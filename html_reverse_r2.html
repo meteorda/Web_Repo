@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 HTML 反向工程 — 提示詞產生器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+
+  :root{
+    --bg:#0a0b0e;
+    --surface:rgba(21,22,28,0.72);
+    --surface-2:rgba(13,14,18,0.6);
+    --line:rgba(212,175,55,0.16);
+    --line-soft:rgba(255,255,255,0.05);
+    --gold:#d4af37;
+    --gold-soft:#e8cd72;
+    --gold-deep:#9c7c1e;
+    --jade:#4fb89a;
+    --jade-soft:#74d6b9;
+    --jade-deep:#2f8f76;
+    --ink:#ece8e1;
+    --ink-dim:#a8a293;
+    --ink-faint:#6b665c;
+    --danger:#e07070;
+    --warn:#e0b25a;
+    --info:#7fb6d8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  /* ===== 同色系捲軸 ===== */
+  *{scrollbar-width:thin;scrollbar-color:var(--gold-deep) rgba(13,14,18,.6);}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:rgba(13,14,18,.6);border-radius:8px;}
+  ::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,var(--gold-deep),rgba(212,175,55,.55));
+    border:2px solid rgba(13,14,18,.8);
+    border-radius:8px;
+  }
+  ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--gold),var(--gold-soft));}
+  ::-webkit-scrollbar-corner{background:transparent;}
+  body{
+    font-family:'Noto Sans TC',sans-serif;
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(212,175,55,0.10), transparent 58%),
+      radial-gradient(820px 460px at 108% 112%, rgba(79,184,154,0.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:22px 18px 10px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .container{max-width:1320px;margin:0 auto;}
+
+  /* Header */
+  .header{text-align:center;padding:18px 8px 22px;}
+  .header .eyebrow{font-size:0.7rem;letter-spacing:0.42em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:12px;opacity:.9;}
+  .header h1{font-family:'Noto Serif TC',serif;font-size:clamp(1.7rem,4.4vw,2.6rem);font-weight:900;letter-spacing:1px;display:inline-flex;align-items:center;gap:12px;}
+  .header h1 .t{background:linear-gradient(120deg,#f4e6ad,var(--gold) 42%,var(--gold-deep));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .header h1 .e{font-size:.82em;filter:drop-shadow(0 2px 6px rgba(212,175,55,.3));}
+  .header .rule{width:200px;max-width:60%;margin:16px auto 0;display:flex;align-items:center;justify-content:center;gap:12px;}
+  .header .rule span{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-deep),transparent);}
+  .header .rule i{width:7px;height:7px;transform:rotate(45deg);background:var(--gold);box-shadow:0 0 10px rgba(212,175,55,.6);}
+  .header p{font-size:.86rem;color:var(--ink-dim);margin-top:14px;letter-spacing:.5px;}
+  .header .badge{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:5px 16px;background:linear-gradient(180deg,rgba(212,175,55,.12),rgba(212,175,55,.04));border:1px solid var(--line);color:var(--gold-soft);border-radius:999px;font-size:.72rem;font-weight:500;}
+
+  .card{position:relative;background:var(--surface);border:1px solid var(--line-soft);border-radius:16px;padding:18px;margin-bottom:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 24px 60px -30px rgba(0,0,0,.8);}
+
+  /* Config */
+  .cfg-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+  .field label{display:block;font-size:.72rem;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:7px;}
+  .field .hint{font-size:.7rem;color:var(--ink-faint);margin-top:5px;}
+  textarea,input[type=text],input[type=password],select{
+    width:100%;background:var(--surface-2);border:1px solid var(--line-soft);color:var(--ink);
+    border-radius:10px;padding:10px 12px;font-size:.84rem;font-family:inherit;transition:border-color .15s,box-shadow .15s;
+  }
+  textarea{resize:vertical;line-height:1.6;}
+  textarea.code{font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:.78rem;color:var(--jade-soft);}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.15);}
+  .key-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .key-row textarea{flex:1 1 280px;min-height:46px;}
+  .cfg-mini{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+  .cfg-mini .field{flex:1 1 180px;min-width:150px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--ink-dim);cursor:pointer;user-select:none;}
+  .checkline input{width:16px;height:16px;accent-color:var(--gold);}
+
+  /* Buttons */
+  .btn{border:1px solid transparent;border-radius:10px;padding:11px 20px;font-size:.85rem;font-weight:700;font-family:inherit;letter-spacing:.5px;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:linear-gradient(135deg,var(--jade),var(--jade-deep));color:#06140f;box-shadow:0 8px 22px -8px rgba(79,184,154,.6);}
+  .btn-primary:hover:not(:disabled){background:linear-gradient(135deg,var(--jade-soft),var(--jade));transform:translateY(-2px);}
+  .btn-gold{background:linear-gradient(180deg,rgba(212,175,55,.16),rgba(212,175,55,.05));border-color:var(--line);color:var(--gold-soft);}
+  .btn-gold:hover:not(:disabled){background:linear-gradient(180deg,rgba(212,175,55,.26),rgba(212,175,55,.1));border-color:var(--gold);color:#f4e6ad;transform:translateY(-2px);}
+  .btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line-soft);color:var(--ink-dim);}
+  .btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.08);color:var(--ink);}
+  .btn-sm{padding:7px 13px;font-size:.76rem;}
+
+  /* Workspace */
+  .work{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:920px){.work{grid-template-columns:1fr;}}
+  .pane{position:relative;min-width:0;background:var(--surface);border:1px solid var(--line-soft);border-radius:16px;padding:16px;backdrop-filter:blur(14px);display:flex;flex-direction:column;min-height:520px;box-shadow:0 24px 60px -30px rgba(0,0,0,.8);}
+  .pane::before{content:'';position:absolute;top:11px;left:11px;width:15px;height:15px;border:1px solid var(--gold);border-right:none;border-bottom:none;border-top-left-radius:5px;opacity:.45;}
+  .pane-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
+  .pane-title{font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .pane-title .tag{font-family:'Noto Sans TC';font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+  .pane-actions{display:flex;gap:7px;flex-wrap:wrap;}
+
+  .drop{flex:1;display:flex;flex-direction:column;}
+  #html-input{flex:1;min-height:400px;}
+  .input-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.72rem;color:var(--ink-faint);gap:8px;flex-wrap:wrap;}
+
+  .out-wrap{flex:1;overflow:auto;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2);padding:16px 18px;}
+  .out-empty{color:var(--ink-faint);font-size:.85rem;text-align:center;padding:60px 16px;line-height:1.9;}
+  /* rendered markdown */
+  .md h1,.md h2,.md h3,.md h4{font-family:'Noto Serif TC',serif;color:var(--gold-soft);margin:18px 0 8px;line-height:1.3;}
+  .md h1{font-size:1.3rem;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .md h2{font-size:1.08rem;}
+  .md h3{font-size:.96rem;color:var(--jade-soft);}
+  .md h4{font-size:.88rem;color:var(--ink);}
+  .md p{font-size:.84rem;line-height:1.75;margin:8px 0;color:var(--ink);overflow-wrap:anywhere;}
+  .md ul,.md ol{margin:8px 0 8px 20px;}
+  .md li{font-size:.83rem;line-height:1.7;margin:3px 0;color:var(--ink-dim);overflow-wrap:anywhere;}
+  .md strong{color:var(--gold-soft);}
+  .md code{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;word-break:break-all;overflow-wrap:anywhere;background:rgba(212,175,55,.1);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--gold-soft);}
+  .md pre.code{background:#070809;border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px;overflow:auto;margin:10px 0;}
+  .md pre.code code{background:none;border:none;padding:0;color:var(--jade-soft);font-size:.78rem;line-height:1.6;display:block;white-space:pre;}
+  .md hr{border:none;border-top:1px solid var(--line-soft);margin:18px 0;}
+  .md blockquote{border-left:3px solid var(--gold);padding:4px 14px;margin:10px 0;color:var(--ink-dim);background:rgba(212,175,55,.05);border-radius:0 8px 8px 0;font-size:.82rem;}
+  .out-raw{white-space:pre-wrap;word-break:break-all;overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace;font-size:.78rem;line-height:1.6;color:var(--ink-dim);}
+  .cursor::after{content:'▋';color:var(--gold);animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  /* status / keys dots */
+  .status{margin-top:12px;padding:10px 14px;border-radius:10px;font-size:.8rem;display:none;line-height:1.55;border:1px solid;}
+  .status.show{display:block;}
+  .status.info{background:rgba(127,182,216,.08);border-color:rgba(127,182,216,.3);color:#a8d2ea;}
+  .status.success{background:rgba(79,184,154,.1);border-color:rgba(79,184,154,.35);color:var(--jade-soft);}
+  .status.error{background:rgba(224,112,112,.1);border-color:rgba(224,112,112,.35);color:#f0a8a8;}
+  .status.warn{background:rgba(212,175,55,.1);border-color:var(--line);color:var(--gold-soft);}
+  .spinner{width:15px;height:15px;border:2px solid rgba(0,0,0,.25);border-top-color:rgba(0,0,0,.7);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .footer{text-align:center;font-size:.72rem;color:var(--ink-faint);padding:18px 0 24px;line-height:1.8;}
+  .footer a{color:var(--gold);text-decoration:none;}
+  .seg{display:inline-flex;border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;}
+  .seg button{background:transparent;border:none;color:var(--ink-dim);padding:5px 12px;font-size:.74rem;font-family:inherit;cursor:pointer;}
+  .seg button.on{background:rgba(212,175,55,.16);color:var(--gold-soft);}
+  details.adv{margin-top:4px;}
+  details.adv summary{cursor:pointer;color:var(--ink-dim);font-size:.78rem;list-style:none;padding:4px 0;}
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary::before{content:'▸ ';color:var(--gold);}
+  details.adv[open] summary::before{content:'▾ ';}
+  .dragover{border-color:var(--gold)!important;box-shadow:0 0 0 3px rgba(212,175,55,.2);}
+  /* API Key 遮罩：預設圓點隱碼，.reveal 才顯示明碼 */
+  #api-keys{-webkit-text-security:disc;text-security:disc;}
+  #api-keys.reveal{-webkit-text-security:none;text-security:none;}
+  /* 圖像反向模式 */
+  .img-wrap{flex:1;display:none;border:1px dashed var(--line);border-radius:12px;background:var(--surface-2);align-items:center;justify-content:center;overflow:auto;min-height:340px;padding:10px;}
+  .pane.image #html-input{display:none;}
+  .pane.image .img-wrap{display:flex;}
+  .img-wrap img{max-width:100%;max-height:520px;border-radius:8px;box-shadow:0 10px 40px -10px rgba(0,0,0,.7);}
+  .img-hint{color:var(--ink-faint);font-size:.82rem;text-align:center;line-height:2.1;}
+
+  /* ===== R2 新增 ===== */
+  .mode-seg{display:flex;gap:8px;margin-bottom:14px;justify-content:center;flex-wrap:wrap;}
+  .mode-seg button{background:rgba(255,255,255,.04);border:1px solid var(--line-soft);color:var(--ink-dim);padding:8px 22px;border-radius:999px;font-size:.8rem;font-family:inherit;cursor:pointer;transition:all .18s;}
+  .mode-seg button.on{background:linear-gradient(180deg,rgba(212,175,55,.2),rgba(212,175,55,.06));border-color:var(--gold);color:var(--gold-soft);}
+  .diff-lbl{display:none;font-size:.7rem;color:var(--gold);letter-spacing:1.5px;font-weight:600;margin:0 0 4px;}
+  #html-input2{display:none;flex:1;min-height:180px;margin-top:2px;}
+  .pane.diff .diff-lbl{display:block;}
+  .pane.diff #html-input{min-height:180px;}
+  .pane.diff #html-input2{display:block;}
+  .batch-list{flex:1;overflow:auto;border:1px solid var(--line-soft);border-radius:12px;background:var(--surface-2);padding:10px;display:none;min-height:300px;}
+  .pane.batch #html-input{display:none;}
+  .pane.batch .batch-list{display:block;}
+  .batch-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line-soft);font-size:.78rem;}
+  .batch-item:last-child{border-bottom:none;}
+  .batch-item .nm{flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .batch-item .st{font-size:.68rem;padding:2px 10px;border-radius:999px;border:1px solid var(--line-soft);color:var(--ink-faint);white-space:nowrap;}
+  .batch-item .st.run{color:var(--gold-soft);border-color:var(--gold);}
+  .batch-item .st.done{color:var(--jade-soft);border-color:var(--jade);}
+  .batch-item .st.err{color:var(--danger);border-color:var(--danger);}
+  .modal-mask{position:fixed;inset:0;background:rgba(5,6,8,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:90;display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal-mask.show{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:min(1400px,96vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 40px 120px -30px rgba(0,0,0,.9);}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line-soft);gap:10px;}
+  .modal-title{font-family:'Noto Serif TC',serif;color:var(--gold-soft);font-size:1rem;font-weight:600;}
+  .modal-body{flex:1;overflow:auto;padding:16px 18px;}
+  .cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;height:70vh;}
+  @media(max-width:920px){.cmp-grid{grid-template-columns:1fr;height:auto;}.cmp-col iframe{min-height:320px;}}
+  .cmp-col{display:flex;flex-direction:column;gap:8px;min-height:0;}
+  .cmp-col .lb{font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:600;}
+  .cmp-col iframe{flex:1;border:1px solid var(--line-soft);border-radius:12px;background:#fff;width:100%;}
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:6px 0 14px;}
+  .score-cell{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:12px;text-align:center;}
+  .score-cell .v{font-family:'Noto Serif TC',serif;font-size:1.8rem;font-weight:700;color:var(--gold);}
+  .score-cell .v.good{color:var(--jade-soft);}
+  .score-cell .v.bad{color:var(--danger);}
+  .score-cell .k{font-size:.68rem;color:var(--ink-faint);letter-spacing:1px;margin-top:3px;}
+  .tok-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .tok-table td{padding:6px 8px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-dim);overflow-wrap:anywhere;}
+  .tok-table td:first-child{color:var(--gold-soft);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;}
+  .tok-swatch{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.2);vertical-align:-2px;margin-right:6px;}
+  .m-h3{font-family:'Noto Serif TC',serif;color:var(--jade-soft);font-size:.9rem;margin:14px 0 6px;}
+  .m-mono{font-size:.76rem;color:var(--ink-dim);font-family:ui-monospace,Consolas,monospace;line-height:1.8;word-break:break-all;}
+  .hist-item{position:relative;padding:10px 36px 10px 12px;border:1px solid var(--line-soft);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;background:var(--surface-2);}
+  .hist-item:hover{border-color:var(--gold);}
+  .hist-item .t{font-size:.82rem;color:var(--ink);font-weight:600;}
+  .hist-item .m{font-size:.68rem;color:var(--ink-faint);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap;}
+  .hist-item .del{position:absolute;top:8px;right:10px;color:var(--danger);opacity:.55;cursor:pointer;padding:2px 4px;}
+  .hist-item .del:hover{opacity:1;}
+  .exp-menu{position:relative;display:inline-block;}
+  .exp-list{position:absolute;right:0;top:calc(100% + 6px);background:#15161c;border:1px solid var(--line);border-radius:12px;min-width:200px;z-index:50;display:none;overflow:hidden;box-shadow:0 20px 50px -12px rgba(0,0,0,.85);}
+  .exp-list.show{display:block;}
+  .exp-list button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink-dim);padding:10px 14px;font-size:.78rem;font-family:inherit;cursor:pointer;}
+  .exp-list button:hover{background:rgba(212,175,55,.12);color:var(--gold-soft);}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">AI · Reverse Engineering Atelier</div>
+    <h1><span class="e">🔍</span><span class="t">HTML 反向工程</span></h1>
+    <div class="rule"><span></span><i></i><span></span></div>
+    <p>讀取任意 HTML 程式 · 自動拆解成完整創作提示詞 · 由 Groq 驅動</p>
+    <span class="badge">⚡ Groq 串流 · 差異比對 · 批次 ZIP · 重建驗證 · 評分補洞 · 歷史庫 · 多格式匯出</span>
+  </div>
+
+  <!-- 設定 -->
+  <div class="card">
+    <div class="cfg-grid">
+      <div class="field">
+        <label>Groq API Key（可多組，每行一組，自動輪換）</label>
+        <div class="key-row">
+          <textarea id="api-keys" class="code" placeholder="gsk_..."></textarea>
+          <button class="btn btn-ghost btn-sm" id="btn-key-eye" title="顯示 / 隱藏金鑰">👁</button>
+          <button class="btn btn-gold btn-sm" id="btn-save-key">💾 儲存</button>
+          <button class="btn btn-ghost btn-sm" id="btn-load-models">⟳ 載入模型</button>
+        </div>
+        <div class="hint">金鑰僅存於本機瀏覽器 localStorage，不會上傳。可至 console.groq.com 免費取得。</div>
+      </div>
+      <div class="cfg-mini">
+        <div class="field">
+          <label>模型</label>
+          <select id="model">
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+            <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+            <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>輸出語言</label>
+          <select id="lang">
+            <option value="繁體中文（台灣）">繁體中文</option>
+            <option value="English">English</option>
+            <option value="日本語">日本語</option>
+          </select>
+        </div>
+        <div class="field" style="flex:0 0 auto;">
+          <label>創意溫度</label>
+          <input type="text" id="temp" value="0.35" style="width:90px;">
+        </div>
+        <div class="field">
+          <label>輸入處理模式</label>
+          <select id="preprocess">
+            <option value="slim">標準精簡</option>
+            <option value="digest">深度萃取（大檔建議）</option>
+            <option value="essence">意境壓縮（最高壓縮率）</option>
+            <option value="none">原文</option>
+          </select>
+        </div>
+      </div>
+      <details class="adv">
+        <summary>進階選項</summary>
+        <div style="margin-top:10px;display:flex;gap:18px;flex-wrap:wrap;">
+          <label class="checkline"><input type="checkbox" id="opt-pitfall" checked> 自動加入「實作陷阱」章節</label>
+          <label class="checkline"><input type="checkbox" id="opt-stream" checked> 串流即時輸出</label>
+          <label class="checkline"><input type="checkbox" id="opt-autofit" checked> 自動壓縮以符合 TPM（建議開啟）</label>
+          <label class="checkline"><input type="checkbox" id="opt-fullshot" checked> 附帶完整 One-Shot 範例（TPM 不足時自動改精簡）</label>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="flex:0 0 auto;">
+            <label>每分鐘 token 上限 TPM</label>
+            <input type="text" id="tpm" value="6000" style="width:120px;">
+            <div class="hint">免費 on_demand 常見：8b=6000、70b=12000</div>
+          </div>
+          <div class="field" style="flex:0 0 auto;">
+            <label>輸出上限 tokens</label>
+            <input type="text" id="maxtok" value="4000" style="width:120px;">
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 模式 -->
+  <div class="mode-seg" id="mode-seg">
+    <button data-mode="single" class="on">📄 單檔反向</button>
+    <button data-mode="diff">🔀 差異比對（v1→v2）</button>
+    <button data-mode="image">🖼 圖像反向</button>
+    <button data-mode="batch">📦 批次處理</button>
+  </div>
+
+  <!-- 工作區 -->
+  <div class="work">
+    <!-- 輸入 -->
+    <div class="pane" id="input-pane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="tag">Input</span> 原始 HTML</div>
+        <div class="pane-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-upload">📁 上傳 .html</button>
+          <button class="btn btn-ghost btn-sm" id="btn-sample">範例</button>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-in">清空</button>
+          <button class="btn btn-ghost btn-sm" id="btn-tokens">🎨 設計系統</button>
+          <button class="btn btn-ghost btn-sm" id="btn-deps">🔌 依賴掃描</button>
+          <button class="btn btn-ghost btn-sm" id="btn-history">🕘 歷史</button>
+          <input type="file" id="file-input" accept=".html,.htm,text/html" style="display:none;">
+        </div>
+      </div>
+      <div class="drop" id="drop">
+        <div class="diff-lbl">V1（舊版）</div>
+        <textarea id="html-input" class="code" placeholder="在此貼上完整 HTML 原始碼，或拖曳 / 上傳 .html 檔案…"></textarea>
+        <div class="diff-lbl" style="margin-top:8px;">V2（新版）</div>
+        <textarea id="html-input2" class="code" placeholder="貼上新版（V2）HTML，將只產出 v1→v2 的增量提示詞…"></textarea>
+        <div class="batch-list" id="batch-list"></div>
+        <div class="img-wrap" id="img-wrap">
+          <div class="img-hint" id="img-hint">🖼 拖曳 / 上傳 / 直接貼上（Ctrl+V）UI 截圖<br>視覺模型將逐一還原版型、元素與配置</div>
+          <img id="img-preview" style="display:none;" alt="">
+        </div>
+        <div class="input-foot">
+          <span id="in-stats">0 字元 · 約 0 tokens</span>
+          <span>支援拖放檔案到此區塊</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-run" style="margin-top:12px;width:100%;">🔍 開始反向工程</button>
+      <button class="btn btn-ghost btn-sm" id="btn-stop" style="margin-top:8px;width:100%;display:none;">■ 停止</button>
+      <button class="btn btn-gold btn-sm" id="btn-zip" style="margin-top:8px;width:100%;display:none;">🗜 打包下載全部 .md（ZIP）</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- 輸出 -->
+    <div class="pane" id="output-pane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="tag">Output</span> 創作提示詞</div>
+        <div class="pane-actions">
+          <span class="seg"><button id="seg-view" class="on">預覽</button><button id="seg-raw">原始</button></span>
+          <button class="btn btn-gold btn-sm" id="btn-copy" disabled>📋 複製</button>
+          <button class="btn btn-gold btn-sm" id="btn-verify" disabled>🧪 重建驗證</button>
+          <button class="btn btn-gold btn-sm" id="btn-score" disabled>⭐ 評分</button>
+          <span class="exp-menu">
+            <button class="btn btn-gold btn-sm" id="btn-export" disabled>⬇ 匯出 ▾</button>
+            <div class="exp-list" id="exp-list">
+              <button data-fmt="md">📄 Markdown（.md）</button>
+              <button data-fmt="skill">🧩 SKILL.md（Claude Skill）</button>
+              <button data-fmt="json">🗂 JSON 結構化規格</button>
+              <button data-fmt="puml">🧭 PlantUML 心智圖（.puml）</button>
+            </div>
+          </span>
+        </div>
+      </div>
+      <div class="out-wrap">
+        <div id="out-view" class="md"></div>
+        <pre id="out-raw" class="out-raw" style="display:none;"></pre>
+        <div id="out-empty" class="out-empty">⟵ 在左側貼上 HTML，按「開始反向工程」<br>即可產出可重建此程式的完整創作提示詞</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="modal-mask">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="modal-title"></div>
+        <button class="btn btn-ghost btn-sm" id="modal-close">✕ 關閉</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    🔍 HTML 反向工程 · Powered by <a href="https://groq.com" target="_blank">Groq</a> ·
+    讀取 HTML → 產生標題 / 配色 / 版型 / 元件 / 功能 / 實作陷阱完整提示詞
+    <br><span style="color:var(--ink-faint);font-size:.68rem;">build R2.1 · 單檔/差異/批次/圖像反向 · 重建驗證 · AI 評分補洞（視覺比對）· IndexedDB 歷史庫 · SKILL.md/JSON/PlantUML 匯出 · 意境壓縮</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  const MODELS_URL = 'https://api.groq.com/openai/v1/models';
+  const LS_KEY = 'htmlre_groq_keys';
+  const LS_MODEL = 'htmlre_model';
+  const FALLBACK_CHAIN = ['llama-3.3-70b-versatile','openai/gpt-oss-120b','llama-3.1-8b-instant'];
+  const VISION_CHAIN = ['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct'];
+
+  let lastMarkdown = '';
+  let abortCtrl = null;
+
+  /* ---------- One-Shot 參考範例（精簡，示範輸出結構與顆粒度） ---------- */
+  const ONE_SHOT = `# RemoveBG Studio — 完整創作提示詞
+
+## 0. 角色與目標
+你是資深前端工程師兼介面設計師。請產出單一檔案 HTML（內嵌 CSS、JS，不使用任何框架），主題為一支深色高質感的 AI 智能去背工具。純 vanilla JS，互動用 Canvas 2D，介面語言繁體中文。
+
+## 1. 程式標題
+- 分頁標題：\`✂️ RemoveBG Studio — AI 智能去背工具\`
+- 主標：\`RemoveBG Studio\`（襯線、金色漸層字）
+- eyebrow：\`AI · Background Atelier\`
+- 副標：\`AI 智能去背工作室 · 一鍵移除圖像背景\`
+- Badge：\`✦ 內建 3 組 API Key 智慧輪換 · 支援自訂 Key\`
+
+## 2. 技術規格
+- 單一 .html，無 build、無框架；字體 Noto Serif/Sans TC（Google Fonts）。
+- 串接 remove.bg API：\`POST https://api.remove.bg/v1.0/removebg\`，標頭 \`X-Api-Key\`，FormData 帶 image_file/size/type。
+- 自訂 Key 存 localStorage。
+
+## 3. 設計系統（深色奢華 · 金/玉）
+配色 tokens（以 CSS 變數實作）：
+\`\`\`
+--bg:#0a0b0e
+--surface:rgba(21,22,28,0.72)
+--gold:#d4af37
+--jade:#4fb89a
+--ink:#ece8e1
+--danger:#e07070
+\`\`\`
+質感：近黑底＋金/玉徑向光暈；玻璃卡片＋四角金色刻線；主標金色漸層襯線字；金色只給重點、玉色給主行動。
+
+## 4. 版型結構（max-width 1080px 置中）
+Header → 上傳卡 → 預覽卡（原圖/結果雙欄）→ 批次卡 → Footer。
+
+## 5. 元件清單與規格
+- 拖放上傳區（點擊/拖放/貼上）。
+- 設定列：輸出尺寸 select、物件類型 select。
+- API Key 指示燈（閒置灰/嘗試金/成功玉/失敗紅）。
+- 自訂 API Key 摺疊區（localStorage）。
+- 預覽雙欄、選取工具列（矩形/多邊形/套索）、背景色票、動作按鈕列。
+
+## 6. 功能規格
+- 去背核心＋3 組 Key 隨機輪換＋自訂 Key 優先＋失敗自動切換（402/403/429 換 Key，400 中止）。
+- 選取去背：矩形/多邊形/套索三模式，座標以比例 0~1 儲存，只保留選取區去背結果、其餘透明。
+- 帶 25% 邊距裁切送 API；失敗則「整圖去背→裁進選取形狀」後援。
+- 背景色合成、透明/含背景 PNG 下載、批次處理。
+
+## 7. 實作陷阱
+- 選取 canvas 不可用 \`inset:0\` 撐滿（replaced element 不會被撐滿）；尺寸以圖片 clientWidth/Height 為基準；ResizeObserver 觀察圖片，否則破圖。
+- 合成要把 API 回傳圖「等比例拉伸」回對應矩形再 clip（免費 Key 回傳預覽尺寸），否則位移縮放。
+
+## 8. 文案與語氣
+全繁體中文、精簡直接；錯誤態給「怎麼了＋下一步」。
+
+## 9. 一句話濃縮版
+用單檔 HTML＋原生 JS＋Canvas 做「RemoveBG Studio」深色金/玉去背工具：串 remove.bg、3 組 Key 輪換、矩形/多邊形/套索框選只保留選取區去背、外擴裁切＋整圖後援；注意 canvas 不可 inset:0、合成要等比例拉伸回 clip。`;
+
+  /* ---------- 精簡版 One-Shot（TPM 吃緊時改用） ---------- */
+  const ONE_SHOT_SKELETON =
+`（結構骨架，請依此章節順序與顆粒度輸出，內容換成使用者 HTML 真實內容）
+# {程式名稱} — 完整創作提示詞
+## 0. 角色與目標：一句定位（單檔/框架/語言/用途）
+## 1. 程式標題：分頁標題、主標、eyebrow、副標、badge 等實際文案（用 code 反引號）
+## 2. 技術規格：單檔/框架/CDN/字體；呼叫的 API 端點、方法、標頭、參數；localStorage 等
+## 3. 設計系統：配色 tokens 用 code block 條列實際數值；字體；質感原則
+## 4. 版型結構：由上到下分區
+## 5. 元件清單與規格：逐一列出主要元件與互動
+## 6. 功能規格：核心流程、錯誤/容錯、邊界
+## 7. 實作陷阱：易踩雷處（Canvas/DPR、座標、API 回傳尺寸、SSE、CORS、競態）
+## 8. 文案與語氣
+## 9. 一句話濃縮版`;
+
+  /* ---------- 系統提示詞 ---------- */
+  function buildMessages(html, lang, withPitfall, oneShot){
+    if(diffFlag){
+      const sys =
+`你是頂尖前端工程師與技術文件專家，專長是產出「版本增量升級提示詞」。
+
+任務：使用者提供 V1 的結構摘要，以及 V1→V2 的行級差異（新增/移除的行）。請產出一份「只描述變更」的增量升級提示詞——拿著 V1 原始碼＋這份提示詞，就能精準改出 V2。
+
+鐵則：
+- 只描述變更，不要重述 V1 既有內容（除非變更依賴其脈絡）。
+- 依差異行推斷「功能層級」的變更意圖，而不是逐行覆誦 diff。
+- 配色/樣式變更用實際數值。機密一律用占位符。
+- 語言：以「${lang}」輸出。只輸出 Markdown 本身。
+${withPitfall ? '- 若變更涉及易踩雷處（Canvas/DPR、座標、API、SSE、CORS、競態），加入「實作陷阱」章節。' : ''}
+
+章節：# {程式名稱} v1→v2 增量升級提示詞 / ## 1 變更總覽（3~6 條） / ## 2 新增功能 / ## 3 修改項目 / ## 4 移除項目 / ## 5 樣式與設計變更 / ## 6 實作陷阱 / ## 7 一句話濃縮版`;
+      const user =
+`以下是 V1 結構摘要與 V1→V2 行級差異，請產生增量升級提示詞：
+
+${html}`;
+      return [{role:'system',content:sys},{role:'user',content:user}];
+    }
+    const refBlock = oneShot
+      ? `\n\n以下是「輸出格式與詳細度」的參考範例（請模仿其結構與顆粒度，內容換成使用者 HTML 的真實內容）：\n<<<REFERENCE\n${oneShot}\nREFERENCE>>>`
+      : '';
+    const sys =
+`你是頂尖前端工程師與技術文件專家，專長是把一份完整的 HTML 程式「逆向拆解」成可以重建它的創作提示詞。
+
+任務：閱讀使用者提供的 HTML（或其結構摘要），產出一份完整、精確、可直接交給 AI 重建此程式的「創作提示詞」。
+
+鐵則：
+- 必須忠實反映「這份 HTML 實際的內容」——實際的標題與文案、實際的配色數值、實際使用的字體、實際的元件、實際的 JS 函式與呼叫的 API（端點/參數/標頭）、實際的功能流程。
+- 不要照抄範例內容；範例只示範「輸出的章節結構與詳細顆粒度」。
+- 配色一律從 HTML 的 CSS 變數/數值萃取，用 code block 條列。
+- 機密（API key、token、密碼）一律用占位符（如 KEY_1），絕不輸出真實值。
+- 語言：以「${lang}」輸出。
+- 只輸出 Markdown 提示詞本身，不要任何前言、說明或結語。
+${withPitfall ? '- 若程式有關鍵或易踩雷的實作細節（Canvas/DPR、座標換算、API 回傳尺寸、SSE 串流解析、CORS、localStorage、競態），務必新增「## 7. 實作陷阱」章節具體提醒。' : ''}
+
+請依下列章節輸出（沒有的章節可省略，但盡量完整）：
+# {程式名稱} — 完整創作提示詞 / ## 0 角色 / ## 1 標題 / ## 2 技術規格 / ## 3 設計系統(配色tokens) / ## 4 版型 / ## 5 元件清單 / ## 6 功能規格 / ## 7 實作陷阱 / ## 8 文案語氣 / ## 9 一句話濃縮版${refBlock}`;
+
+    const user =
+`請逆向工程以下 HTML（或其結構摘要），產生一份完整、可重建它的創作提示詞：
+
+\`\`\`html
+${html}
+\`\`\``;
+
+    return [{role:'system',content:sys},{role:'user',content:user}];
+  }
+
+  /* ---------- HTML 精簡 ---------- */
+  function slimHtml(html){
+    return html
+      .replace(/<!--[\s\S]*?-->/g,'')                       // 註解
+      .replace(/data:[a-zA-Z0-9.+/-]+;base64,[A-Za-z0-9+/=]{60,}/g,'data:[BASE64_OMITTED]') // base64
+      .replace(/[ \t]+\n/g,'\n')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  /* ---------- 深度萃取：把大檔壓成結構摘要（大幅降 token） ---------- */
+  function extractDigest(html){
+    let doc;
+    try{ doc=new DOMParser().parseFromString(html,'text/html'); }
+    catch(_){ return slimHtml(html); }
+    const out=[];
+
+    // 1. 標題 / meta / 外部資源
+    const title=doc.querySelector('title');
+    if(title) out.push('TITLE: '+title.textContent.trim());
+    doc.querySelectorAll('meta[name],meta[property]').forEach(m=>{
+      const n=m.getAttribute('name')||m.getAttribute('property');
+      out.push('META '+n+': '+(m.getAttribute('content')||''));
+    });
+    const links=[];
+    doc.querySelectorAll('link[href],script[src]').forEach(el=>links.push(el.getAttribute('href')||el.getAttribute('src')));
+    if(links.length) out.push('外部資源: '+[...new Set(links)].join(' , '));
+
+    // 2. CSS：:root 變數完整保留，其餘截斷
+    let css='';
+    doc.querySelectorAll('style').forEach(s=>css+='\n'+s.textContent);
+    css=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n{2,}/g,'\n').trim();
+    const rootM=css.match(/:root\s*\{[\s\S]*?\}/);
+    const rootBlock=rootM?rootM[0]:'';
+    let cssRest=rootBlock?css.replace(rootBlock,''):css;
+    const CSS_CAP=5000;
+    if(cssRest.length>CSS_CAP) cssRest=cssRest.slice(0,CSS_CAP)+'\n/* …CSS 已截斷，其餘樣式從略… */';
+    out.push('\n=== CSS ===');
+    if(rootBlock) out.push(rootBlock);
+    if(cssRest.trim()) out.push(cssRest.trim());
+
+    // 3. DOM 結構大綱（去除 script/style，標籤+id/class+關鍵屬性+截斷文字）
+    out.push('\n=== DOM 結構大綱 ===');
+    const lines=[];
+    const walk=(el,depth)=>{
+      if(depth>14) return;
+      for(const node of el.children){
+        const tag=node.tagName.toLowerCase();
+        if(tag==='script'||tag==='style') continue;
+        let d=tag;
+        if(node.id) d+='#'+node.id;
+        if(node.className && typeof node.className==='string' && node.className.trim())
+          d+='.'+node.className.trim().split(/\s+/).join('.');
+        ['type','placeholder','value','href','for','name','alt'].forEach(a=>{
+          if(node.hasAttribute(a)){const v=node.getAttribute(a);if(v)d+=' '+a+'="'+v.slice(0,30)+'"';}
+        });
+        const txt=[...node.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
+        if(txt) d+='  「'+txt.slice(0,40)+'」';
+        lines.push('  '.repeat(depth)+'· '+d);
+        walk(node,depth+1);
+      }
+    };
+    if(doc.body) walk(doc.body,0);
+    let domTxt=lines.join('\n');
+    const DOM_CAP=6000;
+    if(domTxt.length>DOM_CAP) domTxt=domTxt.slice(0,DOM_CAP)+'\n  … (DOM 大綱已截斷)';
+    out.push(domTxt);
+
+    // 4. JS 摘要：函式 / API / 事件 / 常數 / localStorage / 標頭
+    let js='';
+    doc.querySelectorAll('script:not([src])').forEach(s=>js+='\n'+s.textContent);
+    out.push('\n=== JS 摘要（僅列出識別資訊，非完整實作） ===');
+    const pick=(re,label,max=50)=>{
+      const set=new Set(); let m;
+      while((m=re.exec(js))&&set.size<max){ if(m[1])set.add(m[1]); }
+      if(set.size) out.push(label+'：'+[...set].join(', '));
+    };
+    pick(/function\s+([A-Za-z0-9_$]+)\s*\(/g,'函式');
+    pick(/(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/g,'箭頭函式');
+    pick(/(?:const|let|var)\s+([A-Z][A-Z0-9_]{2,})\s*=/g,'常數');
+    pick(/fetch\(\s*[`'"]([^`'"]+)[`'"]/g,'fetch 端點',30);
+    pick(/['"](https?:\/\/[^'"]+)['"]/g,'網址字面量',20);
+    pick(/addEventListener\(\s*['"]([a-zA-Z]+)['"]/g,'監聽事件',40);
+    pick(/localStorage\.(?:get|set|remove)Item\(\s*[`'"]([^`'"]+)[`'"]/g,'localStorage 鍵',30);
+    pick(/['"](Authorization|X-[A-Za-z-]+|Content-Type|model|temperature|max_tokens|stream)['"]/g,'API 參數/標頭',30);
+    pick(/getElementById\(\s*['"]([^'"]+)['"]/g,'取用元素 id',60);
+
+    return out.join('\n');
+  }
+
+  function preprocess(html){
+    const mode=$('preprocess').value;
+    if(mode==='essence') return extractEssence(html);
+    if(mode==='digest') return extractDigest(html);
+    if(mode==='slim') return slimHtml(html);
+    return html;
+  }
+
+  /* ---------- 意境壓縮：digest 再進一步語意壓縮（最高壓縮率） ---------- */
+  function extractEssence(html){
+    let d=extractDigest(html);
+    const rootM=d.match(/:root\s*\{[\s\S]*?\}/);
+    const root=rootM?rootM[0]:'';
+    let rest=root?d.replace(root,'\u0000ROOT\u0000'):d;
+    rest=rest.replace(/\{([^{}]{60,})\}/g,(m,b)=>'{'+b.slice(0,48)+'…}');    // 長規則體截頭
+    const lines=rest.split('\n');const out=[];let i=0;                        // 連續重複行 → ×N
+    while(i<lines.length){
+      let j=i;
+      while(j+1<lines.length&&lines[j+1]===lines[i]&&lines[i].trim())j++;
+      out.push(j>i?lines[i]+'   ×'+(j-i+1):lines[i]);
+      i=j+1;
+    }
+    rest=out.join('\n');
+    d=root?rest.replace('\u0000ROOT\u0000',root):rest;
+    const CAP=9000;
+    if(d.length>CAP)d=d.slice(0,CAP)+'\n…(意境壓縮已達上限，其餘從略)';
+    return d;
+  }
+
+  /* ---------- 自動壓縮以符合 TPM（輸入＋輸出都計入 TPM） ---------- */
+  function estTok(s){ return Math.round((s||'').length/2.8); }   // 保守高估，避免 413
+  function promptTokens(msgs){ return estTok(msgs[0].content)+estTok(msgs[1].content)+16; }
+
+  function buildAndFit(rawHtml, lang, userMax, tpmOverride){
+    const autofit=$('opt-autofit').checked;
+    const tpm=tpmOverride||parseInt($('tpm').value)||6000;
+    const pitfall=$('opt-pitfall').checked;
+    const wantFull=$('opt-fullshot').checked;
+    const safety=600;
+    const notes=[];
+
+    let mode=$('preprocess').value;
+    let payload;
+    if(diffFlag){ payload=rawHtml; mode='diff'; }
+    else if(mode==='essence') payload=extractEssence(rawHtml);
+    else if(mode==='digest') payload=extractDigest(rawHtml);
+    else if(mode==='slim') payload=slimHtml(rawHtml);
+    else payload=rawHtml;
+    let oneShot = wantFull?ONE_SHOT:ONE_SHOT_SKELETON;
+    let maxtok = userMax;
+
+    let msgs=buildMessages(payload,lang,pitfall,oneShot);
+    if(!autofit) return {msgs,maxtok,promptTok:promptTokens(msgs),notes};
+
+    const over=()=>promptTokens(msgs)+maxtok > tpm;
+
+    if(over() && mode!=='digest' && mode!=='essence' && !diffFlag){
+      payload=extractDigest(rawHtml); mode='digest';
+      notes.push('自動切換深度萃取');
+      msgs=buildMessages(payload,lang,pitfall,oneShot);
+    }
+    if(over() && mode!=='essence' && !diffFlag){
+      payload=extractEssence(rawHtml); mode='essence';
+      notes.push('自動升級意境壓縮');
+      msgs=buildMessages(payload,lang,pitfall,oneShot);
+    }
+    if(over() && oneShot===ONE_SHOT){
+      oneShot=ONE_SHOT_SKELETON; notes.push('改用精簡 One-Shot');
+      msgs=buildMessages(payload,lang,pitfall,oneShot);
+    }
+    if(over()){
+      const room=tpm - promptTokens(msgs) - safety;
+      const newMax=Math.max(800, Math.min(maxtok, room));
+      if(newMax<maxtok){ maxtok=newMax; notes.push('輸出上限下調至 '+maxtok); }
+    }
+    if(over()){
+      const allowTok = tpm - maxtok - safety - estTok(oneShot) - 320;
+      const allowChars = Math.max(900, Math.floor(allowTok*2.8));
+      if(payload.length>allowChars){
+        payload = payload.slice(0,allowChars)+'\n\n…(內容已截斷以符合 TPM 上限，請依上述資訊盡量還原)…';
+        notes.push('內容截斷至約 '+Math.round(allowChars/2.8).toLocaleString()+' tokens');
+        msgs=buildMessages(payload,lang,pitfall,oneShot);
+      }
+    }
+    return {msgs,maxtok,promptTok:promptTokens(msgs),notes};
+  }
+
+  /* ---------- 極簡 Markdown 轉 HTML ---------- */
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function mdToHtml(md){
+    const blocks=[];
+    md = md.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,lang,code)=>{
+      blocks.push('<pre class="code"><code>'+esc(code.replace(/\n$/,''))+'</code></pre>');
+      return '\u0000B'+(blocks.length-1)+'\u0000';
+    });
+    md = esc(md);
+    md = md.replace(/^###### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^##### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^#### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^### (.*)$/gm,'<h3>$1</h3>')
+           .replace(/^## (.*)$/gm,'<h2>$1</h2>')
+           .replace(/^# (.*)$/gm,'<h1>$1</h1>');
+    md = md.replace(/^\s*---+\s*$/gm,'<hr>');
+    md = md.replace(/^&gt;\s?(.*)$/gm,'<blockquote>$1</blockquote>');
+    md = md.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+           .replace(/`([^`]+)`/g,'<code>$1</code>');
+    md = md.replace(/(?:^|\n)((?:[-*] .*(?:\n|$))+)/g,(m,list)=>{
+      const items=list.trim().split('\n').map(l=>'<li>'+l.replace(/^[-*] /,'')+'</li>').join('');
+      return '\n<ul>'+items+'</ul>';
+    });
+    md = md.replace(/(?:^|\n)((?:\d+\. .*(?:\n|$))+)/g,(m,list)=>{
+      const items=list.trim().split('\n').map(l=>'<li>'+l.replace(/^\d+\. /,'')+'</li>').join('');
+      return '\n<ol>'+items+'</ol>';
+    });
+    md = md.split(/\n{2,}/).map(b=>{
+      b=b.trim(); if(!b) return '';
+      if(/^<(h\d|ul|ol|pre|hr|blockquote)/.test(b)) return b;
+      return '<p>'+b.replace(/\n/g,'<br>')+'</p>';
+    }).join('\n');
+    md = md.replace(/\u0000B(\d+)\u0000/g,(m,i)=>blocks[+i]);
+    return md;
+  }
+
+  /* ---------- 狀態 ---------- */
+  function setStatus(msg,type){
+    const s=$('status');
+    if(!msg){s.className='status';s.innerHTML='';return;}
+    s.className='status show '+(type||'info');
+    s.innerHTML=msg;
+  }
+
+  /* ---------- Key 管理 ---------- */
+  $('btn-key-eye').addEventListener('click',()=>{
+    const on=$('api-keys').classList.toggle('reveal');
+    $('btn-key-eye').textContent=on?'🙈':'👁';
+  });
+  function getKeys(){
+    return $('api-keys').value.split(/[\n,]/).map(k=>k.trim()).filter(Boolean);
+  }
+  $('btn-save-key').addEventListener('click',()=>{
+    localStorage.setItem(LS_KEY,$('api-keys').value.trim());
+    localStorage.setItem(LS_MODEL,$('model').value);
+    setStatus('✅ 已儲存金鑰與模型設定到本機','success');
+    setTimeout(()=>setStatus('',''),1800);
+  });
+
+  /* ---------- 載入可用模型 ---------- */
+  $('btn-load-models').addEventListener('click',async()=>{
+    const keys=getKeys();
+    if(!keys.length){setStatus('⚠ 請先填入至少一組 Groq API Key','warn');return;}
+    setStatus('<span class="spinner"></span> 載入可用模型…','info');
+    try{
+      const r=await fetch(MODELS_URL,{headers:{'Authorization':'Bearer '+keys[0]}});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      const ids=(j.data||[]).map(m=>m.id)
+        .filter(id=>!/whisper|tts|guard|prompt-guard|embed/i.test(id))
+        .sort();
+      if(!ids.length) throw new Error('沒有可用的對話模型');
+      const cur=$('model').value;
+      $('model').innerHTML=ids.map(id=>`<option value="${id}">${id}</option>`).join('');
+      if(ids.includes(cur))$('model').value=cur;
+      setStatus('✅ 已載入 '+ids.length+' 個模型','success');
+      setTimeout(()=>setStatus('',''),1800);
+    }catch(e){
+      setStatus('❌ 載入模型失敗：'+e.message,'error');
+    }
+  });
+
+  /* ---------- Groq 串流呼叫 ---------- */
+  async function callGroq(messages,model,key,opts,onToken){
+    abortCtrl=new AbortController();
+    const body={
+      model, messages,
+      temperature: opts.temp,
+      max_tokens: opts.maxtok,
+      stream: opts.stream
+    };
+    const res=await fetch(GROQ_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify(body),
+      signal:abortCtrl.signal
+    });
+    if(!res.ok){
+      let detail='';
+      try{const ej=await res.json();detail=ej.error?.message||JSON.stringify(ej);}catch(_){detail=await res.text().catch(()=> '');}
+      const err=new Error('HTTP '+res.status+(detail?'：'+detail:''));
+      err.status=res.status;
+      throw err;
+    }
+    if(!opts.stream){
+      const j=await res.json();
+      const txt=j.choices?.[0]?.message?.content||'';
+      onToken(txt,txt);
+      return txt;
+    }
+    const reader=res.body.getReader();
+    const dec=new TextDecoder();
+    let buf='',full='';
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop();
+      for(const line of lines){
+        const t=line.trim();
+        if(!t.startsWith('data:'))continue;
+        const data=t.slice(5).trim();
+        if(data==='[DONE]')return full;
+        try{
+          const j=JSON.parse(data);
+          const d=j.choices?.[0]?.delta?.content;
+          if(d){full+=d;onToken(full,d);}
+        }catch(_){}
+      }
+    }
+    return full;
+  }
+
+  /* ---------- 輸出渲染（串流節流） ---------- */
+  let rafPending=false, viewMode='view';
+  function renderOut(md,streaming){
+    lastMarkdown=md;
+    $('out-empty').style.display='none';
+    if(viewMode==='raw'){
+      $('out-raw').textContent=md;
+    }else{
+      if(rafPending)return;
+      rafPending=true;
+      requestAnimationFrame(()=>{
+        rafPending=false;
+        $('out-view').innerHTML=mdToHtml(lastMarkdown);
+        $('out-view').classList.toggle('cursor',!!streaming);
+        const w=$('out-view').parentElement;
+        if(streaming)w.scrollTop=w.scrollHeight;
+      });
+    }
+  }
+
+  /* ================================================================
+     R2 引擎：單檔 / 差異 / 批次共用（含 TPM 自動縮小 + 模型/Key fallback）
+     ================================================================ */
+  let diffFlag=false, appMode='single', lastInputHtml='', rebuiltHtml='';
+  let lastInputKind='html', imageDataUrl='', imgW=0, imgH=0;
+
+  async function engine(html,{statusPrefix='',onToken}={}){
+    const keys=getKeys();
+    const lang=$('lang').value;
+    const opts={temp:parseFloat($('temp').value)||0.35,maxtok:parseInt($('maxtok').value)||4000,stream:$('opt-stream').checked};
+    const chosen=$('model').value;
+    const chain=[chosen,...FALLBACK_CHAIN.filter(m=>m!==chosen)];
+    const autofit=$('opt-autofit').checked;
+    const baseTpm=parseInt($('tpm').value)||6000;
+    let ok=false,usedModel='',usedKeyIdx=-1,lastErr=null,tooLarge=false,md='';
+    let shrink=1,fitAttempt=0;
+
+    refit:
+    while(fitAttempt<5){
+      fitAttempt++;
+      const fit=buildAndFit(html,lang,parseInt($('maxtok').value)||4000,Math.round(baseTpm*shrink));
+      const messages=fit.msgs;
+      opts.maxtok=fit.maxtok;
+      if(fit.notes.length||shrink<1){
+        setStatus('⚙ '+statusPrefix+'自動調整：'+(fit.notes.join('、')||'縮小重試')+'（送出約 '+fit.promptTok.toLocaleString()+' tokens，目標 TPM '+Math.round(baseTpm*shrink)+'）','warn');
+      }
+      let got413=false; tooLarge=false;
+      outer:
+      for(const model of chain){
+        for(let ki=0;ki<keys.length;ki++){
+          try{
+            setStatus(`<span class="spinner"></span> ${statusPrefix}模型 <b>${model}</b> · Key #${ki+1} 產生中…`,'info');
+            md='';
+            md=await callGroq(messages,model,keys[ki],opts,(full)=>{md=full;if(onToken)onToken(full);});
+            ok=true;usedModel=model;usedKeyIdx=ki;break outer;
+          }catch(e){
+            lastErr=e;
+            if(e.name==='AbortError'){return {ok:null,md,usedModel,usedKeyIdx,lastErr,tooLarge};}
+            if(e.status===413){got413=true;tooLarge=true;break outer;}
+            if(e.status===400||e.status===404){break;}
+          }
+        }
+      }
+      if(ok===true) break refit;
+      if(got413&&autofit&&shrink>0.25){shrink*=0.55;continue refit;}
+      break refit;
+    }
+    return {ok,md,usedModel,usedKeyIdx,lastErr,tooLarge};
+  }
+
+  /* ---------- 主流程 ---------- */
+  $('btn-run').addEventListener('click',run);
+  async function run(){
+    if(appMode==='batch') return runBatch();
+    if(appMode==='image') return runImage();
+    lastInputKind='html';
+    let html=$('html-input').value.trim();
+    if(!html){setStatus('⚠ 請先貼上或上傳 HTML'+(appMode==='diff'?'（V1）':''),'warn');return;}
+    if(!getKeys().length){setStatus('⚠ 請先填入 Groq API Key','warn');return;}
+
+    diffFlag=false;
+    if(appMode==='diff'){
+      const v2=$('html-input2').value.trim();
+      if(!v2){setStatus('⚠ 差異模式需要貼上 V2（新版）HTML','warn');return;}
+      lastInputHtml=v2;
+      html=buildDiffPayload(html,v2);
+      diffFlag=true;
+    }else{
+      lastInputHtml=html;
+    }
+
+    uiRunning(true);
+    const r=await engine(html,{onToken:full=>renderOut(full,true)});
+    uiRunning(false);
+    diffFlag=false;
+
+    if(r.ok===true){
+      lastMarkdown=r.md; renderOut(r.md,false); setOutButtons(true);
+      setStatus(`✅ 完成！使用模型 <b>${r.usedModel}</b> · Key #${r.usedKeyIdx+1} · ${r.md.length} 字`,'success');
+      histAdd({ts:Date.now(),title:(r.md.match(/^#\s*(.+)$/m)||[])[1]||'未命名',mode:appMode,model:r.usedModel,md:r.md,input:lastInputHtml.slice(0,200000)});
+    }else if(r.ok===null){
+      setStatus('⏹ 已停止','warn');
+      if(r.md){lastMarkdown=r.md;renderOut(r.md,false);setOutButtons(true);}
+    }else if(r.tooLarge){
+      setStatus('❌ 多次自動縮小後仍超過 TPM。建議：①把「TPM 上限」設成你方案的實際值 ②改用「意境壓縮」模式 ③關閉完整 One-Shot ④升級 Groq Dev Tier。<br><span style="color:var(--ink-faint)">'+(r.lastErr?r.lastErr.message:'')+'</span>','error');
+    }else{
+      setStatus('❌ 全部模型/金鑰皆失敗：'+(r.lastErr?r.lastErr.message:'未知錯誤'),'error');
+    }
+  }
+
+  function uiRunning(on){
+    $('btn-run').disabled=on;
+    $('btn-run').innerHTML=on?'<span class="spinner"></span> 反向工程中…':runLabel();
+    $('btn-stop').style.display=on?'block':'none';
+    if(on){setOutButtons(false);$('out-view').innerHTML='';$('out-raw').textContent='';lastMarkdown='';}
+    else abortCtrl=null;
+  }
+  function runLabel(){
+    return appMode==='diff'?'🔀 產生 v1→v2 增量提示詞':appMode==='batch'?'📦 開始批次處理':appMode==='image'?'🖼 開始圖像反向工程':'🔍 開始反向工程';
+  }
+  function setOutButtons(en){['btn-copy','btn-export','btn-verify','btn-score'].forEach(id=>$(id).disabled=!en);}
+
+  $('btn-stop').addEventListener('click',()=>{if(abortCtrl)abortCtrl.abort();});
+
+  /* ---------- 模式切換 ---------- */
+  document.querySelectorAll('#mode-seg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+  function setMode(m){
+    appMode=m;
+    document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+    const pane=$('input-pane');
+    pane.classList.toggle('diff',m==='diff');
+    pane.classList.toggle('batch',m==='batch');
+    pane.classList.toggle('image',m==='image');
+    $('file-input').multiple=(m==='batch');
+    $('file-input').accept=(m==='image')?'image/*':'.html,.htm,text/html';
+    $('btn-run').innerHTML=runLabel();
+    if(m==='batch')renderBatch(); else $('btn-zip').style.display='none';
+    updateStats();
+  }
+
+  /* ---------- 差異 payload：V1 摘要 + 行級 diff ---------- */
+  function buildDiffPayload(v1,v2){
+    const a=slimHtml(v1).split('\n'), b=slimHtml(v2).split('\n');
+    const setA=new Set(a), setB=new Set(b);
+    const removed=a.filter(l=>l.trim()&&!setB.has(l));
+    const added=b.filter(l=>l.trim()&&!setA.has(l));
+    const capJoin=(arr,n,chars)=>{
+      let s=arr.slice(0,n).join('\n');
+      if(s.length>chars)s=s.slice(0,chars)+'\n…(已截斷)';
+      if(arr.length>n)s+='\n…(共 '+arr.length+' 行，其餘從略)';
+      return s||'（無）';
+    };
+    return '=== V1 結構摘要 ===\n'+extractEssence(v1).slice(0,4500)
+      +'\n\n=== 移除的行（V1 有、V2 無）===\n'+capJoin(removed,400,8000)
+      +'\n\n=== 新增的行（V2 有、V1 無）===\n'+capJoin(added,400,8000);
+  }
+
+  /* ---------- 通用工具 ---------- */
+  function dlBlob(data,name,type){
+    const blob=data instanceof Blob?data:new Blob([data],{type:type||'text/plain;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+  }
+  function openModal(title,bodyHtml){
+    $('modal-title').innerHTML=title;
+    $('modal-body').innerHTML=bodyHtml;
+    $('modal-mask').classList.add('show');
+  }
+  function closeModal(){$('modal-mask').classList.remove('show');$('modal-body').innerHTML='';}
+  $('modal-close').addEventListener('click',closeModal);
+  $('modal-mask').addEventListener('click',e=>{if(e.target===$('modal-mask'))closeModal();});
+
+  /* 輕量 chain 呼叫（重建/評分/補洞用，不做 autofit） */
+  async function groqSimple(messages,maxtok,onToken,label,chainOverride){
+    const keys=getKeys();
+    if(!keys.length)throw new Error('請先填入 Groq API Key');
+    const chosen=$('model').value;
+    const chain=chainOverride||[chosen,...FALLBACK_CHAIN.filter(m=>m!==chosen)];
+    let lastErr=null;
+    for(const model of chain){
+      for(let ki=0;ki<keys.length;ki++){
+        try{
+          setStatus(`<span class="spinner"></span> ${label} · <b>${model}</b> · Key #${ki+1}…`,'info');
+          return await callGroq(messages,model,keys[ki],{temp:0.25,maxtok,stream:!!onToken},onToken||(()=>{}));
+        }catch(e){
+          lastErr=e;
+          if(e.name==='AbortError')throw e;
+          if(e.status===400||e.status===404)break;
+        }
+      }
+    }
+    throw lastErr||new Error('全部模型/金鑰皆失敗');
+  }
+
+  /* ---------- 🧪 重建驗證：提示詞 → 重建 HTML → 雙欄比對 ---------- */
+  $('btn-verify').addEventListener('click',verifyRebuild);
+  async function verifyRebuild(){
+    if(!lastMarkdown)return;
+    const messages=[
+      {role:'system',content:'你是頂尖前端工程師。依使用者提供的創作提示詞，輸出「完整、可直接執行的單一 HTML 檔案」（內嵌 CSS/JS，不使用框架）。只輸出一個 ```html code block，不要任何說明文字。'},
+      {role:'user',content:'請依以下創作提示詞重建完整 HTML：\n\n'+lastMarkdown.slice(0,24000)}
+    ];
+    openModal('🧪 重建驗證 — 依提示詞重建中…','<pre class="out-raw" id="vf-stream" style="max-height:64vh;overflow:auto;"></pre>');
+    $('btn-verify').disabled=true;
+    try{
+      const out=await groqSimple(messages,Math.max(4000,parseInt($('maxtok').value)||4000),full=>{
+        const el=$('vf-stream');if(el){el.textContent=full;el.scrollTop=el.scrollHeight;}
+      },'重建驗證');
+      const m=out.match(/```html\s*([\s\S]*?)```/i)||out.match(/```\s*(<!DOCTYPE[\s\S]*?)```/i);
+      rebuiltHtml=m?m[1].trim():(/^\s*<!DOCTYPE|^\s*<html/i.test(out)?out.trim():'');
+      if(!rebuiltHtml)throw new Error('無法從回應中擷取 HTML');
+      const isImg=(lastInputKind==='image'&&imageDataUrl);
+      const leftCol=isImg
+        ?`<div class="cmp-col"><div class="lb">Original 原圖</div><div style="flex:1;overflow:auto;border:1px solid var(--line-soft);border-radius:12px;background:#0d0e12;display:flex;align-items:flex-start;justify-content:center;padding:8px;"><img src="${imageDataUrl}" style="max-width:100%;border-radius:6px;"></div></div>`
+        :`<div class="cmp-col"><div class="lb">Original 原版</div><iframe id="if-orig" sandbox="allow-scripts"></iframe></div>`;
+      openModal('🧪 重建驗證 — 原版 vs 重建版',
+        `<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px;">
+           <button class="btn btn-gold btn-sm" id="btn-dl-rebuilt">⬇ 下載重建版 .html</button>
+         </div>
+         <div class="cmp-grid">
+           ${leftCol}
+           <div class="cmp-col"><div class="lb">Rebuilt 重建版</div><iframe id="if-new" sandbox="allow-scripts"></iframe></div>
+         </div>`);
+      if(!isImg)$('if-orig').srcdoc=lastInputHtml||$('html-input').value;
+      $('if-new').srcdoc=rebuiltHtml;
+      $('btn-dl-rebuilt').onclick=()=>dlBlob(rebuiltHtml,'rebuilt.html','text/html;charset=utf-8');
+      setStatus('✅ 重建完成，請目視比對還原度（沙箱 iframe，外部 API 呼叫可能受限）','success');
+    }catch(e){
+      if(e.name!=='AbortError')setStatus('❌ 重建失敗：'+e.message,'error');
+    }
+    $('btn-verify').disabled=!lastMarkdown;
+  }
+
+  /* ---------- ⭐ 提示詞評分 + 🔧 自動補洞 ---------- */
+  $('btn-score').addEventListener('click',scorePrompt);
+  async function scorePrompt(){
+    if(!lastMarkdown)return;
+    if(lastInputKind==='image'&&imageDataUrl) return scorePromptImage();
+    const digest=extractEssence(lastInputHtml||$('html-input').value).slice(0,9000);
+    const messages=[
+      {role:'system',content:'你是嚴格的技術文件評審。比對「原始 HTML 結構摘要」與「反向工程產出的創作提示詞」，只輸出 JSON（不要 code fence、不要說明）：{"completeness":0,"executability":0,"pitfall":0,"total":0,"missing":["缺漏項…"],"comment":"一句話總評"}。各項 0-100：completeness=內容覆蓋率、executability=可直接重建程度、pitfall=實作陷阱覆蓋率、total=加權總分。missing 列出提示詞遺漏的具體項目（最多 8 條）。'},
+      {role:'user',content:'=== 原始結構摘要 ===\n'+digest+'\n\n=== 創作提示詞 ===\n'+lastMarkdown.slice(0,14000)}
+    ];
+    $('btn-score').disabled=true;
+    try{
+      const out=await groqSimple(messages,700,null,'提示詞評分');
+      const j=JSON.parse(out.replace(/```json|```/g,'').trim());
+      const cell=(k,v)=>`<div class="score-cell"><div class="v ${v>=80?'good':v<60?'bad':''}">${v}</div><div class="k">${k}</div></div>`;
+      const missing=Array.isArray(j.missing)?j.missing:[];
+      const body=`
+        <div class="score-grid">${cell('總分',j.total|0)}${cell('完整性',j.completeness|0)}${cell('可執行性',j.executability|0)}${cell('陷阱覆蓋',j.pitfall|0)}</div>
+        ${j.comment?`<p style="font-size:.82rem;color:var(--ink);line-height:1.7;">${esc(String(j.comment))}</p>`:''}
+        ${missing.length?`<h3 class="m-h3" style="color:var(--danger);">缺漏項目</h3><ul style="margin-left:18px;font-size:.8rem;color:var(--ink-dim);line-height:1.8;">${missing.map(m=>'<li>'+esc(String(m))+'</li>').join('')}</ul>`:''}
+        ${(j.total|0)<80&&missing.length?`<button class="btn btn-primary" id="btn-patch" style="margin-top:12px;">🔧 自動補洞重跑（把缺漏補進提示詞）</button>`:''}`;
+      openModal('⭐ 提示詞評分',body);
+      setStatus('✅ 評分完成：總分 '+(j.total|0)+' 分','success');
+      const bp=$('btn-patch');
+      if(bp)bp.onclick=()=>{closeModal();patchPrompt(missing);};
+    }catch(e){
+      if(e.name!=='AbortError')setStatus('❌ 評分失敗：'+e.message,'error');
+    }
+    $('btn-score').disabled=!lastMarkdown;
+  }
+  async function patchPrompt(missing){
+    if(lastInputKind==='image'&&imageDataUrl) return patchPromptImage(missing);
+    const messages=[
+      {role:'system',content:'你是頂尖技術文件工程師。使用者提供既有創作提示詞與評審指出的缺漏清單，請輸出「修訂後的完整提示詞」——保留原有章節結構、補齊所有缺漏，只輸出 Markdown 本身。'},
+      {role:'user',content:'=== 既有提示詞 ===\n'+lastMarkdown.slice(0,16000)
+        +'\n\n=== 待補缺漏 ===\n'+missing.map(m=>'- '+m).join('\n')
+        +'\n\n=== 原始結構摘要（供補洞參考）===\n'+extractEssence(lastInputHtml||$('html-input').value).slice(0,7000)}
+    ];
+    uiRunning(true);
+    try{
+      const out=await groqSimple(messages,parseInt($('maxtok').value)||4000,full=>renderOut(full,true),'補洞重跑');
+      lastMarkdown=out;renderOut(out,false);
+      setStatus('✅ 補洞完成，提示詞已更新','success');
+    }catch(e){
+      if(e.name!=='AbortError')setStatus('❌ 補洞失敗：'+e.message,'error');
+    }
+    uiRunning(false);
+    setOutButtons(!!lastMarkdown);
+    if(lastMarkdown)renderOut(lastMarkdown,false);
+  }
+
+  /* ---------- 預覽/原始切換 ---------- */
+  $('seg-view').addEventListener('click',()=>{
+    viewMode='view';$('seg-view').classList.add('on');$('seg-raw').classList.remove('on');
+    $('out-view').style.display='';$('out-raw').style.display='none';
+    if(lastMarkdown)renderOut(lastMarkdown,false);
+  });
+  $('seg-raw').addEventListener('click',()=>{
+    viewMode='raw';$('seg-raw').classList.add('on');$('seg-view').classList.remove('on');
+    $('out-view').style.display='none';$('out-raw').style.display='';
+    $('out-raw').textContent=lastMarkdown;
+  });
+
+  /* ---------- 📋 複製 ---------- */
+  $('btn-copy').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(lastMarkdown);
+      const b=$('btn-copy');const o=b.innerHTML;b.innerHTML='✓ 已複製';setTimeout(()=>b.innerHTML=o,1500);
+    }catch(_){setStatus('複製失敗，請手動選取','error');}
+  });
+
+  /* ---------- ⬇ 多格式匯出：md / SKILL.md / JSON / PlantUML ---------- */
+  $('btn-export').addEventListener('click',e=>{e.stopPropagation();$('exp-list').classList.toggle('show');});
+  document.addEventListener('click',()=>$('exp-list').classList.remove('show'));
+  document.querySelectorAll('#exp-list button').forEach(b=>b.addEventListener('click',()=>{doExport(b.dataset.fmt);}));
+  function mdTitle(){
+    const m=lastMarkdown.match(/^#\s*(.+?)\s*$/m);
+    return (m?m[1]:'創作提示詞').replace(/[\\/:*?"<>|]/g,'_').slice(0,60);
+  }
+  function parseMdSections(md){
+    const title=(md.match(/^#\s*(.+)$/m)||[,'未命名'])[1].trim();
+    const list=[];const re=/^##\s*(.+)$/gm;let m;
+    while((m=re.exec(md)))list.push({h:m[1].trim(),i:m.index});
+    const sections=list.map((s,k)=>{
+      const end=k+1<list.length?list[k+1].i:md.length;
+      return {heading:s.h,content:md.slice(s.i,end).replace(/^##.*\n?/,'').trim()};
+    });
+    return {title,sections};
+  }
+  function doExport(fmt){
+    if(!lastMarkdown)return;
+    const t=mdTitle();
+    if(fmt==='md'){dlBlob(lastMarkdown,t+'.md','text/markdown;charset=utf-8');}
+    else if(fmt==='skill'){
+      const p=parseMdSections(lastMarkdown);
+      const oneline=((p.sections.find(s=>/一句話/.test(s.heading))||{}).content||p.title).replace(/\n+/g,' ').replace(/[`*#]/g,'').trim().slice(0,300);
+      const slug=t.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'rebuilt-app';
+      dlBlob(`---\nname: ${slug}\ndescription: ${oneline}\n---\n\n${lastMarkdown}`,'SKILL.md','text/markdown;charset=utf-8');
+    }
+    else if(fmt==='json'){
+      dlBlob(JSON.stringify(parseMdSections(lastMarkdown),null,2),t+'.json','application/json');
+    }
+    else if(fmt==='puml'){
+      const p=parseMdSections(lastMarkdown);
+      let s='@startmindmap\n* '+p.title.replace(/\n/g,' ')+'\n';
+      p.sections.forEach(sec=>{
+        s+='** '+sec.heading.replace(/\n/g,' ')+'\n';
+        sec.content.split('\n').filter(l=>/^[-*] /.test(l.trim())).slice(0,6)
+          .forEach(l=>{s+='*** '+l.trim().replace(/^[-*] /,'').replace(/[`*]/g,'').slice(0,60)+'\n';});
+      });
+      s+='@endmindmap\n';
+      dlBlob(s,t+'.puml','text/plain;charset=utf-8');
+    }
+  }
+
+  /* ---------- 🎨 設計系統萃取（純前端即時分析） ---------- */
+  $('btn-tokens').addEventListener('click',showTokens);
+  function isColorVal(v){return /#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(/.test(v);}
+  function analyzeDesignTokens(html){
+    let doc;try{doc=new DOMParser().parseFromString(html,'text/html');}catch(_){return null;}
+    let css='';doc.querySelectorAll('style').forEach(s=>css+='\n'+s.textContent);
+    const vars=[];const rootM=css.match(/:root\s*\{([\s\S]*?)\}/);
+    if(rootM){rootM[1].replace(/(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g,(m,k,v)=>{vars.push([k,v.trim()]);return m;});}
+    const fonts=[...new Set((css.match(/font-family\s*:\s*[^;}]+/g)||[]).map(s=>s.replace(/font-family\s*:\s*/,'').trim()))].slice(0,8);
+    const radii=[...new Set((css.match(/border-radius\s*:\s*[^;}]+/g)||[]).map(s=>s.split(':')[1].trim()))].slice(0,14);
+    const keyframes=[...new Set((css.match(/@keyframes\s+([A-Za-z0-9_-]+)/g)||[]).map(s=>s.replace('@keyframes','').trim()))];
+    const gradients=(css.match(/gradient\(/g)||[]).length;
+    const shadows=(css.match(/box-shadow\s*:/g)||[]).length;
+    return {vars,fonts,radii,keyframes,gradients,shadows};
+  }
+  function showTokens(){
+    const html=$('html-input').value.trim();
+    if(!html){setStatus('⚠ 請先貼上 HTML','warn');return;}
+    const t=analyzeDesignTokens(html);
+    if(!t||(!t.vars.length&&!t.fonts.length)){
+      openModal('🎨 設計系統萃取','<p style="color:var(--ink-dim);font-size:.84rem;">未偵測到 :root 變數或字體設定。</p>');return;
+    }
+    const rows=t.vars.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${isColorVal(v)?`<span class="tok-swatch" style="background:${esc(v)}"></span>`:''}${esc(v)}</td></tr>`).join('');
+    openModal('🎨 設計系統萃取（Design Tokens）',`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:.78rem;color:var(--ink-dim);">CSS 變數 ${t.vars.length} 組 · 字體 ${t.fonts.length} 種 · 圓角 ${t.radii.length} 種 · 動畫 ${t.keyframes.length} 組 · 漸層 ${t.gradients} 處 · 陰影 ${t.shadows} 處</span>
+        <button class="btn btn-gold btn-sm" id="btn-dl-tokens">⬇ design-tokens.json</button>
+      </div>
+      ${rows?`<table class="tok-table"><tbody>${rows}</tbody></table>`:''}
+      ${t.fonts.length?`<h3 class="m-h3">字體</h3><div class="m-mono">${t.fonts.map(esc).join('<br>')}</div>`:''}
+      ${t.keyframes.length?`<h3 class="m-h3">動畫 keyframes</h3><div class="m-mono">${t.keyframes.map(esc).join(', ')}</div>`:''}
+      ${t.radii.length?`<h3 class="m-h3">圓角尺度</h3><div class="m-mono">${t.radii.map(esc).join(' · ')}</div>`:''}`);
+    $('btn-dl-tokens').onclick=()=>dlBlob(JSON.stringify({variables:Object.fromEntries(t.vars),fonts:t.fonts,radii:t.radii,keyframes:t.keyframes},null,2),'design-tokens.json','application/json');
+  }
+
+  /* ---------- 🔌 依賴 / API 偵測（純前端即時分析） ---------- */
+  $('btn-deps').addEventListener('click',showDeps);
+  function showDeps(){
+    const html=$('html-input').value.trim();
+    if(!html){setStatus('⚠ 請先貼上 HTML','warn');return;}
+    let doc=null;try{doc=new DOMParser().parseFromString(html,'text/html');}catch(_){}
+    let js='';if(doc)doc.querySelectorAll('script:not([src])').forEach(s=>js+='\n'+s.textContent);
+    const ext=doc?[...new Set([...doc.querySelectorAll('link[href],script[src]')].map(el=>el.getAttribute('href')||el.getAttribute('src')).filter(Boolean))]:[];
+    const grab=(re,max=40)=>{const s=new Set();let m;while((m=re.exec(js))&&s.size<max)if(m[1])s.add(m[1]);return [...s];};
+    const parts=[
+      ['外部資源（CDN / 字體）',ext],
+      ['fetch 端點',grab(/fetch\(\s*[`'"]([^`'"]+)[`'"]/g)],
+      ['網址字面量',grab(/['"](https?:\/\/[^'"]+)['"]/g,25)],
+      ['localStorage 鍵',grab(/localStorage\.(?:get|set|remove)Item\(\s*[`'"]([^`'"]+)[`'"]/g)],
+      ['監聽事件',grab(/addEventListener\(\s*['"]([a-zA-Z]+)['"]/g)],
+      ['敏感標頭 / 參數',grab(/['"](Authorization|X-[A-Za-z-]+|api[_-]?key)['"]/gi,15)]
+    ];
+    const sect=(title,arr)=>arr.length?`<h3 class="m-h3">${title}（${arr.length}）</h3><div class="m-mono">${arr.map(esc).join('<br>')}</div>`:'';
+    const inner=parts.map(([t,a])=>sect(t,a)).join('');
+    openModal('🔌 依賴 / API 偵測（串接需求清單）',
+      `<div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><button class="btn btn-gold btn-sm" id="btn-copy-deps">📋 複製清單</button></div>`
+      +(inner||'<p style="color:var(--ink-dim);font-size:.84rem;">未偵測到外部依賴。</p>'));
+    $('btn-copy-deps').onclick=async()=>{
+      const txt='# 串接需求清單\n\n'+parts.filter(([,a])=>a.length).map(([t,a])=>'## '+t+'\n'+a.map(x=>'- '+x).join('\n')).join('\n\n');
+      try{await navigator.clipboard.writeText(txt);setStatus('✅ 已複製串接需求清單','success');setTimeout(()=>setStatus('',''),1500);}catch(_){}
+    };
+  }
+
+  /* ---------- 🕘 歷史庫（IndexedDB） ---------- */
+  function idb(){
+    return new Promise((res,rej)=>{
+      const r=indexedDB.open('htmlre_db',1);
+      r.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('runs'))db.createObjectStore('runs',{keyPath:'id',autoIncrement:true});};
+      r.onsuccess=()=>res(r.result);
+      r.onerror=()=>rej(r.error);
+    });
+  }
+  async function histAdd(rec){try{const db=await idb();db.transaction('runs','readwrite').objectStore('runs').add(rec);}catch(_){}}
+  async function histAll(){try{const db=await idb();return await new Promise((res,rej)=>{const q=db.transaction('runs').objectStore('runs').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error);});}catch(_){return [];}}
+  async function histDel(id){try{const db=await idb();db.transaction('runs','readwrite').objectStore('runs').delete(id);}catch(_){}}
+  async function histClear(){try{const db=await idb();db.transaction('runs','readwrite').objectStore('runs').clear();}catch(_){}}
+  $('btn-history').addEventListener('click',()=>showHistory(''));
+  async function showHistory(filter){
+    const all=(await histAll()).sort((a,b)=>b.ts-a.ts);
+    const kw=(filter||'').toLowerCase();
+    const list=all.filter(r=>!kw||((r.title||'')+' '+(r.md||'')).toLowerCase().includes(kw));
+    const items=list.map(r=>`
+      <div class="hist-item" data-id="${r.id}">
+        <span class="del" data-del="${r.id}" title="刪除">✕</span>
+        <div class="t">${esc(r.title||'未命名')}</div>
+        <div class="m"><span>🕐 ${new Date(r.ts).toLocaleString('zh-TW')}</span><span>${r.mode==='diff'?'🔀 差異':r.mode==='batch'?'📦 批次':'📄 單檔'}</span><span>${esc(r.model||'')}</span><span>${(r.md||'').length} 字</span></div>
+      </div>`).join('')||'<p style="color:var(--ink-faint);font-size:.82rem;text-align:center;padding:30px;">尚無歷史紀錄（每次成功分析會自動存入本機 IndexedDB）</p>';
+    openModal('🕘 歷史庫',`
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="text" id="hist-q" placeholder="搜尋標題 / 內容…" value="${esc(filter||'')}" style="flex:1;">
+        <button class="btn btn-ghost btn-sm" id="hist-clear">🗑 清空全部</button>
+      </div>
+      <div id="hist-list">${items}</div>`);
+    const q=$('hist-q');let qt=null;
+    q.addEventListener('input',()=>{clearTimeout(qt);qt=setTimeout(()=>showHistory(q.value),300);});
+    $('hist-clear').onclick=async()=>{await histClear();showHistory('');};
+    $('hist-list').querySelectorAll('.hist-item').forEach(el=>{
+      el.addEventListener('click',async e=>{
+        if(e.target.dataset.del){await histDel(+e.target.dataset.del);showHistory(q.value);return;}
+        const rec=list.find(r=>r.id===+el.dataset.id);
+        if(!rec)return;
+        lastMarkdown=rec.md||'';renderOut(lastMarkdown,false);setOutButtons(!!lastMarkdown);
+        if(rec.input&&rec.input.startsWith('data:image')){
+          setMode('image');
+          imageDataUrl=rec.input;lastInputKind='image';
+          const im=new Image();im.onload=()=>{imgW=im.width;imgH=im.height;updateStats();};im.src=imageDataUrl;
+          $('img-preview').src=imageDataUrl;$('img-preview').style.display='';$('img-hint').style.display='none';
+        }else if(rec.input){
+          $('html-input').value=rec.input;lastInputHtml=rec.input;lastInputKind='html';updateStats();
+        }
+        closeModal();
+        setStatus('✅ 已載入歷史：'+(rec.title||''),'success');setTimeout(()=>setStatus('',''),1800);
+      });
+    });
+  }
+
+  /* ---------- 📦 批次模式 + ZIP 打包（store-only，零依賴） ---------- */
+  let batchQueue=[];
+  function renderBatch(){
+    const el=$('batch-list');
+    el.innerHTML=batchQueue.map((f,i)=>`
+      <div class="batch-item">
+        <span class="nm">📄 ${esc(f.name)}</span>
+        <span style="color:var(--ink-faint);font-size:.68rem;">${(f.content.length/1024).toFixed(1)} KB</span>
+        <span class="st ${f.status==='處理中'?'run':f.status==='完成'?'done':f.status==='失敗'?'err':''}">${f.status}</span>
+        <span style="cursor:pointer;color:var(--danger);opacity:.7;" data-rm="${i}" title="移除">✕</span>
+      </div>`).join('')||'<div style="color:var(--ink-faint);font-size:.8rem;text-align:center;padding:50px 10px;line-height:2;">拖曳或上傳多個 .html 檔案到此<br>將依序反向工程並可打包下載</div>';
+    el.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{batchQueue.splice(+b.dataset.rm,1);renderBatch();});
+    $('btn-zip').style.display=(appMode==='batch'&&batchQueue.some(f=>f.status==='完成'))?'':'none';
+  }
+  async function runBatch(){
+    if(!batchQueue.length){setStatus('⚠ 請先加入至少一個 .html 檔案','warn');return;}
+    if(!getKeys().length){setStatus('⚠ 請先填入 Groq API Key','warn');return;}
+    uiRunning(true);
+    diffFlag=false;
+    let done=0,stopped=false;
+    for(const f of batchQueue){
+      if(f.status==='完成'){done++;continue;}
+      f.status='處理中';renderBatch();
+      const r=await engine(f.content,{statusPrefix:`[${f.name}] `,onToken:full=>renderOut(full,true)});
+      if(r.ok===null){f.status='待處理';stopped=true;renderBatch();break;}
+      if(r.ok===true){
+        f.status='完成';f.md=r.md;done++;
+        lastMarkdown=r.md;renderOut(r.md,false);
+        histAdd({ts:Date.now(),title:(r.md.match(/^#\s*(.+)$/m)||[])[1]||f.name,mode:'batch',model:r.usedModel,md:r.md,input:f.content.slice(0,200000)});
+      }else{
+        f.status='失敗';
+      }
+      renderBatch();
+    }
+    uiRunning(false);
+    setOutButtons(!!lastMarkdown);
+    renderBatch();
+    if(stopped)setStatus('⏹ 批次已停止（已完成 '+done+'/'+batchQueue.length+'）','warn');
+    else setStatus(done?`✅ 批次完成：${done}/${batchQueue.length}，可打包下載 ZIP`:'❌ 批次未有成功項目','success');
+  }
+  const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+  function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+  function makeZip(files){
+    const enc=new TextEncoder();const chunks=[];const central=[];let offset=0;
+    const u16=v=>new Uint8Array([v&255,(v>>8)&255]);
+    const u32=v=>new Uint8Array([v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255]);
+    for(const f of files){
+      const name=enc.encode(f.name);
+      const data=typeof f.data==='string'?enc.encode(f.data):f.data;
+      const crc=crc32(data);
+      const parts=[u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data];
+      central.push({name,crc,size:data.length,offset});
+      parts.forEach(p=>{chunks.push(p);offset+=p.length;});
+    }
+    const cdStart=offset;let cdLen=0;
+    for(const c of central){
+      const rec=[u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(c.crc),u32(c.size),u32(c.size),u16(c.name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(c.offset),c.name];
+      rec.forEach(p=>{chunks.push(p);cdLen+=p.length;});
+    }
+    [u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(cdLen),u32(cdStart),u16(0)].forEach(p=>chunks.push(p));
+    return new Blob(chunks,{type:'application/zip'});
+  }
+  $('btn-zip').addEventListener('click',()=>{
+    const files=batchQueue.filter(f=>f.status==='完成'&&f.md).map(f=>({name:f.name.replace(/\.html?$/i,'')+'.md',data:f.md}));
+    if(!files.length)return;
+    dlBlob(makeZip(files),'反向工程提示詞_'+new Date().toISOString().slice(0,10)+'.zip');
+  });
+
+  /* ================================================================
+     🖼 圖像反向工程：UI 截圖 → 視覺模型 → 完整版型/元素/配置提示詞
+     ================================================================ */
+  function loadImageFile(file){
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=1600;                                   // 控制 base64 體積，避免 413
+        const sc=Math.min(1,MAX/Math.max(img.width,img.height));
+        const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        imageDataUrl=c.toDataURL('image/jpeg',0.88);
+        imgW=img.width;imgH=img.height;
+        $('img-preview').src=imageDataUrl;
+        $('img-preview').style.display='';
+        $('img-hint').style.display='none';
+        updateStats();
+        setStatus('✅ 已載入圖像：'+(file.name||'剪貼簿')+'（'+img.width+'×'+img.height+(sc<1?'，已縮至 '+w+'×'+h:'')+'）','success');
+        setTimeout(()=>setStatus('',''),2000);
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  }
+
+  /* 剪貼簿貼圖（僅圖像模式生效） */
+  document.addEventListener('paste',e=>{
+    if(appMode!=='image')return;
+    for(const it of (e.clipboardData?.items||[])){
+      if(it.type&&it.type.startsWith('image/')){
+        const f=it.getAsFile();
+        if(f){loadImageFile(f);e.preventDefault();}
+        break;
+      }
+    }
+  });
+
+  /* 視覺提示詞：要求版型/元素/配置與圖像完全一致 */
+  function buildImageMessages(lang,withPitfall){
+    const sys=
+`你是頂尖 UI 設計師兼前端工程師，專長是把一張 UI 截圖「逆向拆解」成可以像素級重建它的創作提示詞。
+
+鐵則——版型、元素、配置必須與圖像「完全一致」，不可省略任何可見內容：
+- 版型結構：由上到下、由左到右逐區塊描述；每個區塊給出相對位置、寬度佔比、對齊方式、內外間距的估計值。
+- 元素清單：畫面上「每一個」可見元件（按鈕、輸入框、textarea、下拉選單、標籤、徽章、圖示、提示文字、分隔線…）都要逐一列出，一個都不能漏。
+- 文案：所有可見文字「逐字抄錄」（含表情符號、標點、大小寫、字距感），用反引號標示。
+- 配色：以估計 hex 值列出 tokens（頁面背景、卡片表面、主色、次色、文字層級、邊框、hover 態），用 code block 條列。
+- 字體：襯線/無襯線、粗細層級、字級比例、字距（letter-spacing）特徵。
+- 質感：圓角尺度、邊框、陰影、玻璃感（backdrop blur）、漸層方向與色停。
+- 元件狀態：可見的 disabled / focus / placeholder / 選取值等狀態要標明。
+- 機密處理：圖中若出現 API Key、token 等機密字串，一律以占位符（如 KEY_1）代替，絕不抄錄真實值。
+- 語言：以「${lang}」輸出。只輸出 Markdown 提示詞本身，不要任何前言或結語。
+${withPitfall?'- 加入「## 7. 實作陷阱」：還原此版面時容易失真之處（等寬字體、textarea 對齊、按鈕高度一致性、色彩對比、間距節奏）。':''}
+
+請依下列章節輸出：
+# {介面名稱} — 完整創作提示詞
+## 0. 角色與目標
+## 1. 標題與文案（逐字）
+## 3. 設計系統（配色 tokens / 字體 / 質感）
+## 4. 版型結構（精確配置：區塊順序、佔比、對齊、間距）
+## 5. 元件清單與規格（逐一、含狀態與實際文案）
+## 6. 功能推斷（依 UI 合理推斷的互動行為）
+${withPitfall?'## 7. 實作陷阱':''}
+## 8. 文案與語氣
+## 9. 一句話濃縮版`;
+    return [
+      {role:'system',content:sys},
+      {role:'user',content:[
+        {type:'text',text:'請逆向工程這張 UI 截圖，產出一份「與圖像所有配置完全一致」、可重建此畫面的完整創作提示詞：'},
+        {type:'image_url',image_url:{url:imageDataUrl}}
+      ]}
+    ];
+  }
+
+  async function runImage(){
+    if(!imageDataUrl){setStatus('⚠ 請先上傳或貼上 UI 截圖','warn');return;}
+    const keys=getKeys();
+    if(!keys.length){setStatus('⚠ 請先填入 Groq API Key','warn');return;}
+    lastInputKind='image';lastInputHtml='';
+    const messages=buildImageMessages($('lang').value,$('opt-pitfall').checked);
+    const opts={temp:parseFloat($('temp').value)||0.3,maxtok:parseInt($('maxtok').value)||4000,stream:$('opt-stream').checked};
+    uiRunning(true);
+    let ok=false,usedModel='',usedKeyIdx=-1,lastErr=null,md='';
+    outer:
+    for(const model of VISION_CHAIN){
+      for(let ki=0;ki<keys.length;ki++){
+        try{
+          setStatus(`<span class="spinner"></span> 視覺模型 <b>${model}</b> · Key #${ki+1} 解析圖像中…`,'info');
+          md='';
+          md=await callGroq(messages,model,keys[ki],opts,full=>{md=full;renderOut(full,true);});
+          ok=true;usedModel=model;usedKeyIdx=ki;break outer;
+        }catch(e){
+          lastErr=e;
+          if(e.name==='AbortError'){
+            uiRunning(false);setStatus('⏹ 已停止','warn');
+            if(md){lastMarkdown=md;renderOut(md,false);setOutButtons(true);}
+            return;
+          }
+          if(e.status===400||e.status===404)break;   // 模型問題 → 換下一個視覺模型
+        }
+      }
+    }
+    uiRunning(false);
+    if(ok){
+      lastMarkdown=md;renderOut(md,false);setOutButtons(true);
+      setStatus(`✅ 完成！視覺模型 <b>${usedModel}</b> · Key #${usedKeyIdx+1} · ${md.length} 字`,'success');
+      histAdd({ts:Date.now(),title:(md.match(/^#\s*(.+)$/m)||[])[1]||'圖像反向',mode:'image',model:usedModel,md,input:imageDataUrl.length<300000?imageDataUrl:''});
+    }else{
+      setStatus('❌ 視覺模型皆失敗（請確認金鑰可用 Llama-4 Scout/Maverick）：'+(lastErr?lastErr.message:'未知錯誤'),'error');
+    }
+  }
+
+  /* 視覺評分：拿原圖 + 提示詞給視覺模型比對 */
+  async function scorePromptImage(){
+    const messages=[
+      {role:'system',content:'你是嚴格的 UI 評審。比對「UI 截圖」與「反向工程產出的創作提示詞」，只輸出 JSON（不要 code fence、不要說明）：{"completeness":0,"executability":0,"pitfall":0,"total":0,"missing":["缺漏項…"],"comment":"一句話總評"}。completeness=畫面元素覆蓋率（有沒有漏掉任何可見元件/文案/配置）、executability=照提示詞能否重建出一致版面、pitfall=易失真處覆蓋率、total=加權總分。missing 列出提示詞遺漏的具體畫面內容（最多 8 條）。'},
+      {role:'user',content:[
+        {type:'text',text:'=== 創作提示詞 ===\n'+lastMarkdown.slice(0,14000)},
+        {type:'image_url',image_url:{url:imageDataUrl}}
+      ]}
+    ];
+    $('btn-score').disabled=true;
+    try{
+      const out=await groqSimple(messages,700,null,'視覺評分',VISION_CHAIN);
+      const j=JSON.parse(out.replace(/```json|```/g,'').trim());
+      const cell=(k,v)=>`<div class="score-cell"><div class="v ${v>=80?'good':v<60?'bad':''}">${v}</div><div class="k">${k}</div></div>`;
+      const missing=Array.isArray(j.missing)?j.missing:[];
+      openModal('⭐ 提示詞評分（視覺比對）',`
+        <div class="score-grid">${cell('總分',j.total|0)}${cell('元素覆蓋',j.completeness|0)}${cell('可重建性',j.executability|0)}${cell('失真防護',j.pitfall|0)}</div>
+        ${j.comment?`<p style="font-size:.82rem;color:var(--ink);line-height:1.7;">${esc(String(j.comment))}</p>`:''}
+        ${missing.length?`<h3 class="m-h3" style="color:var(--danger);">畫面缺漏</h3><ul style="margin-left:18px;font-size:.8rem;color:var(--ink-dim);line-height:1.8;">${missing.map(m=>'<li>'+esc(String(m))+'</li>').join('')}</ul>`:''}
+        ${(j.total|0)<80&&missing.length?`<button class="btn btn-primary" id="btn-patch" style="margin-top:12px;">🔧 自動補洞重跑（把缺漏補進提示詞）</button>`:''}`);
+      setStatus('✅ 視覺評分完成：總分 '+(j.total|0)+' 分','success');
+      const bp=$('btn-patch');
+      if(bp)bp.onclick=()=>{closeModal();patchPromptImage(missing);};
+    }catch(e){
+      if(e.name!=='AbortError')setStatus('❌ 評分失敗：'+e.message,'error');
+    }
+    $('btn-score').disabled=!lastMarkdown;
+  }
+
+  /* 視覺補洞：帶原圖修訂提示詞 */
+  async function patchPromptImage(missing){
+    const messages=[
+      {role:'system',content:'你是頂尖 UI 技術文件工程師。使用者提供 UI 截圖、既有創作提示詞與評審指出的畫面缺漏，請對照截圖輸出「修訂後的完整提示詞」——保留原章節結構、補齊所有缺漏、確保與圖像所有配置一致，只輸出 Markdown 本身。'},
+      {role:'user',content:[
+        {type:'text',text:'=== 既有提示詞 ===\n'+lastMarkdown.slice(0,14000)+'\n\n=== 待補畫面缺漏 ===\n'+missing.map(m=>'- '+m).join('\n')},
+        {type:'image_url',image_url:{url:imageDataUrl}}
+      ]}
+    ];
+    uiRunning(true);
+    try{
+      const out=await groqSimple(messages,parseInt($('maxtok').value)||4000,full=>renderOut(full,true),'視覺補洞',VISION_CHAIN);
+      lastMarkdown=out;
+      setStatus('✅ 補洞完成，提示詞已更新','success');
+    }catch(e){
+      if(e.name!=='AbortError')setStatus('❌ 補洞失敗：'+e.message,'error');
+    }
+    uiRunning(false);
+    setOutButtons(!!lastMarkdown);
+    if(lastMarkdown)renderOut(lastMarkdown,false);
+  }
+
+  /* ---------- 輸入：上傳 / 拖放 / 字數（支援多檔＋差異模式） ---------- */
+  function handleFiles(files){
+    if(!files||!files.length)return;
+    if(appMode==='image'){
+      const f=[...files].find(x=>x.type.startsWith('image/'));
+      if(f)loadImageFile(f); else setStatus('⚠ 請提供圖片檔（png / jpg / webp）','warn');
+      return;
+    }
+    if(appMode==='batch'){
+      let n=0;
+      [...files].forEach(f=>{
+        const r=new FileReader();
+        r.onload=e=>{batchQueue.push({name:f.name,content:e.target.result,status:'待處理',md:''});renderBatch();};
+        r.readAsText(f);n++;
+      });
+      setStatus('✅ 已加入 '+n+' 個檔案到批次佇列','success');setTimeout(()=>setStatus('',''),1600);
+      return;
+    }
+    const f=files[0];
+    const r=new FileReader();
+    r.onload=e=>{
+      const toV2=appMode==='diff'&&$('html-input').value.trim()&&!$('html-input2').value.trim();
+      (toV2?$('html-input2'):$('html-input')).value=e.target.result;
+      updateStats();
+      setStatus('✅ 已載入：'+f.name+(toV2?'（V2 新版）':appMode==='diff'?'（V1 舊版）':''),'success');
+      setTimeout(()=>setStatus('',''),1600);
+    };
+    r.readAsText(f);
+  }
+  $('btn-upload').addEventListener('click',()=>$('file-input').click());
+  $('file-input').addEventListener('change',e=>{handleFiles(e.target.files);e.target.value='';});
+  const drop=$('drop');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('dragover');}));
+  drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+
+  let statTimer=null;
+  function updateStats(){
+    if(appMode==='image'){
+      $('in-stats').innerHTML=imageDataUrl
+        ?('🖼 圖像 '+imgW+'×'+imgH+' · 約 '+Math.round(imageDataUrl.length*3/4/1024)+' KB · 視覺模型解析')
+        :'尚未載入圖像';
+      return;
+    }
+    const raw=$('html-input').value;
+    let processed=raw;
+    try{ if(raw.trim()) processed=preprocess(raw); }catch(_){ processed=raw; }
+    const tok=Math.round(processed.length/3.2);
+    const mode=$('preprocess').value;
+    const modeTxt=mode==='essence'?'意境壓縮':mode==='digest'?'深度萃取':mode==='slim'?'標準精簡':'原文';
+    $('in-stats').innerHTML=raw.length.toLocaleString()+' 字元 → '+modeTxt+'後送出約 <b>'
+      +tok.toLocaleString()+'</b> tokens'+(tok>5500?' <span style="color:var(--warn)">⚠ 偏大</span>':'');
+  }
+  function scheduleStats(){clearTimeout(statTimer);statTimer=setTimeout(updateStats,250);}
+  $('html-input').addEventListener('input',scheduleStats);
+  $('preprocess').addEventListener('change',updateStats);
+  $('btn-clear-in').addEventListener('click',()=>{$('html-input').value='';updateStats();});
+
+  /* ---------- 範例 ---------- */
+  $('btn-sample').addEventListener('click',()=>{
+    $('html-input').value=
+`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+<title>⏱️ 番茄鐘 Focus</title>
+<style>
+  :root{--bg:#0f1115;--accent:#ff6b6b;--ink:#e8e8ea;}
+  body{background:var(--bg);color:var(--ink);font-family:system-ui;display:grid;place-items:center;height:100vh;}
+  .timer{font-size:5rem;font-weight:800;color:var(--accent);}
+  button{background:var(--accent);border:none;color:#fff;padding:12px 28px;border-radius:12px;font-size:1rem;cursor:pointer;}
+</style></head><body>
+  <div>
+    <div class="timer" id="t">25:00</div>
+    <button id="start">開始</button><button id="reset">重設</button>
+  </div>
+<script>
+  let sec=1500,iv=null;const t=document.getElementById('t');
+  const fmt=s=>String((s/60)|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  document.getElementById('start').onclick=()=>{if(iv)return;iv=setInterval(()=>{if(sec--<=0){clearInterval(iv);iv=null;new Audio().play();}t.textContent=fmt(sec);},1000);};
+  document.getElementById('reset').onclick=()=>{clearInterval(iv);iv=null;sec=1500;t.textContent=fmt(sec);};
+<\/script></body></html>`;
+    updateStats();
+    setStatus('已載入範例（番茄鐘），可直接按「開始反向工程」','info');
+    setTimeout(()=>setStatus('',''),2200);
+  });
+
+  /* ---------- 初始化 ---------- */
+  (function init(){
+    const k=localStorage.getItem(LS_KEY); if(k)$('api-keys').value=k;
+    const m=localStorage.getItem(LS_MODEL);
+    if(m){const opt=[...$('model').options].find(o=>o.value===m);if(opt)$('model').value=m;}
+    updateStats();
+    setMode('single');
+    console.log('%c🔍 HTML 反向工程 已就緒 · build R2.1（差異比對·批次ZIP·圖像反向·重建驗證·視覺評分補洞·歷史庫·多格式匯出·意境壓縮）','color:#d4af37;font-weight:bold;');
+  })();
+</script>
+</body>
+</html>
