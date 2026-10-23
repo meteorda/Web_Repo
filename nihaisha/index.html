@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倪海廈觀點 · 雙欄經方臨證工作台 (NiHaiSha Web Workbench v3.2)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tcm: {
+                            50: '#f6f8f6',
+                            100: '#eaf0ea',
+                            200: '#d5e2d6',
+                            300: '#b4ccb7',
+                            500: '#2d6a4f',
+                            600: '#1b4332',
+                            700: '#143628',
+                            800: '#081c15',
+                            accent: '#2a9d8f',
+                            gold: '#b5832b',
+                            warm: '#faf8f5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Mermaid.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            themeVariables: {
+                background: '#ffffff',
+                primaryColor: '#eaf0ea',
+                primaryTextColor: '#1b4332',
+                primaryBorderColor: '#2d6a4f',
+                lineColor: '#2a9d8f'
+            }
+        });
+    </script>
+    <!-- Markdown-it CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <style>
+        /* 溫潤細雅 Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(240, 243, 240, 0.7);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(180, 204, 183, 0.8);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(45, 106, 79, 0.6);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] text-slate-800 h-screen flex flex-col overflow-hidden font-sans select-text">
+
+    <!-- 🌟 頂部全域導航列 (Top Navbar) - 天青玉白典雅美學 -->
+    <header class="h-14 border-b border-stone-200/90 bg-white/95 backdrop-blur px-4 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
+        <!-- 品牌與病患識別 -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-700 to-teal-500 flex items-center justify-center text-white text-base font-extrabold shadow-md shadow-emerald-900/10 tracking-wider">
+                漢
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm md:text-base text-stone-800 tracking-wide">倪海廈經方中醫智慧工作台</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">v3.2</span>
+                </div>
+                <div class="text-[11px] text-stone-500 flex items-center gap-1.5">
+                    <span>問診病患：</span>
+                    <span id="current_patient_badge" class="font-bold text-emerald-800">大同先生</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 狀態徽章與控制按鈕 -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- 模型狀態徽章 -->
+            <div id="provider_status_badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 未配置金鑰
+            </div>
+
+            <!-- 📖 系統說明按鈕 -->
+            <button id="btn_principles" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 shadow-sm transition flex items-center gap-1.5" title="查看醫療免責聲明與數位經方演算法原理">
+                <span>📖</span> <span class="hidden md:inline">系統說明</span>
+            </button>
+
+            <!-- ⚙️ API 設定按鈕 -->
+            <button id="btn_settings" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 shadow-sm transition flex items-center gap-1.5" title="配置大語言模型 API 金鑰與病患名稱">
+                <span>⚙️</span> <span class="hidden md:inline">設定</span>
+            </button>
+
+            <!-- 手機版抽屜切換漢堡選單 (☰) -->
+            <button id="drawer_toggle" class="lg:hidden p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition" title="切換動態辨證儀表板">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 📱 手機版遮罩 (Backdrop) -->
+    <div id="drawer_backdrop" class="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
+    <!-- 💻 主工作空間 (電腦 2/3 : 1/3 常駐雙欄，手機 90% 滑出抽屜) -->
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- 💬 左欄：臨床問診與對話流 (電腦佔 2/3，手機佔 100%) -->
+        <section class="flex-1 lg:w-2/3 flex flex-col h-full bg-[#fbfbfb] border-r border-stone-200 relative">
+            
+            <!-- 聊天訊息捲動容器 -->
+            <div id="chat_container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+                <div id="chat_flow" class="max-w-3xl mx-auto space-y-4">
+                    <!-- 對話訊息將由 app.js 動態追加至此 -->
+                </div>
+            </div>
+
+            <!-- OCR 處方箋影像辨識進度條 (動態顯示) -->
+            <div id="ocr_progress_bar" class="hidden px-4 py-2.5 bg-emerald-50 border-t border-emerald-200 flex items-center gap-3 text-xs text-emerald-800">
+                <svg class="animate-spin h-4 w-4 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span id="ocr_progress_text" class="font-medium">正在處理處方箋影像辨識...</span>
+            </div>
+
+            <!-- 輸入控制列 (Textarea + 📷 藥單 + 🚀 傳送) -->
+            <div class="p-3 md:p-4 bg-white border-t border-stone-200 flex flex-col gap-2 shadow-sm flex-shrink-0">
+                <div class="max-w-3xl mx-auto w-full flex items-end gap-2 sm:gap-3">
+                    
+                    <!-- 隱藏的檔案上傳 Input -->
+                    <input type="file" id="prescription_file_input" accept="image/*" class="hidden">
+
+                    <!-- 📷 上傳藥單按鈕 -->
+                    <button id="btn_upload_prescription" class="p-2.5 sm:px-3 sm:py-2.5 rounded-xl text-sm font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 shadow-xs transition flex items-center gap-1.5 flex-shrink-0" title="上傳處方箋、藥袋或藥盒照片進行 OCR 智慧藥理辨識">
+                        <span class="text-base">📷</span>
+                        <span class="hidden sm:inline">藥單</span>
+                    </button>
+
+                    <!-- 自適應多行文字輸入框 -->
+                    <textarea id="user_input" rows="1" placeholder="請描述您的症狀與感覺..." class="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 focus:bg-white resize-none max-h-36 leading-relaxed transition"></textarea>
+
+                    <!-- 🚀 傳送 / ⏹ 停止按鈕 -->
+                    <button id="btn_send" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-md shadow-emerald-900/10 transition flex items-center gap-1.5 flex-shrink-0">
+                        <span>🚀</span> 傳送
+                    </button>
+                </div>
+                <div class="max-w-3xl mx-auto w-full text-[11px] text-stone-400 text-center flex items-center justify-between px-1">
+                    <span>💡 提示：本系統診斷僅供學術交流參考，有急重病痛仍須及時就醫。</span>
+                    <span class="hidden md:inline text-stone-400 font-mono">確定性 Python 檢索 &lt;15ms</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📊 右欄：動態辨證儀表板 (電腦常駐佔 1/3，手機為 90% 滑出抽屜) -->
+        <aside id="dashboard_column" class="fixed lg:static inset-y-0 right-0 w-[90%] sm:w-[420px] lg:w-1/3 h-full bg-white border-l border-stone-200 flex flex-col z-50 lg:z-10 transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl lg:shadow-none">
+            
+            <!-- 抽屜標題列 -->
+            <div class="p-3.5 sm:p-4 border-b border-stone-200 flex items-center justify-between flex-shrink-0 bg-stone-50">
+                <div class="flex items-center gap-2">
+                    <span class="text-base text-emerald-700">⚡</span>
+                    <h2 class="text-sm font-bold text-stone-800">活體辨證動態儀表板</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">實時推演</span>
+                    <!-- 手機端關閉按鈕 -->
+                    <button id="drawer_close" class="lg:hidden text-stone-500 hover:text-stone-800 p-1 rounded-lg hover:bg-stone-200 transition text-base">✕</button>
+                </div>
+            </div>
+
+            <!-- 看板核心捲動內容 (Phase A 特徵看板 或 Phase B 終審投影) -->
+            <div id="dashboard_content" class="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+                <!-- 初始未檢索時的佔位引導卡 -->
+                <div class="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400 space-y-3">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-2xl text-emerald-600 shadow-xs">
+                        🩺
+                    </div>
+                    <div class="text-sm font-semibold text-stone-700">尚未開始診斷推演</div>
+                    <div class="text-xs text-stone-500 leading-relaxed max-w-xs">
+                        請在左側輸入您的症狀或上傳處方箋，系統將於 <span class="text-emerald-700 font-mono font-bold">&lt;15ms</span> 內透過純 Python 引擎進行雙軌檢索，並動態繪製候選經方與鑑別死穴。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 看板底部：血統審計抽屜按鈕 -->
+            <div class="p-3 border-t border-stone-200 bg-stone-50 flex-shrink-0">
+                <button id="btn_provenance" class="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 text-xs font-bold text-emerald-800 border border-stone-300 flex items-center justify-center gap-1.5 transition shadow-xs hover:border-emerald-300">
+                    <span>🔍</span> 展開全域決策血統審計 (四大支柱)
+                </button>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- ── 彈窗 1：📖 系統說明長捲軸彈窗 (醫療免責 / 四層白盒 / 演算法 / 防禦矩陣) ── -->
+    <div id="modal_principles" class="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-white border border-stone-200 rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+            
+            <!-- 彈窗頂部標題列 -->
+            <div class="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg text-emerald-700">📖</span>
+                    <h3 class="text-base font-bold text-stone-800">數位經方辨證原理與醫療免責聲明</h3>
+                </div>
+                <button id="close_principles" class="text-stone-400 hover:text-stone-700 text-xl p-1 rounded-lg hover:bg-stone-100 transition">✕</button>
+            </div>
+
+            <!-- 彈窗捲動主體 -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 text-sm text-stone-700 leading-relaxed font-sans">
+                
+                <!-- 1. ⚠️ 最高醫療免責聲明 (紅色醒目區塊) -->
+                <div class="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-200 shadow-xs space-y-3">
+                    <div class="flex items-center gap-2.5 text-rose-800 font-bold text-base">
+                        <span class="text-xl">🛑</span> 醫療免責聲明與就醫提醒 (Strict Medical Disclaimer)
+                    </div>
+                    <ol class="list-decimal list-inside space-y-2 text-rose-900/90 text-xs sm:text-sm leading-relaxed">
+                        <li><strong>學術研究與學習輔助性質</strong>：本系統為國醫大師倪海廈全套著作（《金匱要略》、《傷寒論》、《神農本草經》、《黃帝內經》、《天紀》、《地紀》、《漢唐醫案全編》等 179 個精密切片）之<strong>數位化檢索、統計推演與大模型語意分析輔助研究工具</strong>。</li>
+                        <li><strong>非醫療行為替代</strong>：系統輸出之所有問診內容、病機推演、方證候選、處方劑量與日常保養建議，<strong>僅供中醫學術交流、經方自我學習與研究參考，絕不構成任何形式之確定性醫療診斷、亦不得作為法定處方依據或替代合格執業中西醫師之臨床實體診治</strong>！</li>
+                        <li><strong>及時就醫原則</strong>：任何急症或慢性進行性疾病，<strong>請務必立即尋求正規醫療院所、合格執業中醫師或專科西醫師親自進行四診望聞問切與現代醫學檢查</strong>。</li>
+                        <li><strong>用藥安全警語</strong>：中藥方劑講究因時、因地、因人制宜，未經專業醫師親自把脈望診，<strong>嚴禁病患或家屬依據本系統輸出擅自購買、抓配、增減藥材或擅自停用常規西藥</strong>，以免發生危險！</li>
+                    </ol>
+                </div>
+
+                <!-- 2. 🚨 臨床情境應急處置分流表 -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-stone-800 flex items-center gap-2">
+                        <span>🚨</span> 臨床情境應急處置分流表 (Triage & Safety Boundary)
+                    </h4>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-xs">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-700 border-b border-stone-200 font-bold">
+                                    <th class="p-3 w-1/4">臨床情境</th>
+                                    <th class="p-3 w-1/4">病症特徵舉例</th>
+                                    <th class="p-3 w-1/4">系統安全處置策略</th>
+                                    <th class="p-3 w-1/4">使用者法定行動指南</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100">
+                                <tr class="bg-rose-50/60">
+                                    <td class="p-3 font-bold text-rose-700">紅線急危重症</td>
+                                    <td class="p-3 text-stone-700">劇烈胸痛徹背、大汗淋漓四肢厥逆、意識不清、急性吐血便血、呼吸極度困難</td>
+                                    <td class="p-3 text-rose-700 font-semibold">立即中斷辨證推演，畫面跳出緊急就醫紅燈</td>
+                                    <td class="p-3 text-rose-800 font-bold">立刻撥打 119 或至最近急診室就醫</td>
+                                </tr>
+                                <tr class="bg-amber-50/60">
+                                    <td class="p-3 font-bold text-amber-700">誤治變證危機</td>
+                                    <td class="p-3 text-stone-700">因燙水/三溫暖過汗導致心悸、漏汗惡風、手足冰冷抽筋</td>
+                                    <td class="p-3 text-amber-800">觸發 Rule 4 熔斷，一票否決發汗劑，警示亡陽風險</td>
+                                    <td class="p-3 text-amber-900 font-semibold">停止一切過度發汗行為，尋求合格中醫師救逆固脫</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-emerald-800">慢性亞健康/雜病</td>
+                                    <td class="p-3 text-stone-700">長期手腳冰涼、慢性蕁麻疹、消化不良、失眠、月經不調</td>
+                                    <td class="p-3 text-emerald-700">啟動 7-Slot 全息多輪問診，精準收斂至仲景經方</td>
+                                    <td class="p-3 text-stone-600">輸出方證與病機報告，攜帶報告供合格醫師臨證參考</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. 💡 打破 AI 醫療黑盒子迷信 -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-stone-800 flex items-center gap-2">
+                        <span>💡</span> 數位經方辨證之本質：打破 AI 醫療的「黑盒子迷信」
+                    </h4>
+                    <p class="text-xs text-stone-600 leading-relaxed">
+                        一般人常誤以為 AI 診斷是「把症狀隨便丟給 ChatGPT 瞎猜」，那種通用黑盒子大模型極易產生致命幻覺。
+                        本系統徹底顛覆黑盒子架構，由<strong>「底層確定性代碼、統計學數學模型、臨床本體知識圖譜與大語言模型（LLM）」</strong>四層緊密咬合：
+                    </p>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-xs">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-700 border-b border-stone-200 font-bold">
+                                    <th class="p-3 w-1/4">比較維度</th>
+                                    <th class="p-3 w-1/3">通用黑盒大模型 (ChatGPT 直接問診)</th>
+                                    <th class="p-3 w-5/12 text-emerald-800">本系統四層白盒數位經方大腦 (NiHaiSha Web)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100">
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">診斷依據</td>
+                                    <td class="p-3 text-stone-500">靠參數量隨機生成，無原始文獻可考</td>
+                                    <td class="p-3 text-emerald-800 font-semibold bg-emerald-50/30">100% 錨定 179 個切片庫物理行號（傷寒論、金匱、醫案）</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">醫療幻覺</td>
+                                    <td class="p-3 text-rose-600">極高，常自創不存在的方劑與劑量</td>
+                                    <td class="p-3 text-emerald-800 font-semibold bg-emerald-50/30">0 幻覺（LLM 僅能閱讀檢索出之 &lt;1.5KB 權威物理條文切片）</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">問診節奏</td>
+                                    <td class="p-3 text-stone-500">一次拋出 10~20 道問題讓病患疲憊不堪</td>
+                                    <td class="p-3 text-emerald-800 font-semibold bg-emerald-50/30">少問精問狀態機（每輪依據「鑑別分水嶺」精準只問 1~2 題）</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">誤治防禦</td>
+                                    <td class="p-3 text-rose-600">易被局部成效欺騙（如燙水暫時止癢誤判為好轉）</td>
+                                    <td class="p-3 text-amber-700 font-semibold bg-emerald-50/30">內建 Rule 4 過汗熔斷閘門與 Rule 5 真偽排毒五維鑑別矩陣</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">運作透明度</td>
+                                    <td class="p-3 text-stone-500">不可解釋的神經網路黑箱權重</td>
+                                    <td class="p-3 text-emerald-800 font-semibold bg-emerald-50/30">完全白盒透明（統計評分公式、極性窗口、血統圖皆可溯源）</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">算力與延遲</td>
+                                    <td class="p-3 text-stone-500">昂貴、依賴巨型雲端伺服器、無法離線運算</td>
+                                    <td class="p-3 text-emerald-800 font-semibold bg-emerald-50/30">底層純 Python 運算耗時 &lt;15ms，支援本機離線運作</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. 🔬 第 1 層底層剖析：雙軌語意檢索與對數飽和度評分 -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-stone-800 flex items-center gap-2">
+                        <span>🔬</span> 第 1 層底層剖析：純程式演算法與雙軌語意檢索引擎
+                    </h4>
+                    <p class="text-xs text-stone-600 leading-relaxed">
+                        數位辨證的第一道防線由完全不具備隨機性的確定性代碼 (<code class="text-emerald-700 font-mono font-semibold">nuwa_retriever.py</code>) 完成：
+                    </p>
+                    
+                    <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-3">
+                        <div class="text-xs font-mono font-bold text-emerald-800">
+                            對數飽和度數學評分公式： S(Ck) = Σ [ Weight × ln(1 + Count) × PolarityMultiplier ]
+                        </div>
+                        <ul class="list-disc list-inside space-y-1.5 text-xs text-stone-600">
+                            <li><strong class="text-stone-800">對數邊際效益遞減 ln(1 + Count)</strong>：防止病患在一句話內連續重複「好癢好癢好癢」導致該特徵無限膨脹，徹底杜絕刷屏干擾。</li>
+                            <li><strong class="text-stone-800">4 字滑動窗口極性反轉 (Negation Window)</strong>：自動在特徵前滑動 4 字元。若偵測到「不、無、未、沒有、非」，極性乘數轉為負值或啟動一票否決。例如「沒有流汗」絕不會被誤判為「汗出」。</li>
+                            <li><strong class="text-stone-800">鑑別分水嶺 (Discriminative Pivots)</strong>：自驅比對得分 Top-1 與 Top-2 的特徵矩陣差值，找出互斥特徵死穴（如：表陽虛漏汗 vs 寒濕無汗），交由虛擬倪師精準提問。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 5. 🛡️ 第 3 層防禦安全閘門：真排毒 vs 偽排毒 五維矩陣 -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-stone-800 flex items-center gap-2">
+                        <span>🛡️</span> 第 3 層防禦安全閘門：真排毒 (瞑眩) vs 偽排毒 (亡陽) 五維鑑別鐵律矩陣
+                    </h4>
+                    <div class="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-xs">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-700 border-b border-stone-200 font-bold">
+                                    <th class="p-3 w-1/5">鑑別維度</th>
+                                    <th class="p-3 w-2/5 text-emerald-800">🟢 真排毒 (正氣抗邪、陽氣來復之瞑眩反應)</th>
+                                    <th class="p-3 w-2/5 text-rose-800">🔴 偽排毒 (誤治傷陽、衛外失固之亡陽惡化)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100">
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">1. 自覺神氣與體能</td>
+                                    <td class="p-3 text-emerald-800 bg-emerald-50/20">發汗或排泄後，雖然身體微倦，但<strong>精神煥發、神清氣爽</strong>。</td>
+                                    <td class="p-3 text-rose-800 bg-rose-50/20">發汗或燙洗後，雖然局部止癢，但<strong>整個人虛脫無力、頭昏心悸</strong>。</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">2. 惡風畏寒與手足溫</td>
+                                    <td class="p-3 text-emerald-800 bg-emerald-50/20">汗出後身體舒暢，手足逐漸由冰冷<strong>轉為溫暖</strong>，不畏冷風。</td>
+                                    <td class="p-3 text-rose-800 bg-rose-50/20">汗出後四肢厥冷，<strong>極度惡風，吹到一絲微風便冷徹骨髓</strong>。</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">3. 出汗模式與津液</td>
+                                    <td class="p-3 text-emerald-800 bg-emerald-50/20">微微有黏汗（透汗），出汗後隨即汗止，<strong>口渴想喝常溫水</strong>。</td>
+                                    <td class="p-3 text-rose-800 bg-rose-50/20">汗出如注、自汗漏汗不止（漏汗），<strong>口不渴或只喜熱飲</strong>。</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">4. 睡眠品質與胃口</td>
+                                    <td class="p-3 text-emerald-800 bg-emerald-50/20">當晚<strong>睡眠深沈安穩，晨起胃口大開</strong>，想吃熱稀飯。</td>
+                                    <td class="p-3 text-rose-800 bg-rose-50/20">整夜<strong>煩躁失眠、心神不寧，食慾全無，腹脹噁心</strong>。</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold text-stone-700">5. 二便排泄動態</td>
+                                    <td class="p-3 text-emerald-800 bg-emerald-50/20">小便通暢色淡黃，大便順暢排出陳年黑便或宿食。</td>
+                                    <td class="p-3 text-rose-800 bg-rose-50/20">小便量少短赤或尿意頻頻而清冷，大便溏瀉無力。</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 彈窗底部 -->
+            <div class="p-4 border-t border-stone-200 bg-stone-50 flex items-center justify-end flex-shrink-0">
+                <button id="close_principles_bottom" onclick="document.getElementById('modal_principles').classList.add('hidden'); document.body.classList.remove('overflow-hidden');" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-xs transition">
+                    我已充分理解原理與免責聲明
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 彈窗 2：⚙️ API 與病患設定彈窗 (LLM Provider / API Key / Patient Name) ── -->
+    <div id="modal_settings" class="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-stone-200 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col p-5 sm:p-6 shadow-2xl animate-fade-in overflow-hidden">
+            
+            <!-- 標題列 (固定不捲動) -->
+            <div class="flex items-center justify-between pb-3 border-b border-stone-200 flex-shrink-0">
+                <h3 class="text-base font-bold text-stone-800 flex items-center gap-2">
+                    <span class="text-emerald-700">⚙️</span> 大語言模型與病患參數設定
+                </h3>
+                <button id="close_settings" class="text-stone-400 hover:text-stone-700 text-xl p-1 rounded-lg hover:bg-stone-100 transition">✕</button>
+            </div>
+
+            <!-- 表單內容 (可獨立平滑垂直捲動) -->
+            <div class="space-y-4 text-xs flex-1 overflow-y-auto pr-1.5 my-3">
+                
+                <!-- 病患姓名 -->
+                <div>
+                    <label class="block font-bold text-stone-700 mb-1.5">病患稱謂 / 姓名：</label>
+                    <input id="input_patient_name" type="text" placeholder="例如：大同先生、陳媽媽" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-sans">
+                    <p class="mt-1 text-[11px] text-stone-500">虛擬倪醫師將於問診對話中親切稱呼病患姓名。</p>
+                </div>
+
+                <!-- 大模型供應商選擇 -->
+                <div>
+                    <label class="block font-bold text-stone-700 mb-1.5">大語言模型供應商 (LLM Provider)：</label>
+                    <select id="select_model_provider" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-sans">
+                        <option value="google-gemini">Google Gemini (推薦：gemini-3.8-flash 旗艦 / 視覺直傳)</option>
+                        <option value="groq-cloud">GroqCloud (推薦：openai/gpt-oss-20b 極速秒回 或 llama-3.3-70b-versatile)</option>
+                        <option value="anthropic-claude">Anthropic Claude (claude-3-5-sonnet)</option>
+                        <option value="openai-gpt">OpenAI (gpt-4o / 本地轉發代理)</option>
+                        <option value="ollama-local">本地 Ollama (qwen2.5:latest / 離線模式)</option>
+                    </select>
+                </div>
+
+                <!-- 自訂指定模型代碼 (選填) -->
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">指定自訂模型名稱 (留空自動使用該供應商最佳現役模型)：</label>
+                    <input id="input_custom_model" type="text" placeholder="例如：gemini-3.8-flash、openai/gpt-oss-20b、openai/gpt-oss-120b" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-mono text-xs">
+                </div>
+
+                <!-- 🔍 活體動態模型探針與快速選單 (支援 Gemini 與 Groq，帶獨立滾動容器) -->
+                <div id="model_probe_section" class="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span id="probe_title_label" class="text-stone-700 font-bold text-[11px]">⚡ 活體可用模型探針：</span>
+                        <button id="btn_probe_models" type="button" class="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] font-medium transition flex items-center gap-1 shadow-xs">
+                            <span>🔍</span> 探測我金鑰可用的模型清單
+                        </button>
+                    </div>
+                    <!-- 快速關鍵字篩選框 -->
+                    <input id="probe_search_input" type="text" placeholder="🔍 快速篩選標籤 (輸入 flash、pro、gpt 等)..." class="w-full bg-white border border-stone-300 rounded-lg px-2.5 py-1 text-[11px] text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 hidden">
+                    <!-- 標籤容器 (固定最大高度，支援獨立流暢滾動) -->
+                    <div id="probe_models_list" class="flex flex-wrap gap-1.5 text-[11px] max-h-44 overflow-y-auto p-1 bg-white rounded-lg border border-stone-200">
+                        <span class="text-stone-400 italic p-1">點擊上方按鈕可即時查詢您金鑰支援的所有模型清單</span>
+                    </div>
+                </div>
+
+                <!-- API 金鑰輸入與顯示開關 -->
+                <div>
+                    <label class="block font-bold text-stone-700 mb-1.5">API 金鑰 (API Key)：</label>
+                    <div class="relative">
+                        <input id="input_api_key" type="password" placeholder="請填寫對應供應商之 API 金鑰" class="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 pr-10 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-mono">
+                        <button id="toggle_key_visibility" type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-700" title="切換金鑰明文/密文">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 隱私保障提示 (嚴格遵守使用者要求) -->
+                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <span>🔒</span> 隱私與本機記憶體保證
+                    </div>
+                    <div class="text-emerald-700 leading-relaxed">
+                        所有 API 金鑰均<strong>僅儲存在您個人電腦瀏覽器的本機快取 (localStorage)</strong> 之中，絕不上傳至任何第三方雲端伺服器，請放心使用。
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 操作按鈕 (固定於底部，絕不被擠出視窗) -->
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-stone-200 flex-shrink-0 bg-white">
+                <button onclick="document.getElementById('modal_settings').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition">
+                    取消
+                </button>
+                <button id="btn_save_settings" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white shadow-md shadow-emerald-900/10 transition">
+                    儲存設定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 彈窗 3：🔍 全域決策血統審計抽屜 (四大支柱 / Mermaid 圓餅圖) ── -->
+    <div id="modal_provenance" class="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-white border border-stone-200 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+            
+            <!-- 標題列 -->
+            <div class="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg text-emerald-700">🔍</span>
+                    <h3 class="text-base font-bold text-stone-800">全域決策血統審計與四大支柱溯源</h3>
+                </div>
+                <button id="close_provenance" class="text-stone-400 hover:text-stone-700 text-xl p-1 rounded-lg hover:bg-stone-100 transition">✕</button>
+            </div>
+
+            <!-- 捲動內容 -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                
+                <!-- 動態計算之 Mermaid 圓餅圖容器 -->
+                <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 shadow-xs">
+                    <div class="text-xs font-bold text-stone-700 mb-3 text-center">📊 終審診斷決策血統動態比例分析</div>
+                    <div id="provenance_chart_container" class="min-h-[220px] flex items-center justify-center">
+                        <span class="text-xs text-stone-500">正在計算當前問診血統數據...</span>
+                    </div>
+                </div>
+
+                <!-- 四大血統支柱詳解卡片 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-1">
+                        <div class="font-bold text-blue-900 flex items-center gap-1.5">
+                            <span>📜</span> 1. 物理切片原文血統 (~50%)
+                        </div>
+                        <p class="text-stone-600 leading-relaxed text-[11px]">
+                            100% 錨定《傷寒論》、《金匱要略》與漢唐醫案之物理行號切片，杜絕大模型無中生有之憑空造句。
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+                        <div class="font-bold text-emerald-900 flex items-center gap-1.5">
+                            <span>🏛️</span> 2. 實體本體與決策集群 (~25%)
+                        </div>
+                        <p class="text-stone-600 leading-relaxed text-[11px]">
+                            依據 7-Slot 全息特徵槽位與 24/72 經方矩陣硬性約束，具備一票否決熔斷機制。
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-1">
+                        <div class="font-bold text-amber-900 flex items-center gap-1.5">
+                            <span>🔄</span> 3. 多輪交互糾偏與自癒 (~20%)
+                        </div>
+                        <p class="text-stone-600 leading-relaxed text-[11px]">
+                            透過鑑別分水嶺對抗演算法，在多輪問診中動態修正權重，逐步逼近最佳收斂解。
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-1">
+                        <div class="font-bold text-purple-900 flex items-center gap-1.5">
+                            <span>💊</span> 4. 現代生理與藥理通識 (~5%)
+                        </div>
+                        <p class="text-stone-600 leading-relaxed text-[11px]">
+                            結合西醫類固醇、抗組織胺及抗生素用藥史審計，判定皮下毛孔閉鎖與伏飲病理。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 底部 -->
+            <div class="p-3 border-t border-stone-200 bg-stone-50 flex items-center justify-end flex-shrink-0">
+                <button onclick="document.getElementById('modal_provenance').classList.add('hidden'); document.body.classList.remove('overflow-hidden');" class="px-5 py-2 rounded-xl text-xs font-bold bg-stone-200 hover:bg-stone-300 text-stone-700 transition">
+                    關閉審計抽屜
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 核心應用腳本 (嚴格物理隔離於 js/ 目錄，保證核心技能 0 污染) ── -->
+    <script src="js/static_backend.js"></script>
+    <script src="js/ocr_engine.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

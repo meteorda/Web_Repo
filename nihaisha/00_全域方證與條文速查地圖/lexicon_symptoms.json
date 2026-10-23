@@ -1,0 +1,1664 @@
+{
+  "_meta": {
+    "schema_version": "2.0",
+    "layer": "Layer 1 - Full 84-Entity Canonical TCM Symptom Ontology",
+    "total_symptoms": 85,
+    "total_synonyms": 774,
+    "description": "Standardized TCM symptom entities across 10 clinical axes (十問歌) with rich colloquial synonyms, slang, negation antonyms, and clinical weights"
+  },
+  "symptoms": [
+    {
+      "sym_id": "SYM_001_CHILL_WIND",
+      "canonical_name": "惡風畏寒",
+      "body_location": "肌表皮毛",
+      "clinical_axis": "temperature",
+      "default_weight": 2.0,
+      "negation_antonym": "SYM_003_FEVER_HEAT",
+      "synonyms": [
+        "惡風",
+        "怕風",
+        "吹風難受",
+        "畏風",
+        "怕吹電扇",
+        "怕吹冷氣",
+        "見風就冷",
+        "吹風發抖",
+        "怕冷",
+        "畏寒",
+        "吹風起雞皮疙瘩",
+        "後頸怕風",
+        "怕吹冷风",
+        "怕吹风",
+        "怕冷畏寒"
+      ],
+      "legacy_id": "SYM_CHILL_WIND"
+    },
+    {
+      "sym_id": "SYM_002_CHILL_SEVERE",
+      "canonical_name": "惡寒極甚",
+      "body_location": "周身骨髓",
+      "clinical_axis": "temperature",
+      "default_weight": 2.8,
+      "negation_antonym": "SYM_004_FEVER_HIGH",
+      "synonyms": [
+        "惡寒",
+        "極度怕冷",
+        "蓋好幾條被子還是冷",
+        "骨子裡發冷",
+        "身寒",
+        "但寒不熱",
+        "背後發涼如澆冰水",
+        "冷得全身發抖",
+        "身冷畏寒",
+        "打寒顫",
+        "恶寒",
+        "极度怕冷",
+        "冷得发抖"
+      ],
+      "legacy_id": "SYM_CHILL_COLD"
+    },
+    {
+      "sym_id": "SYM_003_FEVER_HEAT",
+      "canonical_name": "發熱身熱",
+      "body_location": "周身肌表",
+      "clinical_axis": "temperature",
+      "default_weight": 2.0,
+      "negation_antonym": "SYM_001_CHILL_WIND",
+      "synonyms": [
+        "發熱",
+        "發燒",
+        "身熱",
+        "身體很燙",
+        "熱熱的",
+        "發燒不退",
+        "微熱",
+        "體溫偏高",
+        "體溫高",
+        "感覺身體在燒",
+        "微發熱",
+        "发热",
+        "发烧",
+        "浑身发热"
+      ],
+      "legacy_id": "SYM_FEVER_HEAT"
+    },
+    {
+      "sym_id": "SYM_004_FEVER_HIGH",
+      "canonical_name": "壯熱大熱高熱",
+      "body_location": "陽明氣分/血分",
+      "clinical_axis": "temperature",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_002_CHILL_SEVERE",
+      "synonyms": [
+        "大熱",
+        "身大熱",
+        "壯熱",
+        "高熱",
+        "發高燒",
+        "身熱如火",
+        "體溫狂飆40度",
+        "不惡寒反惡熱",
+        "燥熱難耐",
+        "全身像火爐在烤",
+        "身大热",
+        "高烧",
+        "高热",
+        "壮热"
+      ],
+      "legacy_id": "SYM_FEVER_HEAT"
+    },
+    {
+      "sym_id": "SYM_005_TIDAL_FEVER",
+      "canonical_name": "日晡潮熱",
+      "body_location": "陽明腑實",
+      "clinical_axis": "temperature",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "潮熱",
+        "日晡潮熱",
+        "午後潮熱",
+        "下午定時發燒",
+        "申酉時發熱",
+        "傍晚發熱升溫",
+        "像潮水一樣定時發熱",
+        "午後高熱狂躁",
+        "潮热",
+        "日晡所发潮热",
+        "下午发烧"
+      ]
+    },
+    {
+      "sym_id": "SYM_006_ALTERNATE_CHILL_FEVER",
+      "canonical_name": "往來寒熱",
+      "body_location": "少陽半表半裡",
+      "clinical_axis": "temperature",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "往來寒熱",
+        "忽冷忽熱",
+        "一陣冷一陣熱",
+        "寒熱往來",
+        "一會兒冷一會兒熱",
+        "一陣發冷一陣發熱",
+        "發熱發冷交替",
+        "寒热往来",
+        "忽冷忽热"
+      ],
+      "legacy_id": "SYM_ALTERNATE_CHILL_FEVER"
+    },
+    {
+      "sym_id": "SYM_007_TRUE_COLD_FALSE_HEAT",
+      "canonical_name": "真寒假熱陰盛格陽",
+      "body_location": "少陰厥陰浮陽",
+      "clinical_axis": "temperature",
+      "default_weight": 3.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "真寒假熱",
+        "陰盛格陽",
+        "面赤如妝",
+        "臉很紅但手腳冰冷",
+        "骨子冷透但感覺燥熱",
+        "身熱反欲得衣",
+        "想喝滾燙熱水",
+        "虛陽浮越面赤",
+        "真寒假热",
+        "阴盛格阳"
+      ]
+    },
+    {
+      "sym_id": "SYM_008_FIVE_CENTER_HEAT",
+      "canonical_name": "五心煩熱陰虛發熱",
+      "body_location": "手足心胸口",
+      "clinical_axis": "temperature",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "五心煩熱",
+        "手心腳心發燙",
+        "手心熱",
+        "腳心熱",
+        "胸口煩熱",
+        "骨蒸潮熱",
+        "陰虛發熱",
+        "睡覺腳要伸出被子",
+        "手腳心發熱",
+        "手心发烫",
+        "五心烦热"
+      ]
+    },
+    {
+      "sym_id": "SYM_009_AFTERNOON_HEAT",
+      "canonical_name": "午後烘熱",
+      "body_location": "胸面衝熱",
+      "clinical_axis": "temperature",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "午後烘熱",
+        "更年期熱潮紅",
+        "一陣熱氣往臉上衝",
+        "胸口發熱面紅",
+        "熱陣",
+        "臉部發紅燥熱",
+        "面熱",
+        "烘热",
+        "热潮红"
+      ]
+    },
+    {
+      "sym_id": "SYM_010_COLD_BONES",
+      "canonical_name": "骨髓身冷蜷臥",
+      "body_location": "全身陰寒",
+      "clinical_axis": "temperature",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "骨髓發冷",
+        "畏寒蜷臥",
+        "整個人蜷縮成一團怕冷",
+        "身冷畏寒",
+        "冷徹骨髓",
+        "被子蓋再多也不暖",
+        "冷氣往骨頭鑽",
+        "蜷卧怕冷"
+      ]
+    },
+    {
+      "sym_id": "SYM_011_SWEAT_OUT",
+      "canonical_name": "自汗出",
+      "body_location": "周身肌表",
+      "clinical_axis": "sweat",
+      "default_weight": 2.5,
+      "negation_antonym": "SYM_012_SWEAT_NONE",
+      "synonyms": [
+        "流汗",
+        "出汗",
+        "自汗",
+        "一直出汗",
+        "冒汗",
+        "微汗",
+        "流虛汗",
+        "容易出汗",
+        "稍微動一下就流汗",
+        "汗出",
+        "動則汗出",
+        "大汗出",
+        "盗汗",
+        "出虚汗",
+        "动不动就流汗"
+      ],
+      "legacy_id": "SYM_SWEAT_OUT"
+    },
+    {
+      "sym_id": "SYM_012_SWEAT_NONE",
+      "canonical_name": "無汗汗閉",
+      "body_location": "肌表皮毛閉塞",
+      "clinical_axis": "sweat",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_011_SWEAT_OUT",
+      "synonyms": [
+        "無汗",
+        "不出汗",
+        "沒汗",
+        "流不出汗",
+        "汗閉",
+        "身無汗",
+        "發熱無汗",
+        "毛孔緊閉流不出汗",
+        "怎麼烤都不出汗",
+        "无汗",
+        "闭汗",
+        "完全不出汗"
+      ],
+      "legacy_id": "SYM_SWEAT_NONE"
+    },
+    {
+      "sym_id": "SYM_013_SWEAT_PROFUSE",
+      "canonical_name": "大汗淋漓",
+      "body_location": "全身表陽外越",
+      "clinical_axis": "sweat",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_012_SWEAT_NONE",
+      "synonyms": [
+        "大汗",
+        "大汗淋漓",
+        "大汗狂出",
+        "衣服被子全濕透",
+        "汗流浹背",
+        "狂冒大汗",
+        "漏汗不止",
+        "汗出如珠",
+        "大汗不止",
+        "大汗淋漓衣服湿透"
+      ]
+    },
+    {
+      "sym_id": "SYM_014_NIGHT_SWEAT",
+      "canonical_name": "盜汗",
+      "body_location": "夜間睡眠肌表",
+      "clinical_axis": "sweat",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "盜汗",
+        "睡覺流汗",
+        "夜間盜汗",
+        "半夜醒來衣服濕透",
+        "醒來汗就停了",
+        "入睡出汗醒後汗收",
+        "睡中盜汗",
+        "盗汗",
+        "半夜盗汗"
+      ]
+    },
+    {
+      "sym_id": "SYM_015_HEAD_SWEAT",
+      "canonical_name": "但頭汗出",
+      "body_location": "頭頸部",
+      "clinical_axis": "sweat",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "但頭汗出",
+        "只有頭部出汗",
+        "頭部爆汗身體無汗",
+        "齊頸而還",
+        "頭汗",
+        "滿頭大汗但身上沒汗",
+        "吃飯只有頭頂流汗",
+        "但头汗出"
+      ]
+    },
+    {
+      "sym_id": "SYM_016_LIMB_SWEAT",
+      "canonical_name": "手足濈然汗出",
+      "body_location": "手心足底",
+      "clinical_axis": "sweat",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "手足濈然汗出",
+        "手心腳心冒冷汗",
+        "手腳出汗",
+        "手心出汗",
+        "腳底冒汗",
+        "手腳常濕冷流汗",
+        "手足多汗",
+        "手心脚心流汗"
+      ]
+    },
+    {
+      "sym_id": "SYM_017_COLD_SWEAT",
+      "canonical_name": "冷汗自出",
+      "body_location": "少陰亡陽周身",
+      "clinical_axis": "sweat",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "冷汗自出",
+        "直冒冷汗",
+        "四肢冰冷冒冷汗",
+        "亡陽冷汗",
+        "冷汗淋漓",
+        "虛脫冒冷汗",
+        "冷汗直流",
+        "冒冷汗"
+      ]
+    },
+    {
+      "sym_id": "SYM_018_HALF_BODY_SWEAT",
+      "canonical_name": "半身汗出",
+      "body_location": "經絡偏阻",
+      "clinical_axis": "sweat",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "半身汗出",
+        "只有半邊身體流汗",
+        "左半身出汗右半身無汗",
+        "中風半身汗",
+        "身體一側出汗",
+        "半身不遂出汗"
+      ]
+    },
+    {
+      "sym_id": "SYM_019_HEADACHE",
+      "canonical_name": "頭痛",
+      "body_location": "頭部經絡",
+      "clinical_axis": "head_sensory",
+      "default_weight": 1.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "頭痛",
+        "頭頂痛",
+        "偏頭痛",
+        "後腦勺痛",
+        "整個頭痛",
+        "前額痛",
+        "太陽穴脹痛",
+        "頭痛如裂",
+        "頭皮緊繃痛",
+        "头痛",
+        "偏头痛",
+        "脑袋痛"
+      ],
+      "legacy_id": "SYM_HEADACHE"
+    },
+    {
+      "sym_id": "SYM_020_HEAD_HEAVY",
+      "canonical_name": "頭重如裹",
+      "body_location": "頭部濕濁",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "頭重如裹",
+        "頭上像戴了頂濕重鐵盔",
+        "頭重腳輕",
+        "腦袋昏沉沉像包了毛巾",
+        "頭重如載重物",
+        "雷頭風",
+        "頭重",
+        "头重如裹",
+        "头昏脑胀"
+      ]
+    },
+    {
+      "sym_id": "SYM_021_VERTIGO_WATER",
+      "canonical_name": "苦冒眩天旋地轉",
+      "body_location": "內耳前庭清竅",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "頭眩",
+        "眩冒",
+        "苦冒眩",
+        "頭暈目眩",
+        "起則頭眩",
+        "天旋地轉",
+        "像坐船一樣晃",
+        "站起來頭暈眼黑",
+        "美尼爾氏症水眩",
+        "眩暈",
+        "頭昏眩",
+        "晕眩",
+        "眩晕",
+        "天旋地转"
+      ],
+      "legacy_id": "SYM_VERTIGO_WATER"
+    },
+    {
+      "sym_id": "SYM_022_EYE_RED_PAIN",
+      "canonical_name": "目赤腫痛",
+      "body_location": "眼目肝經",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "目赤腫痛",
+        "眼睛紅腫發炎",
+        "眼睛布滿血絲",
+        "目赤",
+        "眼睛乾澀刺痛",
+        "怕光流淚",
+        "眼睛發紅脹痛",
+        "眼睛红肿",
+        "目赤痛"
+      ]
+    },
+    {
+      "sym_id": "SYM_023_VISION_BLUR",
+      "canonical_name": "目眩視物昏花",
+      "body_location": "肝腎虛水氣上泛",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "目眩",
+        "視物昏花",
+        "眼前發黑",
+        "視力模糊",
+        "眼冒金星",
+        "看東西旋轉晃動",
+        "視物不清",
+        "目暗",
+        "眼睛发花"
+      ]
+    },
+    {
+      "sym_id": "SYM_024_TINNITUS",
+      "canonical_name": "耳鳴如蟬",
+      "body_location": "耳少陽少陰",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "耳鳴",
+        "耳鳴如蟬",
+        "耳朵嗡嗡叫",
+        "耳鳴如火車聲",
+        "耳聾聽力下降",
+        "耳朵塞住感",
+        "耳鳴晝夜不停",
+        "耳聋",
+        "耳鸣"
+      ]
+    },
+    {
+      "sym_id": "SYM_025_NOSE_OBSTRUCT_RUNNY",
+      "canonical_name": "鼻塞流清涕",
+      "body_location": "鼻部肺系",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "鼻塞",
+        "流清涕",
+        "大量清水鼻涕",
+        "打噴嚏流鼻水",
+        "水樣鼻涕流不停",
+        "過敏性鼻炎打噴嚏",
+        "鼻鳴",
+        "鼻孔塞住無法呼吸",
+        "鼻塞流涕"
+      ]
+    },
+    {
+      "sym_id": "SYM_026_NOSE_BLEED",
+      "canonical_name": "鼻衄吐衄",
+      "body_location": "鼻肺血熱",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "鼻衄",
+        "流鼻血",
+        "吐衄",
+        "鼻子出血",
+        "咳血衄血",
+        "流鼻血不止",
+        "鼻血"
+      ]
+    },
+    {
+      "sym_id": "SYM_027_BITTER_TASTE",
+      "canonical_name": "口苦",
+      "body_location": "少陽膽府",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "口苦",
+        "早晨起來口苦",
+        "嘴巴苦苦的",
+        "口苦咽乾",
+        "膽汁反流嘴苦",
+        "吃什麼都發苦",
+        "口中發苦",
+        "口苦"
+      ],
+      "legacy_id": "SYM_BITTER_TASTE_THROAT_DRY"
+    },
+    {
+      "sym_id": "SYM_028_THROAT_PAIN_DRY",
+      "canonical_name": "咽乾喉痛",
+      "body_location": "咽喉少陰少陽",
+      "clinical_axis": "head_sensory",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "咽乾",
+        "喉嚨痛",
+        "喉嚨乾痛",
+        "吞嚥痛",
+        "喉嚨發炎紅腫",
+        "喉嚨乾涸無津液",
+        "聲音沙啞咽痛",
+        "咽干",
+        "喉咙痛"
+      ]
+    },
+    {
+      "sym_id": "SYM_029_WHEEZING_FOWL",
+      "canonical_name": "咳喘肺家伏飲喉中水雞聲",
+      "body_location": "氣管呼吸道肺系",
+      "clinical_axis": "head_sensory",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "喉中水雞聲",
+        "氣喘哮鳴聲",
+        "喉嚨咻咻叫",
+        "喉嚨像有小雞在叫",
+        "呼吸哮喘痰鳴漉漉",
+        "小兒支氣管喘鳴",
+        "喉中痰鸣",
+        "咳嗽",
+        "咳得很嚴重",
+        "咳",
+        "久咳",
+        "乾咳",
+        "咳喘",
+        "咳逆",
+        "咳逆倚息",
+        "咳痰",
+        "喉嚨癢就咳",
+        "氣喘",
+        "哮喘",
+        "喘息",
+        "冬天容易咳",
+        "每年冬天都會這樣",
+        "每年冬天咳",
+        "冷空氣就咳",
+        "吹到冷風就咳",
+        "咳好幾個月",
+        "咳喘不能平臥",
+        "肺家伏飲",
+        "痰多",
+        "白泡痰",
+        "泡沫痰",
+        "清稀白痰",
+        "咳白色泡沫",
+        "遇寒咳甚",
+        "咳嗽气喘",
+        "久咳不愈",
+        "干咳",
+        "咳得很厉害",
+        "冬天咳嗽"
+      ],
+      "legacy_id": "SYM_COUGH_PANT"
+    },
+    {
+      "sym_id": "SYM_030_CHEST_IMBEDIMENT",
+      "canonical_name": "胸痺胸滿短氣",
+      "body_location": "胸膈心包陽氣",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "胸痺",
+        "胸悶",
+        "胸中悶塞如大石壓迫",
+        "胸滿短氣",
+        "喘不過氣",
+        "胸口壓榨感",
+        "不能平臥",
+        "胸口憋悶難受",
+        "胸闷",
+        "胸痹",
+        "喘息不得卧"
+      ],
+      "legacy_id": "SYM_CHEST_PAIN_BACK"
+    },
+    {
+      "sym_id": "SYM_031_HEART_PAIN_BACK",
+      "canonical_name": "心痛徹背",
+      "body_location": "心俞背俞第五椎",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 3.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "心痛徹背",
+        "背痛徹心",
+        "狹心症心絞痛",
+        "心臟痛到背後",
+        "第五椎壓痛",
+        "心臟瓣膜閉鎖不全胸痛",
+        "心胸絞痛牽引至背",
+        "心痛彻背",
+        "心绞痛"
+      ],
+      "legacy_id": "SYM_CHEST_PAIN_BACK"
+    },
+    {
+      "sym_id": "SYM_032_EPIGASTRIC_FULLNESS",
+      "canonical_name": "心下痞硬心下痞",
+      "body_location": "胃脘心下中焦",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "心下痞",
+        "心下痞硬",
+        "心下痞鞕",
+        "胃窩處硬塞滿悶但不痛",
+        "胃悶堵住脹滿",
+        "心下硬",
+        "胃脘阻塞感",
+        "心下痞满",
+        "胃窝硬塞"
+      ],
+      "legacy_id": "SYM_ACID_REFLUX_BELCH"
+    },
+    {
+      "sym_id": "SYM_033_ABDOMINAL_FULL_TENDER",
+      "canonical_name": "腹滿痛拒按堅硬如石",
+      "body_location": "陽明全腹腸道",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "腹滿痛",
+        "腹痛拒按",
+        "肚子硬得像石頭按了劇痛",
+        "肚子脹滿拒按",
+        "全腹堅硬",
+        "腹滿不減減不足言",
+        "急性腹膜炎腹痛",
+        "大便不通腹脹痛",
+        "肚子硬邦邦拒按"
+      ]
+    },
+    {
+      "sym_id": "SYM_034_PALPITATION_HEART",
+      "canonical_name": "心悸心下悸",
+      "body_location": "心水凌心",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "心悸",
+        "心下悸",
+        "心跳慌慌不安",
+        "心慌跳得很快",
+        "心臟亂跳心律不整",
+        "臍下悸動",
+        "水飲凌心悸動",
+        "心悸慌慌",
+        "心慌"
+      ]
+    },
+    {
+      "sym_id": "SYM_035_RUNNING_PIGLET",
+      "canonical_name": "奔豚氣衝心",
+      "body_location": "少腹衝逆心胸",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "奔豚",
+        "奔豚氣",
+        "一股氣從下肚子往上衝胸口",
+        "氣衝咽喉如小豬亂撞",
+        "發作時胸悶欲死氣上衝",
+        "自下腹上衝胸",
+        "奔豚气冲心"
+      ]
+    },
+    {
+      "sym_id": "SYM_036_UMBILICAL_COLIC",
+      "canonical_name": "繞臍痛寒疝腹痛",
+      "body_location": "肚臍周圍寒凝",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "繞臍痛",
+        "肚臍周圍絞痛",
+        "寒疝腹痛",
+        "肚子冷絞痛",
+        "宿食繞臍冷痛",
+        "肚臍眼周圍抓痛",
+        "腹中冷痛如絞",
+        "绕脐痛"
+      ]
+    },
+    {
+      "sym_id": "SYM_037_LOWER_ABDOMEN_TENSION",
+      "canonical_name": "少腹急結少腹滿",
+      "body_location": "少腹膀胱胞宮",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "少腹急結",
+        "少腹硬滿刺痛",
+        "少腹蓄血急結",
+        "小腹硬繃壓痛",
+        "下腹刺痛拒按",
+        "小腹如掌大塊硬痛",
+        "桃核承氣少腹急結",
+        "少腹硬满"
+      ]
+    },
+    {
+      "sym_id": "SYM_038_STOMACH_COLD_PAIN",
+      "canonical_name": "胃脘冷痛喜溫喜按",
+      "body_location": "中焦虛寒脾胃",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "胃脘冷痛",
+        "肚子冷痛喜溫喜按",
+        "一吹冷氣肚子就痛",
+        "腹痛揉揉比較舒服",
+        "綿綿作痛得熱痛減",
+        "脾胃虛寒冷痛",
+        "胃痛喜温喜按"
+      ]
+    },
+    {
+      "sym_id": "SYM_039_ACID_REFLUX",
+      "canonical_name": "胃酸逆流火燒心",
+      "body_location": "食道賁門中焦",
+      "clinical_axis": "chest_abdomen",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "胃酸逆流",
+        "火燒心",
+        "胃食道逆流",
+        "胸口灼熱灼痛",
+        "胃酸往咽喉衝",
+        "反酸泛酸胃酸很多",
+        "吃甜食胃酸暴衝",
+        "胃灼热",
+        "火烧心反酸"
+      ],
+      "legacy_id": "SYM_ACID_REFLUX_BELCH"
+    },
+    {
+      "sym_id": "SYM_040_POOR_APPETITE",
+      "canonical_name": "默默不欲飲食",
+      "body_location": "脾胃納化",
+      "clinical_axis": "digestion",
+      "default_weight": 2.0,
+      "negation_antonym": "SYM_041_VORACIOUS_HUNGER",
+      "synonyms": [
+        "默默不欲飲食",
+        "不想吃東西",
+        "胃口很差",
+        "食慾不振",
+        "吃不下飯",
+        "見到食物就反胃沒有胃口",
+        "厭食",
+        "不想吃饭",
+        "胃口差"
+      ]
+    },
+    {
+      "sym_id": "SYM_041_VORACIOUS_HUNGER",
+      "canonical_name": "消穀善飢",
+      "body_location": "陽明胃火旺",
+      "clinical_axis": "digestion",
+      "default_weight": 2.2,
+      "negation_antonym": "SYM_040_POOR_APPETITE",
+      "synonyms": [
+        "消穀善飢",
+        "吃很多馬上又餓了",
+        "食量暴增容易餓",
+        "飢餓感強烈",
+        "胃火亢盛吃不飽",
+        "吃飽沒多久又飢餓",
+        "消谷善饥"
+      ]
+    },
+    {
+      "sym_id": "SYM_042_HUNGRY_CANNOT_EAT",
+      "canonical_name": "飢不欲食",
+      "body_location": "胃陰虛/厥陰虛火",
+      "clinical_axis": "digestion",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "飢不欲食",
+        "肚子很餓但吃不下",
+        "有飢餓感但勉強吃一點就脹",
+        "胃陰虧損飢不欲食",
+        "餓卻吃不進去"
+      ]
+    },
+    {
+      "sym_id": "SYM_043_DRY_VOMIT",
+      "canonical_name": "乾嘔噦逆",
+      "body_location": "胃氣逆胃火",
+      "clinical_axis": "digestion",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "乾嘔",
+        "常常乾嘔吐不出東西",
+        "噦逆",
+        "惡心想吐",
+        "胃氣上衝乾嘔",
+        "喜嘔",
+        "一直作嘔",
+        "干呕",
+        "恶心"
+      ]
+    },
+    {
+      "sym_id": "SYM_044_VOMIT_AFTER_DRINK",
+      "canonical_name": "水入即吐水逆",
+      "body_location": "胃中蓄水膀胱不利",
+      "clinical_axis": "digestion",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "水入即吐",
+        "喝水就吐",
+        "欲飲水水入則吐",
+        "口渴但喝了就想吐出來",
+        "喝水停在胃裡吐出水來",
+        "水逆",
+        "喝水就呕吐"
+      ],
+      "legacy_id": "SYM_THIRST_VOMIT_WATER"
+    },
+    {
+      "sym_id": "SYM_045_VOMIT_FOOD",
+      "canonical_name": "食入即吐朝食暮吐",
+      "body_location": "幽門梗阻翻胃",
+      "clinical_axis": "digestion",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "食入即吐",
+        "吃東西就吐出來",
+        "朝食暮吐",
+        "吃完飯立刻反胃吐光食物",
+        "嘔吐食物膽汁",
+        "反胃吐食",
+        "吃什么吐什么"
+      ]
+    },
+    {
+      "sym_id": "SYM_046_BELCH_CONTINUOUS",
+      "canonical_name": "噫氣不除噯氣打嗝",
+      "body_location": "胃氣不降痰阻",
+      "clinical_axis": "digestion",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "噫氣不除",
+        "頻繁打飽嗝",
+        "噯氣不休",
+        "打嗝打個不停一整天",
+        "吃完飯一直打嗝反酸",
+        "打飽嗝噯氣",
+        "嗳气不止",
+        "打嗝不断"
+      ],
+      "legacy_id": "SYM_ACID_REFLUX_BELCH"
+    },
+    {
+      "sym_id": "SYM_047_SWEET_FOOD_TRIGGER",
+      "canonical_name": "吃甜食胃酸暴增",
+      "body_location": "精緻糖引發胃熱",
+      "clinical_axis": "digestion",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "吃甜食胃酸暴增",
+        "一吃蛋糕甜點就胃痛胃酸",
+        "精緻糖引起火燒心",
+        "甜食發酵反胃",
+        "喝甜飲立刻胃脹酸"
+      ]
+    },
+    {
+      "sym_id": "SYM_048_MOUTH_STICKY",
+      "canonical_name": "口中黏膩",
+      "body_location": "中焦濕熱痰濁",
+      "clinical_axis": "digestion",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "口中黏膩",
+        "嘴巴黏黏的很不爽快",
+        "嘴巴黏膩有厚苔",
+        "唾液黏稠發甜或發鹹",
+        "口黏",
+        "口中黏"
+      ]
+    },
+    {
+      "sym_id": "SYM_049_THIRST_DESIRE_DRINK",
+      "canonical_name": "大渴引飲喜冷飲",
+      "body_location": "陽明津枯熱盛",
+      "clinical_axis": "digestion",
+      "default_weight": 2.5,
+      "negation_antonym": "SYM_050_THIRST_NONE",
+      "synonyms": [
+        "大渴",
+        "消渴",
+        "渴欲飲水",
+        "一直想喝水",
+        "口乾舌燥狂喝水",
+        "喜冷飲喜冰水",
+        "喝很多水還是不能止渴",
+        "狂喝水不解渴",
+        "大渴引饮",
+        "口渴想喝冰水"
+      ],
+      "legacy_id": "SYM_THIRST_DESIRE_DRINK"
+    },
+    {
+      "sym_id": "SYM_050_THIRST_NONE",
+      "canonical_name": "口淡不渴不喜飲",
+      "body_location": "太陰少陰虛寒水飲",
+      "clinical_axis": "digestion",
+      "default_weight": 2.0,
+      "negation_antonym": "SYM_049_THIRST_DESIRE_DRINK",
+      "synonyms": [
+        "口不渴",
+        "不渴",
+        "不喜飲",
+        "不想喝水",
+        "喝不下水",
+        "口淡不渴",
+        "口中和無渴感",
+        "整天不喝水也不渴",
+        "口淡不欲饮"
+      ],
+      "legacy_id": "SYM_THIRST_NONE"
+    },
+    {
+      "sym_id": "SYM_051_THIRST_SIP_ONLY",
+      "canonical_name": "渴欲漱水不欲嚥",
+      "body_location": "下焦蓄血血瘀",
+      "clinical_axis": "digestion",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "渴欲漱水不欲嚥",
+        "口乾只想含水漱口不想吞下去",
+        "只濕潤嘴唇不想喝水",
+        "內有瘀血口燥不欲嚥",
+        "漱水不欲咽"
+      ]
+    },
+    {
+      "sym_id": "SYM_052_CONSTIPATION_HARD",
+      "canonical_name": "大便秘結燥屎",
+      "body_location": "大腸陽明燥結",
+      "clinical_axis": "excretion",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_053_DIARRHEA_WATERY",
+      "synonyms": [
+        "大便硬",
+        "大便秘結",
+        "便秘",
+        "好幾天沒大便",
+        "燥屎成塊",
+        "大便像羊大便一顆顆",
+        "排便困難乾燥流血",
+        "大便堅硬難出",
+        "便秘高熱",
+        "大便秘结",
+        "大便干燥"
+      ],
+      "legacy_id": "SYM_CONSTIPATION_HARD"
+    },
+    {
+      "sym_id": "SYM_053_DIARRHEA_WATERY",
+      "canonical_name": "下利清谷自利不渴",
+      "body_location": "太陰少陰下焦虛寒",
+      "clinical_axis": "excretion",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_052_CONSTIPATION_HARD",
+      "synonyms": [
+        "下利清谷",
+        "拉肚子",
+        "腹瀉",
+        "自利不渴",
+        "完穀不化",
+        "拉清稀水",
+        "吃什麼拉什麼",
+        "水樣便水瀉",
+        "肚子冷痛水瀉",
+        "腹泻拉稀",
+        "下利"
+      ],
+      "legacy_id": "SYM_DIARRHEA_COLD"
+    },
+    {
+      "sym_id": "SYM_054_DIARRHEA_FOUL",
+      "canonical_name": "熱結旁流下利臭穢",
+      "body_location": "陽明燥屎內結下利清水",
+      "clinical_axis": "excretion",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "熱結旁流",
+        "下利清水色純青臭穢",
+        "拉極臭黑褐色水但肚子脹硬劇痛",
+        "燥屎不下純流惡臭稀水",
+        "假下利真燥屎"
+      ]
+    },
+    {
+      "sym_id": "SYM_055_DIARRHEA_BURNING",
+      "canonical_name": "協熱下利肛門灼熱",
+      "body_location": "葛芩連腸道濕熱",
+      "clinical_axis": "excretion",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "協熱下利",
+        "拉肚子肛門火辣辣灼熱",
+        "大便黃黏惡臭下利",
+        "暴注下迫便黃臭",
+        "腸炎發燒水瀉肛灼",
+        "肛门灼热下利"
+      ]
+    },
+    {
+      "sym_id": "SYM_056_TENESMUS",
+      "canonical_name": "裡急後重痢下赤白",
+      "body_location": "大腸氣滯濕熱",
+      "clinical_axis": "excretion",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "裡急後重",
+        "肚子很急想拉但蹲半天拉不出來",
+        "便意頻繁拉一點點黏液",
+        "痢疾紅白相雜",
+        "肛門重墜感",
+        "里急后重"
+      ]
+    },
+    {
+      "sym_id": "SYM_057_DYSURIA_RETENTION",
+      "canonical_name": "小便不利尿閉",
+      "body_location": "膀胱下焦氣化不行",
+      "clinical_axis": "excretion",
+      "default_weight": 2.8,
+      "negation_antonym": "SYM_059_URINE_CLEAR_LONG",
+      "synonyms": [
+        "小便不利",
+        "尿不出來",
+        "小便少",
+        "排尿困難滴滴答答",
+        "尿量很少浮腫",
+        "膀胱脹滿排不出尿",
+        "小腹脹小便不順",
+        "尿少",
+        "小便困难"
+      ],
+      "legacy_id": "SYM_URINE_DIFFICULTY"
+    },
+    {
+      "sym_id": "SYM_058_URINE_FREQUENT",
+      "canonical_name": "小便頻數",
+      "body_location": "下焦膀胱不固/虛熱",
+      "clinical_axis": "excretion",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "小便頻數",
+        "尿頻頻尿",
+        "動不動就想尿尿",
+        "小便次數很多",
+        "尿急憋不住",
+        "十分鐘就跑一次廁所",
+        "尿频"
+      ]
+    },
+    {
+      "sym_id": "SYM_059_URINE_CLEAR_LONG",
+      "canonical_name": "小便清長",
+      "body_location": "少陰下焦虛寒無火",
+      "clinical_axis": "excretion",
+      "default_weight": 2.2,
+      "negation_antonym": "SYM_060_URINE_SCANTY_RED",
+      "synonyms": [
+        "小便清長",
+        "尿色像清水一樣透明",
+        "小便清澈且量很大",
+        "下焦虛寒尿白長",
+        "尿液完全無顏色且長",
+        "小便清白"
+      ]
+    },
+    {
+      "sym_id": "SYM_060_URINE_SCANTY_RED",
+      "canonical_name": "小便黃赤熱痛",
+      "body_location": "膀胱下焦濕熱熱淋",
+      "clinical_axis": "excretion",
+      "default_weight": 2.5,
+      "negation_antonym": "SYM_059_URINE_CLEAR_LONG",
+      "synonyms": [
+        "小便黃赤",
+        "小便刺痛灼熱",
+        "尿道灼痛",
+        "尿色深黃赤紅",
+        "血尿淋漓澀痛",
+        "尿液發紅像濃茶",
+        "尿道炎刺痛",
+        "小便短赤灼痛"
+      ]
+    },
+    {
+      "sym_id": "SYM_061_NOCTURIA",
+      "canonical_name": "夜尿頻繁遺尿",
+      "body_location": "命門火衰腎陽不固",
+      "clinical_axis": "excretion",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "夜尿頻繁",
+        "半夜起床尿好幾次",
+        "夜尿多",
+        "半夜頻頻如廁失眠",
+        "小兒夜間尿床遺尿",
+        "老年人腎陽虛夜尿",
+        "夜尿"
+      ]
+    },
+    {
+      "sym_id": "SYM_062_SOMNOLENCE",
+      "canonical_name": "但欲寐神采懨懨",
+      "body_location": "少陰心腎陽微",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.0,
+      "negation_antonym": "SYM_063_INSOMNIA_DEFICIENCY",
+      "synonyms": [
+        "但欲寐",
+        "整天只想睡覺精神渙散",
+        "極度嗜睡眼睛張不開",
+        "神采懨懨萎靡不振",
+        "大病無力只想閉眼睡覺",
+        "精神萎靡但欲寐",
+        "嗜睡无力"
+      ]
+    },
+    {
+      "sym_id": "SYM_063_INSOMNIA_DEFICIENCY",
+      "canonical_name": "虛煩不得眠神經衰弱",
+      "body_location": "肝血不足心神不寧",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 2.5,
+      "negation_antonym": "SYM_062_SOMNOLENCE",
+      "synonyms": [
+        "虛煩不得眠",
+        "失眠",
+        "睡不著",
+        "整夜輾轉反側無法入睡",
+        "極度疲勞卻睡不著",
+        "腦子狂轉心悸失眠",
+        "神經衰弱睡得很淺易醒",
+        "整夜数羊失眠",
+        "失眠多梦"
+      ],
+      "legacy_id": "SYM_INSOMNIA_DEFICIENCY"
+    },
+    {
+      "sym_id": "SYM_064_INSOMNIA_CANNOT_LIE",
+      "canonical_name": "心中煩不得臥重度失眠",
+      "body_location": "少陰心腎不交熱盛",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "心中煩不得臥",
+        "整晚徹底不能閉眼躺下",
+        "心胸有一團火在燒睡不著",
+        "重度失眠坐著到天亮",
+        "口瘡心煩徹夜不得眠",
+        "彻夜难眠不能卧"
+      ],
+      "legacy_id": "SYM_INSOMNIA_DEFICIENCY"
+    },
+    {
+      "sym_id": "SYM_065_VEXATION_RESTLESS",
+      "canonical_name": "心煩躁動坐臥不安",
+      "body_location": "心神擾動陽熱內伏",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "煩躁",
+        "坐臥不安",
+        "心煩意亂",
+        "莫名煩躁想發脾氣",
+        "抓狂翻來覆去踢被子",
+        "煩熱躁動",
+        "翻覆不能自持",
+        "烦躁不安"
+      ],
+      "legacy_id": "SYM_VEXATION"
+    },
+    {
+      "sym_id": "SYM_066_DELIRIUM",
+      "canonical_name": "譫語神昏狂語",
+      "body_location": "陽明燥熱熱擾心包",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "譫語",
+        "高燒胡言亂語",
+        "神智不清亂講話",
+        "說胡話",
+        "不識親疏亂說話",
+        "熱盛神昏譫語",
+        "狂語",
+        "谵语"
+      ]
+    },
+    {
+      "sym_id": "SYM_067_MANIA_VIOLENT",
+      "canonical_name": "狂躁打人罵人登高而歌",
+      "body_location": "陽明熱狂陽狂",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "狂躁",
+        "發狂打人毀物",
+        "登高而歌棄衣而走",
+        "躁狂力大無窮",
+        "狂躁奔走罵詈",
+        "精神分裂陽狂發作",
+        "发狂打人"
+      ]
+    },
+    {
+      "sym_id": "SYM_068_PANIC_FRIGHT",
+      "canonical_name": "驚悸不安膽怯易驚",
+      "body_location": "膽氣虛痰飲心悸",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 2.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "驚悸",
+        "易驚膽小",
+        "聽到一點聲音就嚇一大跳",
+        "常常心慌害怕恐慌",
+        "噩夢受驚心悸",
+        "恐慌症心慌發抖",
+        "心惊胆战"
+      ]
+    },
+    {
+      "sym_id": "SYM_069_LETHARGY_COMA",
+      "canonical_name": "神昏如醉昏睡不醒",
+      "body_location": "濕濁蒙閉清竅元神",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "神昏如醉",
+        "整天昏睡叫不醒",
+        "濕溫病昏睡不語",
+        "意識不清嗜睡沉迷",
+        "神昏嗜睡",
+        "昏迷昏睡"
+      ]
+    },
+    {
+      "sym_id": "SYM_070_COLD_LIMBS_JUE",
+      "canonical_name": "手足厥冷四肢逆冷",
+      "body_location": "四肢末梢少陰厥陰",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "手足厥冷",
+        "手腳冰冷",
+        "四肢冰涼",
+        "四肢逆冷",
+        "手腳冷到手肘膝蓋",
+        "手腳像死人手一樣冰冷",
+        "冬天手腳凍痛發紫發白",
+        "四肢厥逆",
+        "手足寒",
+        "手脚冰凉"
+      ],
+      "legacy_id": "SYM_COLD_LIMBS"
+    },
+    {
+      "sym_id": "SYM_071_BODY_ACHE",
+      "canonical_name": "身疼痛骨節痛酸重",
+      "body_location": "周身肌肉骨節",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "身痛",
+        "身疼痛",
+        "骨節痛",
+        "骨痛",
+        "全身骨頭痠痛",
+        "全身痠痛",
+        "骨節劇痛",
+        "肌肉酸痛無力",
+        "全身沉重痠痛",
+        "浑身酸痛",
+        "骨头酸痛"
+      ],
+      "legacy_id": "SYM_BODY_ACHE"
+    },
+    {
+      "sym_id": "SYM_072_JOINT_GOUT_PAIN",
+      "canonical_name": "諸肢節疼痛歷節風痛風",
+      "body_location": "周身指腕膝踝關節",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "諸肢節疼痛",
+        "關節痛",
+        "關節紅腫熱痛",
+        "歷節風像被野狼咬",
+        "痛風急性發作腳踝大紅腫",
+        "手指關節變形劇痛",
+        "類風濕性關節炎劇痛",
+        "關節變形腫脹",
+        "痛风关节炎",
+        "肢节疼痛"
+      ],
+      "legacy_id": "SYM_JOINT_PAIN_SWOLLEN"
+    },
+    {
+      "sym_id": "SYM_073_FOOT_SWOLLEN_DROP",
+      "canonical_name": "腳腫如脫水腫按陷",
+      "body_location": "下肢足踝膝蓋",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "腳腫如脫",
+        "腳踝水腫按壓凹陷不起",
+        "下肢水腫嚴重",
+        "關節腫得像要掉下來",
+        "腳背腫脹鞋子穿不下",
+        "雙腿浮腫沉重",
+        "下肢水肿",
+        "脚肿如脱"
+      ]
+    },
+    {
+      "sym_id": "SYM_074_BODY_HEAVY_NUMB",
+      "canonical_name": "身重不能轉側肌膚麻木",
+      "body_location": "肌表筋骨濕痺血痺",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "身重不能轉側",
+        "身體沈重翻身都很困難",
+        "肌膚麻木不仁",
+        "手腳發麻刺痛感",
+        "血痺肢體麻木",
+        "四肢沈重抬不起",
+        "肢体麻木",
+        "身重沉重"
+      ]
+    },
+    {
+      "sym_id": "SYM_075_SPASM_CRAMP",
+      "canonical_name": "轉筋抽筋四肢拘急",
+      "body_location": "小腿腓腸肌筋脈",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "轉筋",
+        "半夜小腿大抽筋劇痛",
+        "四肢抽筋拘攣",
+        "腳抽筋痛到叫出來",
+        "筋脈拘急曲屈不能伸",
+        "腳筋緊繃抽筋",
+        "抽筋",
+        "转筋"
+      ]
+    },
+    {
+      "sym_id": "SYM_076_EMACIATION",
+      "canonical_name": "身體羸瘦皮包骨",
+      "body_location": "周身肌肉消爍",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "身體羸瘦",
+        "日漸消瘦皮包骨",
+        "肌肉萎縮無肉",
+        "虛勞羸弱消瘦",
+        "體重暴瘦脫形",
+        "大肉陷下消瘦",
+        "消瘦羸弱"
+      ]
+    },
+    {
+      "sym_id": "SYM_077_UTERINE_BLEED",
+      "canonical_name": "漏下不止崩漏赤白",
+      "body_location": "胞宮衝任二脈",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "漏下不止",
+        "月經滴滴答答好幾十天不乾淨",
+        "崩漏經血狂流",
+        "非經期異常陰道出血",
+        "宮血不止夾血塊",
+        "月經淋漓不淨",
+        "崩漏"
+      ]
+    },
+    {
+      "sym_id": "SYM_078_AMENORRHEA",
+      "canonical_name": "經閉不行數月不來",
+      "body_location": "胞宮血枯血瘀",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "經閉",
+        "經水不利",
+        "好幾個月沒有月經",
+        "月經閉止不來",
+        "月經推遲幾個月",
+        "闭经",
+        "经期严重推后"
+      ]
+    },
+    {
+      "sym_id": "SYM_079_DYSMENORRHEA_CLOTS",
+      "canonical_name": "痛經腹痛黑血塊",
+      "body_location": "胞宮寒凝血瘀",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 2.5,
+      "negation_antonym": null,
+      "synonyms": [
+        "痛經",
+        "月經來下腹劇烈絞痛",
+        "經血呈紫黑色夾大血塊",
+        "血塊排出後疼痛大減",
+        "月經下腹冷痛牽引",
+        "痛经",
+        "经血大血块"
+      ]
+    },
+    {
+      "sym_id": "SYM_080_POSTPARTUM_ABDOMINAL",
+      "canonical_name": "產後腹痛惡露不下",
+      "body_location": "產後胞宮兒枕",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "產後腹痛",
+        "生完孩子肚子劇痛",
+        "惡露排不乾淨發臭",
+        "惡露不下血塊痛",
+        "兒枕痛腹中急痛",
+        "产后恶露不下腹痛"
+      ]
+    },
+    {
+      "sym_id": "SYM_081_MILK_BACKFLOW",
+      "canonical_name": "乳房脹硬結塊奶水逆流",
+      "body_location": "乳房心火厥陰肝經",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "乳房脹硬結塊",
+        "奶水積聚排不出硬塊發熱",
+        "乳癰急性乳腺炎紅腫",
+        "乳房摸到硬石塊痛",
+        "退奶不乾淨硬塊發炎",
+        "乳腺炎硬块"
+      ]
+    },
+    {
+      "sym_id": "SYM_082_PEDIATRIC_CONVULSION",
+      "canonical_name": "小兒夜啼急驚風抽搐",
+      "body_location": "兒科肝風神志",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "小兒夜啼",
+        "小兒半夜無故狂哭不止",
+        "急驚風高燒抽搐",
+        "角弓反張抽筋發抖",
+        "小兒抽筋眼翻白",
+        "小儿夜啼",
+        "小儿惊风抽搐"
+      ]
+    },
+    {
+      "sym_id": "SYM_083_TONGUE_SIGNS",
+      "canonical_name": "望診舌質舌苔",
+      "body_location": "心之苗脾之外候舌部",
+      "clinical_axis": "inspection_tongue_pulse",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "舌紅絳無苔",
+        "舌淡胖有齒痕",
+        "舌苔白滑水潤",
+        "舌苔黃燥焦黑起芒刺",
+        "舌苔厚膩發黃",
+        "舌質紫暗有瘀斑",
+        "舌尖紅赤糜爛",
+        "舌边齿痕",
+        "舌苔黄厚"
+      ]
+    },
+    {
+      "sym_id": "SYM_084_PULSE_SIGNS",
+      "canonical_name": "切診脈象特徵",
+      "body_location": "寸口六脈三部九候",
+      "clinical_axis": "inspection_tongue_pulse",
+      "default_weight": 2.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "脈浮緊",
+        "脈浮緩",
+        "脈浮洪大",
+        "脈弦細數",
+        "脈沉微細欲絕",
+        "脈沉遲滑實",
+        "寸口脈微尺脈緊",
+        "脈細欲絕",
+        "脉浮紧",
+        "脉沉细微弱"
+      ]
+    },
+    {
+      "sym_id": "SYM_085_STIFF_NECK",
+      "canonical_name": "項背強幾幾項強",
+      "body_location": "頸項後背太陽經筋",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "項背強幾幾",
+        "項強",
+        "脖子僵硬",
+        "後頸緊繃",
+        "後頸僵硬如鐵",
+        "肩膀緊繃",
+        "脖子轉不動",
+        "落枕感",
+        "項背強急",
+        "頸項僵硬",
+        "脖子硬邦邦",
+        "脖子緊繃轉不動",
+        "落枕脖子轉不動",
+        "電腦族肩頸僵硬如石",
+        "後頸痠痛抽筋",
+        "項強不能回顧",
+        "項背痛",
+        "颈项僵硬",
+        "后脑勺紧",
+        "项强",
+        "项背强几几",
+        "脖子转不动"
+      ],
+      "legacy_id": "SYM_STIFF_NECK"
+    }
+  ]
+}

@@ -1,0 +1,1340 @@
+{
+  "_meta": {
+    "title": "倪海廈全集全域章節與條文索引地圖 (Master Index v3.0 十一大部類全錄版)",
+    "version": "3.0.0",
+    "description": "涵蓋倪海廈大師一生傳世著作全量十一大部類（人紀、天紀、地紀、專題特輯、事實評論、診療日誌全編）。",
+    "master_navigator_md": "00_倪海廈全集總章節目錄導航.md"
+  },
+  "books": [
+    {
+      "book_folder": "01_金匱要略",
+      "index_md_path": "01_金匱要略/01_金匱要略_章節目錄索引.md",
+      "total_chapters": 26,
+      "chapters": [
+        {
+          "file_name": "00_篇前與序言.md",
+          "relative_path": "01_金匱要略/chunks/00_篇前與序言.md",
+          "bytes": 25875,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "00_續傷寒霍亂篇.md",
+          "relative_path": "01_金匱要略/chunks/00_續傷寒霍亂篇.md",
+          "bytes": 48115,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "01_臟腑經絡先後病脈證第一.md",
+          "relative_path": "01_金匱要略/chunks/01_臟腑經絡先後病脈證第一.md",
+          "bytes": 71861,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_痙濕暍病脈證治第二.md",
+          "relative_path": "01_金匱要略/chunks/02_痙濕暍病脈證治第二.md",
+          "bytes": 115543,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_百合狐惑陰陽毒病脈證治第三.md",
+          "relative_path": "01_金匱要略/chunks/03_百合狐惑陰陽毒病脈證治第三.md",
+          "bytes": 51287,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_瘧病脈證並治第四.md",
+          "relative_path": "01_金匱要略/chunks/04_瘧病脈證並治第四.md",
+          "bytes": 19632,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_中風歷節病脈證並治第五.md",
+          "relative_path": "01_金匱要略/chunks/05_中風歷節病脈證並治第五.md",
+          "bytes": 80869,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_血痺虛勞病脈並治第六.md",
+          "relative_path": "01_金匱要略/chunks/06_血痺虛勞病脈並治第六.md",
+          "bytes": 71852,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_血痺虛勞病脈證並治第六.md",
+          "relative_path": "01_金匱要略/chunks/06_血痺虛勞病脈證並治第六.md",
+          "bytes": 1647,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "07_肺痿肺癰咳嗽上氣病脈證治第七.md",
+          "relative_path": "01_金匱要略/chunks/07_肺痿肺癰咳嗽上氣病脈證治第七.md",
+          "bytes": 41487,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "08_奔豚氣病脈證治第八.md",
+          "relative_path": "01_金匱要略/chunks/08_奔豚氣病脈證治第八.md",
+          "bytes": 26751,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "09_胸痺心痛短氣病脈證治第九.md",
+          "relative_path": "01_金匱要略/chunks/09_胸痺心痛短氣病脈證治第九.md",
+          "bytes": 76859,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "10_腹滿寒疝宿食病脈證治第十.md",
+          "relative_path": "01_金匱要略/chunks/10_腹滿寒疝宿食病脈證治第十.md",
+          "bytes": 75526,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "11_五臟風寒積聚病脈證並治第十一.md",
+          "relative_path": "01_金匱要略/chunks/11_五臟風寒積聚病脈證並治第十一.md",
+          "bytes": 71022,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "12_痰飲咳嗽病脈證治第十二.md",
+          "relative_path": "01_金匱要略/chunks/12_痰飲咳嗽病脈證治第十二.md",
+          "bytes": 106823,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "13_消渴小便不利淋病脈證治第十三.md",
+          "relative_path": "01_金匱要略/chunks/13_消渴小便不利淋病脈證治第十三.md",
+          "bytes": 69426,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "14_水氣病脈證並治第十四.md",
+          "relative_path": "01_金匱要略/chunks/14_水氣病脈證並治第十四.md",
+          "bytes": 151071,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "15_黃疸病脈證並治第十五.md",
+          "relative_path": "01_金匱要略/chunks/15_黃疸病脈證並治第十五.md",
+          "bytes": 64229,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "16_驚悸吐衄下血胸滿瘀血病脈證治第十六.md",
+          "relative_path": "01_金匱要略/chunks/16_驚悸吐衄下血胸滿瘀血病脈證治第十六.md",
+          "bytes": 66873,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "17_嘔吐噦下利病脈證治第十七.md",
+          "relative_path": "01_金匱要略/chunks/17_嘔吐噦下利病脈證治第十七.md",
+          "bytes": 113447,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "18_瘡癰腸癰浸淫病脈證並治第十八.md",
+          "relative_path": "01_金匱要略/chunks/18_瘡癰腸癰浸淫病脈證並治第十八.md",
+          "bytes": 52065,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "20_婦人妊娠病脈證並治第二十.md",
+          "relative_path": "01_金匱要略/chunks/20_婦人妊娠病脈證並治第二十.md",
+          "bytes": 47949,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "21_婦人產後病脈證治第二十一.md",
+          "relative_path": "01_金匱要略/chunks/21_婦人產後病脈證治第二十一.md",
+          "bytes": 27895,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "22_婦人雜病脈證並治第二十二.md",
+          "relative_path": "01_金匱要略/chunks/22_婦人雜病脈證並治第二十二.md",
+          "bytes": 78953,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "23_陰陽易差後勞復第二十三.md",
+          "relative_path": "01_金匱要略/chunks/23_陰陽易差後勞復第二十三.md",
+          "bytes": 36309,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "24_金匱案例篇.md",
+          "relative_path": "01_金匱要略/chunks/24_金匱案例篇.md",
+          "bytes": 268658,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "02_傷寒論",
+      "index_md_path": "02_傷寒論/02_傷寒論_六經與條文目錄索引.md",
+      "total_chapters": 10,
+      "chapters": [
+        {
+          "file_name": "00_序言與五運六氣總論.md",
+          "relative_path": "02_傷寒論/chunks/00_序言與五運六氣總論.md",
+          "bytes": 8546,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "01_辨太陽病脈證並治上篇.md",
+          "relative_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "bytes": 119782,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_辨太陽病脈證並治中篇.md",
+          "relative_path": "02_傷寒論/chunks/02_辨太陽病脈證並治中篇.md",
+          "bytes": 169672,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_辨太陽病脈證並治下篇.md",
+          "relative_path": "02_傷寒論/chunks/03_辨太陽病脈證並治下篇.md",
+          "bytes": 147838,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_辨陽明病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/04_辨陽明病脈證並治篇.md",
+          "bytes": 102055,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_辨少陽病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/05_辨少陽病脈證並治篇.md",
+          "bytes": 12960,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_辨太陰病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/06_辨太陰病脈證並治篇.md",
+          "bytes": 10571,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "07_辨少陰病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/07_辨少陰病脈證並治篇.md",
+          "bytes": 51686,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "08_辨厥陰病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/08_辨厥陰病脈證並治篇.md",
+          "bytes": 54071,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "09_辨霍亂陰陽易差後勞復病脈證並治篇.md",
+          "relative_path": "02_傷寒論/chunks/09_辨霍亂陰陽易差後勞復病脈證並治篇.md",
+          "bytes": 635,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "03_黃帝內經",
+      "index_md_path": "03_黃帝內經/03_黃帝內經_章節目錄索引.md",
+      "total_chapters": 84,
+      "chapters": [
+        {
+          "file_name": "01_素問_上古天真與四氣調神篇.md",
+          "relative_path": "03_黃帝內經/chunks/01_素問_上古天真與四氣調神篇.md",
+          "bytes": 68735,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_素問_生氣通天與金匱真言篇.md",
+          "relative_path": "03_黃帝內經/chunks/02_素問_生氣通天與金匱真言篇.md",
+          "bytes": 77781,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_素問_陰陽應象與陰陽別論篇.md",
+          "relative_path": "03_黃帝內經/chunks/03_素問_陰陽應象與陰陽別論篇.md",
+          "bytes": 122976,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_素問_靈蘭秘典與臟象篇.md",
+          "relative_path": "03_黃帝內經/chunks/04_素問_靈蘭秘典與臟象篇.md",
+          "bytes": 108285,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_素問_治法方宜與診要精微篇.md",
+          "relative_path": "03_黃帝內經/chunks/05_素問_治法方宜與診要精微篇.md",
+          "bytes": 173510,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_素問_平人氣象與玉機真藏篇.md",
+          "relative_path": "03_黃帝內經/chunks/06_素問_平人氣象與玉機真藏篇.md",
+          "bytes": 277140,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "07_素問_太陰陽明與熱論篇.md",
+          "relative_path": "03_黃帝內經/chunks/07_素問_太陰陽明與熱論篇.md",
+          "bytes": 83589,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "08_素問_欬論舉痛腹中論篇.md",
+          "relative_path": "03_黃帝內經/chunks/08_素問_欬論舉痛腹中論篇.md",
+          "bytes": 149298,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "09_素問_風痹痿厥論篇.md",
+          "relative_path": "03_黃帝內經/chunks/09_素問_風痹痿厥論篇.md",
+          "bytes": 185501,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "10_素問_大奇病能與其餘諸篇.md",
+          "relative_path": "03_黃帝內經/chunks/10_素問_大奇病能與其餘諸篇.md",
+          "bytes": 486186,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_01_第一篇_上古天真论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_01_第一篇_上古天真论.md",
+          "bytes": 46578,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_02_第二篇_四气调神大论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_02_第二篇_四气调神大论.md",
+          "bytes": 22520,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_03_第三篇_生气通天论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_03_第三篇_生气通天论.md",
+          "bytes": 41042,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_04_第四篇_金匮真言论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_04_第四篇_金匮真言论.md",
+          "bytes": 37094,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_05_第五篇_阴阳应象大论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_05_第五篇_阴阳应象大论.md",
+          "bytes": 57971,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_06_第六篇_阴阳离合论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_06_第六篇_阴阳离合论.md",
+          "bytes": 8750,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_07_第七篇_阴阳别论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_07_第七篇_阴阳别论.md",
+          "bytes": 56826,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_08_第八篇_灵兰秘典论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_08_第八篇_灵兰秘典论.md",
+          "bytes": 13556,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_09_第九篇_六节藏象论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_09_第九篇_六节藏象论.md",
+          "bytes": 31506,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_10_第十篇_五脏生成.md",
+          "relative_path": "03_黃帝內經/chunks/素問_10_第十篇_五脏生成.md",
+          "bytes": 51905,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_11_第十一篇_五藏别论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_11_第十一篇_五藏别论.md",
+          "bytes": 12102,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_12_第十二篇_异法方宜论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_12_第十二篇_异法方宜论.md",
+          "bytes": 7661,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_13_第十三篇_移精变气论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_13_第十三篇_移精变气论.md",
+          "bytes": 14201,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_14_第十四篇_汤液醪醴论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_14_第十四篇_汤液醪醴论.md",
+          "bytes": 11007,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_15_第十五篇_玉版论要.md",
+          "relative_path": "03_黃帝內經/chunks/素問_15_第十五篇_玉版论要.md",
+          "bytes": 16280,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_16_第十六篇_诊要经终论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_16_第十六篇_诊要经终论.md",
+          "bytes": 34488,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_17_第十七篇_脉要精微论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_17_第十七篇_脉要精微论.md",
+          "bytes": 91137,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_18_第十八篇_平人气象论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_18_第十八篇_平人气象论.md",
+          "bytes": 44600,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_19_第十九篇_玉机真藏论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_19_第十九篇_玉机真藏论.md",
+          "bytes": 58546,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_20_第二十篇_三部九候论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_20_第二十篇_三部九候论.md",
+          "bytes": 20222,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_21_第二十一篇_经脉别论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_21_第二十一篇_经脉别论.md",
+          "bytes": 16153,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_22_第二十二篇_藏气法时论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_22_第二十二篇_藏气法时论.md",
+          "bytes": 32610,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_23_第二十三篇_宣明五气篇.md",
+          "relative_path": "03_黃帝內經/chunks/素問_23_第二十三篇_宣明五气篇.md",
+          "bytes": 307,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_24_第二十三篇，“宣明五气篇”，在明确的分析五种气的变.md",
+          "relative_path": "03_黃帝內經/chunks/素問_24_第二十三篇，“宣明五气篇”，在明确的分析五种气的变.md",
+          "bytes": 18954,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_25_第二十四篇_血气行志论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_25_第二十四篇_血气行志论.md",
+          "bytes": 8281,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_26_第二十五篇_宝命全角论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_26_第二十五篇_宝命全角论.md",
+          "bytes": 14497,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_27_第二十六篇_八正神明论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_27_第二十六篇_八正神明论.md",
+          "bytes": 17184,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_28_第二十七篇_离合真邪论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_28_第二十七篇_离合真邪论.md",
+          "bytes": 14372,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_29_第二十八篇_通评虚实论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_29_第二十八篇_通评虚实论.md",
+          "bytes": 34241,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_30_第二十九篇_太阴阳明论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_30_第二十九篇_太阴阳明论.md",
+          "bytes": 14083,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_31_第三十篇_阳明脉解.md",
+          "relative_path": "03_黃帝內經/chunks/素問_31_第三十篇_阳明脉解.md",
+          "bytes": 8657,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_32_第三十一篇_热论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_32_第三十一篇_热论.md",
+          "bytes": 20974,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_33_第三十二篇_刺热论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_33_第三十二篇_刺热论.md",
+          "bytes": 21859,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_34_第三十三篇_评热病论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_34_第三十三篇_评热病论.md",
+          "bytes": 19041,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_35_第三十四篇_逆调论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_35_第三十四篇_逆调论.md",
+          "bytes": 12165,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_36_第三十五篇_疟论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_36_第三十五篇_疟论.md",
+          "bytes": 29978,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_37_第三十六篇_刺疟.md",
+          "relative_path": "03_黃帝內經/chunks/素問_37_第三十六篇_刺疟.md",
+          "bytes": 22459,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_38_第三十七篇_气厥论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_38_第三十七篇_气厥论.md",
+          "bytes": 14271,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_39_第三十八篇_欬论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_39_第三十八篇_欬论.md",
+          "bytes": 13415,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_40_第三十九篇__举痛论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_40_第三十九篇__举痛论.md",
+          "bytes": 34546,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_41_第四十十篇_腹中论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_41_第四十十篇_腹中论.md",
+          "bytes": 23881,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_42_第四十一篇_刺腰论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_42_第四十一篇_刺腰论.md",
+          "bytes": 17707,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_43_第四十二篇_风论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_43_第四十二篇_风论.md",
+          "bytes": 23225,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_44_第四十三篇_痹论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_44_第四十三篇_痹论.md",
+          "bytes": 20694,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_45_第四十四篇_痿论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_45_第四十四篇_痿论.md",
+          "bytes": 30329,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_46_第四十五篇_厥论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_46_第四十五篇_厥论.md",
+          "bytes": 37829,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_47_第四十六篇_病能论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_47_第四十六篇_病能论.md",
+          "bytes": 22715,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_48_第四十七篇_奇病论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_48_第四十七篇_奇病论.md",
+          "bytes": 34414,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_49_第四十八篇_大奇论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_49_第四十八篇_大奇论.md",
+          "bytes": 35224,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_50_第四十九篇_脉解篇.md",
+          "relative_path": "03_黃帝內經/chunks/素問_50_第四十九篇_脉解篇.md",
+          "bytes": 39956,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_51_第五十篇_刺要论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_51_第五十篇_刺要论.md",
+          "bytes": 6402,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_52_第五十二篇_刺齐论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_52_第五十二篇_刺齐论.md",
+          "bytes": 9124,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_53_第五十三篇_刺志论反症.md",
+          "relative_path": "03_黃帝內經/chunks/素問_53_第五十三篇_刺志论反症.md",
+          "bytes": 4775,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_54_第五十四篇_针解.md",
+          "relative_path": "03_黃帝內經/chunks/素問_54_第五十四篇_针解.md",
+          "bytes": 9129,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_55_第五十五篇_长刺节论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_55_第五十五篇_长刺节论.md",
+          "bytes": 14528,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_56_第五十六篇_皮部论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_56_第五十六篇_皮部论.md",
+          "bytes": 12273,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_57_第五十七篇_经络论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_57_第五十七篇_经络论.md",
+          "bytes": 1785,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_58_第五十八篇_气穴论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_58_第五十八篇_气穴论.md",
+          "bytes": 11260,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_59_第五十九篇_气腑论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_59_第五十九篇_气腑论.md",
+          "bytes": 445,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_60_第六十篇_骨空论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_60_第六十篇_骨空论.md",
+          "bytes": 24184,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_61_第六十一篇，水热穴论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_61_第六十一篇，水热穴论.md",
+          "bytes": 21299,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_62_第六十二篇_调经论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_62_第六十二篇_调经论.md",
+          "bytes": 45980,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_63_第六十三篇_缪刺论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_63_第六十三篇_缪刺论.md",
+          "bytes": 32097,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_64_第六十四篇_四时刺逆从论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_64_第六十四篇_四时刺逆从论.md",
+          "bytes": 16387,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_65_第六十五篇_标本病论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_65_第六十五篇_标本病论.md",
+          "bytes": 13631,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_66_第七十五篇_着至教论篇.md",
+          "relative_path": "03_黃帝內經/chunks/素問_66_第七十五篇_着至教论篇.md",
+          "bytes": 12015,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_67_第七十六篇_示从容论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_67_第七十六篇_示从容论.md",
+          "bytes": 12636,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_68_第七十七篇_疏五过论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_68_第七十七篇_疏五过论.md",
+          "bytes": 16554,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_69_第七十八篇_征四失论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_69_第七十八篇_征四失论.md",
+          "bytes": 7264,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_70_第七十九篇_阴阳类论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_70_第七十九篇_阴阳类论.md",
+          "bytes": 14735,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_71_第八十篇_方盛衰论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_71_第八十篇_方盛衰论.md",
+          "bytes": 10485,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_72_第八十一篇_解经微论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_72_第八十一篇_解经微论.md",
+          "bytes": 7856,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_73_第七十二篇_刺法论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_73_第七十二篇_刺法论.md",
+          "bytes": 34496,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "素問_74_第七五篇_：着至教论.md",
+          "relative_path": "03_黃帝內經/chunks/素問_74_第七五篇_：着至教论.md",
+          "bytes": 77332,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "04_神農本草經",
+      "index_md_path": "04_神農本草經/04_神農本草經_藥物目錄索引.md",
+      "total_chapters": 4,
+      "chapters": [
+        {
+          "file_name": "00_神農本草經前言與藥性總義.md",
+          "relative_path": "04_神農本草經/chunks/00_神農本草經前言與藥性總義.md",
+          "bytes": 51971,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "01_上品藥全解_神仙養命延年.md",
+          "relative_path": "04_神農本草經/chunks/01_上品藥全解_神仙養命延年.md",
+          "bytes": 183995,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_中品藥全解_臣道養性防疾.md",
+          "relative_path": "04_神農本草經/chunks/02_中品藥全解_臣道養性防疾.md",
+          "bytes": 178932,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_下品藥全解_佐使佐毒攻邪.md",
+          "relative_path": "04_神農本草經/chunks/03_下品藥全解_佐使佐毒攻邪.md",
+          "bytes": 85863,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "05_針灸教程",
+      "index_md_path": "05_針灸教程/05_針灸教程_章節目錄索引.md",
+      "total_chapters": 28,
+      "chapters": [
+        {
+          "file_name": "01_針灸總論_急救法與火罐刺法.md",
+          "relative_path": "05_針灸教程/chunks/01_針灸總論_急救法與火罐刺法.md",
+          "bytes": 47859,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_五行生剋與井滎俞原經合穴.md",
+          "relative_path": "05_針灸教程/chunks/02_五行生剋與井滎俞原經合穴.md",
+          "bytes": 2795,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_任脈與督脈經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/03_任脈與督脈經穴詳解.md",
+          "bytes": 63166,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_手三陰三陽經詳解.md",
+          "relative_path": "05_針灸教程/chunks/04_手三陰三陽經詳解.md",
+          "bytes": 50831,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_足陽明胃經與足太陰脾經.md",
+          "relative_path": "05_針灸教程/chunks/05_足陽明胃經與足太陰脾經.md",
+          "bytes": 104492,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_手少陰心經與手太陽小腸經.md",
+          "relative_path": "05_針灸教程/chunks/06_手少陰心經與手太陽小腸經.md",
+          "bytes": 48172,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "07_足太陽膀胱經與足少陰腎經.md",
+          "relative_path": "05_針灸教程/chunks/07_足太陽膀胱經與足少陰腎經.md",
+          "bytes": 135382,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "08_手厥陰手少陽與足少陽膽經.md",
+          "relative_path": "05_針灸教程/chunks/08_手厥陰手少陽與足少陽膽經.md",
+          "bytes": 102930,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "09_足厥陰肝經與奇經八脈針法.md",
+          "relative_path": "05_針灸教程/chunks/09_足厥陰肝經與奇經八脈針法.md",
+          "bytes": 316971,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_01_針灸的使用時機與急救法.md",
+          "relative_path": "05_針灸教程/chunks/針灸_01_針灸的使用時機與急救法.md",
+          "bytes": 11554,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_02_火罐的使用時機與操作手法.md",
+          "relative_path": "05_針灸教程/chunks/針灸_02_火罐的使用時機與操作手法.md",
+          "bytes": 3398,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_03_針刺深淺討論與入穴手法.md",
+          "relative_path": "05_針灸教程/chunks/針灸_03_針刺深淺討論與入穴手法.md",
+          "bytes": 8839,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_04_天干地支歌與五行生剋.md",
+          "relative_path": "05_針灸教程/chunks/針灸_04_天干地支歌與五行生剋.md",
+          "bytes": 14471,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_05_十二正經之井滎俞原經合穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_05_十二正經之井滎俞原經合穴詳解.md",
+          "bytes": 13497,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_06_任脈經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_06_任脈經穴詳解.md",
+          "bytes": 37153,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_07_督脈經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_07_督脈經穴詳解.md",
+          "bytes": 20743,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_08_手太陰肺經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_08_手太陰肺經經穴詳解.md",
+          "bytes": 26850,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_09_手陽明大腸經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_09_手陽明大腸經經穴詳解.md",
+          "bytes": 24384,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_10_足陽明胃經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_10_足陽明胃經經穴詳解.md",
+          "bytes": 59744,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_11_足太陰脾經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_11_足太陰脾經經穴詳解.md",
+          "bytes": 45135,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_12_手少陰心經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_12_手少陰心經經穴詳解.md",
+          "bytes": 20051,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_13_手太陽小腸經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_13_手太陽小腸經經穴詳解.md",
+          "bytes": 28513,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_14_足太陽膀胱經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_14_足太陽膀胱經經穴詳解.md",
+          "bytes": 97420,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_15_足少陰腎經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_15_足少陰腎經經穴詳解.md",
+          "bytes": 38355,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_16_手厥陰心包經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_16_手厥陰心包經經穴詳解.md",
+          "bytes": 15738,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_17_手少陽三焦經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_17_手少陽三焦經經穴詳解.md",
+          "bytes": 33548,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_18_足少陽膽經經穴詳解.md",
+          "relative_path": "05_針灸教程/chunks/針灸_18_足少陽膽經經穴詳解.md",
+          "bytes": 54271,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "針灸_19_足厥陰肝經與奇經八脈針法.md",
+          "relative_path": "05_針灸教程/chunks/針灸_19_足厥陰肝經與奇經八脈針法.md",
+          "bytes": 317157,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "06_仲景心法與扶陽",
+      "index_md_path": "06_仲景心法與扶陽/06_仲景心法與扶陽_目錄索引.md",
+      "total_chapters": 4,
+      "chapters": [
+        {
+          "file_name": "01_倪師仲景心法_經方劑量把握與癌症時機.md",
+          "relative_path": "06_仲景心法與扶陽/chunks/01_倪師仲景心法_經方劑量把握與癌症時機.md",
+          "bytes": 184348,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_倪師仲景心法_辨證機轉與急救危症.md",
+          "relative_path": "06_仲景心法與扶陽/chunks/02_倪師仲景心法_辨證機轉與急救危症.md",
+          "bytes": 183531,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_扶陽講記_火神重陽理論與四時運行.md",
+          "relative_path": "06_仲景心法與扶陽/chunks/03_扶陽講記_火神重陽理論與四時運行.md",
+          "bytes": 145639,
+          "authority_tier": "NOTE_OR_GUEST",
+          "speaker": "名家客座"
+        },
+        {
+          "file_name": "04_扶陽講記_陰陽五行病機與經方治驗.md",
+          "relative_path": "06_仲景心法與扶陽/chunks/04_扶陽講記_陰陽五行病機與經方治驗.md",
+          "bytes": 139961,
+          "authority_tier": "NOTE_OR_GUEST",
+          "speaker": "名家客座"
+        }
+      ]
+    },
+    {
+      "book_folder": "07_漢唐醫案與配方",
+      "index_md_path": "07_漢唐醫案與配方/07_漢唐醫案與配方_全集目錄索引.md",
+      "total_chapters": 5,
+      "chapters": [
+        {
+          "file_name": "01_漢唐經典配方全集_常用成方與加減.md",
+          "relative_path": "07_漢唐醫案與配方/chunks/01_漢唐經典配方全集_常用成方與加減.md",
+          "bytes": 75357,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_倪師門診跟診實錄_四診辨證全記錄.md",
+          "relative_path": "07_漢唐醫案與配方/chunks/02_倪師門診跟診實錄_四診辨證全記錄.md",
+          "bytes": 109120,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_漢唐臨床醫案集_疑難重症與腫瘤癌症.md",
+          "relative_path": "07_漢唐醫案與配方/chunks/03_漢唐臨床醫案集_疑難重症與腫瘤癌症.md",
+          "bytes": 880587,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_漢唐臨床醫案集_外感雜病與經方神效.md",
+          "relative_path": "07_漢唐醫案與配方/chunks/04_漢唐臨床醫案集_外感雜病與經方神效.md",
+          "bytes": 909777,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_倪師地紀日記與中醫文化宣言.md",
+          "relative_path": "07_漢唐醫案與配方/chunks/05_倪師地紀日記與中醫文化宣言.md",
+          "bytes": 43497,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "08_天紀易經與紫微斗數",
+      "index_md_path": "08_天紀易經與紫微斗數/08_天紀易經與紫微斗數_章節目錄索引.md",
+      "total_chapters": 4,
+      "chapters": [
+        {
+          "file_name": "01_天機道_易經六十四卦與紫微命理總綱.md",
+          "relative_path": "08_天紀易經與紫微斗數/chunks/01_天機道_易經六十四卦與紫微命理總綱.md",
+          "bytes": 44872,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_人間道_為人處事心性與天人合一.md",
+          "relative_path": "08_天紀易經與紫微斗數/chunks/02_人間道_為人處事心性與天人合一.md",
+          "bytes": 238724,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_地脈道_陽宅風水堪輿與九宮方位.md",
+          "relative_path": "08_天紀易經與紫微斗數/chunks/03_地脈道_陽宅風水堪輿與九宮方位.md",
+          "bytes": 143163,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_倪師紫微斗數真實案例詳解.md",
+          "relative_path": "08_天紀易經與紫微斗數/chunks/04_倪師紫微斗數真實案例詳解.md",
+          "bytes": 62514,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "09_地紀行醫傳承全集",
+      "index_md_path": "09_地紀行醫傳承全集/09_地紀行醫傳承全集_章節目錄索引.md",
+      "total_chapters": 1,
+      "chapters": [
+        {
+          "file_name": "01_地紀第一至八卷行醫踏查全本.md",
+          "relative_path": "09_地紀行醫傳承全集/chunks/01_地紀第一至八卷行醫踏查全本.md",
+          "bytes": 44002,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "10_倪師專題論壇與事實評論",
+      "index_md_path": "10_倪師專題論壇與事實評論/10_倪師專題論壇與事實評論_章節目錄索引.md",
+      "total_chapters": 7,
+      "chapters": [
+        {
+          "file_name": "01_專論糖尿病_消渴本質與胰島素危害.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/01_專論糖尿病_消渴本質與胰島素危害.md",
+          "bytes": 152378,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_專論肝癌_期門刺痛與活血化瘀攻堅.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/02_專論肝癌_期門刺痛與活血化瘀攻堅.md",
+          "bytes": 248400,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_專論乳癌_奶水即月經與心火疏導.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/03_專論乳癌_奶水即月經與心火疏導.md",
+          "bytes": 298751,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_專論維他命_人工化學合成補品致癌真諦.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/04_專論維他命_人工化學合成補品致癌真諦.md",
+          "bytes": 244420,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_梁冬對話倪海廈國學堂七講完整實錄.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/05_梁冬對話倪海廈國學堂七講完整實錄.md",
+          "bytes": 419760,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_倪師事實評論全集_痛批西藥廠與疫苗內幕.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/06_倪師事實評論全集_痛批西藥廠與疫苗內幕.md",
+          "bytes": 2530995,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "07_倪海廈三十六條真言與病機十九條.md",
+          "relative_path": "10_倪師專題論壇與事實評論/chunks/07_倪海廈三十六條真言與病機十九條.md",
+          "bytes": 15282,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    },
+    {
+      "book_folder": "11_漢唐診斷日誌與臨床醫案全編",
+      "index_md_path": "11_漢唐診斷日誌與臨床醫案全編/11_漢唐診斷日誌與臨床醫案全編_章節目錄索引.md",
+      "total_chapters": 6,
+      "chapters": [
+        {
+          "file_name": "01_漢唐診療日誌2008年精選全錄.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/01_漢唐診療日誌2008年精選全錄.md",
+          "bytes": 1382826,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "02_漢唐診療日誌2009年精選全錄.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/02_漢唐診療日誌2009年精選全錄.md",
+          "bytes": 2206717,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "03_倪海廈臨床醫案合訂本2008年3至9月.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/03_倪海廈臨床醫案合訂本2008年3至9月.md",
+          "bytes": 1336296,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "04_倪海廈內部珍貴案例100篇實證.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/04_倪海廈內部珍貴案例100篇實證.md",
+          "bytes": 159046,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "05_新流感禽流感中醫療法與治感冒六大經方.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/05_新流感禽流感中醫療法與治感冒六大經方.md",
+          "bytes": 8498,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        },
+        {
+          "file_name": "06_快樂生活的問診單_倪師十問與健康標準.md",
+          "relative_path": "11_漢唐診斷日誌與臨床醫案全編/chunks/06_快樂生活的問診單_倪師十問與健康標準.md",
+          "bytes": 6480,
+          "authority_tier": "NI_DIRECT",
+          "speaker": "倪海廈醫師本人親述"
+        }
+      ]
+    }
+  ]
+}

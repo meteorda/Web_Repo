@@ -1,0 +1,1369 @@
+{
+  "_meta": {
+    "version": "3.4",
+    "wave": "Wave 1 Core Clusters",
+    "total_clusters": 24,
+    "description": "7-Slot Holographic Clinical Formula Clusters with verified verbatim anchors from Ni Haisha's clinical works"
+  },
+  "clusters": [
+    {
+      "cluster_id": "CLS_001_GUIZHI_TANG",
+      "canonical_name": "桂枝湯",
+      "pattern_name": "太陽病中風表虛證",
+      "domain": "太陽病篇",
+      "slots": {
+        "body_meridian": [
+          "太陽經",
+          "肌表",
+          "頭項",
+          "肩背"
+        ],
+        "subjective_sensation": [
+          "惡風",
+          "自汗出",
+          "頭痛",
+          "身微熱"
+        ],
+        "cold_heat_thirst": [
+          "微發熱",
+          "微惡寒惡風",
+          "不甚渴"
+        ],
+        "secretion_excretion": [
+          "自汗出",
+          "鼻鳴",
+          "乾嘔"
+        ],
+        "onset_timing": [
+          "吹風受寒即發",
+          "日夜持續"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡紅苔薄白",
+          "脈浮緩"
+        ],
+        "layman_modern_terms": [
+          "吹風頭痛",
+          "吹電風扇不舒服",
+          "動不動就流虛汗",
+          "怕吹冷氣",
+          "感冒流汗又發冷",
+          "體虛感冒"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_NONE",
+        "SYM_COLD_LIMBS",
+        "SYM_THIRST_DESIRE_DRINK"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_GUIZHI_NO_SWEAT",
+          "condition": "無汗者嚴禁純桂枝湯，必為傷寒表實麻黃湯證",
+          "action": "PENALIZE_HARD",
+          "penalty_score": -999.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "干呕者,「桂枝汤」 主之。042050 伤寒金匮中的方剂",
+          "line_start": 260,
+          "line_end": 275,
+          "key_quote": "经方家认为桂枝汤是调和阴阳的第一方，发汗解肌，调和营卫。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_002_MAHUANG_TANG",
+      "canonical_name": "麻黃湯",
+      "pattern_name": "太陽病傷寒表實證",
+      "domain": "太陽病篇",
+      "slots": {
+        "body_meridian": [
+          "太陽經",
+          "皮毛",
+          "骨節",
+          "背部"
+        ],
+        "subjective_sensation": [
+          "惡寒甚",
+          "骨節劇痛",
+          "頭痛",
+          "無汗全身緊繃"
+        ],
+        "cold_heat_thirst": [
+          "發熱",
+          "極度惡寒",
+          "口不渴"
+        ],
+        "secretion_excretion": [
+          "完全無汗",
+          "鼻塞",
+          "喘息"
+        ],
+        "onset_timing": [
+          "受劇寒暴發",
+          "無汗氣喘"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔薄白水滑",
+          "脈浮緊"
+        ],
+        "layman_modern_terms": [
+          "全身骨頭痠痛",
+          "完全流不出汗",
+          "高燒畏寒發抖",
+          "蓋厚被還是冷",
+          "胸悶氣喘不能呼吸"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_OUT"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_MAHUANG_SWEAT_VETO",
+          "condition": "已有汗出者嚴禁麻黃湯，汗出再發麻黃必亡陽",
+          "action": "PENALIZE_HARD",
+          "penalty_score": -999.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "」, 应用麻黄汤,误用桂枝汤,桂枝汤是解肌的,让血液循环",
+          "line_start": 448,
+          "line_end": 460,
+          "key_quote": "我们临床使用麻黄或桂枝，就是看病人有汗或是无汗，这就是中风与伤寒两种病症的区别。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_003_GEGEN_TANG",
+      "canonical_name": "葛根湯",
+      "pattern_name": "太陽陽明合病項背強幾幾",
+      "domain": "太陽病篇",
+      "slots": {
+        "body_meridian": [
+          "太陽經",
+          "陽明經",
+          "項背",
+          "頸項後腦"
+        ],
+        "subjective_sensation": [
+          "脖子緊繃",
+          "項背強硬",
+          "肩頸僵硬",
+          "惡寒"
+        ],
+        "cold_heat_thirst": [
+          "發熱惡寒",
+          "微渴或不渴"
+        ],
+        "secretion_excretion": [
+          "無汗或微自汗",
+          "或兼輕度下利"
+        ],
+        "onset_timing": [
+          "受風寒後頸項拘急"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡紅苔薄白",
+          "脈浮緊或浮長"
+        ],
+        "layman_modern_terms": [
+          "後頸僵硬如鐵",
+          "轉頭牽扯痛",
+          "落枕感",
+          "肩膀脖子死緊",
+          "感冒脖子硬"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "「桂枝加 葛根汤」主之。052140 项背强几几,脖子绷",
+          "line_start": 370,
+          "line_end": 385,
+          "key_quote": "项背强几几，脖子绷得很紧，葛根汤一下去，津液上输后项，立刻松开解肌。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_004_DA_QINGLONG_TANG",
+      "canonical_name": "大青龍湯",
+      "pattern_name": "外寒內熱表實兼心煩煩躁",
+      "domain": "太陽病篇",
+      "slots": {
+        "body_meridian": [
+          "太陽肌表",
+          "胸膈內熱"
+        ],
+        "subjective_sensation": [
+          "高燒惡寒",
+          "心煩意亂",
+          "坐臥不安",
+          "全身無汗緊繃"
+        ],
+        "cold_heat_thirst": [
+          "身大熱",
+          "極惡寒",
+          "內有煩熱口渴"
+        ],
+        "secretion_excretion": [
+          "無汗",
+          "喘息",
+          "咳逆"
+        ],
+        "onset_timing": [
+          "寒冬重感冒",
+          "急性暴發高熱不退"
+        ],
+        "inspection_tongue_pulse": [
+          "舌紅苔薄黃白相間",
+          "脈浮緊而數"
+        ],
+        "layman_modern_terms": [
+          "高燒全身骨痛加抓狂",
+          "煩躁踢被子",
+          "體溫極高卻冷得發抖",
+          "流感重症煩躁",
+          "無汗煩躁高燒"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_OUT"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_DAQINGLONG_SWEAT_VETO",
+          "condition": "若脈微弱、汗出、惡風者，不可服大青龍湯，服之亡陽厥逆",
+          "action": "PENALIZE_HARD",
+          "penalty_score": -999.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "烦躁者,「大青龙汤」主之。若脉微弱,汗出,恶风者,不可 服",
+          "line_start": 1160,
+          "line_end": 1175,
+          "key_quote": "大青龙汤证是表寒里热，病人不仅发热恶寒身痛无汗，而且必定有极其明显的烦躁。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_005_XIAO_QINGLONG_TANG",
+      "canonical_name": "小青龍湯",
+      "pattern_name": "外寒內飲咳喘倚息喉鳴",
+      "domain": "太陽病篇/金匱痰飲篇",
+      "slots": {
+        "body_meridian": [
+          "太陽表",
+          "肺系",
+          "心下水飲"
+        ],
+        "subjective_sensation": [
+          "咳逆上氣",
+          "氣喘不能平臥",
+          "胸悶",
+          "發冷"
+        ],
+        "cold_heat_thirst": [
+          "惡寒發熱",
+          "口不渴或渴喜熱飲"
+        ],
+        "secretion_excretion": [
+          "白色清稀水樣痰",
+          "吐白色泡沫痰",
+          "大量清水鼻涕"
+        ],
+        "onset_timing": [
+          "受冷空氣即引發劇烈咳嗽氣喘",
+          "遇冷加重"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔白滑水潤",
+          "脈浮緊或弦滑"
+        ],
+        "layman_modern_terms": [
+          "氣喘躺不下",
+          "遇冷狂咳",
+          "吐透明泡沫痰",
+          "水樣清涕流不停",
+          "寒性過敏性鼻炎氣喘"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "喘,就是「小青龙汤」证,也就是寒喘；天气 热才开始喘,天气",
+          "line_start": 1215,
+          "line_end": 1230,
+          "key_quote": "天气一冷才开始喘，就是小青龙汤证，也就是寒喘，里有水饮，干姜细辛五味子温化水饮。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_006_XIAO_CHAIHU_TANG",
+      "canonical_name": "小柴胡湯",
+      "pattern_name": "少陽病半表半裡樞機不利",
+      "domain": "少陽病篇",
+      "slots": {
+        "body_meridian": [
+          "少陽膽經",
+          "三焦樞機",
+          "胸脅兩側"
+        ],
+        "subjective_sensation": [
+          "往來寒熱",
+          "胸脅苦滿",
+          "默默不欲飲食",
+          "心煩喜嘔"
+        ],
+        "cold_heat_thirst": [
+          "忽冷忽熱",
+          "口苦咽乾目眩"
+        ],
+        "secretion_excretion": [
+          "乾嘔",
+          "喜嘔",
+          "口苦涎少"
+        ],
+        "onset_timing": [
+          "寒熱往來定時或不定時發作"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔薄白或淡黃",
+          "脈弦細"
+        ],
+        "layman_modern_terms": [
+          "一陣發冷一陣發熱",
+          "嘴巴苦苦的",
+          "兩肋下脹痛不適",
+          "不想吃東西又想吐",
+          "感冒拖很久未好"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/02_辨太陽病脈證並治中篇.md",
+          "anchor_snippet": "头痛就是「小柴胡汤」；整个头痛、头顶最 痛用「葛根汤」。 ",
+          "line_start": 158,
+          "line_end": 172,
+          "key_quote": "偏头痛走少阳胆经，就是小柴胡汤；小柴胡汤和解少阳枢机，半表半里之邪尽解。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_007_DA_CHAIHU_TANG",
+      "canonical_name": "大柴胡湯",
+      "pattern_name": "少陽陽明合病心下急鬱鬱微煩",
+      "domain": "少陽病篇/陽明病篇",
+      "slots": {
+        "body_meridian": [
+          "少陽膽經",
+          "陽明胃腸",
+          "心下胃脘"
+        ],
+        "subjective_sensation": [
+          "心下痞硬急痛",
+          "胸脅滿痛",
+          "嘔吐不止",
+          "鬱鬱微煩"
+        ],
+        "cold_heat_thirst": [
+          "發熱往來",
+          "口渴便秘"
+        ],
+        "secretion_excretion": [
+          "大便秘結或熱結旁流",
+          "嘔吐黃綠膽汁"
+        ],
+        "onset_timing": [
+          "少陽邪未解而陽明實熱已成"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔厚膩黃燥",
+          "脈弦數有力"
+        ],
+        "layman_modern_terms": [
+          "膽囊炎急性絞痛",
+          "胃窩處硬痛拒按",
+          "便秘高燒狂吐",
+          "既吐又拉不出來",
+          "肝膽胃同時劇痛"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_DIARRHEA_COLD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/02_辨太陽病脈證並治中篇.md",
+          "anchor_snippet": "间,就 是大柴胡汤。 例：小孩感冒发烧,西医开退烧药,又开",
+          "line_start": 1090,
+          "line_end": 1105,
+          "key_quote": "病在少阳与阳明之间，心下痞满痛，呕吐不止大便秘结，就是大柴胡汤。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_008_BAIHU_TANG",
+      "canonical_name": "白虎湯",
+      "pattern_name": "陽明經證四大實熱四大徵象",
+      "domain": "陽明病篇",
+      "slots": {
+        "body_meridian": [
+          "陽明胃經",
+          "氣分實熱",
+          "肌肉血分"
+        ],
+        "subjective_sensation": [
+          "大熱身大熱",
+          "大熱全身烘熱",
+          "大渴引飲",
+          "大渴狂欲冷飲",
+          "大汗出大汗狂出",
+          "煩躁",
+          "發熱",
+          "身熱"
+        ],
+        "cold_heat_thirst": [
+          "大熱發熱身熱如火",
+          "不惡寒反惡熱",
+          "大渴消渴喜冷飲"
+        ],
+        "secretion_excretion": [
+          "大汗出汗出淋漓",
+          "大汗",
+          "汗出",
+          "大便通暢或尚可",
+          "小便赤熱"
+        ],
+        "onset_timing": [
+          "邪入陽明氣分，裡熱熾盛蒸騰"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質紅絳舌苔乾燥黃或白薄燥",
+          "脈洪大或浮滑"
+        ],
+        "layman_modern_terms": [
+          "四大：大熱大汗大渴脈洪大",
+          "高燒體溫狂飆狂喝冰水",
+          "衣服被子全濕透",
+          "完全不怕冷只怕熱"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_NONE",
+        "SYM_CHILL_COLD"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_BAIHU_SWEAT_EXISTS",
+          "condition": "白虎湯必見大汗大渴，若無汗惡寒者絕非白虎，不可妄投石膏",
+          "action": "PENALIZE_HARD",
+          "penalty_score": -999.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/04_辨陽明病脈證並治篇.md",
+          "anchor_snippet": "便好就是「白虎汤」,大便不 好就是「承气汤」。 二一〇：",
+          "line_start": 200,
+          "line_end": 215,
+          "key_quote": "阳明经热，如果大便好就是白虎汤清气分之热，如果大便不好结实就是承气汤攻腑。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_009_TIAOWEI_CHENGQI",
+      "canonical_name": "調胃承氣湯",
+      "pattern_name": "陽明腑證燥熱初結胃氣不和",
+      "domain": "陽明病篇",
+      "slots": {
+        "body_meridian": [
+          "陽明胃腑",
+          "中焦大腸"
+        ],
+        "subjective_sensation": [
+          "微滿微煩",
+          "身微發熱",
+          "腹不甚大滿痛"
+        ],
+        "cold_heat_thirst": [
+          "蒸蒸發熱",
+          "心煩口渴口乾"
+        ],
+        "secretion_excretion": [
+          "大便乾燥結硬難出",
+          "小便赤"
+        ],
+        "onset_timing": [
+          "發汗或吐後胃中津液乾枯"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔正黃燥",
+          "脈滑數"
+        ],
+        "layman_modern_terms": [
+          "輕度便秘燥屎",
+          "大便像羊大便一顆顆",
+          "胃燥發熱口乾",
+          "調和胃氣軟堅潤燥"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_DIARRHEA_COLD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/04_辨陽明病脈證並治篇.md",
+          "anchor_snippet": "「调胃承气汤」是阳明病最浅的第一方,如果病人不吐,代",
+          "line_start": 355,
+          "line_end": 370,
+          "key_quote": "调胃承气汤是阳明病最浅的第一方，大黄芒硝甘草，调和胃气润燥软坚。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_010_DA_CHENGQI_TANG",
+      "canonical_name": "大承氣湯",
+      "pattern_name": "陽明腑實痞滿燥實潮熱譫語",
+      "domain": "陽明病篇",
+      "slots": {
+        "body_meridian": [
+          "陽明大腸腑",
+          "全腹胃腸"
+        ],
+        "subjective_sensation": [
+          "痞滿燥實堅",
+          "腹痛拒按堅硬如石",
+          "腹滿痛",
+          "日晡所發潮熱高熱",
+          "發熱",
+          "潮熱",
+          "譫語神昏"
+        ],
+        "cold_heat_thirst": [
+          "午後定時潮熱高熱",
+          "發熱",
+          "手足濈然汗出",
+          "狂渴"
+        ],
+        "secretion_excretion": [
+          "大便秘結燥屎",
+          "大便多日不解乾燥堅硬",
+          "燥屎",
+          "或純下臭穢熱水（熱結旁流）"
+        ],
+        "onset_timing": [
+          "申酉時（下午3-7點）發潮熱狂躁"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔焦黃起刺芒黑燥裂",
+          "脈沉遲滑實有力"
+        ],
+        "layman_modern_terms": [
+          "肚子硬得像石頭按了劇痛",
+          "胡言亂語狂躁打人",
+          "好幾天沒大便熱氣衝腦",
+          "腸阻塞急腹症"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_DIARRHEA_COLD"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_CHENGQI_DIARRHEA_FALSE",
+          "condition": "下利清水但心下硬痛口燥譫語者為熱結旁流，非太陰虛寒，仍應大承氣湯急下存陰",
+          "action": "OVERRIDE_ALLOW",
+          "penalty_score": 0.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/04_辨陽明病脈證並治篇.md",
+          "anchor_snippet": "处方分有大承气汤、小承气汤,和煮药的方法,如果大便堵在大",
+          "line_start": 15,
+          "line_end": 30,
+          "key_quote": "大承气汤用于大便堵在大肠里面燥屎成块，痞满燥实四证俱全，急下存阴。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_011_LIZHONG_TANG",
+      "canonical_name": "理中湯",
+      "pattern_name": "太陰脾陽虛寒吐瀉腹痛自利不渴",
+      "domain": "太陰病篇",
+      "slots": {
+        "body_meridian": [
+          "太陰脾經",
+          "中焦脾胃"
+        ],
+        "subjective_sensation": [
+          "腹部綿綿作痛喜溫喜按",
+          "胃脘冷痛",
+          "嘔吐下利",
+          "手足不溫"
+        ],
+        "cold_heat_thirst": [
+          "胃腹極寒",
+          "口不渴或喜熱飲熱湯",
+          "不耐生冷"
+        ],
+        "secretion_excretion": [
+          "自利清水便溏",
+          "嘔吐清水胃液",
+          "下利不渴"
+        ],
+        "onset_timing": [
+          "進食生冷即腹痛腹瀉",
+          "夜間受寒即發"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質淡胖嫩舌苔白水滑",
+          "脈沉遲無力或沉細"
+        ],
+        "layman_modern_terms": [
+          "一吃冰就拉肚子",
+          "肚子冷痛揉揉比較舒服",
+          "吃什麼拉什麼拉清稀便",
+          "脾胃虛寒吐酸水",
+          "慢性格林瀉"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_THIRST_DESIRE_DRINK",
+        "SYM_CONSTIPATION_HARD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/03_辨太陽病脈證並治下篇.md",
+          "anchor_snippet": "理中汤是理「中焦」的虚, 被攻下了以后是下焦的虚",
+          "line_start": 1150,
+          "line_end": 1165,
+          "key_quote": "理中汤是理中焦的虚，白朮干姜人参炙甘草，把脾胃中焦的阳气壮起来。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_012_SINAN_TANG",
+      "canonical_name": "四逆湯",
+      "pattern_name": "少陰病心腎陽衰陰寒內盛手足厥冷",
+      "domain": "少陰病篇",
+      "slots": {
+        "body_meridian": [
+          "少陰心腎",
+          "全身三陰經",
+          "四肢厥逆"
+        ],
+        "subjective_sensation": [
+          "但欲寐神采懨懨",
+          "手足厥冷逆冷",
+          "手腳冰冷過肘膝",
+          "手腳冰冷",
+          "畏寒蜷臥",
+          "精神極度疲憊萎靡",
+          "惡寒"
+        ],
+        "cold_heat_thirst": [
+          "徹骨嚴寒",
+          "惡寒極甚",
+          "惡寒",
+          "口不渴或渴喜極熱飲",
+          "身冷畏寒"
+        ],
+        "secretion_excretion": [
+          "下利清谷完穀不化",
+          "小便清長",
+          "冷汗自出"
+        ],
+        "onset_timing": [
+          "心腎陽氣衰微，晝夜精神萎靡但欲寐"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡白苔白滑薄潤",
+          "脈微細欲絕"
+        ],
+        "layman_modern_terms": [
+          "手腳冰冷冷到骨子裡",
+          "整天只想睡覺精神渙散",
+          "四肢冰冷超過手肘膝蓋",
+          "拉肚子拉出生食物",
+          "回陽救逆第一方"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_FEVER_HEAT",
+        "SYM_CONSTIPATION_HARD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/07_辨少陰病脈證並治篇.md",
+          "anchor_snippet": "时候用通脉四逆汤、 四逆汤等,这 时候要用很重的剂量",
+          "line_start": 90,
+          "line_end": 105,
+          "key_quote": "少阴厥逆危症，回阳救逆用生附子配干姜甘草，四逆汤这时候要用很重的剂量。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_013_TONGMAI_SINAN",
+      "canonical_name": "通脈四逆湯",
+      "pattern_name": "少陰厥陰陰盛格陽真寒假熱面赤",
+      "domain": "少陰病篇/厥陰病篇",
+      "slots": {
+        "body_meridian": [
+          "少陰心腎陰極",
+          "周身經脈陽絕",
+          "虛陽浮越面部"
+        ],
+        "subjective_sensation": [
+          "四肢厥逆冷痛",
+          "身倦欲死",
+          "面赤如妝但身體徹寒",
+          "裡寒外熱"
+        ],
+        "cold_heat_thirst": [
+          "體表微熱或面赤，內裡下利清谷骨冷",
+          "口渴但想喝滾燙熱水或漱水不欲嚥"
+        ],
+        "secretion_excretion": [
+          "下利清谷",
+          "小便色白清長",
+          "冷汗肢厥"
+        ],
+        "onset_timing": [
+          "陽氣暴脫，虛陽浮越於外"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡白舌苔白潤或灰黑水滑",
+          "脈微欲絕或浮大而空無根"
+        ],
+        "layman_modern_terms": [
+          "真寒假熱臉紅通通但手腳冰冷",
+          "重病末期臉色泛紅假象",
+          "骨子冷透但感覺燥熱",
+          "回陽破陰通脈"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_CONSTIPATION_HARD"
+      ],
+      "paradox_override_rules": [
+        {
+          "rule_id": "PARADOX_TONGMAI_TRUE_COLD_FALSE_HEAT",
+          "condition": "面赤身熱但下利清谷脈微欲絕者為陰盛格陽真寒假熱，禁投寒涼白虎，急投通脈四逆湯",
+          "action": "OVERRIDE_PRIORITIZE",
+          "penalty_score": 10.0
+        }
+      ],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/07_辨少陰病脈證並治篇.md",
+          "anchor_snippet": "脉四逆汤、 四逆汤等,这 时候要用很重的剂量",
+          "line_start": 92,
+          "line_end": 108,
+          "key_quote": "阴盛格阳真寒假热，虚阳浮越面赤，必须重用生附子加重干姜，通脉四逆汤回阳破阴。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_014_ZHENWU_TANG",
+      "canonical_name": "真武湯",
+      "pattern_name": "少陰腎陽虛衰水飲氾濫頭眩悸動",
+      "domain": "少陰病篇/太陽病篇",
+      "slots": {
+        "body_meridian": [
+          "少陰腎水",
+          "太陽膀胱",
+          "心下水飲",
+          "四肢肌表"
+        ],
+        "subjective_sensation": [
+          "頭眩站立不穩如坐舟車",
+          "心下悸心跳慌慌",
+          "四肢沉重疼痛",
+          "腹痛下利"
+        ],
+        "cold_heat_thirst": [
+          "畏寒身冷",
+          "口不渴或喜熱飲"
+        ],
+        "secretion_excretion": [
+          "小便不利或反多",
+          "四肢浮腫",
+          "腹痛自利水泄"
+        ],
+        "onset_timing": [
+          "陽虛水停，動則心悸頭眩"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡胖邊有齒痕苔白滑水潤",
+          "脈沉弦或沉細遲"
+        ],
+        "layman_modern_terms": [
+          "天旋地轉像坐船搖晃",
+          "站起來頭暈眼花心悸",
+          "腳踝水腫按壓凹陷",
+          "腎虛水腫手腳冰涼",
+          "美尼爾氏症水眩"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/02_辨太陽病脈證並治中篇.md",
+          "anchor_snippet": "后面会提到真武汤的时候,再说明。 白朮就是因为湿太盛了",
+          "line_start": 485,
+          "line_end": 500,
+          "key_quote": "水饮在少阴，肾阳不足不能制水，水气上泛则眩晕心悸，真武汤用炮附子茯苓白术生姜白芍。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_015_WULING_SAN",
+      "canonical_name": "五苓散",
+      "pattern_name": "太陽蓄水證小便不利水入即吐消渴",
+      "domain": "太陽病篇/金匱痰飲篇",
+      "slots": {
+        "body_meridian": [
+          "太陽膀胱腑",
+          "下焦三焦水道",
+          "胃中水飲"
+        ],
+        "subjective_sensation": [
+          "口渴想喝水但喝下即吐",
+          "胃中翻滾",
+          "頭暈微熱",
+          "心下痞滿水聲"
+        ],
+        "cold_heat_thirst": [
+          "口渴渴欲飲水",
+          "消渴狂飲不解",
+          "微發熱"
+        ],
+        "secretion_excretion": [
+          "小便不利排尿少",
+          "水入即吐水逆",
+          "下利水飲"
+        ],
+        "onset_timing": [
+          "發汗後表邪隨經入腑",
+          "飲水即吐"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡紅苔白滑或水汪汪",
+          "脈浮或浮數"
+        ],
+        "layman_modern_terms": [
+          "喝水就吐吐出剛喝的水",
+          "狂渴但水喝不進去卡在胃",
+          "小便滴滴答答排不順",
+          "膀胱汽化功能不良",
+          "急性腸胃炎水瀉嘔水"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/02_辨太陽病脈證並治中篇.md",
+          "anchor_snippet": "渴者,「五苓散」主之。171740",
+          "line_start": 595,
+          "line_end": 610,
+          "key_quote": "脉浮小便不利，微热消渴者，五苓散主之；膀胱气化不行，水蓄下焦，化气利水兼解表。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_016_BANXIA_XIEXIN",
+      "canonical_name": "半夏瀉心湯",
+      "pattern_name": "寒熱錯雜胃氣不和心下痞滿乾嘔下利",
+      "domain": "太陽病篇/傷寒痞證",
+      "slots": {
+        "body_meridian": [
+          "中焦心下胃脘",
+          "脾胃大小腸"
+        ],
+        "subjective_sensation": [
+          "心下痞滿不痛但硬塞感",
+          "乾嘔呃逆",
+          "腸鳴下利",
+          "胃脘悶塞脹滿"
+        ],
+        "cold_heat_thirst": [
+          "上熱下寒",
+          "口乾苦但不欲冷飲",
+          "腹中雷鳴發涼"
+        ],
+        "secretion_excretion": [
+          "乾嘔惡心",
+          "腹瀉便溏水泄",
+          "腸鳴漉漉"
+        ],
+        "onset_timing": [
+          "誤下傷中，寒熱邪氣互結心下"
+        ],
+        "inspection_tongue_pulse": [
+          "舌苔黃白相雜微膩",
+          "脈弦滑或濡數"
+        ],
+        "layman_modern_terms": [
+          "胃窩悶堵硬硬的但不痛",
+          "一直乾嘔又拉肚子",
+          "肚子咕嚕咕嚕狂叫",
+          "慢性胃炎寒熱混雜",
+          "胃食道逆流消化不良"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/03_辨太陽病脈證並治下篇.md",
+          "anchor_snippet": "宜「半夏泻心汤」。331130 呕就是进入少阳了",
+          "line_start": 805,
+          "line_end": 820,
+          "key_quote": "但满而不痛者，此为痞，柴胡不中与之，宜半夏泻心汤；辛开苦降，寒热并用除心下痞。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_017_XUANFU_DAIZHE",
+      "canonical_name": "旋覆代赭湯",
+      "pattern_name": "胃虛痰阻虛氣上逆心下痞硬噫氣不除",
+      "domain": "太陽病篇/傷寒痞證",
+      "slots": {
+        "body_meridian": [
+          "胃經中焦",
+          "胸膈食道",
+          "咽喉"
+        ],
+        "subjective_sensation": [
+          "胃酸逆流灼熱感",
+          "心下痞硬",
+          "頻繁打嗝呃逆",
+          "胃脘脹氣反酸"
+        ],
+        "cold_heat_thirst": [
+          "胃中虛寒痰濁微熱互結",
+          "口中黏膩"
+        ],
+        "secretion_excretion": [
+          "頻頻噯氣呃逆",
+          "吐清水黏痰",
+          "火燒心泛酸"
+        ],
+        "onset_timing": [
+          "大病發汗吐下解後胃氣極虛",
+          "吃甜食精緻糖後大發作"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡苔白膩",
+          "脈弦虛或虛緩"
+        ],
+        "layman_modern_terms": [
+          "火燒心胃酸逆流神藥",
+          "打飽嗝打個不停一整天",
+          "胃酸往喉嚨衝",
+          "甜食吃多立刻胃脹泛酸",
+          "胃食道賁門鬆弛"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/03_辨太陽病脈證並治下篇.md",
+          "anchor_snippet": "除者,「旋覆代赭石汤」主之。372000",
+          "line_start": 1190,
+          "line_end": 1210,
+          "key_quote": "心下痞鞕，噫气不除者，旋覆代赭石汤主之；胃酸逆流、火烧心，甜食吃太多，往往一剂就好。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_018_SHEGAN_MAHUANG",
+      "canonical_name": "射干麻黃湯",
+      "pattern_name": "咳而上氣喉中水雞聲寒飲鬱肺",
+      "domain": "金匱咳嗽上氣篇",
+      "slots": {
+        "body_meridian": [
+          "肺系呼吸道",
+          "咽喉氣管"
+        ],
+        "subjective_sensation": [
+          "喉嚨呼吸有水雞啼叫哮鳴聲",
+          "氣喘不過來",
+          "咳而胸悶胸痛"
+        ],
+        "cold_heat_thirst": [
+          "肺中寒飲冷聚",
+          "不甚渴"
+        ],
+        "secretion_excretion": [
+          "咳稀白痰",
+          "喉間痰鳴漉漉如水雞聲"
+        ],
+        "onset_timing": [
+          "夜間平臥或遇冷風寒即劇烈發作"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡苔白水潤",
+          "脈弦緊或浮浮"
+        ],
+        "layman_modern_terms": [
+          "氣喘發作喉嚨咻咻叫",
+          "喉嚨裡像有小雞在叫",
+          "支氣管哮喘夜間狂咳",
+          "遇冷吸冷氣喘鳴哮喘",
+          "小兒氣喘水雞聲"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "01_金匱要略/chunks/07_肺痿肺癰咳嗽上氣病脈證治第七.md",
+          "anchor_snippet": "中水鸡声，射干麻黄汤主之。",
+          "line_start": 130,
+          "line_end": 140,
+          "key_quote": "咳而上气，喉中水鸡声，射干麻黄汤主之；射干去喉中痰鸣，麻黄宣肺开表降逆。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_019_ZEXIE_TANG",
+      "canonical_name": "澤瀉湯",
+      "pattern_name": "心下有支飲其人苦冒眩頭重目暗",
+      "domain": "金匱痰飲篇",
+      "slots": {
+        "body_meridian": [
+          "心下胃脘",
+          "清竅清陽",
+          "腦部前庭耳目"
+        ],
+        "subjective_sensation": [
+          "苦冒眩頭重如裹",
+          "天旋地轉站不穩",
+          "視物旋轉晃動",
+          "心下有水聲震盪"
+        ],
+        "cold_heat_thirst": [
+          "脾胃水飲停聚",
+          "口淡不渴"
+        ],
+        "secretion_excretion": [
+          "小便量少或不利",
+          "或吐清水清涎"
+        ],
+        "onset_timing": [
+          "站起或轉頭時突然劇烈眩暈"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質胖嫩苔白滑潤",
+          "脈沉弦或伏滑"
+        ],
+        "layman_modern_terms": [
+          "美尼爾氏症天旋地轉",
+          "起床站起來頭重腳輕摔倒",
+          "內耳不平衡眩暈",
+          "頭上像戴了頂濕重鐵盔",
+          "頭暈眼黑如坐船"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "01_金匱要略/chunks/12_痰飲咳嗽病脈證治第十二.md",
+          "anchor_snippet": "人苦冒眩，泽泻汤主之。",
+          "line_start": 662,
+          "line_end": 675,
+          "key_quote": "心下有支饮，其人苦冒眩，泽泻汤主之；泽泻白术二味，重用泽泻涤去胃中停水，眩晕立止。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_020_GUALOU_XIEBAI",
+      "canonical_name": "栝蔞薤白白酒湯",
+      "pattern_name": "胸痺陰寒凝滯心痛徹背胸滿短氣",
+      "domain": "金匱胸痺篇",
+      "slots": {
+        "body_meridian": [
+          "胸膈心包",
+          "心經背俞第五椎",
+          "上焦陽氣"
+        ],
+        "subjective_sensation": [
+          "胸中憋悶如大石壓迫",
+          "心痛徹背背痛徹心",
+          "喘息咳唾短氣",
+          "不得臥"
+        ],
+        "cold_heat_thirst": [
+          "胸中陰寒凝滯無火",
+          "口不渴"
+        ],
+        "secretion_excretion": [
+          "咳唾稠白黏痰或喘息泡沫"
+        ],
+        "onset_timing": [
+          "勞累受寒或夜間發作，不能平躺臥床"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡紫苔白膩",
+          "脈寸口微弱關尺小緊數或結代"
+        ],
+        "layman_modern_terms": [
+          "狹心症心絞痛痛到後背",
+          "心臟瓣膜閉鎖不全胸悶",
+          "胸口壓大石喘不過氣",
+          "胸痹心臟病第五椎壓痛",
+          "冠心病心痛背痛"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "01_金匱要略/chunks/09_胸痺心痛短氣病脈證治第九.md",
+          "anchor_snippet": "栝蒌薤白白酒汤主之。",
+          "line_start": 85,
+          "line_end": 100,
+          "key_quote": "胸痹之病，喘息咳唾，胸背痛，短气，栝蒌薤白白酒汤主之；临床治疗非常多的瓣膜闭锁不全。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_021_GUIZHI_SHAOYAO_ZHIMU",
+      "canonical_name": "桂枝芍藥知母湯",
+      "pattern_name": "諸肢節疼痛身體羸瘦腳腫如脫頭眩短氣",
+      "domain": "金匱中風歷節篇",
+      "slots": {
+        "body_meridian": [
+          "周身關節四肢",
+          "下肢足踝關節",
+          "風寒濕血脈"
+        ],
+        "subjective_sensation": [
+          "全身關節劇痛像被狼咬",
+          "四肢關節紅腫灼熱",
+          "身體日漸羸瘦弱",
+          "腳腫痛如脫落"
+        ],
+        "cold_heat_thirst": [
+          "局部關節發熱紅腫但體質有風寒濕",
+          "口渴微熱"
+        ],
+        "secretion_excretion": [
+          "腳踝膝關節積水腫大",
+          "小便黃"
+        ],
+        "onset_timing": [
+          "陰雨天氣或夜間關節痛劇增"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質紅苔白黃夾雜",
+          "脈寸口微弦或沉滑"
+        ],
+        "layman_modern_terms": [
+          "痛風急性發作腳踝大紅腫",
+          "類風濕性關節炎變形劇痛",
+          "關節腫得像要掉下來",
+          "走不了路關節骨頭痛",
+          "歷節風關節熱痛"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "01_金匱要略/chunks/05_中風歷節病脈證並治第五.md",
+          "anchor_snippet": "这个桂枝芍药知母汤，哦，诸位看  诸肢节疼痛",
+          "line_start": 580,
+          "line_end": 595,
+          "key_quote": "诸肢节疼痛，身体羸瘦，脚肿如脱，头眩短气，温温欲吐，桂枝芍药知母汤主之；治痛风顽疾神方。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_022_SUANZAOREN_TANG",
+      "canonical_name": "酸棗仁湯",
+      "pattern_name": "虛勞虛煩不得眠心悸盜汗肝血不足",
+      "domain": "金匱血痺虛勞篇",
+      "slots": {
+        "body_meridian": [
+          "肝藏魂",
+          "心藏神",
+          "胸中血海"
+        ],
+        "subjective_sensation": [
+          "整夜輾轉反側無法入睡",
+          "心煩悸動",
+          "虛勞疲憊極點但腦袋亢奮",
+          "頭暈眼乾目澀"
+        ],
+        "cold_heat_thirst": [
+          "虛煩內熱",
+          "夜間身熱口乾微渴但不欲多飲"
+        ],
+        "secretion_excretion": [
+          "夜間盜汗虛汗",
+          "小便淡黃"
+        ],
+        "onset_timing": [
+          "夜深人靜躺在床上腦子狂轉睡不著"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質偏紅苔薄少津",
+          "脈弦細或細數無力"
+        ],
+        "layman_modern_terms": [
+          "極度疲勞卻睡不著",
+          "失眠整夜數羊眼光光",
+          "神經衰弱心悸盜汗",
+          "肝血虛虛火失眠",
+          "更年期虛煩睡不好"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_CONSTIPATION_HARD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "01_金匱要略/chunks/06_血痺虛勞病脈並治第六.md",
+          "anchor_snippet": "烦不得眠，酸枣仁汤主之。",
+          "line_start": 600,
+          "line_end": 615,
+          "key_quote": "虚劳虚烦不得眠，酸枣仁汤主之；重用酸枣仁养肝血收敛魂魄，知母川芎茯苓清虚热调心神。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_023_HUANGLIAN_EJIAO",
+      "canonical_name": "黃連阿膠湯",
+      "pattern_name": "少陰病陰虛火旺心腎不交心煩不得臥",
+      "domain": "少陰病篇",
+      "slots": {
+        "body_meridian": [
+          "少陰心火",
+          "少陰腎水",
+          "神明神志"
+        ],
+        "subjective_sensation": [
+          "心中煩熱坐臥不寧",
+          "徹底徹夜不能閉眼躺下睡覺",
+          "咽乾舌燥口瘡",
+          "心悸神經緊繃"
+        ],
+        "cold_heat_thirst": [
+          "心腎不交陰虛真熱",
+          "口燥咽乾渴欲飲涼水"
+        ],
+        "secretion_excretion": [
+          "小便黃赤短少",
+          "便乾或便血衄血"
+        ],
+        "onset_timing": [
+          "入夜心胸煩熱如火燎，完全不得臥床休息"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質紅絳舌尖糜爛少苔或無苔",
+          "脈細數有力"
+        ],
+        "layman_modern_terms": [
+          "重度失眠整晚不能閉眼躺下",
+          "心胸裡有一團火在燒睡不著",
+          "嘴破口瘡心煩意亂",
+          "心腎不交陰虛火旺失眠",
+          "頑固性神經失眠"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_DIARRHEA_COLD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/07_辨少陰病脈證並治篇.md",
+          "anchor_snippet": "【黄连阿胶汤】主之。571820 得到二三日,一定津",
+          "line_start": 238,
+          "line_end": 255,
+          "key_quote": "少阴病二三日以上，心中烦不得卧，黄连阿胶汤主之；鸡子黄黄连阿胶黄芩芍药，引火下行交济水火。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_024_DANGGUI_SINAN",
+      "canonical_name": "當歸四逆湯",
+      "pattern_name": "厥陰病血虛寒凝手足厥寒脈細欲絕",
+      "domain": "厥陰病篇",
+      "slots": {
+        "body_meridian": [
+          "厥陰肝經",
+          "四肢末梢手指腳趾",
+          "血脈脈絡"
+        ],
+        "subjective_sensation": [
+          "手腳冰冷刺痛麻木",
+          "手足冰寒手指發白發紫",
+          "下腹部冷痛牽引",
+          "手腳凍瘡"
+        ],
+        "cold_heat_thirst": [
+          "血虛感受客寒",
+          "體內受涼口不甚渴"
+        ],
+        "secretion_excretion": [
+          "四肢冷汗少",
+          "婦女月經後期量少色暗夾塊"
+        ],
+        "onset_timing": [
+          "冬天天冷時手腳冰冷到骨節發痛麻木"
+        ],
+        "inspection_tongue_pulse": [
+          "舌淡暗苔薄白潤",
+          "脈細欲絕微弱如游絲"
+        ],
+        "layman_modern_terms": [
+          "冬天手腳冰冷像死人手",
+          "手指發白發紫雷諾氏症",
+          "天冷手腳長凍瘡刺痛",
+          "女生經期手腳冰冷下腹悶痛",
+          "血虛寒凝末梢循環障礙"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_CONSTIPATION_HARD"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "02_傷寒論/chunks/08_辨厥陰病脈證並治篇.md",
+          "anchor_snippet": "「当归四逆汤」,能从脚指头发热出来,因为有新鲜的血 ",
+          "line_start": 15,
+          "line_end": 30,
+          "key_quote": "手足厥寒脉细欲绝者，当归四逆汤主之；血虚寒凝四肢，温通经脉养血通阳，脚指头发热出来。"
+        }
+      ]
+    }
+  ]
+}
