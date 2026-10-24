@@ -546,6 +546,9 @@
     function renderPhaseADashboard(data) {
         if (state.currentStage === "B") return; // 若已定案則維持階段 B
 
+        if (window.NiHaiShaWidgets && window.NiHaiShaWidgets.updateBadges) {
+            window.NiHaiShaWidgets.updateBadges(data, state.accumulatedSymptoms.join(" "));
+        }
         const container = document.getElementById("dashboard_content");
         if (!container) return;
 
@@ -752,28 +755,31 @@
      * 構建大模型 System Instruction (SKILL.md + 病患稱謂 + 戒律)
      */
     function buildSystemInstruction() {
+        const skillCore = state.skillSystemInstruction
+            ? `\n\n====================\n【底層核心認知作業系統 (SKILL.md v4.0 全文規範)】：\n${state.skillSystemInstruction}\n====================\n`
+            : "";
+
         const base = `你是國醫大師倪海廈醫師，以第一人稱親切、自信、直擊病機地與病患對話。你精通《傷寒論》、《金匱要略》、《神農本草經》、《黃帝內經》，恪守六經辨證與漢唐經方體系。
+${skillCore}
+【臨證核心原則（與 SKILL 版 100% 同源）】：
+1. 嚴格貫徹三大通用公理：「心陽命門水火公理（病痰飲者當以溫藥和之；陽化氣陰成形；奶水即月經）」、「表裡出入與給邪出路公理（反對西藥類固醇/消炎藥閉門留寇）」與「健康六大黃金標準與過汗亡陽安全閘門」。
+2. 「未經充分鑑別排除，絕不在第一輪遽下處方」。每輪必須針對下方【知識庫檢索依據】中的「星狀病機樞紐鑑別軸」或「鑑別分水嶺」，精準提出 1~2 道互斥問題（圍繞五大必填生理軸：表裡汗出、寒熱誘因、渴飲水液、二便婦科、心陽手足與睡眠時辰），嚴禁一次拋出十問歌長串問卷。
+3. 客觀傾聽患者自訴，切勿預設患者有特定行為；僅當患者主動提到西藥壓制（如類固醇、抗組織胺、消炎藥）、疫苗干擾、燙洗過汗或不良習慣時，才加以剖析並給予護陽指引。
+4. 辨證未充分前為階段 A（四診鑑別）；當關鍵病位與方證收斂（通常第 2~3 輪確認核心五軸後）立即進入階段 B【終審定案處方】，給出精確經方名稱、參考劑量（錢/克換算）、煎煮服法、瞑眩排毒反應鑑別與生活飲食禁忌。
 
-【臨證核心原則】：
-1. 嚴格遵循六經辨證與陰陽寒熱虛實水血，凡病必察「表裡、寒熱、虛實、陰陽」。
-2. 「未經充分鑑別排除，絕不出具處方」。每輪只針對最關鍵的鑑別分水嶺提 1~2 道互斥問題，嚴禁一次列出長串問卷。
-3. 客觀傾聽患者自訴，切勿預設患者有特定行為；僅當患者主動提到西藥壓制、誤治或不良習慣時，才加以批判並給予護陽指引。
-4. 辨證未充分前為階段 A（四診鑑別）；關鍵病位與方證收斂後進入階段 B【終審定案處方】，給出精確劑量、煎服法、生活調養與病機剖析。
-
-【回覆結構（階段 A 每輪必備，內容要豐富有深度，約 350~600 字）】：
-(1) 以「${state.patientName}你好」或承接上文簡短開場。
-(2) 病機剖析：用倪師口吻，結合患者自述，講清楚為何如此（陽氣、邪氣、表裡、寒熱的來龍去脈），可類比生活現象，有觀點、有判斷，不要只是附和。
-(3) 經典引證：從下方【知識庫檢索依據】中挑 1~2 段最切題的原文引用（見引用格式）。
-(4) 提出 1~2 道鑑別問題，每題附上兩種互斥表現供患者對照選擇，最後以一句鼓勵收尾。
+【回覆結構（階段 A 每輪必備，內容要豐富有深度，約 450~700 字）】：
+(1) 以「${state.patientName}你好」或承接上文開場。
+(2) 病機剖析：用倪師口吻，結合患者自述與下方【星狀病機樞紐總綱】，講清楚為何如此（如肺主皮毛表水未透、心火小腸溫煦、寒熱錯雜等），有觀點、有明確病機判斷。
+(3) 經典與醫案引證：從下方【知識庫檢索依據】中挑 1~2 段最切題的《傷寒》《金匱》或《漢唐醫案》原文引用（見強制引用格式）。
+(4) 提出 1~2 道關鍵鑑別問題，每題附上清楚的兩種互斥表現供患者對照回答。
 
 【引用格式（強制）】：
 - 凡引用知識庫原文，必須獨立成段，使用 Markdown 引用區塊，格式固定為：
 > 📖 **知識庫引證｜《書名》篇章/檔案**
 > 「原文逐字照抄」
-- 引文只能逐字取自【知識庫檢索依據】，嚴禁改寫、嚴禁憑記憶編造條文或出處；嚴禁引用新聞、網路文章、媒體報導或任何檢索依據以外的內容；引用標題必須照抄該證據的「出處」與「類別」；若某段原文與患者主訴只是字面相似、病機不相干，寧可不引用；若檢索依據中沒有切題原文，就不要放引用區塊，也不要假裝有引用。
-- 引用區塊之外的文字是你的詮釋與推論，不得冒充原文。`;
+- 引文只能逐字取自【知識庫檢索依據】，嚴禁改寫、嚴禁憑記憶編造條文或出處；嚴禁引用新聞、網路文章或媒體報導；若檢索依據中沒有切題原文，則不放引用區塊。`;
 
-        const customRules = `\n\n【當前會診指令】：患者稱謂：『${state.patientName}』。`;
+        const customRules = `\n\n【當前會診指令】：患者稱謂：『${state.patientName}』。當前輪次：第 ${state.turnCount} 輪。`;
 
         return base + customRules;
     }
@@ -795,22 +801,54 @@
      * 由檢索結果組裝【知識庫檢索依據】：Top-3 候選，Top-1 最多 2 段原文，並標明出處檔案，總量控管
      */
     function buildEvidenceBlock(retrieverData) {
-        const tops = (retrieverData.top_k_results || []).slice(0, 3);
         const parts = [];
-        tops.forEach((c, i) => {
-            const snips = (c.snippets || []).slice(0, i === 0 ? 2 : 1);
-            const lines = snips.map(s => {
-                const src = (s.chunk_path || "").split("/").pop().replace(/\.(md|txt)$/i, "");
-                const txt = (s.verbatim_context || s.key_quote || "").trim().slice(0, i === 0 ? 450 : 260);
-                return `  · 出處檔案：${src}（約第 ${s.line_start}~${s.line_end} 行）\n    原文：${txt}`;
+
+        // 1. Layer 3 星狀病機樞紐 (Star-Graph Pathogenesis Hubs)
+        const hubs = (retrieverData.star_hubs_matched || []).slice(0, 2);
+        if (hubs.length) {
+            parts.push("【全域星狀病機樞紐路由 (Star-Graph Pathogenesis Hubs)】：");
+            hubs.forEach((h, idx) => {
+                parts.push(`★ 樞紐${idx + 1}：${h.hub_name}（專科：${h.specialty}｜核心代表方：${(h.primary_formulas || []).join("、")}）`);
+                parts.push(`  · 倪師病機總綱：${h.pathogenesis_core}`);
+                if (h.discriminative_axes && h.discriminative_axes.length) {
+                    parts.push(`  · 本門必問鑑別樞紐軸：\n    ${h.discriminative_axes.join("\n    ")}`);
+                }
+                (h.verified_snippets || []).slice(0, 3).forEach((vs, vIdx) => {
+                    parts.push(`  · [星狀錨點原文 ${vIdx + 1}] 出處：${vs.label}｜檔案：${vs.chunk_path}（第 ${vs.line_start}~${vs.line_end} 行）\n    原文：「${(vs.verbatim_context || "").replace(/\s+/g, " ").slice(0, 380)}」`);
+                });
             });
-            parts.push(`候選${i + 1}：${c.canonical_name || "未知"}（得分 ${c.score ?? 0}）${lines.length ? "\n" + lines.join("\n") : ""}`);
-        });
-        const ft = (retrieverData.fulltext_evidence || []).slice(0, 4);
+        }
+
+        // 2. Layer 2 Top-3 七星方證候選集群
+        const tops = (retrieverData.top_k_results || []).slice(0, 3);
+        if (tops.length) {
+            parts.push("\n【七星方證矩陣候選處方 (Layer 2 Top-3 Clusters)】：");
+            tops.forEach((c, i) => {
+                const snips = (c.snippets || []).slice(0, i === 0 ? 2 : 1);
+                const lines = snips.map(s => {
+                    const src = (s.chunk_path || "").split("/").pop().replace(/\.(md|txt)$/i, "");
+                    const txt = (s.verbatim_context || s.key_quote || "").trim().replace(/\s+/g, " ").slice(0, i === 0 ? 420 : 260);
+                    return `  · 出處檔案：${src}（約第 ${s.line_start}~${s.line_end} 行）\n    原文：「${txt}」`;
+                });
+                parts.push(`候選${i + 1}：${c.canonical_name || "未知"}（證型：${c.pattern_name || c.domain}｜得分 ${c.score ?? 0}）${lines.length ? "\n" + lines.join("\n") : ""}`);
+            });
+        }
+
+        // 3. 《漢唐經典配方全集》臨床驗方直接映射
+        const ht = (retrieverData.hantang_matches || []).slice(0, 2);
+        if (ht.length) {
+            parts.push("\n【漢唐臨床經典驗方與加減映射】：");
+            ht.forEach((m, k) => {
+                parts.push(`驗方${k + 1}｜${m.title}｜檔案：${m.chunk_path}（第 ${m.line_start}~${m.line_end} 行）\n    原文：「${(m.snippet || "").replace(/\s+/g, " ").slice(0, 300)}」`);
+            });
+        }
+
+        // 4. 全文檢索補位 (僅當上述精準通道不足時輔助)
+        const ft = (retrieverData.fulltext_evidence || []).slice(0, hubs.length ? 2 : 4);
         if (ft.length) {
-            parts.push("【全文原文證據（逐字取自知識庫，可直接引用）】");
+            parts.push("\n【全文補充原文證據（逐字取自知識庫）】：");
             ft.forEach((e, k) => {
-                parts.push(`證據${k + 1}｜類別：${e.kind || "知識庫"}｜出處：${e.source}｜檔案 ${e.file}｜約第 ${e.line_start}~${e.line_end} 行\n    原文：${(e.text || "").slice(0, 380)}`);
+                parts.push(`補充證據${k + 1}｜類別：${e.kind || "知識庫"}｜出處：${e.source}｜檔案 ${e.file}｜約第 ${e.line_start}~${e.line_end} 行\n    原文：「${(e.text || "").slice(0, 340)}」`);
             });
         }
         return parts.join("\n");

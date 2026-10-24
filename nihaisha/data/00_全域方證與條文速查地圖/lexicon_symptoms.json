@@ -2,7 +2,7 @@
   "_meta": {
     "schema_version": "2.0",
     "layer": "Layer 1 - Full 84-Entity Canonical TCM Symptom Ontology",
-    "total_symptoms": 85,
+    "total_symptoms": 90,
     "total_synonyms": 774,
     "description": "Standardized TCM symptom entities across 10 clinical axes (十問歌) with rich colloquial synonyms, slang, negation antonyms, and clinical weights"
   },
@@ -1413,7 +1413,18 @@
         "類風濕性關節炎劇痛",
         "關節變形腫脹",
         "痛风关节炎",
-        "肢节疼痛"
+        "肢节疼痛",
+        "痛風",
+        "痛風發作",
+        "關節紅腫",
+        "關節劇痛",
+        "大腳趾痛",
+        "腳踝關節痛",
+        "歷節",
+        "類風濕",
+        "痛风",
+        "关节红肿",
+        "关节剧痛"
       ],
       "legacy_id": "SYM_JOINT_PAIN_SWOLLEN"
     },
@@ -1432,7 +1443,11 @@
         "腳背腫脹鞋子穿不下",
         "雙腿浮腫沉重",
         "下肢水肿",
-        "脚肿如脱"
+        "脚肿如脱",
+        "像要斷掉",
+        "腫得像要斷掉",
+        "腳踝紅腫",
+        "關節腫痛"
       ]
     },
     {
@@ -1536,7 +1551,17 @@
         "血塊排出後疼痛大減",
         "月經下腹冷痛牽引",
         "痛经",
-        "经血大血块"
+        "经血大血块",
+        "肚子劇痛",
+        "黑血塊",
+        "大塊血塊",
+        "子宮肌瘤",
+        "卵巢囊腫",
+        "巧克力囊腫",
+        "經痛",
+        "生理痛",
+        "子宫肌瘤",
+        "经痛"
       ]
     },
     {
@@ -1659,6 +1684,126 @@
         "脖子转不动"
       ],
       "legacy_id": "SYM_STIFF_NECK"
+    },
+    {
+      "sym_id": "SYM_086_SKIN_ITCH_RASH",
+      "legacy_id": "SYM_SKIN_ITCH",
+      "canonical_name": "身癢風疹癮疹皮膚癢",
+      "body_location": "肌表皮毛腠理",
+      "clinical_axis": "limbs_joints",
+      "default_weight": 3.0,
+      "negation_antonym": null,
+      "synonyms": [
+        "皮膚癢",
+        "皮膚很癢",
+        "身癢",
+        "身必癢",
+        "蕁麻疹",
+        "尋麻疹",
+        "風疹",
+        "風疹塊",
+        "起疹子",
+        "濕疹",
+        "異位性皮膚炎",
+        "脂漏性皮膚炎",
+        "脂溢性皮炎",
+        "全身發癢",
+        "奇癢無比",
+        "抓破流湯",
+        "皮膚過敏",
+        "乾癬",
+        "牛皮癬",
+        "體股癬",
+        "疥瘡",
+        "皮肤痒",
+        "荨麻疹",
+        "风疹",
+        "湿疹"
+      ]
+    },
+    {
+      "sym_id": "SYM_087_HEAT_AGGRAVATES_ITCH",
+      "legacy_id": "SYM_HEAT_ITCH",
+      "canonical_name": "遇熱即癢春夏加劇冬緩",
+      "body_location": "肌表陽升鬱熱",
+      "clinical_axis": "temperature",
+      "default_weight": 2.6,
+      "negation_antonym": null,
+      "synonyms": [
+        "遇熱即癢",
+        "洗熱水澡更癢",
+        "過了冬天就會變嚴重",
+        "冬天會好一點",
+        "春夏變嚴重",
+        "流汗更癢",
+        "悶熱就發作",
+        "天氣回暖變嚴重",
+        "遇热即痒",
+        "夏天严重冬天好"
+      ]
+    },
+    {
+      "sym_id": "SYM_088_WAKE_1_TO_3_AM",
+      "legacy_id": "SYM_WAKE_1_3",
+      "canonical_name": "丑時早醒半夜一至三點醒",
+      "body_location": "足厥陰肝經",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "一點到三點醒",
+        "1點到3點醒",
+        "半夜一點醒",
+        "半夜兩點醒",
+        "丑時醒",
+        "一點到三點一定會醒",
+        "凌晨一點醒",
+        "凌晨兩點醒",
+        "丑时醒",
+        "半夜一点到三点醒"
+      ]
+    },
+    {
+      "sym_id": "SYM_089_WAKE_3_TO_5_AM",
+      "legacy_id": "SYM_WAKE_3_5",
+      "canonical_name": "寅時早醒半夜三至五點醒",
+      "body_location": "手太陰肺經",
+      "clinical_axis": "spirit_sleep",
+      "default_weight": 3.2,
+      "negation_antonym": null,
+      "synonyms": [
+        "三點到五點醒",
+        "3點到5點醒",
+        "半夜三點醒",
+        "半夜四點醒",
+        "寅時醒",
+        "凌晨三點醒",
+        "凌晨四點醒",
+        "寅时醒",
+        "半夜三点到五点醒"
+      ]
+    },
+    {
+      "sym_id": "SYM_090_LEUKORRHEA_BAND",
+      "legacy_id": "SYM_LEUKORRHEA",
+      "canonical_name": "婦人帶下赤白黃帶",
+      "body_location": "胞宮任帶二脈",
+      "clinical_axis": "gynecology_pediatrics",
+      "default_weight": 2.8,
+      "negation_antonym": null,
+      "synonyms": [
+        "白帶",
+        "黃帶",
+        "赤白帶",
+        "帶下",
+        "分泌物多",
+        "陰道發癢",
+        "陰部癢",
+        "白帶異常",
+        "白带",
+        "黄带",
+        "带下"
+      ]
     }
   ]
 }

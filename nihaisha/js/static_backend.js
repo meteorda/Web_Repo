@@ -11,7 +11,7 @@
 (function () {
     const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
     const MAP_DIR = "data/00_全域方證與條文速查地圖";
-    const MAP_FILES = ["lexicon_symptoms.json", "thesaurus_layman_to_tcm.json", "master_index.json"];
+    const MAP_FILES = ["lexicon_symptoms.json", "thesaurus_layman_to_tcm.json", "global_tcm_graph.json", "master_index.json"];
 
     const host = location.hostname;
     const forceStatic = new URLSearchParams(location.search).get("static") === "1";
@@ -71,7 +71,7 @@
             let txt;
             try { txt = await getText(rel); } catch (e) { continue; }
             writeFile(rel, txt);
-            for (const m of txt.matchAll(/"(?:chunk_path|file_path)"\s*:\s*"([^"]+)"/g)) refs.add(m[1]);
+            if (f !== "global_tcm_graph.json") { for (const m of txt.matchAll(/"(?:chunk_path|file_path)"\s*:\s*"([^"]+)"/g)) refs.add(m[1]); }
         }
         await Promise.all([...refs].map(async (rel) => {
             try { writeFile(rel, await getText(rel)); } catch (e) { console.warn("[static] 略過切片", rel); }

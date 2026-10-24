@@ -2,7 +2,7 @@
   "_meta": {
     "version": "3.4",
     "wave": "Wave 1 Core Clusters",
-    "total_clusters": 24,
+    "total_clusters": 29,
     "description": "7-Slot Holographic Clinical Formula Clusters with verified verbatim anchors from Ni Haisha's clinical works"
   },
   "clusters": [
@@ -1362,6 +1362,321 @@
           "line_start": 15,
           "line_end": 30,
           "key_quote": "手足厥寒脉细欲绝者，当归四逆汤主之；血虚寒凝四肢，温通经脉养血通阳，脚指头发热出来。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_025_GUIZHI_MAHUANG_GEBAN",
+      "canonical_name": "桂枝麻黃各半湯",
+      "pattern_name": "太陽病表鬱日久不得小汗出身必癢證",
+      "domain": "太陽病篇·皮膚風疹",
+      "slots": {
+        "body_meridian": [
+          "太陽經",
+          "肌表皮毛",
+          "皮膚腠理"
+        ],
+        "subjective_sensation": [
+          "身必癢",
+          "皮膚很癢",
+          "風疹塊",
+          "蕁麻疹",
+          "起疹子"
+        ],
+        "cold_heat_thirst": [
+          "面色反有熱色",
+          "寒熱如瘧",
+          "冬天好一點春夏變嚴重",
+          "遇熱即癢"
+        ],
+        "secretion_excretion": [
+          "不能得小汗出",
+          "表汗未發透",
+          "表水未透發"
+        ],
+        "onset_timing": [
+          "日久不解",
+          "氣溫改變發作",
+          "換季加劇"
+        ],
+        "inspection_tongue_pulse": [
+          "面色微赤",
+          "脈浮緩或微緊"
+        ],
+        "layman_modern_terms": [
+          "蕁麻疹",
+          "尋麻疹",
+          "皮膚很癢",
+          "過敏起疹",
+          "打疫苗後皮膚癢",
+          "吃類固醇壓制反覆發作",
+          "冬天好一點過了冬天變嚴重"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_PROFUSE",
+        "SYM_013_SWEAT_PROFUSE"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "data/02_傷寒論/chunks/01_辨太陽病脈證並治上篇.md",
+          "anchor_snippet": "面色反有热色者,未欲解也,以其不能得小汗出,身必痒",
+          "line_start": 573,
+          "line_end": 588,
+          "key_quote": "以其不能得小汗出，身必癢，宜桂枝麻黃各半湯。水氣停在皮膚毛孔下面出不來，就會很癢。"
+        },
+        {
+          "chunk_path": "data/11_漢唐診斷日誌與臨床醫案全編/chunks/03_倪海廈臨床醫案合訂本2008年3至9月.md",
+          "anchor_snippet": "桂枝麻黃各半湯，發微汗，將表水去掉。桂枝麻黃各半湯，身必癢",
+          "line_start": 9900,
+          "line_end": 9915,
+          "key_quote": "氣溫改變時，皮膚會癢（師：此亦與表水未透發有關）... 桂枝麻黃各半湯，身必癢，此乃表汗沒有發透。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_026_MAXING_YIGAN_MAHUANG_JIAZHU",
+      "canonical_name": "麻杏薏甘湯 / 麻黃加朮湯",
+      "pattern_name": "風濕在表皮下積濕身癢疼重證",
+      "domain": "金匱痙濕暍篇·皮膚風濕",
+      "slots": {
+        "body_meridian": [
+          "肌表皮下",
+          "肌肉關節",
+          "肺主皮毛"
+        ],
+        "subjective_sensation": [
+          "皮膚癢",
+          "身疼重",
+          "濕疹",
+          "風疹",
+          "一身盡痛"
+        ],
+        "cold_heat_thirst": [
+          "發熱日晡所劇",
+          "遇熱即癢",
+          "春夏潮濕加劇"
+        ],
+        "secretion_excretion": [
+          "皮下積濕",
+          "汗未發透",
+          "脂漏皮屑"
+        ],
+        "onset_timing": [
+          "陰天潮濕加劇",
+          "日晡所劇"
+        ],
+        "inspection_tongue_pulse": [
+          "苔白膩或微黃",
+          "脈浮虛或浮緊"
+        ],
+        "layman_modern_terms": [
+          "濕疹皮膚癢",
+          "異位性皮膚炎",
+          "風疹瘙癢",
+          "脂漏性皮膚炎",
+          "陰天肌肉酸痛皮膚癢"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_SWEAT_PROFUSE",
+        "SYM_013_SWEAT_PROFUSE"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "data/01_金匱要略/chunks/02_痙濕暍病脈證治第二.md",
+          "anchor_snippet": "再来在肌肉上面麻杏薏甘汤， 再来是防己黄芪汤",
+          "line_start": 798,
+          "line_end": 808,
+          "key_quote": "濕家身煩疼，可與麻黃加朮湯發其汗為宜；風濕一身盡痛，日晡所劇者，麻黃杏仁薏苡甘草湯。"
+        },
+        {
+          "chunk_path": "data/07_漢唐醫案與配方/chunks/01_漢唐經典配方全集_常用成方與加減.md",
+          "anchor_snippet": "治疗风疹的处方(出自<伤寒杂病论>--麻黄加术汤)",
+          "line_start": 44,
+          "line_end": 52,
+          "key_quote": "治療風疹與瘙癢性皮膚病的處方：麻黃加朮湯、麻杏薏甘湯。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_027_MAHUANG_LIANQIAO_CHIXIAODOU",
+      "canonical_name": "麻黃連軺赤小豆湯",
+      "pattern_name": "傷寒瘀熱在裡兼表濕熱身癢發黃證",
+      "domain": "陽明病篇·濕熱皮膚病",
+      "slots": {
+        "body_meridian": [
+          "肌表血分",
+          "陽明濕熱",
+          "全身皮膚"
+        ],
+        "subjective_sensation": [
+          "皮膚奇癢",
+          "紅疹灼熱",
+          "濕疹流黃水",
+          "體股癬疥瘡"
+        ],
+        "cold_heat_thirst": [
+          "內有瘀熱",
+          "遇熱奇癢無比",
+          "煩熱"
+        ],
+        "secretion_excretion": [
+          "無汗或汗出不暢",
+          "小便赤"
+        ],
+        "onset_timing": [
+          "春夏濕熱季節大發",
+          "西藥壓制後反彈"
+        ],
+        "inspection_tongue_pulse": [
+          "苔黃膩",
+          "脈浮數"
+        ],
+        "layman_modern_terms": [
+          "急性蕁麻疹紅腫",
+          "濕疹流湯流水",
+          "頑固皮膚過敏",
+          "皮膚紅熱奇癢",
+          "類固醇反彈紅皮"
+        ]
+      },
+      "contraindicated_symptoms": [
+        "SYM_DIARRHEA_COLD",
+        "SYM_053_DIARRHEA_WATERY"
+      ],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "data/02_傷寒論/chunks/04_辨陽明病脈證並治篇.md",
+          "anchor_snippet": "二七六：「伤寒」身黄发热者,「麻黄连翘赤小豆汤」主",
+          "line_start": 1122,
+          "line_end": 1148,
+          "key_quote": "傷寒身黃發熱者，麻黃連翹赤小豆湯主之。除了身發黃之外，最常用在疥癬、皮膚科，皮膚濕黏黏的又癢。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_028_WENJING_GUIZHI_FULING",
+      "canonical_name": "溫經湯 / 桂枝茯苓丸",
+      "pattern_name": "婦人衝任虛寒兼瘀血胞宮癥瘕痛經證",
+      "domain": "婦人三篇·經帶肌瘤",
+      "slots": {
+        "body_meridian": [
+          "胞宮子宮",
+          "衝任二脈",
+          "乳房厥陰"
+        ],
+        "subjective_sensation": [
+          "痛經",
+          "經前乳房脹痛",
+          "少腹冷痛或刺痛",
+          "子宮肌瘤硬塊"
+        ],
+        "cold_heat_thirst": [
+          "手足冰冷",
+          "唇口乾燥",
+          "暮即發熱手掌煩熱"
+        ],
+        "secretion_excretion": [
+          "經血紫黑有血塊",
+          "漏下不止",
+          "經水不利",
+          "白帶"
+        ],
+        "onset_timing": [
+          "月經來潮前後",
+          "更年期或久不受孕"
+        ],
+        "inspection_tongue_pulse": [
+          "舌質紫暗有瘀點",
+          "脈沉緊或澀"
+        ],
+        "layman_modern_terms": [
+          "子宮肌瘤",
+          "卵巢囊腫",
+          "巧克力囊腫",
+          "子宮內膜異位",
+          "痛經大血塊",
+          "不孕症",
+          "月經不調",
+          "更年期綜合症"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "data/01_金匱要略/chunks/22_婦人雜病脈證並治第二十二.md",
+          "anchor_snippet": "问曰：妇人年五十，所病下利，数十日不止，暮即发热，少腹里",
+          "line_start": 397,
+          "line_end": 410,
+          "key_quote": "婦人少腹寒久不受胎，或月水來過多，及至期不來，溫經湯主之；宿有癥病，桂枝茯苓丸主之。"
+        },
+        {
+          "chunk_path": "data/07_漢唐醫案與配方/chunks/01_漢唐經典配方全集_常用成方與加減.md",
+          "anchor_snippet": "治疗子宫肌瘤的处方(出自<伤寒论>--桂枝茯苓丸)",
+          "line_start": 916,
+          "line_end": 926,
+          "key_quote": "治療子宮肌瘤、卵巢瘤、不孕與痛經之經典處方：桂枝茯苓丸與溫經湯。"
+        }
+      ]
+    },
+    {
+      "cluster_id": "CLS_029_WUMEI_WAN",
+      "canonical_name": "烏梅丸",
+      "pattern_name": "厥陰病上熱下寒丑時早醒久利消渴證",
+      "domain": "厥陰病篇·上熱下寒",
+      "slots": {
+        "body_meridian": [
+          "足厥陰肝經",
+          "上焦心胸",
+          "下焦腸道"
+        ],
+        "subjective_sensation": [
+          "半夜一點到三點醒",
+          "丑時早醒",
+          "心中疼熱",
+          "心煩失眠",
+          "氣上撞心",
+          "飢而不欲食"
+        ],
+        "cold_heat_thirst": [
+          "上熱下寒",
+          "口乾舌燥但手腳冰冷",
+          "消渴"
+        ],
+        "secretion_excretion": [
+          "久利下利",
+          "大便不成形"
+        ],
+        "onset_timing": [
+          "丑時（凌晨1~3點）定時醒來",
+          "寒熱錯雜經年"
+        ],
+        "inspection_tongue_pulse": [
+          "舌紅或尖紅而下肢冷",
+          "脈弦細微"
+        ],
+        "layman_modern_terms": [
+          "半夜一點到三點一定會醒來",
+          "凌晨一兩點失眠醒來",
+          "上熱下寒嘴乾腳冷",
+          "慢性結腸炎久瀉",
+          "糖尿病消渴"
+        ]
+      },
+      "contraindicated_symptoms": [],
+      "paradox_override_rules": [],
+      "chunk_refs": [
+        {
+          "chunk_path": "data/02_傷寒論/chunks/08_辨厥陰病脈證並治篇.md",
+          "anchor_snippet": "乌梅丸主之,又主久利,乌梅丸除了打虫以外又可以用在久利上",
+          "line_start": 118,
+          "line_end": 135,
+          "key_quote": "厥陰病為寒熱錯雜、上熱下寒之極，半夜丑時（1~3點）肝經氣血注而不通、久利消渴者，烏梅丸主之。"
         }
       ]
     }

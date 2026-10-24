@@ -42,8 +42,8 @@ def to_simplified(text: str) -> str:
 
 # 書籍優先級（目錄前綴 → 權重）
 _BOOK_WEIGHT = {
-    "02_": 1.60, "01_": 1.55, "06_": 1.25, "07_": 1.10, "11_": 0.85,
-    "04_": 1.0, "03_": 1.0, "09_": 0.85, "10_": 0.7, "05_": 0.55, "08_": 0.5,
+    "02_": 2.00, "01_": 2.00, "07_": 1.90, "11_": 1.85, "06_": 1.80,
+    "04_": 1.30, "03_": 1.30, "05_": 1.10, "09_": 0.25, "10_": 0.20, "08_": 0.15,
 }
 _STOP_CHARS = set("我你他她它的了是很有在也就都而及與与和或但被把讓让給给請请嗎吗呢吧啊哦呀這这那一個个會会可以不沒没怎麼么什麼為为何")
 _PUNCT = re.compile(r"[\s,，。、；;：:！!？?（）()\[\]【】「」『』\"'“”‘’\-—…/\\|]+")
@@ -81,6 +81,8 @@ def _build_index():
         weight = next((w for k, w in _BOOK_WEIGHT.items() if top.startswith(k)), 1.0)
         for fn in files:
             if not fn.lower().endswith(".md"):
+                continue
+            if fn.startswith("06_倪海廈事實評論") or fn.startswith("07_西醫藥事實評論") or top.startswith("08_") or top.startswith("09_"):
                 continue
             path = os.path.join(root, fn)
             try:
