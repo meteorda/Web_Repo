@@ -3,14 +3,14 @@
  * 職責：
  * 1. 在無 server.py 的環境 (GitHub Pages) 攔截 POST /api/retrieve，
  *    改由瀏覽器內 Pyodide 直接執行「原封不動」的 scripts/nuwa_retriever.py。
- * 2. 僅掛載 00_全域方證與條文速查地圖/*.json 與其引用的切片檔 (約 1MB)，不下載全部 20MB 切片庫。
+ * 2. 僅掛載 data/00_全域方證與條文速查地圖/*.json 與其引用的切片檔 (約 1MB)，不下載全部 20MB 切片庫。
  * 3. 本機 (localhost / 127.0.0.1) 仍走 server.py 原生 Python，本檔不介入。
  * 嚴格物理隔離於 js/，不修改 scripts/ 與 00_~11_ 任何內容。
  * 已知差異：靜態模式無 fulltext_evidence 全文檢索補充 (需 server.py)，/api/proxy 亦不可用。
  */
 (function () {
     const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
-    const MAP_DIR = "00_全域方證與條文速查地圖";
+    const MAP_DIR = "data/00_全域方證與條文速查地圖";
     const MAP_FILES = ["lexicon_symptoms.json", "thesaurus_layman_to_tcm.json", "master_index.json"];
 
     const host = location.hostname;
@@ -55,7 +55,7 @@
         const py = await window.loadPyodide();
 
         const mk = (d) => { try { py.FS.mkdirTree(d); } catch (e) { } };
-        mk("/nuwa/scripts"); mk("/nuwa/" + MAP_DIR);
+        mk("/nuwa/scripts"); mk("/nuwa/data"); mk("/nuwa/" + MAP_DIR);
 
         const writeFile = (rel, text) => {
             const dir = rel.substring(0, rel.lastIndexOf("/"));

@@ -57,11 +57,15 @@ def to_traditional(text: str) -> str:
 class NuwaRetriever:
     def __init__(self, base_dir: str = BASE_DIR):
         self.base_dir = base_dir
-        self.lexicon_path = os.path.join(base_dir, "00_全域方證與條文速查地圖", "lexicon_symptoms.json")
+        self.lexicon_path = os.path.join(base_dir, "data", "00_全域方證與條文速查地圖", "lexicon_symptoms.json")
+        if not os.path.exists(self.lexicon_path):
+            self.lexicon_path = os.path.join(base_dir, "00_全域方證與條文速查地圖", "lexicon_symptoms.json")
         if not os.path.exists(self.lexicon_path):
             self.lexicon_path = os.path.join(base_dir, "lexicon_symptoms.json")
 
-        self.thesaurus_path = os.path.join(base_dir, "00_全域方證與條文速查地圖", "thesaurus_layman_to_tcm.json")
+        self.thesaurus_path = os.path.join(base_dir, "data", "00_全域方證與條文速查地圖", "thesaurus_layman_to_tcm.json")
+        if not os.path.exists(self.thesaurus_path):
+            self.thesaurus_path = os.path.join(base_dir, "00_全域方證與條文速查地圖", "thesaurus_layman_to_tcm.json")
         if not os.path.exists(self.thesaurus_path):
             self.thesaurus_path = os.path.join(base_dir, "thesaurus_layman_to_tcm.json")
         

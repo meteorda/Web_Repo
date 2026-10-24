@@ -82,21 +82,21 @@ flowchart TD
 本技能採用**自包含結構（Self-Contained）**，全量 179 個按章節編排之 Markdown 切片庫與索引地圖已完整內建於技能目錄之內。
 **啟動與呼叫本技能時，AI 僅載入本 SKILL.md（約 9KB），絕對不會預先載入全量語料；僅在辨證過程中依據四診鑑別結果，對特定章節進行「按需靶向讀取 (On-Demand Fetching)」**：
 
-1. **總導航首頁**：[`00_倪海廈全集總章節目錄導航.md`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/00_倪海廈全集總章節目錄導航.md)（或 `README.md`）
-2. **機器速查地圖**：[`00_全域方證與條文速查地圖/master_index.json`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/00_全域方證與條文速查地圖/master_index.json)
-3. **雙軌防偽對照庫**：[`00_全域方證與條文速查地圖/thesaurus_layman_to_tcm.json`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/00_全域方證與條文速查地圖/thesaurus_layman_to_tcm.json)
+1. **總導航首頁**：[`data/00_倪海廈全集總章節目錄導航.md`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/00_倪海廈全集總章節目錄導航.md)（或 `README.md`）
+2. **機器速查地圖**：[`data/00_全域方證與條文速查地圖/master_index.json`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/00_全域方證與條文速查地圖/master_index.json)
+3. **雙軌防偽對照庫**：[`data/00_全域方證與條文速查地圖/thesaurus_layman_to_tcm.json`](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/00_全域方證與條文速查地圖/thesaurus_layman_to_tcm.json)
 4. **全書十一大部類章節目錄索引與切片庫（按需單篇讀取）**：
-   - `01_金匱要略/`：[01_金匱要略_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/01_金匱要略/01_金匱要略_章節目錄索引.md)（含 25 卷切片）
-   - `02_傷寒論/`：[02_傷寒論_六經與條文目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/02_傷寒論/02_傷寒論_六經與條文目錄索引.md)（含 9 篇六經切片）
-   - `03_黃帝內經/`：[03_黃帝內經_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/03_黃帝內經/03_黃帝內經_章節目錄索引.md)（含 74 篇素問單篇切片）
-   - `04_神農本草經/`：[04_神農本草經_藥物目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/04_神農本草經/04_神農本草經_藥物目錄索引.md)（含 4 篇三品切片）
-   - `05_針灸教程/`：[05_針灸教程_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/05_針灸教程/05_針灸教程_章節目錄索引.md)（含 19 篇經穴切片）
-   - `06_仲景心法與扶陽/`：[06_仲景心法與扶陽_目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/06_仲景心法與扶陽/06_仲景心法與扶陽_目錄索引.md)（含 4 篇心法切片）
-   - `07_漢唐醫案與配方/`：[07_漢唐醫案與配方_全集目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/07_漢唐醫案與配方/07_漢唐醫案與配方_全集目錄索引.md)（含 5 篇成方切片）
-   - `08_天紀易經與紫微斗數/`：[08_天紀易經與紫微斗數_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/08_天紀易經與紫微斗數/08_天紀易經與紫微斗數_章節目錄索引.md)（含 4 篇易經命理風水切片）
-   - `09_地紀行醫傳承全集/`：[09_地紀行醫傳承全集_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/09_地紀行醫傳承全集/09_地紀行醫傳承全集_章節目錄索引.md)（含 1-8 冊踏查日記）
-   - `10_倪師專題論壇與事實評論/`：[10_倪師專題論壇與事實評論_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/10_倪師專題論壇與事實評論/10_倪師專題論壇與事實評論_章節目錄索引.md)（含 7 篇癌症/維他命專論、國學堂七講、事實評論）
-   - `11_漢唐診斷日誌與臨床醫案全編/`：[11_漢唐診斷日誌與臨床醫案全編_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/11_漢唐診斷日誌與臨床醫案全編/11_漢唐診斷日誌與臨床醫案全編_章節目錄索引.md)（含 6 篇診療日誌全編、合訂本、內部案例、問診單）
+   - `data/01_金匱要略/`：[data/01_金匱要略_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/01_金匱要略/data/01_金匱要略_章節目錄索引.md)（含 25 卷切片）
+   - `data/02_傷寒論/`：[data/02_傷寒論_六經與條文目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/02_傷寒論/data/02_傷寒論_六經與條文目錄索引.md)（含 9 篇六經切片）
+   - `data/03_黃帝內經/`：[data/03_黃帝內經_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/03_黃帝內經/data/03_黃帝內經_章節目錄索引.md)（含 74 篇素問單篇切片）
+   - `data/04_神農本草經/`：[data/04_神農本草經_藥物目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/04_神農本草經/data/04_神農本草經_藥物目錄索引.md)（含 4 篇三品切片）
+   - `data/05_針灸教程/`：[data/05_針灸教程_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/05_針灸教程/data/05_針灸教程_章節目錄索引.md)（含 19 篇經穴切片）
+   - `data/06_仲景心法與扶陽/`：[data/06_仲景心法與扶陽_目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/06_仲景心法與扶陽/data/06_仲景心法與扶陽_目錄索引.md)（含 4 篇心法切片）
+   - `data/07_漢唐醫案與配方/`：[data/07_漢唐醫案與配方_全集目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/07_漢唐醫案與配方/data/07_漢唐醫案與配方_全集目錄索引.md)（含 5 篇成方切片）
+   - `data/08_天紀易經與紫微斗數/`：[data/08_天紀易經與紫微斗數_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/08_天紀易經與紫微斗數/data/08_天紀易經與紫微斗數_章節目錄索引.md)（含 4 篇易經命理風水切片）
+   - `data/09_地紀行醫傳承全集/`：[data/09_地紀行醫傳承全集_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/09_地紀行醫傳承全集/data/09_地紀行醫傳承全集_章節目錄索引.md)（含 1-8 冊踏查日記）
+   - `data/10_倪師專題論壇與事實評論/`：[data/10_倪師專題論壇與事實評論_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/10_倪師專題論壇與事實評論/data/10_倪師專題論壇與事實評論_章節目錄索引.md)（含 7 篇癌症/維他命專論、國學堂七講、事實評論）
+   - `data/11_漢唐診斷日誌與臨床醫案全編/`：[data/11_漢唐診斷日誌與臨床醫案全編_章節目錄索引.md](file:///C:/Users/HONDA/.gemini/config/skills/my-Nuwa-NiHaiSha/data/11_漢唐診斷日誌與臨床醫案全編/data/11_漢唐診斷日誌與臨床醫案全編_章節目錄索引.md)（含 6 篇診療日誌全編、合訂本、內部案例、問診單）
 
 ---
 

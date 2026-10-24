@@ -76,7 +76,8 @@ def _build_index():
         rel_root = os.path.relpath(root, BASE_DIR).replace("\\", "/")
         if "chunks" not in rel_root.split("/"):
             continue
-        top = rel_root.split("/")[0]
+        parts = [p for p in rel_root.split("/") if p != "data"]
+        top = parts[0] if parts else ""
         weight = next((w for k, w in _BOOK_WEIGHT.items() if top.startswith(k)), 1.0)
         for fn in files:
             if not fn.lower().endswith(".md"):
