@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎣 股王釣魚選股攻略 v12 · 程式架構與教學使用手冊 · Web_Repo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f3f4f6;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent: #10b981;
+      --gold: #fbbf24;
+      --code-bg: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.75;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding: 30px 20px 80px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 40px 48px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
+    }
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 14px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .back-link:hover {
+      background: var(--primary);
+      color: #0b0f19;
+    }
+    .raw-md-link {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .raw-md-link:hover {
+      color: var(--text);
+      text-decoration: underline;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 24px;
+      line-height: 1.4;
+      border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+      padding-bottom: 14px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 32px 0 16px;
+      padding-left: 12px;
+      border-left: 4px solid var(--primary);
+    }
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin: 24px 0 12px;
+    }
+    p {
+      margin-bottom: 16px;
+      color: #cbd5e1;
+    }
+    ul, ol {
+      margin: 0 0 20px 24px;
+      color: #cbd5e1;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    blockquote {
+      background: rgba(56, 189, 248, 0.05);
+      border-left: 4px solid var(--primary);
+      padding: 14px 20px;
+      margin: 20px 0;
+      border-radius: 0 12px 12px 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border: 1px solid var(--card-border);
+    }
+    th {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    code {
+      background: var(--code-bg);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+    }
+    pre {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid var(--card-border);
+      margin: 32px 0;
+    }
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 640px) {
+      .container { padding: 24px 18px; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="nav-bar">
+      <a href="../index.html" class="back-link">← 返回工具導航大廳</a>
+      <span class="badge">📘 教學實戰要點手冊</span>
+      <a href="釣魚選股v12_程式深度解析與教學要點手冊.md" class="raw-md-link" target="_blank">📄 檢視原始 Markdown 檔案</a>
+    </div>
+
+    <article>
+<h1>🎣 股王釣魚選股攻略 v12 — 程式架構與教學使用手冊</h1>
+<blockquote>
+<p><strong>依據來源</strong>：2026-09-04 21:33:15 線上教學錄影《釣魚選股運用-20260904_213315-會議錄製.mp4》（時長 2 小時 15 分鐘）與原始碼《釣魚選股_v12.html》完整交叉比對整理。</p>
+</blockquote>
+<hr />
+<h2>壹、會議背景與軟體演進定位</h2>
+<h3>1. 核心定位轉變：從「單純報明牌」到「AI 產業趨勢與籌碼量化」</h3>
+<ul>
+<li><strong>主講人</strong>：E大（醫師大）。</li>
+<li><strong>升級跨度（v11 → v12）</strong>：</li>
+<li>舊版（v10/v11）著重於趣味釣魚動畫與單一技術指標（KD、均線等）。</li>
+<li>新版（v12）全面進化為**「AI 驅動的產業趨勢分析儀」<strong>，大幅淡化賭博性質，強化</strong>法人籌碼、主力成本、產業鏈上下游、族群輪動星圖與 AI 推論**。</li>
+<li><strong>跨平台使用</strong>：單一 HTML 檔案架構，免伺服器後端，手機瀏覽器與電腦均可直接開啟運行。</li>
+</ul>
+<hr />
+<h2>貳、主視覺與「釣魚隱喻」架構</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">視覺元素</th>
+<th style="text-align: left;">對應金融/量化意涵</th>
+<th style="text-align: left;">實戰操作指引</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>水線與水深（Ocean Depth）</strong></td>
+<td style="text-align: left;"><strong>負乖離 / 超跌打底 / 估值折價區</strong></td>
+<td style="text-align: left;">越深層代表股價離均線越遠、超跌嚴重，適合「左側逢低撈魚」。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>淺水層 / 跳出水面（Surface）</strong></td>
+<td style="text-align: left;"><strong>強勢突破 / 爆量噴出 / 主升段</strong></td>
+<td style="text-align: left;">靠近水面或躍出水面代表多頭動能強勁，適合「順勢短打/突破跟進」。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>50 隻游動魚（Fish School）</strong></td>
+<td style="text-align: left;"><strong>全市場活躍個股</strong></td>
+<td style="text-align: left;">魚的體型大小代表市值/成交量，游速代表波動度與當日漲跌力道。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>大盤鯨魚（Index Whale）</strong></td>
+<td style="text-align: left;"><strong>加權指數（TWSE Index）</strong></td>
+<td style="text-align: left;">象徵大盤母體走勢，鯨魚無法被釣起；觀察個股魚群與鯨魚的相對位置以判斷個股相對於大盤的強弱度。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>釣竿與甩竿物理</strong></td>
+<td style="text-align: left;"><strong>選股鎖定與下單觸發</strong></td>
+<td style="text-align: left;">點擊/甩竿命中游動魚，即可拉起觸發《個股健診與詳細數據面板》。</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>參、資料獲取機制（Data Ingestion Pipeline）</h2>
+<ol>
+<li><strong>三道備援即時 API</strong>：</li>
+<li><strong>方案 1</strong>：Yahoo Finance TW 排行榜頁面 API（抓取上市/上櫃漲幅、跌幅前 100 名）。</li>
+<li><strong>方案 2</strong>：證券交易所（TWSE MI_INDEX）與櫃買中心（TPEx）官方 OpenAPI。</li>
+<li><strong>方案 3</strong>：內建 Proxy 轉發與 JSON 快取。</li>
+<li><strong>AI Vision 截圖辨識（獨家亮點）</strong>：</li>
+<li>使用者在券商軟體（如三竹股市、大戶投等）看到漲跌排行榜，只需<strong>截圖後直接在畫面按 Ctrl+V</strong>。</li>
+<li>系統自動調用 <strong>Claude Vision API</strong> 讀取圖片文字，精準抓取超過 15 檔以上股票代碼與名稱，直接匯入池塘放魚！</li>
+<li><strong>自選名單與 CSV 匯出</strong>：</li>
+<li>支援手動輸入代號自訂放魚，並可隨時將觀察魚池匯出為標準 CSV。</li>
+</ol>
+<hr />
+<h2>肆、個股詳細分析面板（健診與量化指標）</h2>
+<p>點擊任意魚隻後，右側彈出深度健診儀表板，涵蓋五大維度：</p>
+<h3>1. K 線與技術指標</h3>
+<ul>
+<li><strong>60 日互動 K 線圖</strong>：支援日線縮放與技術疊加。</li>
+<li><strong>均線警示（MA Alert）</strong>：月線（20MA）、季線（60MA）扣抵與站上/跌破即時提示。</li>
+<li><strong>布林通道（Bollinger Bands）</strong>：觀察通道開口（爆發前兆）與中軌攻防。</li>
+</ul>
+<h3>2. 籌碼集中與主力成本帶</h3>
+<ul>
+<li><strong>三大法人買賣超</strong>：連買/連賣天數、外資與投信進出張數即時核對。</li>
+<li><strong>主力成本帶（Chip Cost Band）</strong>：計算特定週期籌碼換手成本，作為回檔支撐防守點。</li>
+<li><strong>籌碼五角雷達圖</strong>：量能、集中度、法人力道、散戶退場度多維評分。</li>
+</ul>
+<h3>3. 基本面與估值警示</h3>
+<ul>
+<li><strong>本益比 (PE) 與市營比 (PS) 曲線</strong>：評估股價是否過熱（昂貴）或低估。</li>
+<li><strong>30 日振幅評估</strong>：警示振幅超過 60%~100% 的妖股，提醒散戶避免過度槓桿。</li>
+</ul>
+<h3>4. 情緒與產業新聞牆</h3>
+<ul>
+<li>即時爬梳相關新聞，提供**「只看利多」<strong>或</strong>「只看利空（逃命/避險）」**過濾器。</li>
+</ul>
+<h3>5. 趣味姓名學契合度</h3>
+<ul>
+<li>採用《康熙字典》正統繁體筆畫演算法，計算投資人姓名與個股名稱的五行契合分數（提升社群黏著度與互動趣味）。</li>
+</ul>
+<hr />
+<h2>伍、AI 智慧釣魚教練（AI Analysis）</h2>
+<ul>
+<li><strong>底層驅動</strong>：支援 Groq API / Claude API。</li>
+<li><strong>非線性大數據推論（非生硬技術指標疊加）</strong>：</li>
+<li><strong>支撐與壓力試算</strong>：以影片中展示案例，AI 推算出突破關鍵點（如 365 元）、短線目標價（388 元）、防守停損線（350 元）。</li>
+<li><strong>機率思維</strong>：E大特別強調，AI 是給出機率分佈與紀律框架，投資人切勿神化預測，破防守線必須果斷停損。</li>
+</ul>
+<hr />
+<h2>陸、產業關聯星圖與族群輪動雷達（v12 重點實戰）</h2>
+<p>E大於會議中詳細拆解 2026/2024 下半年資金流向實盤族群：</p>
+<ol>
+<li><strong>矽光子 / CPO / 光學傳輸</strong>：</li>
+<li>光訊號取代傳統銅線傳輸，帶動大立光、玉晶光、上詮等產業鏈向上連動。</li>
+<li><strong>散熱模組雙雄</strong>：</li>
+<li>奇鋐（3017）、雙鴻（3324）受惠 AI 伺服器水冷散熱需求，回檔帶量即為觀察點。</li>
+<li><strong>被動元件同動效應</strong>：</li>
+<li>國巨（2327）與華新科（2492）同步漲停，示範「族群集體噴出」的大型輪動結構。</li>
+<li><strong>AI 伺服器整機與 CCL 銅箔基板</strong>：</li>
+<li>緯創、廣達以及台燿、台光電的上下游供需輪動。</li>
+</ol>
+<hr />
+<h2>柒、實戰交易策略與心法指引</h2>
+<ol>
+<li><strong>隔日衝（5% 法則）</strong>：</li>
+<li>當日收盤前尋找漲幅落在 <strong>4%~5%</strong> 之間、籌碼穩定且籌碼集中度高的標的佈局，期待隔日早盤衝高獲利了結。</li>
+<li><strong>零股分批佈局</strong>：</li>
+<li>高價股或波動大的標的，鼓勵學員善用「盤中零股」降低單筆曝險，分批建倉，拉長持有心理素質。</li>
+<li><strong>避開「聖誕樹型態」</strong>：</li>
+<li>股價如聖誕樹般無量急拉、高檔爆量長黑倒貨者，絕不盲目追高。</li>
+</ol>
+<hr />
+<h2>捌、AI 協同開發與 Prompt 工程心法</h2>
+<ol>
+<li><strong>結對程式設計（Pair Programming）</strong>：</li>
+<li>整套專案皆透過 Claude / AI 結對生成，透過小步快跑、逐步迭代。</li>
+<li><strong>Prompt Engineering 關鍵法則</strong>：</li>
+<li>提問者本身必須具備充足的<strong>金融領域知識（Domain Know-how）</strong>，AI 才能產出精確架構。</li>
+<li>與 AI 建立持續記憶，讓 AI 記住上一次的 Bug 與代碼結構，避免重蹈覆轍。</li>
+</ol>
+    </article>
+  </div>
+
+</body>
+</html>

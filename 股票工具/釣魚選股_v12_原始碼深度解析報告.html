@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎣 釣魚選股 v12 · 原始碼與系統架構深度解析報告 · Web_Repo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f3f4f6;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent: #10b981;
+      --gold: #fbbf24;
+      --code-bg: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.75;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      padding: 30px 20px 80px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 40px 48px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
+    }
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 14px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .back-link:hover {
+      background: var(--primary);
+      color: #0b0f19;
+    }
+    .raw-md-link {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .raw-md-link:hover {
+      color: var(--text);
+      text-decoration: underline;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 24px;
+      line-height: 1.4;
+      border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+      padding-bottom: 14px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 32px 0 16px;
+      padding-left: 12px;
+      border-left: 4px solid var(--primary);
+    }
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin: 24px 0 12px;
+    }
+    p {
+      margin-bottom: 16px;
+      color: #cbd5e1;
+    }
+    ul, ol {
+      margin: 0 0 20px 24px;
+      color: #cbd5e1;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    blockquote {
+      background: rgba(56, 189, 248, 0.05);
+      border-left: 4px solid var(--primary);
+      padding: 14px 20px;
+      margin: 20px 0;
+      border-radius: 0 12px 12px 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border: 1px solid var(--card-border);
+    }
+    th {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    code {
+      background: var(--code-bg);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+    }
+    pre {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13px;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid var(--card-border);
+      margin: 32px 0;
+    }
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 640px) {
+      .container { padding: 24px 18px; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="nav-bar">
+      <a href="../index.html" class="back-link">← 返回工具導航大廳</a>
+      <span class="badge">📄 深度架構解析報告</span>
+      <a href="釣魚選股_v12_原始碼深度解析報告.md" class="raw-md-link" target="_blank">📄 檢視原始 Markdown 檔案</a>
+    </div>
+
+    <article>
+<h1>🎣《釣魚選股_v12.html》程式原始碼與系統架構深度解析報告</h1>
+<blockquote>
+<p><strong>分析對象</strong>：<a href="file:///G:/我的雲端硬碟/Antigravity/研究網友建置AI系統與軟體的架構與方法/現有程式分析/20260904_釣魚選股%20解析/釣魚選股_v12.html">釣魚選股_v12.html</a><br />
+<strong>代碼規模</strong>：<strong>21,340 行</strong>，約 <strong>1,275,983 字節（1.27 MB）</strong><br />
+<strong>技術棧</strong>：純原生前端技術（HTML5 Canvas + Vanilla ES6+ + CSS3 + Web Audio API），<strong>完全零第三方 JS 庫依賴</strong>。</p>
+</blockquote>
+<hr />
+<h2>壹、系統整體規格與架構藍圖</h2>
+<p>《釣魚選股 v12》是一個極具創新性與高技術密度的單檔案 Web 應用程式（Single-File Application, SFA）。它巧妙地將**「休閒釣魚遊戲視覺（Gamification）」<strong>作為前端交互外殼，骨子裡卻是一個高度複雜且完整的</strong>「台股全市場量化選股、籌碼追蹤、產業拓撲圖譜與 AI 大模型推論決策系統」**。</p>
+<h3>1. 代碼分層與三大腳本區塊</h3>
+<ul>
+<li><strong>Block 0：主控與遊戲畫布引擎（~11,720 行）</strong></li>
+<li>60FPS Canvas GameLoop / 物理釣線與魚隻行為樹</li>
+<li>全市場資料抓取管線 / 備援 CORS Proxy 矩陣</li>
+<li>HUD 狀態儀表板 / 導航棧 Navigation Stack</li>
+<li>Web Audio API 原生音效合成系統</li>
+<li>
+<p>虛擬投資組合 / 釣竿升級 / 成就系統</p>
+</li>
+<li>
+<p><strong>Block 1：v10-extensions 量化指標引擎（window.V10，~2,436 行）</strong></p>
+</li>
+<li>數學指標引擎：DMI, MACD, CCI, OBV, 布林通道, Fibonacci 黃金分割線</li>
+<li>形態學辨識：十字星、跳空缺口、乖離率、指標頂底背離偵測</li>
+<li>均線扣抵推演 / 艾略特波浪自動標註（1-5 浪與 a-b-c 浪）</li>
+<li>
+<p>選股回測勝率驗證器 / 本益比河流圖 / 融資融券籌碼分析</p>
+</li>
+<li>
+<p><strong>Block 2：v11-sector 產業星圖與 AI 決策（window.V11，~4,278 行）</strong></p>
+</li>
+<li>20+ 台股新興科技族群字典（CPO矽光子、散熱、CoWoS、ASIC、BBU等）</li>
+<li>皮爾森相關係數矩陣 Pearson Correlation 與收益率對齊</li>
+<li>Canvas 純手寫力導向圖（Force-Directed Graph）繪製星圖</li>
+<li>Ctrl+V 全域截圖 OCR 辨識（Groq / Claude Vision API）</li>
+<li>AI 釣魚教練 / 即時產業新聞牆與情緒過濾</li>
+</ul>
+<hr />
+<h2>貳、三大核心模組源碼剖析</h2>
+<h3>1. Block 0：主控、遊戲引擎與資料管線</h3>
+<ul>
+<li><strong>主迴圈（gameLoop）</strong>：以 <br />
+equestAnimationFrame 驅動，每幀計算釣竿角度（updateRod）、天空海洋漸層、波浪與氣泡粒子、魚群深度排序（ishes.sort((a,b) =&gt; a.y - b.y)）、游動避障（scared 狀態 3 倍速逃逸），以及甩竿（castHook）碰撞偵測。</li>
+<li><strong>水深物理對應</strong>：水深底層對應「負乖離過大、超跌打底、低估值折價區」，海面附近對應「突破 20MA、爆量主升段」。</li>
+<li><strong>大盤鯨魚（Index Whale）</strong>：不可釣起的巨型鯨魚（indexFish），實時綁定加權指數走勢，作為個股相對大盤強弱度的基準座標。</li>
+<li><strong>Web Audio API 原生合成音效</strong>：使用 AudioContext 的 OscillatorNode 與 GainNode 原生合成甩竿（cast）、釣起（catch）、成就（achievement）與漲停（limitup）音效，免外部音訊資源。</li>
+<li><strong>稀有度與虛擬組合</strong>：漲停為傳說（legend）、7%為史詩（epic）、5%為稀有（rare）；內置 100 萬本金虛擬投資組合下單與損益追蹤。</li>
+</ul>
+<h3>2. Block 1：v10-extensions 核心量化指標引擎（window.V10）</h3>
+<ul>
+<li><strong>核心指標計算</strong>：DMI、MACD、CCI、OBV、Bias、Fibonacci 黃金分割線、多週期支撐壓力位。</li>
+<li><strong>形態學與異象辨識</strong>：十字星、晨星、夜星、紅三兵、跳空缺口、指標背離警告。</li>
+<li><strong>艾略特波浪自動標註</strong>：走訪轉折高低點標註推動浪與修正浪。</li>
+<li><strong>回測沙盒</strong>：比對 5日、10日、20日、30日前推薦股票之報酬率與勝率。</li>
+</ul>
+<h3>3. Block 2：v11-sector 產業星圖與 AI 決策引擎（window.V11）</h3>
+<ul>
+<li><strong>產業關聯星圖</strong>：以庫倫斥力與虎克彈簧力構建力導向圖，彈簧剛度綁定皮爾森相關係數，兩股走勢越相關在星圖上越靠近。</li>
+<li><strong>全域截圖 OCR（Ctrl+V）</strong>：監聽全域 paste 事件，提取圖片 Base64 呼叫 Groq/Claude Vision API 自動解析股票放魚。</li>
+<li><strong>AI 釣魚教練</strong>：接入 Groq API 大模型，結合 30 日價量與籌碼演算關鍵突破點、目標價與防守停損線。</li>
+</ul>
+<hr />
+<h2>參、資料通訊管線與高可用備援架構</h2>
+<p>三層自動故障轉移機制：<br />
+1. <strong>通道 1</strong>：Yahoo Finance TW 排行榜 API（優先取得全市場前 100 名）。<br />
+2. <strong>通道 2</strong>：台灣證券交易所（TWSE MI_INDEX）與櫃買中心（TPEx）開放資料。<br />
+3. <strong>通道 3</strong>：CORS Proxy 矩陣（corsproxy.io、allorigins、codetabs、jina.ai 等多節點自動輪詢競速）。</p>
+<hr />
+<h2>肆、軟體工程品質評估與重構建議</h2>
+<ul>
+<li><strong>核心亮點</strong>：極致便攜（單檔 1.27MB 跨平台即開即用）、自研原創（手刻 Canvas 圖表與力導向圖，零外部 JS 庫）、互動顛覆（遊戲化外殼包裝專業量化系統）。</li>
+<li><strong>技術債務</strong>：單檔 2.1 萬行代碼過於龐大、公用 CORS Proxy 的穩定度風險、單線程運算易造成渲染卡頓。</li>
+<li><strong>重構建議</strong>：工程化拆分模組（Vite + TypeScript）、引入 Web Worker 卸載矩陣運算、自建 Cloudflare Worker 專屬資料中繼代理。</li>
+</ul>
+    </article>
+  </div>
+
+</body>
+</html>

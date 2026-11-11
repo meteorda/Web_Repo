@@ -5,9 +5,9 @@
 
 ---
 
-## 📊 總覽統計：共收錄 **52** 款工具，切分為 **10** 大子分類
+## 📊 總覽統計：共收錄 **54** 款工具，切分為 **10** 大子分類
 
-### 📈 股票工具 (8 款)
+### 📈 股票工具 (10 款)
 
 | # | 工具名稱 | 線上直接開啟 (GitHub Pages) | 檔案相對路徑 |
 |---|---|---|---|
@@ -16,9 +16,11 @@
 | 3 | **台股個股資料分析與 Groq AI 洞察系統** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/tw-stock-ai/index.html) | `股票工具/tw-stock-ai/index.html` |
 | 4 | **台股長期投資分析系統 v2** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%95%B7%E6%9C%9F%E6%8A%95%E8%B3%87%E5%88%86%E6%9E%90_v2.html) | `股票工具/長期投資分析_v2.html` |
 | 5 | **量化策略實驗室** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%8F%E5%8C%96%E7%AD%96%E7%95%A5%E5%AF%A6%E9%A9%97%E5%AE%A4.html) | `股票工具/量化策略實驗室.html` |
-| 6 | **🎣 股王釣魚選股攻略 v16** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v16.html) | `股票工具/釣魚選股_v16.html` |
-| 7 | **🎰 股王拉霸選股攻略 v1** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E6%8B%89%E9%9C%B8%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1.html) | `股票工具/股王拉霸選股攻略_v1.html` |
-| 8 | **🐦 股王鳥卦選股攻略 v1.6** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E9%B3%A5%E5%8D%A6%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1_6.html) | `股票工具/股王鳥卦選股攻略_v1_6.html` |
+| 6 | **🎣 股王釣魚選股攻略 v12 · 程式架構與教學使用手冊** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1v12_%E7%A8%8B%E5%BC%8F%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E8%88%87%E6%95%99%E5%AD%B8%E8%A6%81%E9%BB%9E%E6%89%8B%E5%86%8A.html) | `股票工具/釣魚選股v12_程式深度解析與教學要點手冊.html` |
+| 7 | **🎣 股王釣魚選股攻略 v16** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v16.html) | `股票工具/釣魚選股_v16.html` |
+| 8 | **🎣 釣魚選股 v12 · 原始碼與系統架構深度解析報告** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v12_%E5%8E%9F%E5%A7%8B%E7%A2%BC%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E5%A0%B1%E5%91%8A.html) | `股票工具/釣魚選股_v12_原始碼深度解析報告.html` |
+| 9 | **🎰 股王拉霸選股攻略 v1** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E6%8B%89%E9%9C%B8%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1.html) | `股票工具/股王拉霸選股攻略_v1.html` |
+| 10 | **🐦 股王鳥卦選股攻略 v1.6** | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E9%B3%A5%E5%8D%A6%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1_6.html) | `股票工具/股王鳥卦選股攻略_v1_6.html` |
 
 ### 🤖 AI工具 (13 款)
 
@@ -114,4 +116,4 @@
 ## 🚀 跨裝置使用指引
 - 📱 **手機與平板**：支援 iOS (Safari) 與 Android (Chrome) 直接瀏覽，可透過「加入主畫面」作為 PWA / 捷徑應用。
 - 💻 **桌機與筆電**：直接點擊上方目錄連結或首頁 [https://meteorda.github.io/Web_Repo/](https://meteorda.github.io/Web_Repo/)，內建即時關鍵字過濾搜尋。
-- 🕒 **最後自動同步日期**：`2026-11-11 23:26`
+- 🕒 **最後自動同步日期**：`2026-11-11 23:45`
