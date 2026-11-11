@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMC 商業模式畫布生成器 · Groq</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#0b0f17; --bg2:#0e1420;
+  --panel:#131a26; --panel2:#172131;
+  --line:#23304a; --line2:#2e3d5c;
+  --tx:#e8eef9; --mut:#8194b0; --mut2:#5e6f8c;
+  --accent:#6ee7d2; --gold:#f5c451; --indigo:#7c8cf8;
+  --kp:#7c8cf8; --ka:#a78bfa; --kr:#60a5fa; --vp:#f5c451;
+  --cr:#f472b6; --ch:#22d3ee; --cs:#5eead4;
+  --cost:#fb7185; --rev:#34d399;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:
+  radial-gradient(1200px 600px at 85% -10%, rgba(124,140,248,.10), transparent 60%),
+  radial-gradient(900px 500px at 0% 110%, rgba(110,231,210,.07), transparent 55%),
+  var(--bg);
+  color:var(--tx); font-family:"Noto Sans TC",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; min-height:100vh;}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 22px 80px}
+.layout{display:grid;grid-template-columns:minmax(340px,400px) 1fr;gap:18px;align-items:stretch}
+.col-left{display:flex;flex-direction:column}
+.col-left>.card{flex:1;display:flex;flex-direction:column}
+.col-right{display:flex;flex-direction:column;gap:18px;min-width:0}
+.col-left .card,.col-right .card{margin-top:0}
+
+/* Header */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.brand h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:30px;letter-spacing:.5px;
+  background:linear-gradient(92deg,var(--accent),var(--gold) 70%);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+.brand p{color:var(--mut);font-size:13.5px;margin-top:6px;letter-spacing:.3px}
+.brand .tag{display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--line2);
+  border-radius:999px;padding:2px 10px;margin-top:8px;letter-spacing:1px}
+
+/* API bar */
+.apibar{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.apibar .lbl{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:7px;letter-spacing:.5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--rev);box-shadow:0 0 8px var(--rev)}
+.keys{display:flex;gap:7px;flex-wrap:wrap}
+.keypill{font-size:11px;font-family:ui-monospace,monospace;color:var(--mut2);background:#0d1320;
+  border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;transition:.15s;user-select:none}
+.keypill:hover{border-color:var(--line2);color:var(--mut)}
+.keypill.active{color:#07131a;background:linear-gradient(180deg,var(--accent),#48c9b3);border-color:transparent;font-weight:700;box-shadow:0 2px 14px rgba(110,231,210,.25)}
+.keypill.dead{opacity:.35;text-decoration:line-through}
+
+/* Cards */
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:18px;padding:20px;margin-top:18px}
+.card h2{font-size:15px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.card h2 .n{font-family:"Noto Serif TC",serif;color:var(--gold);font-size:14px;border:1px solid var(--line2);border-radius:7px;width:26px;height:26px;display:grid;place-items:center}
+.fold{cursor:pointer;color:var(--mut);font-size:13px;user-select:none;transition:.15s;padding:0 4px;flex:none}
+.fold:hover{color:var(--accent)}
+.card.collapsed>:not(h2){display:none}
+.card.collapsed h2{margin-bottom:0}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;background:#0c1220;border:1px solid var(--line);border-radius:11px;padding:4px;width:fit-content}
+.tab{font-size:13px;color:var(--mut);padding:8px 16px;border-radius:8px;cursor:pointer;transition:.15s;font-weight:500}
+.tab.on{background:var(--panel2);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
+.tabpane{display:none;margin-top:14px;flex:1 1 auto;min-height:0}
+.tabpane.on{display:flex;flex-direction:column}
+#txtIn{flex:1}
+
+textarea,input[type=text],input[type=url]{width:100%;background:#0c1220;border:1px solid var(--line);
+  color:var(--tx);border-radius:11px;padding:13px 14px;font-family:inherit;font-size:14px;resize:vertical;transition:.15s}
+textarea{min-height:150px;line-height:1.6}
+textarea:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(110,231,210,.12)}
+::placeholder{color:var(--mut2)}
+
+.drop{border:1.5px dashed var(--line2);border-radius:13px;padding:32px;text-align:center;cursor:pointer;transition:.2s;background:#0c1220}
+.drop:hover,.drop.over{border-color:var(--accent);background:rgba(110,231,210,.05)}
+.drop .ic{font-size:30px}
+.drop p{color:var(--mut);font-size:13.5px;margin-top:8px}
+.drop small{color:var(--mut2);font-size:11.5px}
+.filetag{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--accent);
+  background:rgba(110,231,210,.08);border:1px solid var(--line2);border-radius:8px;padding:6px 11px}
+.imgprev{margin-top:12px;border:1px solid var(--line2);border-radius:11px;overflow:hidden;max-height:200px;display:flex;justify-content:center;background:#0c1220}
+.imgprev img{max-width:100%;max-height:200px;object-fit:contain}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.fld label{display:block;font-size:11.5px;color:var(--mut);margin-bottom:6px;letter-spacing:.3px}
+.row-models{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+.row-models .fld{flex:1;min-width:200px}
+
+/* Buttons */
+.btn{font-family:inherit;font-size:14px;font-weight:700;border:none;border-radius:11px;padding:13px 22px;cursor:pointer;transition:.18s;letter-spacing:.5px}
+.btn-primary{background:linear-gradient(95deg,var(--accent),var(--gold));color:#0a1014;box-shadow:0 6px 22px rgba(110,231,210,.22)}
+.btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+.btn-ghost{background:#0c1220;color:var(--tx);border:1px solid var(--line2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.spin{width:16px;height:16px;border:2px solid rgba(10,16,20,.35);border-top-color:#0a1014;border-radius:50%;display:inline-block;animation:sp .7s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.status{font-size:12.5px;color:var(--mut);min-height:18px}
+.status.err{color:var(--cost)}
+.status.ok{color:var(--rev)}
+
+/* 企業/個人模式切換 */
+.modesw{display:flex;gap:6px;background:#0c1220;border:1px solid var(--line);border-radius:11px;padding:4px;margin-bottom:12px}
+.mode{flex:1;text-align:center;font-size:13px;color:var(--mut);padding:9px 10px;border-radius:8px;cursor:pointer;transition:.15s;font-weight:600;letter-spacing:.3px}
+.mode.on{color:#0a1014;background:linear-gradient(95deg,var(--accent),var(--gold));box-shadow:0 3px 14px rgba(110,231,210,.2)}
+
+/* 自訂金鑰管理 */
+.keymgr{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.km-head{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);cursor:pointer;user-select:none;font-weight:500;letter-spacing:.3px}
+.km-head:hover{color:var(--tx)}
+.km-arrow{margin-left:auto;transition:.2s;font-size:11px}
+.km-head.open .km-arrow{transform:rotate(180deg)}
+.km-body{display:none;margin-top:11px}
+.km-body.open{display:block}
+.km-row{display:flex;gap:8px}
+.km-row input{flex:1;font-size:12.5px;padding:9px 11px}
+.kbtn{font-size:12px;padding:9px 14px;white-space:nowrap;flex:none}
+.kstatus{font-size:11.5px;margin-top:8px;min-height:14px}
+.kstatus.ok{color:var(--rev)} .kstatus.err{color:var(--cost)} .kstatus.run{color:var(--mut)}
+.klist{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+.kitem{display:flex;align-items:center;gap:8px;font-size:11.5px;font-family:ui-monospace,monospace;color:var(--mut);
+  background:#0c1220;border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.kitem .kx{margin-left:auto;cursor:pointer;color:var(--mut2);font-size:14px;line-height:1;padding:0 2px}
+.kitem .kx:hover{color:var(--cost)}
+.kitem .kok{color:var(--rev)}
+
+/* BMC Canvas */
+#bmcWrap{margin-top:18px;display:none}
+.bmc{background:#fbfbf7;border-radius:16px;padding:20px;color:#1a2233;
+  display:grid;grid-template-columns:repeat(10,1fr);gap:10px;
+  aspect-ratio:16/9;grid-template-rows:auto 1fr 1fr .92fr;
+  grid-template-areas:
+    "kp kp ka ka vp vp cr cr cs cs"
+    "kp kp kr kr vp vp ch ch cs cs"
+    "cost cost cost cost cost rev rev rev rev rev";}
+.bx{background:#fff;border:1px solid #e7e9ef;border-top:3px solid var(--bc,#888);border-radius:10px;padding:12px 13px;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.bx .bh{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.bx .bi{font-size:16px;line-height:1}
+.bx .bt{font-weight:900;font-size:13px;color:#222b3d}
+.bx .be{font-size:9.5px;color:#97a0b3;font-weight:500;letter-spacing:.5px;margin-left:auto;text-transform:uppercase}
+.bx ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.bx li{font-size:11.8px;line-height:1.45;color:#3c465c;padding-left:13px;position:relative}
+.bx li::before{content:;position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--bc,#888)}
+.a-kp{grid-area:kp;--bc:var(--kp)} .a-ka{grid-area:ka;--bc:var(--ka)} .a-kr{grid-area:kr;--bc:var(--kr)}
+.a-vp{grid-area:vp;--bc:var(--vp)} .a-cr{grid-area:cr;--bc:var(--cr)} .a-ch{grid-area:ch;--bc:var(--ch)}
+.a-cs{grid-area:cs;--bc:var(--cs)} .a-cost{grid-area:cost;--bc:var(--cost)} .a-rev{grid-area:rev;--bc:var(--rev)}
+.a-vp{background:linear-gradient(180deg,#fffdf4,#fff)}
+.bmc-title{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+/* 匯出 1920×1080 用的放大排版 */
+.bmc-shot{gap:16px}
+.bmc-shot .bmc-title{margin-bottom:8px}
+.bmc-shot .bmc-title b{font-size:34px}
+.bmc-shot .bmc-title span{font-size:19px}
+.bmc-shot .bx{padding:20px 22px;border-radius:14px;border-top-width:5px}
+.bmc-shot .bx .bh{gap:11px;margin-bottom:14px}
+.bmc-shot .bx .bi{font-size:27px}
+.bmc-shot .bx .bt{font-size:23px}
+.bmc-shot .bx .be{font-size:14px}
+.bmc-shot .bx ul{gap:10px}
+.bmc-shot .bx li{font-size:19px;line-height:1.5;padding-left:22px}
+.bmc-shot .bx li::before{width:8px;height:8px;top:9px;left:4px}
+.bmc-title b{font-size:17px;color:#1a2233;font-weight:900}
+.bmc-title span{font-size:11px;color:#9aa3b5}
+
+/* Prompt output */
+#promptWrap{display:none}
+.copybar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.mini{font-size:12px;color:var(--mut);font-weight:500}
+.btn-copy{background:#0c1220;border:1px solid var(--line2);color:var(--accent);font-size:12.5px;font-weight:700;padding:8px 15px;border-radius:9px;cursor:pointer;transition:.15s}
+.btn-copy:hover{background:rgba(110,231,210,.08)}
+#promptOut{min-height:260px;font-size:13px;line-height:1.7;font-family:ui-monospace,"Noto Sans TC",monospace}
+
+/* AI 提問 */
+#qaWrap{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.chip{font-size:12px;color:var(--mut);background:#0c1220;border:1px solid var(--line2);border-radius:999px;
+  padding:7px 13px;cursor:pointer;transition:.15s;font-family:inherit}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.qalog{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;max-height:440px;overflow-y:auto}
+.qalog:empty{display:none}
+.bub{font-size:13.5px;line-height:1.65;border-radius:13px;padding:11px 14px;max-width:88%;white-space:pre-wrap;word-break:break-word}
+.bub.u{align-self:flex-end;background:linear-gradient(95deg,rgba(110,231,210,.16),rgba(245,196,81,.14));
+  border:1px solid var(--line2);color:var(--tx)}
+.bub.a{align-self:flex-start;background:#0c1220;border:1px solid var(--line);color:var(--tx)}
+.bub.a b{color:var(--gold)}
+.bub.typing{color:var(--mut);font-style:italic}
+.qa-input{display:flex;gap:8px}
+.qa-input input{flex:1}
+.qa-send{flex:none;padding:13px 20px}
+.qa-send:disabled{opacity:.45;cursor:not-allowed}
+
+/* 延伸運用 */
+#extWrap{display:none}
+.chip.ext{font-weight:600}
+.eblock{border:1px solid var(--line);border-radius:13px;margin-top:14px;overflow:hidden;background:#0c1220}
+.eblock-h{display:flex;align-items:center;gap:9px;padding:11px 14px;cursor:pointer;font-size:13.5px;font-weight:700;background:var(--panel2)}
+.eblock-h .ef{margin-left:auto;color:var(--mut);font-size:12px;transition:.15s}
+.eblock-h .ecopy{font-size:11.5px;font-weight:700;color:var(--accent);border:1px solid var(--line2);border-radius:7px;padding:4px 9px;background:#0c1220}
+.eblock-h .ecopy:hover{background:rgba(110,231,210,.08)}
+.eblock-b{padding:14px}
+.eblock.collapsed .eblock-b{display:none}
+.eload{font-size:12.5px;color:var(--mut);font-style:italic;padding:14px}
+/* VPC */
+.vpc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vpc .vcol{display:flex;flex-direction:column;gap:10px}
+.vsub{border:1px solid var(--line2);border-radius:10px;padding:11px;background:#0e1521}
+.vsub h4{font-size:12px;margin-bottom:7px;color:var(--gold)}
+.vsub ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.vsub li{font-size:12px;line-height:1.45;color:var(--tx);padding-left:13px;position:relative}
+.vsub li::before{content:;position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.vpc-cap{grid-column:1/-1;font-size:11.5px;color:var(--mut);text-align:center;margin-top:2px}
+/* SWOT */
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.scell{border:1px solid var(--line2);border-radius:10px;padding:11px;border-top:3px solid var(--sc)}
+.scell h4{font-size:12.5px;margin-bottom:7px}
+.scell ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.scell li{font-size:12px;line-height:1.45;color:var(--tx);padding-left:13px;position:relative}
+.scell li::before{content:;position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--sc)}
+.s-s{--sc:var(--rev)} .s-w{--sc:var(--cost)} .s-o{--sc:var(--ch)} .s-t{--sc:var(--ka)}
+/* 競品對比 */
+.vtable{width:100%;border-collapse:collapse;font-size:12px}
+.vtable th,.vtable td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.45}
+.vtable th{background:var(--panel2);color:var(--gold);font-size:11.5px}
+.vtable td:first-child{color:var(--mut);font-weight:600;white-space:nowrap}
+.vinput{display:flex;gap:8px;margin-bottom:4px}
+.vinput input{flex:1}
+/* 風險雷達 */
+.radarwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.radarwrap canvas{max-width:100%}
+.rsum{font-size:13px;color:var(--tx);text-align:center;font-weight:600}
+.rnotes{list-style:none;width:100%;display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.rnotes li{font-size:12px;line-height:1.45;color:var(--mut);padding-left:13px;position:relative}
+.rnotes li::before{content:"▸";position:absolute;left:0;color:var(--accent)}
+/* 文字輸出 */
+.etext{font-size:13px;line-height:1.7;color:var(--tx);white-space:pre-wrap;word-break:break-word}
+/* OKR */
+.okr{display:flex;flex-direction:column;gap:11px}
+.obj{border:1px solid var(--line2);border-radius:11px;padding:12px;border-left:3px solid var(--gold)}
+.obj .ot{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:9px;line-height:1.4}
+.obj ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.obj li{font-size:12.5px;line-height:1.5;color:var(--tx);padding-left:26px;position:relative}
+.obj li::before{content:"KR";position:absolute;left:0;top:2px;font-size:9px;font-weight:700;color:var(--accent);border:1px solid var(--line2);border-radius:4px;padding:1px 4px}
+/* 30/60/90 行動計畫 */
+.plan306{display:flex;flex-direction:column;gap:12px}
+.pphase{border:1px solid var(--line2);border-radius:11px;padding:12px;border-top:3px solid var(--pc)}
+.pphase h4{font-size:12.5px;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.pprog{margin-left:auto;font-size:11px;color:var(--mut);font-weight:700;background:#0e1521;border:1px solid var(--line2);border-radius:999px;padding:2px 9px}
+.p30{--pc:var(--ch)} .p60{--pc:var(--vp)} .p90{--pc:var(--rev)}
+.ptask{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.5;padding:5px 0;cursor:pointer}
+.ptask input{margin-top:2px;width:16px;height:16px;accent-color:var(--accent);flex:none;cursor:pointer}
+.ptask.done span{text-decoration:line-through;color:var(--mut2)}
+/* Ikigai */
+.ikigai{display:flex;flex-direction:column;align-items:center;gap:14px}
+.ikigai svg{max-width:100%;height:auto}
+.ik-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.ik-cell{border:1px solid var(--line2);border-radius:10px;padding:10px;border-top:3px solid var(--ic)}
+.ik-cell h4{font-size:12px;margin-bottom:7px;color:var(--ic)}
+.ik-cell ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.ik-cell li{font-size:12px;line-height:1.45;color:var(--tx);padding-left:13px;position:relative}
+.ik-cell li::before{content:;position:absolute;left:2px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--ic)}
+.ik-love{--ic:#f472b6} .ik-good{--ic:#60a5fa} .ik-need{--ic:#34d399} .ik-paid{--ic:#f5c451}
+.ik-mid{width:100%;display:flex;flex-direction:column;gap:7px}
+.ik-int{font-size:12px;line-height:1.5;color:var(--tx);background:#0e1521;border:1px solid var(--line2);border-radius:9px;padding:8px 11px}
+.ik-int b{color:var(--accent)}
+.ik-center{width:100%;text-align:center;font-size:14px;font-weight:700;color:#0a1014;background:linear-gradient(95deg,var(--accent),var(--gold));border-radius:11px;padding:13px;line-height:1.5}
+
+footer{text-align:center;color:var(--mut2);font-size:11.5px;margin-top:40px;letter-spacing:.4px}
+
+@media(max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .col-left>.card{flex:none}
+  #txtIn{flex:none}
+}
+@media(max-width:860px){
+  .bmc{grid-template-columns:1fr;aspect-ratio:auto;grid-template-rows:none;grid-template-areas:"kp" "ka" "kr" "vp" "cr" "ch" "cs" "cost" "rev"}
+  .bx{min-height:110px}
+  .grid2{grid-template-columns:1fr}
+  .brand h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>BMC 商業模式畫布生成器</h1>
+      <p>上傳資料或貼上連結 → AI 拆解九宮格 → 一鍵產出可作圖的完整提示詞</p>
+      <span class="tag">GROQ · 自動輪替 · 可自訂金鑰</span>
+    </div>
+  </header>
+
+  <div class="layout">
+  <!-- 左欄：輸入 -->
+  <div class="col-left">
+  <div class="card">
+    <h2><span class="n">1</span><span id="step1title">輸入公司／產品資料</span></h2>
+    <div class="modesw">
+      <div class="mode on" data-mode="company">🏢 企業 BMC</div>
+      <div class="mode" data-mode="personal">👤 個人 BMC</div>
+      <div class="mode" data-mode="lean">🚀 精實畫布</div>
+    </div>
+    <div class="tabs">
+      <div class="tab on" data-tab="text">貼上文字</div>
+      <div class="tab" data-tab="file">上傳檔案</div>
+      <div class="tab" data-tab="image">上傳圖像</div>
+      <div class="tab" data-tab="url">網址連結</div>
+    </div>
+
+    <div class="tabpane on" data-pane="text">
+      <textarea id="txtIn" placeholder="貼上公司簡介、產品說明、官網文案、商業計畫書內容…（越完整越好）"></textarea>
+    </div>
+
+    <div class="tabpane" data-pane="file">
+      <div class="drop" id="drop">
+        <div class="ic">📄</div>
+        <p>點此或拖曳上傳檔案</p>
+        <small>支援 PDF · TXT · Markdown（PDF 會自動擷取文字）</small>
+      </div>
+      <input type="file" id="fileIn" accept=".pdf,.txt,.md,.markdown" hidden>
+      <div id="fileInfo"></div>
+    </div>
+
+    <div class="tabpane" data-pane="image">
+      <div class="drop" id="imgDrop">
+        <div class="ic">🖼️</div>
+        <p>點此或拖曳上傳圖像</p>
+        <small>支援 JPG · PNG · WEBP（用 Groq Vision 辨識內容）</small>
+      </div>
+      <input type="file" id="imgIn" accept="image/png,image/jpeg,image/webp" hidden>
+      <div id="imgInfo"></div>
+    </div>
+
+    <div class="tabpane" data-pane="url">
+      <input type="url" id="urlIn" placeholder="https://公司官網或產品頁面網址">
+      <p class="mini" style="margin-top:8px">將透過代理擷取頁面文字；若頁面為純前端渲染可能擷取不到，建議改貼文字。</p>
+    </div>
+
+    <div class="grid2">
+      <div class="fld"><label id="lblCo">公司名稱（選填）</label><input type="text" id="coName" placeholder="例：益師傅科技"></div>
+      <div class="fld"><label id="lblProd">產品名稱（選填）</label><input type="text" id="prodName" placeholder="例：BMC 智能分析儀"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="goBtn">⚡ 分析並生成 BMC</button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <div class="keymgr">
+      <div class="km-head" id="kmToggle">🔑 自訂 Groq 金鑰<span class="km-arrow" id="kmArrow">▾</span></div>
+      <div class="km-body" id="kmBody">
+        <div class="km-row">
+          <input type="text" id="userKey" placeholder="貼上你的 gsk_… 金鑰">
+          <button class="btn-ghost kbtn" id="saveKey">驗證並儲存</button>
+        </div>
+        <div class="kstatus" id="kstatus"></div>
+        <div class="klist" id="klist"></div>
+        <p class="mini" style="margin-top:4px">驗證通過才會儲存（存於本機瀏覽器）。自訂金鑰會優先使用，失敗自動切換內建金鑰。</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- 右欄：畫布 + 提示詞 -->
+  <div class="col-right">
+  <!-- BMC 畫布 -->
+  <div class="card" id="bmcWrap">
+    <h2><span class="n">2</span>商業模式畫布（九宮格）
+      <button class="btn btn-ghost" id="pngBtn" style="margin-left:auto;font-size:12.5px;padding:8px 15px">⬇ 下載 PNG</button>
+      <span class="fold">▾</span>
+    </h2>
+    <div class="bmc" id="bmc">
+      <div class="bmc-title"><b id="bmcCo">商業模式畫布</b><span id="bmcSub">Business Model Canvas</span></div>
+      <div class="bx a-kp"><div class="bh"><span class="bi">🤝</span><span class="bt" id="t-kp">關鍵合作夥伴</span><span class="be" id="c-kp">KP</span></div><ul id="o-kp"></ul></div>
+      <div class="bx a-ka"><div class="bh"><span class="bi">⚙️</span><span class="bt" id="t-ka">關鍵活動</span><span class="be" id="c-ka">KA</span></div><ul id="o-ka"></ul></div>
+      <div class="bx a-kr"><div class="bh"><span class="bi">🧱</span><span class="bt" id="t-kr">關鍵資源</span><span class="be" id="c-kr">KR</span></div><ul id="o-kr"></ul></div>
+      <div class="bx a-vp"><div class="bh"><span class="bi">💎</span><span class="bt" id="t-vp">價值主張</span><span class="be" id="c-vp">VP</span></div><ul id="o-vp"></ul></div>
+      <div class="bx a-cr"><div class="bh"><span class="bi">💬</span><span class="bt" id="t-cr">顧客關係</span><span class="be" id="c-cr">CR</span></div><ul id="o-cr"></ul></div>
+      <div class="bx a-ch"><div class="bh"><span class="bi">🚚</span><span class="bt" id="t-ch">通路</span><span class="be" id="c-ch">CH</span></div><ul id="o-ch"></ul></div>
+      <div class="bx a-cs"><div class="bh"><span class="bi">🎯</span><span class="bt" id="t-cs">客戶區隔</span><span class="be" id="c-cs">CS</span></div><ul id="o-cs"></ul></div>
+      <div class="bx a-cost"><div class="bh"><span class="bi">💸</span><span class="bt" id="t-cost">成本結構</span><span class="be" id="c-cost">CO$T</span></div><ul id="o-cost"></ul></div>
+      <div class="bx a-rev"><div class="bh"><span class="bi">💰</span><span class="bt" id="t-rev">收益流</span><span class="be" id="c-rev">REV</span></div><ul id="o-rev"></ul></div>
+    </div>
+  </div>
+
+  <!-- 圖像提示詞 -->
+  <div class="card" id="promptWrap">
+    <h2><span class="n">3</span>圖像作圖提示詞<span class="fold" style="margin-left:auto">▾</span></h2>
+    <div class="copybar">
+      <span class="mini">已套入九宮格內容，可直接貼到任何文字生圖工具</span>
+      <button class="btn-copy" id="copyBtn">📋 複製提示詞</button>
+    </div>
+    <textarea id="promptOut" readonly></textarea>
+  </div>
+
+  <!-- AI 提問 -->
+  <div class="card" id="qaWrap">
+    <h2><span class="n">4</span>AI 提問<span class="mini" id="qaMode" style="margin-left:auto;font-weight:500"></span><span class="fold">▾</span></h2>
+    <div class="chips" id="qaChips"></div>
+    <div class="qalog" id="qaLog"></div>
+    <div class="qa-input">
+      <input type="text" id="qaIn" placeholder="針對這份 BMC 提問…">
+      <button class="btn btn-primary qa-send" id="qaSend">送出</button>
+    </div>
+  </div>
+
+  <!-- 延伸運用 -->
+  <div class="card" id="extWrap">
+    <h2><span class="n">5</span>延伸運用<span class="fold" style="margin-left:auto">▾</span></h2>
+    <div class="chips" id="extBtns">
+      <button class="chip ext" data-ext="vpc">📐 價值主張畫布 VPC</button>
+      <button class="chip ext" data-ext="swot">🧭 SWOT 分析</button>
+      <button class="chip ext" data-ext="versus">⚔️ 競品對比</button>
+      <button class="chip ext" data-ext="risk">📊 風險與可行性評分</button>
+      <button class="chip ext" data-ext="proposal">📝 提案文案</button>
+      <button class="chip ext" data-ext="plan">📋 商業計畫書草稿</button>
+      <button class="chip ext" data-ext="slides">🖥️ 簡報大綱</button>
+      <button class="chip ext" data-ext="okr">🎯 OKR 目標</button>
+      <button class="chip ext" data-ext="action">✅ 30/60/90 行動計畫</button>
+      <button class="chip ext" data-ext="ikigai">🌸 Ikigai 生き甲斐圖</button>
+    </div>
+    <div id="extOut"></div>
+  </div>
+  </div>
+  </div>
+
+  <footer>BMC × Groq · 單檔離線工具 · 繁體中文</footer>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ===== 8 組 Groq 金鑰 ===== */
+/* ===== 內建金鑰（2 組）+ 使用者自訂金鑰 ===== */
+const BUILTIN_KEYS = [
+ ,
+ 
+];
+const LS_KEY = "bmc_user_keys";
+function userKeys(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}catch{return []} }
+function saveUserKeys(a){ try{localStorage.setItem(LS_KEY,JSON.stringify(a))}catch(e){} }
+function allKeys(){ return [...userKeys(), ...BUILTIN_KEYS]; } // 自訂金鑰優先
+/* 模型備援鏈：第一個 404／下架時自動換下一個（要換模型改這兩行） */
+const MODEL_CHAIN  = ["llama-3.3-70b-versatile","openai/gpt-oss-120b","qwen/qwen3.6-27b"];
+const VISION_CHAIN = ["qwen/qwen3.6-27b","openai/gpt-oss-120b"];
+const MODEL = MODEL_CHAIN[0];        // 文字分析模型
+const VISION_MODEL = VISION_CHAIN[0]; // 圖像辨識模型
+const dead = new Set();   // 以金鑰字串記錄失效者
+const deadModels = new Set(); // 已下架／404 的模型
+let keyCursor = 0;        // 輪替指標
+const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+const MODELS_URL = "https://api.groq.com/openai/v1/models";
+
+/* ===== 驗證單一金鑰（呼叫 models 端點，不耗用量） ===== */
+async function verifyKey(k){
+  try{
+    const r = await fetch(MODELS_URL,{headers:{Authorization:"Bearer "+k}});
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+/* ===== 自訂金鑰 UI ===== */
+function mask(k){ return k.slice(0,7)+'…'+k.slice(-5); }
+function renderKlist(){
+  const el=document.getElementById('klist'); el.innerHTML='';
+  userKeys().forEach((k,i)=>{
+    const d=document.createElement('div'); d.className='kitem';
+    d.innerHTML='<span class="kok">✓</span><span>'+mask(k)+'</span><span class="kx" title="刪除">✕</span>';
+    d.querySelector('.kx').onclick=()=>{ const a=userKeys(); a.splice(i,1); saveUserKeys(a); dead.delete(k); renderKlist(); };
+    el.appendChild(d);
+  });
+}
+function setKStatus(t,cls=''){ const s=document.getElementById('kstatus'); s.textContent=t; s.className='kstatus '+cls; }
+
+document.getElementById('kmToggle').onclick=()=>{
+  document.getElementById('kmToggle').classList.toggle('open');
+  document.getElementById('kmBody').classList.toggle('open');
+};
+
+document.getElementById('saveKey').onclick=async()=>{
+  const inp=document.getElementById('userKey');
+  const k=inp.value.trim();
+  const btn=document.getElementById('saveKey');
+  if(!k){ return setKStatus('請先輸入金鑰','err'); }
+  if(!k.startsWith('gsk_')){ return setKStatus('格式可能有誤（應為 gsk_ 開頭）','err'); }
+  if(userKeys().includes(k)||BUILTIN_KEYS.includes(k)){ return setKStatus('此金鑰已存在','err'); }
+  btn.disabled=true; setKStatus('驗證中…','run');
+  const ok=await verifyKey(k);
+  btn.disabled=false;
+  if(!ok){ return setKStatus('✗ 驗證失敗，金鑰無效或無權限','err'); }
+  const a=userKeys(); a.push(k); saveUserKeys(a);
+  dead.delete(k); inp.value='';
+  setKStatus('✓ 驗證通過，已儲存','ok');
+  renderKlist();
+};
+renderKlist();
+
+/* ===== 分頁切換 ===== */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.querySelector('.tabpane[data-pane="'+t.dataset.tab+'"]').classList.add('on');
+});
+
+/* ===== 檔案上傳 ===== */
+const drop=document.getElementById('drop'), fileIn=document.getElementById('fileIn'), fileInfo=document.getElementById('fileInfo');
+let fileText='';
+drop.onclick=()=>fileIn.click();
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>{ if(ev.dataTransfer.files[0]) handleFile(ev.dataTransfer.files[0]); });
+fileIn.onchange=()=>{ if(fileIn.files[0]) handleFile(fileIn.files[0]); };
+
+/* ===== 圖像上傳 ===== */
+const imgDrop=document.getElementById('imgDrop'), imgIn=document.getElementById('imgIn'), imgInfo=document.getElementById('imgInfo');
+let imgData='';
+imgDrop.onclick=()=>imgIn.click();
+['dragover','dragenter'].forEach(e=>imgDrop.addEventListener(e,ev=>{ev.preventDefault();imgDrop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>imgDrop.addEventListener(e,ev=>{ev.preventDefault();imgDrop.classList.remove('over')}));
+imgDrop.addEventListener('drop',ev=>{ if(ev.dataTransfer.files[0]) handleImg(ev.dataTransfer.files[0]); });
+imgIn.onchange=()=>{ if(imgIn.files[0]) handleImg(imgIn.files[0]); };
+function handleImg(f){
+  if(!f.type.startsWith('image/')){ imgInfo.innerHTML='<span class="filetag" style="color:var(--cost)">✗ 請上傳圖片檔</span>'; return; }
+  const r=new FileReader();
+  r.onload=()=>{
+    imgData=r.result; // data:image/...;base64,...
+    imgInfo.innerHTML='<div class="imgprev"><img src="'+imgData+'"></div><span class="filetag">✓ '+f.name+'</span>';
+  };
+  r.readAsDataURL(f);
+}
+
+async function handleFile(f){
+  fileInfo.innerHTML='<span class="filetag">⏳ 讀取中… '+f.name+'</span>';
+  try{
+    if(f.name.toLowerCase().endsWith('.pdf')){
+      const buf=await f.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      let txt='';
+      for(let i=1;i<=pdf.numPages;i++){
+        const page=await pdf.getPage(i);
+        const c=await page.getTextContent();
+        txt+=c.items.map(it=>it.str).join(' ')+'\n';
+      }
+      fileText=txt;
+    }else{
+      fileText=await f.text();
+    }
+    fileInfo.innerHTML='<span class="filetag">✓ '+f.name+'（'+fileText.length.toLocaleString()+' 字）</span>';
+  }catch(e){
+    fileInfo.innerHTML='<span class="filetag" style="color:var(--cost)">✗ 讀取失敗：'+e.message+'</span>';
+    fileText='';
+  }
+}
+
+/* ===== 網址擷取（多代理 fallback） ===== */
+async function fetchUrl(url){
+  const proxies=[
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+    u=>'https://thingproxy.freeboard.io/fetch/'+u
+  ];
+  for(const p of proxies){
+    try{
+      const r=await fetch(p(url));
+      if(!r.ok) continue;
+      const html=await r.text();
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      doc.querySelectorAll('script,style,noscript,svg').forEach(n=>n.remove());
+      const t=(doc.body?doc.body.innerText:html).replace(/\n{3,}/g,'\n\n').trim();
+      if(t.length>50) return t;
+    }catch(e){}
+  }
+  throw new Error('所有代理均無法擷取此網址');
+}
+
+/* ===== Groq 呼叫（金鑰自動輪替） ===== */
+async function callGroq(messages,model,opts={}){
+  const keys = allKeys().filter(k=>!dead.has(k));
+  if(!keys.length) throw new Error('沒有可用金鑰，請新增自訂金鑰');
+  // 依傳入模型決定備援鏈
+  let chain = VISION_CHAIN.includes(model)?VISION_CHAIN.slice():MODEL_CHAIN.slice();
+  if(!chain.includes(model)) chain.unshift(model);
+  else chain = [model, ...chain.filter(m=>m!==model)];
+
+  let lastErr;
+  for(const m of chain){
+    if(deadModels.has(m)) continue;
+    const body={model:m,messages,temperature:0.4,max_tokens:4000};
+    if(opts.json!==false) body.response_format={type:"json_object"};
+    let modelGone=false;
+    for(let i=0;i<keys.length;i++){
+      const pos = (keyCursor+i)%keys.length;
+      const k = keys[pos];
+      try{
+        const r=await fetch(ENDPOINT,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+          body:JSON.stringify(body)
+        });
+        if(r.status===401||r.status===403){ dead.add(k); lastErr=new Error('某組金鑰失效'); continue; }
+        if(r.status===429){ lastErr=new Error('某組金鑰額度限制'); continue; }
+        if(!r.ok){
+          const t=(await r.text()).slice(0,200);
+          if(r.status===404 || /does not exist|decommission|model_not_found/i.test(t)){
+            deadModels.add(m); lastErr=new Error('模型 '+m+' 已下架，改用備援模型');
+            modelGone=true; break;   // 換下一個模型
+          }
+          lastErr=new Error('HTTP '+r.status+'：'+t.slice(0,120)); continue;
+        }
+        const data=await r.json();
+        keyCursor=pos;
+        return data.choices[0].message.content;
+      }catch(e){ lastErr=e; }
+    }
+    if(modelGone) continue;
+  }
+  throw lastErr||new Error('全部金鑰／模型皆無法使用');
+}
+
+/* ===== 主流程 ===== */
+const SYS_COMPANY=`你是資深商業模式分析顧問。請依使用者提供的公司／產品資料，拆解成 Business Model Canvas（商業模式畫布）標準九宮格。
+規則：
+1. 僅輸出 JSON，不要任何說明文字或 markdown 標記。
+2. 所有內容使用繁體中文（台灣用語）。
+3. 每個區塊 3~5 條，每條精簡具體、商業化、條列式（單句，勿冗長）。
+4. 若資料不足，依產業常理合理推論補齊，不可留空。
+JSON 結構：
+{
+ "company":"公司名稱","product":"產品名稱",
+ "cs":["客戶區隔…"],"vp":["價值主張…"],"ch":["通路…"],
+ "cr":["顧客關係…"],"rev":["收益流…"],"kr":["關鍵資源…"],
+ "ka":["關鍵活動…"],"kp":["關鍵合作夥伴…"],"cost":["成本結構…"]
+}`;
+
+const SYS_LEAN=`你是資深新創顧問與精實創業教練。請依使用者提供的新創／產品構想，拆解成「精實畫布」（Lean Canvas）九宮格。
+規則：
+1. 僅輸出 JSON，不要任何說明文字或 markdown 標記。
+2. 所有內容使用繁體中文（台灣用語）。
+3. 每個區塊 3~5 條，精簡具體、單句、勿冗長；務實面對風險與假設。
+4. 若資料不足，依常理合理推論補齊，不可留空。
+各區塊（沿用以下 JSON key）對應精實畫布定義：
+- kp（問題 Problem）：目標客群最重要的 1~3 個問題、現有替代方案
+- ka（解決方案 Solution）：對應每個問題的最簡解法
+- kr（關鍵指標 Key Metrics）：衡量成敗的關鍵數字
+- vp（獨特價值主張 UVP）：一句話說清為何不同、值得買
+- cr（不公平優勢 Unfair Advantage）：難被複製的優勢
+- ch（通路 Channels）：觸及客戶的路徑
+- cs（客戶區隔 Customer Segments）：目標客群、早期採用者
+- cost（成本結構 Cost Structure）：主要成本
+- rev（收益流 Revenue Streams）：營收來源、定價
+JSON 結構：
+{
+ "company":"專案名稱","product":"產品名稱",
+ "cs":[…],"vp":[…],"ch":[…],"cr":[…],"rev":[…],"kr":[…],"ka":[…],"kp":[…],"cost":[…]
+}`;
+
+const SYS_PERSONAL=`你是資深職涯與個人品牌顧問。請依使用者提供的個人資料（背景、技能、經歷、興趣、職涯目標等），拆解成「個人商業模式畫布」（Personal Business Model Canvas / Business Model You）九宮格。
+規則：
+1. 僅輸出 JSON，不要任何說明文字或 markdown 標記。
+2. 所有內容使用繁體中文（台灣用語）。
+3. 每個區塊 3~5 條，以「個人」視角表達，精簡具體、單句、勿冗長。
+4. 若資料不足，依常理合理推論補齊，不可留空。
+各區塊個人版定義：
+- company 填「姓名」、product 填「職稱或專長領域」
+- cs（你幫助誰）：你服務或影響的對象、雇主、客戶、團隊
+- vp（你如何幫助他人）：你能提供的價值、解決的問題、獨特優勢
+- ch（如何被看見）：別人如何認識你、你如何傳遞成果（作品集、社群、人脈、面試）
+- cr（互動方式）：你與對象建立關係的方式（協作、指導、服務、社群經營）
+- rev（你得到什麼）：薪資、報酬、成就感、學習、人脈、聲譽
+- kr（你是誰／你有什麼）：技能、知識、經驗、人格特質、證照、資源
+- ka（你做什麼）：你日常執行的關鍵工作與活動
+- kp（誰能幫你）：協助你的人脈、導師、夥伴、團隊、平台
+- cost（你付出什麼）：你投入的時間、精力、金錢、壓力與機會成本
+JSON 結構：
+{
+ "company":"姓名","product":"職稱或領域",
+ "cs":[…],"vp":[…],"ch":[…],"cr":[…],"rev":[…],"kr":[…],"ka":[…],"kp":[…],"cost":[…]
+}`;
+
+const $=id=>document.getElementById(id);
+let DATA=null;
+let mode='company';
+
+const LABELS={
+  company:{kp:'關鍵合作夥伴',ka:'關鍵活動',kr:'關鍵資源',vp:'價值主張',cr:'顧客關係',ch:'通路',cs:'客戶區隔',cost:'成本結構',rev:'收益流'},
+  personal:{kp:'誰能幫你',ka:'你做什麼',kr:'你是誰／你有什麼',vp:'你如何幫助他人',cr:'互動方式',ch:'如何被看見',cs:'你幫助誰',cost:'你付出什麼',rev:'你得到什麼'},
+  lean:{kp:'問題',ka:'解決方案',kr:'關鍵指標',vp:'獨特價值主張',cr:'不公平優勢',ch:'通路',cs:'客戶區隔',cost:'成本結構',rev:'收益流'}
+};
+const CODES={
+  company:{kp:'KP',ka:'KA',kr:'KR',vp:'VP',cr:'CR',ch:'CH',cs:'CS',cost:'CO$T',rev:'REV'},
+  personal:{kp:'誰',ka:'做',kr:'我',vp:'值',cr:'動',ch:'見',cs:'誰',cost:'付',rev:'得'},
+  lean:{kp:'PROB',ka:'SOL',kr:'KPI',vp:'UVP',cr:'EDGE',ch:'CH',cs:'CS',cost:'CO$T',rev:'REV'}
+};
+const UI={
+  company:{step1:'輸入公司／產品資料',lblCo:'公司名稱（選填）',lblProd:'產品名稱（選填）',phCo:'例：益師傅科技',phProd:'例：BMC 智能分析儀',sub:'Business Model Canvas',txtPh:'貼上公司簡介、產品說明、官網文案、商業計畫書內容…（越完整越好）'},
+  personal:{step1:'輸入個人資料',lblCo:'姓名（選填）',lblProd:'職稱／專長領域（選填）',phCo:'例：王小明',phProd:'例：資深前端工程師 / 自由接案',sub:'Personal Business Model Canvas',txtPh:'貼上個人簡歷、技能、經歷、興趣、職涯目標…（越完整越好）'},
+  lean:{step1:'輸入新創／產品構想',lblCo:'專案／公司名稱（選填）',lblProd:'產品名稱（選填）',phCo:'例：益師傅新創',phProd:'例：AI 選股助理',sub:'Lean Canvas',txtPh:'貼上你的新創構想、目標客群、想解決的問題、解決方案…（越完整越好）'}
+};
+function applyMode(m){
+  mode=m;
+  document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));
+  const u=UI[m], L=LABELS[m];
+  $('step1title').textContent=u.step1;
+  $('lblCo').textContent=u.lblCo; $('lblProd').textContent=u.lblProd;
+  $('coName').placeholder=u.phCo; $('prodName').placeholder=u.phProd;
+  $('txtIn').placeholder=u.txtPh;
+  $('bmcSub').textContent=u.sub;
+  Object.keys(L).forEach(k=>{ const el=$('t-'+k); if(el) el.textContent=L[k]; });
+  const C=CODES[m];
+  Object.keys(C).forEach(k=>{ const el=$('c-'+k); if(el) el.textContent=C[k]; });
+}
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>applyMode(b.dataset.mode));
+applyMode('company');
+
+$('goBtn').onclick=async()=>{
+  const tab=document.querySelector('.tab.on').dataset.tab;
+  const isP=mode==='personal', isL=mode==='lean';
+  const sys=isL?SYS_LEAN:(isP?SYS_PERSONAL:SYS_COMPANY);
+  const subjLbl=isP?'個人資料':(isL?'新創構想':'公司／產品資料');
+
+  const hint=[];
+  if($('coName').value.trim()) hint.push((isP?'姓名：':(isL?'專案名稱：':'公司名稱：'))+$('coName').value.trim());
+  if($('prodName').value.trim()) hint.push((isP?'職稱／領域：':'產品名稱：')+$('prodName').value.trim());
+  const hintTxt=hint.length?hint.join('\n')+'\n\n':'';
+
+  let messages, model=MODEL, useJson=true;
+
+  if(tab==='image'){
+    if(!imgData) return setStatus('✗ 請先上傳圖像','err');
+    model=VISION_MODEL; useJson=false;
+    const itext=isP
+      ? '請辨識這張圖片中的個人資訊（含圖中所有文字、姓名、技能、經歷、頭銜等），據此拆解成個人 BMC 九宮格，僅輸出指定 JSON。'
+      : (isL
+        ? '請辨識這張圖片中的產品／新創相關資訊（含圖中所有文字、功能、訴求），據此拆解成精實畫布九宮格，僅輸出指定 JSON。'
+        : '請辨識這張圖片中的公司／產品資訊（含圖中所有文字、品牌、規格、特色），據此拆解成 BMC 九宮格，僅輸出指定 JSON。');
+    messages=[
+      {role:'system',content:sys},
+      {role:'user',content:[
+        {type:'text',text:hintTxt+itext},
+        {type:'image_url',image_url:{url:imgData}}
+      ]}
+    ];
+  }else{
+    let src='';
+    setStatus('整理輸入資料…');
+    try{
+      if(tab==='text') src=$('txtIn').value.trim();
+      else if(tab==='file') src=fileText.trim();
+      else if(tab==='url'){
+        const u=$('urlIn').value.trim();
+        if(!u) throw new Error('請輸入網址');
+        setStatus('擷取網頁內容…');
+        src=await fetchUrl(u);
+      }
+    }catch(e){ return setStatus('✗ '+e.message,'err'); }
+    if(!src||src.length<20) return setStatus('✗ 資料太少，請提供更完整內容','err');
+    src=src.slice(0,12000);
+    messages=[
+      {role:'system',content:sys},
+      {role:'user',content:hintTxt+subjLbl+'如下：\n'+src}
+    ];
+  }
+
+  $('goBtn').disabled=true;
+  $('goBtn').innerHTML='<span class="spin"></span>'+(tab==='image'?'辨識圖像中…':'AI 分析中…');
+  setStatus(tab==='image'?'呼叫 Groq Vision 辨識並拆解…':'呼叫 Groq 模型拆解九宮格…');
+
+  try{
+    const raw=await callGroq(messages,model,{json:useJson});
+    DATA=parseJSON(raw);
+    renderBMC(DATA);
+    buildPrompt(DATA);
+    initQA();
+    $('extOut').innerHTML=''; extMode=mode;
+    setStatus('✓ 完成','ok');
+    $('bmcWrap').style.display='block';
+    $('promptWrap').style.display='block';
+    $('qaWrap').style.display='block';
+    $('extWrap').style.display='block';
+    $('bmcWrap').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    setStatus('✗ 生成失敗：'+e.message,'err');
+  }finally{
+    $('goBtn').disabled=false;
+    $('goBtn').innerHTML='⚡ 分析並生成 BMC';
+  }
+};
+
+function parseJSON(s){
+  s=String(s).replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/<\|[^|]*\|>/g,'');
+  s=s.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  const a=s.indexOf('{'), b=s.lastIndexOf('}');
+  if(a>=0&&b>=0) s=s.slice(a,b+1);
+  return JSON.parse(s);
+}
+
+function fill(id,arr){
+  const ul=$('o-'+id); ul.innerHTML='';
+  (arr||[]).forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+}
+function renderBMC(d){
+  const defTitle=mode==='personal'?'個人商業模式畫布':(mode==='lean'?'精實畫布':'商業模式畫布');
+  $('bmcCo').textContent=(d.company||defTitle)+(d.product?'　|　'+d.product:'');
+  ['kp','ka','kr','vp','cr','ch','cs','cost','rev'].forEach(k=>fill(k,d[k]));
+}
+
+/* ===== 作圖提示詞 ===== */
+function lines(arr){return (arr||[]).map(x=>'・'+x).join('\n');}
+function buildPrompt(d){
+  $('promptOut').value = mode==='personal' ? buildPersonalPrompt(d) : (mode==='lean'? buildLeanPrompt(d) : buildCompanyPrompt(d));
+}
+function buildLeanPrompt(d){
+  const co=d.company||'（專案名稱）', pr=d.product||'（產品名稱）';
+  return `請製作一張專業、清晰、適合新創提案使用的 Lean Canvas（精實畫布）九宮格圖像。版面為橫式 16:9，白底淺色商務風格，視覺乾淨、現代、易讀，採用精實畫布標準結構（上排五格：問題｜解決方案＋關鍵指標（上下分割）｜獨特價值主張｜不公平優勢＋通路（上下分割）｜客戶區隔；下排兩格：成本結構｜收益流）。文字使用繁體中文，每格都有標題與條列式重點，避免冗長段落。
+
+【標題】${co}　精實畫布${pr&&pr!=='（產品名稱）'?'：'+pr:''}
+
+請將以下內容分別填入九個區塊：
+
+① 問題（Problem）
+${lines(d.kp)}
+
+② 解決方案（Solution）
+${lines(d.ka)}
+
+③ 關鍵指標（Key Metrics）
+${lines(d.kr)}
+
+④ 獨特價值主張（Unique Value Proposition）
+${lines(d.vp)}
+
+⑤ 不公平優勢（Unfair Advantage）
+${lines(d.cr)}
+
+⑥ 通路（Channels）
+${lines(d.ch)}
+
+⑦ 客戶區隔（Customer Segments）
+${lines(d.cs)}
+
+⑧ 成本結構（Cost Structure）
+${lines(d.cost)}
+
+⑨ 收益流（Revenue Streams）
+${lines(d.rev)}
+
+每個區塊內容精簡、具體，整體像是一張可直接用於募資簡報或新創提案的精實畫布圖。配色建議：左側問題/解法用冷色，中央價值主張用金色強調，右側客群用暖色，底部成本用紅、收益用綠，區塊間留白清楚、線條俐落。`;
+}
+function buildPersonalPrompt(d){
+  const nm=d.company||'（姓名）', role=d.product||'（職稱／領域）';
+  return `請製作一張專業、清晰、適合履歷與職涯規劃使用的「個人商業模式畫布」（Personal Business Model Canvas）九宮格圖像。版面為橫式 16:9，白底淺色商務風格，視覺乾淨、現代、易讀，採用標準九格結構（上排五格：誰能幫你｜你做什麼＋你是誰／你有什麼（上下分割）｜你如何幫助他人｜互動方式＋如何被看見（上下分割）｜你幫助誰；下排兩格：你付出什麼｜你得到什麼）。文字使用繁體中文，每格都有標題與條列式重點，避免冗長段落。
+
+【標題】${nm}　個人商業模式畫布${role&&role!=='（職稱／領域）'?'：'+role:''}
+
+請將以下內容分別填入九個區塊：
+
+① 你幫助誰（Who You Help）
+${lines(d.cs)}
+
+② 你如何幫助他人（How You Help）
+${lines(d.vp)}
+
+③ 如何被看見（How They Know You）
+${lines(d.ch)}
+
+④ 互動方式（How You Interact）
+${lines(d.cr)}
+
+⑤ 你得到什麼（What You Get）
+${lines(d.rev)}
+
+⑥ 你是誰／你有什麼（Who You Are）
+${lines(d.kr)}
+
+⑦ 你做什麼（What You Do）
+${lines(d.ka)}
+
+⑧ 誰能幫你（Who Helps You）
+${lines(d.kp)}
+
+⑨ 你付出什麼（What You Give）
+${lines(d.cost)}
+
+每個區塊內容精簡、具體、以個人視角表達，整體像是一張可直接用於履歷、面試、職涯諮詢或個人品牌規劃的個人 BMC 圖。配色建議：左側能力區塊用冷色（藍／紫），中央價值用金色強調，右側對象區塊用暖色（粉／青），底部付出用紅、收穫用綠，區塊間留白清楚、線條俐落。`;
+}
+function buildCompanyPrompt(d){
+  const co=d.company||'（公司名稱）', pr=d.product||'（產品名稱）';
+  return `請製作一張專業、清晰、適合簡報與商業分析使用的 Business Model Canvas（BMC）九宮格圖像。版面為橫式 16:9，白底淺色商務風格，整體視覺乾淨、現代、易讀，採用標準九格結構（上排五格：關鍵合作夥伴｜關鍵活動＋關鍵資源（上下分割）｜價值主張｜顧客關係＋通路（上下分割）｜客戶區隔；下排兩格：成本結構｜收益流）。文字使用繁體中文，字體清楚、排版整齊，每個區塊都有標題與條列式重點，避免冗長段落。
+
+【標題】${co}　商業模式畫布${pr&&pr!=='（產品名稱）'?'：'+pr:''}
+
+請將以下內容分別填入九個區塊：
+
+① 客戶區隔（Customer Segments）
+${lines(d.cs)}
+
+② 價值主張（Value Proposition）
+${lines(d.vp)}
+
+③ 通路（Channels）
+${lines(d.ch)}
+
+④ 顧客關係（Customer Relationships）
+${lines(d.cr)}
+
+⑤ 收益流（Revenue Streams）
+${lines(d.rev)}
+
+⑥ 關鍵資源（Key Resources）
+${lines(d.kr)}
+
+⑦ 關鍵活動（Key Activities）
+${lines(d.ka)}
+
+⑧ 關鍵合作夥伴（Key Partners）
+${lines(d.kp)}
+
+⑨ 成本結構（Cost Structure）
+${lines(d.cost)}
+
+每個區塊內容精簡、具體、商業化表達，整體像是一張可直接用於提案、教學或內部策略會議的 BMC 分析圖。配色建議：左側營運區塊用冷色（藍／紫），中央價值主張用金色強調，右側市場區塊用暖色（粉／青），底部成本用紅、收益用綠，區塊間留白清楚、線條俐落。`;
+}
+
+$('copyBtn').onclick=()=>{
+  $('promptOut').select();
+  navigator.clipboard.writeText($('promptOut').value).then(()=>{
+    const b=$('copyBtn'); const o=b.textContent; b.textContent='✓ 已複製';
+    setTimeout(()=>b.textContent=o,1500);
+  });
+};
+
+/* ===== AI 提問 ===== */
+let qaHistory=[], qaCtxMode='company';
+const QA_CHIPS={
+  company:['這個商業模式最大的風險?','如何強化價值主張?','有哪些獲利成長機會?','主要競爭優勢與弱點?','建議的下一步行動?'],
+  personal:['我最該強化哪項技能?','如何提升個人價值?','職涯下一步怎麼走?','我的競爭優勢是什麼?','如何擴展人脈與被看見?'],
+  lean:['最該先驗證哪個假設?','問題與解法是否吻合?','MVP 該怎麼做?','最大的風險在哪?','要追蹤哪些關鍵指標?']
+};
+function initQA(){
+  qaCtxMode=mode; qaHistory=[];
+  $('qaLog').innerHTML='';
+  const mn=mode==='personal'?'個人 BMC':(mode==='lean'?'精實畫布':'企業 BMC');
+  $('qaMode').textContent=mn+' · 多輪對話';
+  const chips=$('qaChips'); chips.innerHTML='';
+  QA_CHIPS[mode].forEach(q=>{
+    const b=document.createElement('button'); b.className='chip'; b.textContent=q;
+    b.onclick=()=>{ $('qaIn').value=q; askQA(); };
+    chips.appendChild(b);
+  });
+}
+function qaSystem(){
+  const role=qaCtxMode==='personal'?'職涯與個人品牌':(qaCtxMode==='lean'?'精實創業與新創策略':'商業模式與經營策略');
+  const cn=qaCtxMode==='personal'?'個人':(qaCtxMode==='lean'?'精實畫布':'企業');
+  return `你是資深的${role}顧問。以下是使用者剛完成的${cn}畫布。請依此回答提問。
+規則：用繁體中文（台灣用語），務實具體、可執行，重點條列，避免空泛客套；可主動點出畫布中的弱點、風險或盲點。回答精簡，盡量控制在 250 字內。
+畫布內容（JSON）：
+${JSON.stringify(DATA)}`;
+}
+function addBub(cls,text){
+  const d=document.createElement('div'); d.className='bub '+cls; d.textContent=text;
+  $('qaLog').appendChild(d); $('qaLog').scrollTop=$('qaLog').scrollHeight; return d;
+}
+async function askQA(){
+  if(!DATA) return;
+  const q=$('qaIn').value.trim();
+  if(!q) return;
+  $('qaIn').value=''; $('qaSend').disabled=true;
+  addBub('u',q);
+  const typing=addBub('a typing','思考中…');
+  qaHistory.push({role:'user',content:q});
+  try{
+    const recent=qaHistory.slice(-12);
+    const ans=(await callGroq([{role:'system',content:qaSystem()},...recent],MODEL,{json:false})).trim();
+    typing.remove(); addBub('a',ans);
+    qaHistory.push({role:'assistant',content:ans});
+  }catch(e){
+    typing.remove(); addBub('a','✗ 回答失敗：'+e.message);
+    qaHistory.pop();
+  }finally{
+    $('qaSend').disabled=false; $('qaIn').focus();
+  }
+}
+$('qaSend').onclick=askQA;
+$('qaIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); askQA(); } });
+
+/* ===== 卡片摺疊 ===== */
+document.querySelectorAll('.fold').forEach(f=>{
+  f.onclick=e=>{ e.stopPropagation(); const c=f.closest('.card'); c.classList.toggle('collapsed');
+    f.textContent=c.classList.contains('collapsed')?'▸':'▾'; };
+});
+
+/* ===== 延伸運用 ===== */
+let extMode='company';
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function liList(arr){return (arr||[]).map(x=>'<li>'+esc(x)+'</li>').join('');}
+
+// 建立／取得可摺疊結果區塊
+function extBlock(key,title){
+  let b=document.getElementById('eb-'+key);
+  if(!b){
+    b=document.createElement('div'); b.className='eblock'; b.id='eb-'+key;
+    b.innerHTML='<div class="eblock-h"><span>'+title+'</span><span class="ef">▾</span></div><div class="eblock-b"></div>';
+    const head=b.querySelector('.eblock-h'), ef=b.querySelector('.ef');
+    head.onclick=()=>{ b.classList.toggle('collapsed'); ef.textContent=b.classList.contains('collapsed')?'▸':'▾'; };
+    $('extOut').appendChild(b);
+  }
+  b.classList.remove('collapsed'); b.querySelector('.ef').textContent='▾';
+  b.scrollIntoView({behavior:'smooth',block:'nearest'});
+  return b.querySelector('.eblock-b');
+}
+function extLoading(key,title){ const body=extBlock(key,title); body.innerHTML='<div class="eload">AI 產生中…</div>'; return body; }
+function addCopy(key,getText){
+  const head=document.getElementById('eb-'+key).querySelector('.eblock-h');
+  if(head.querySelector('.ecopy')) return;
+  const ef=head.querySelector('.ef');
+  const btn=document.createElement('button'); btn.className='ecopy'; btn.textContent='複製';
+  btn.onclick=ev=>{ ev.stopPropagation(); navigator.clipboard.writeText(getText()).then(()=>{btn.textContent='✓';setTimeout(()=>btn.textContent='複製',1200);}); };
+  head.insertBefore(btn,ef);
+}
+
+const cnName=()=> extMode==='personal'?'個人畫布':(extMode==='lean'?'精實畫布':'商業模式畫布');
+
+document.querySelectorAll('.chip.ext').forEach(b=>b.onclick=()=>runExt(b.dataset.ext));
+
+async function runExt(type){
+  if(!DATA) return;
+  try{
+    if(type==='vpc') return await extVPC();
+    if(type==='swot') return await extSWOT();
+    if(type==='versus') return await extVersus();
+    if(type==='risk') return await extRisk();
+    if(type==='okr') return await extOKR();
+    if(type==='action') return await extAction();
+    if(type==='ikigai') return await extIkigai();
+    if(type==='proposal') return await extText('proposal','📝 提案文案',
+      '請依下列畫布撰寫一段對外提案文案，約 300 字，繁體中文，語氣專業具說服力，可直接用於 email 或提案開場。');
+    if(type==='plan') return await extText('plan','📋 商業計畫書草稿',
+      '請依下列畫布產出商業計畫書草稿大綱，繁體中文，分節條列：一、執行摘要 二、市場與客群 三、產品與價值主張 四、商業模式與獲利 五、行銷與通路 六、競爭與優勢 七、財務概估 八、團隊與里程碑。每節 2~4 條重點。');
+    if(type==='slides') return await extText('slides','🖥️ 簡報大綱',
+      '請依下列畫布產出提案／募資簡報大綱，繁體中文，共 10 張投影片，每張格式為「第N張：標題」後接 3 條重點。');
+  }catch(e){
+    const body=extBlock(type,'⚠️ 失敗'); body.innerHTML='<div class="eload">✗ '+esc(e.message)+'</div>';
+  }
+}
+
+const ctxJSON=()=>`${cnName()}內容（JSON）：\n${JSON.stringify(DATA)}`;
+
+async function extVPC(){
+  const body=extLoading('vpc','📐 價值主張畫布 VPC');
+  const sys='你是價值主張設計顧問。依使用者畫布產出價值主張畫布（VPC）。僅輸出 JSON，繁體中文，每項 3~5 條：\n{"jobs":["顧客任務"],"pains":["顧客痛點"],"gains":["顧客獲益"],"products":["產品與服務"],"relievers":["痛點解方"],"creators":["獲益引擎"]}';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  body.innerHTML=
+    '<div class="vpc"><div class="vcol">'+
+      '<div class="vsub"><h4>🛠️ 產品與服務</h4><ul>'+liList(d.products)+'</ul></div>'+
+      '<div class="vsub"><h4>💊 痛點解方</h4><ul>'+liList(d.relievers)+'</ul></div>'+
+      '<div class="vsub"><h4>🚀 獲益引擎</h4><ul>'+liList(d.creators)+'</ul></div>'+
+    '</div><div class="vcol">'+
+      '<div class="vsub"><h4>🎯 顧客任務</h4><ul>'+liList(d.jobs)+'</ul></div>'+
+      '<div class="vsub"><h4>😣 顧客痛點</h4><ul>'+liList(d.pains)+'</ul></div>'+
+      '<div class="vsub"><h4>😊 顧客獲益</h4><ul>'+liList(d.gains)+'</ul></div>'+
+    '</div><div class="vpc-cap">左：價值地圖　｜　右：顧客素描</div></div>';
+}
+
+async function extSWOT(){
+  const body=extLoading('swot','🧭 SWOT 分析');
+  const sys='你是策略顧問。依使用者畫布做 SWOT 分析。僅輸出 JSON，繁體中文，每項 3~5 條：\n{"s":["優勢"],"w":["劣勢"],"o":["機會"],"t":["威脅"]}';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  body.innerHTML='<div class="swot">'+
+    '<div class="scell s-s"><h4>💪 優勢 Strengths</h4><ul>'+liList(d.s)+'</ul></div>'+
+    '<div class="scell s-w"><h4>⚠️ 劣勢 Weaknesses</h4><ul>'+liList(d.w)+'</ul></div>'+
+    '<div class="scell s-o"><h4>🌱 機會 Opportunities</h4><ul>'+liList(d.o)+'</ul></div>'+
+    '<div class="scell s-t"><h4>🔥 威脅 Threats</h4><ul>'+liList(d.t)+'</ul></div></div>';
+}
+
+async function extVersus(){
+  const body=extBlock('versus','⚔️ 競品對比');
+  body.innerHTML='<div class="vinput"><input type="text" id="vsName" placeholder="輸入競爭對手名稱，例：Gogoro"><button class="btn btn-primary" id="vsGo" style="flex:none;padding:11px 18px">對比</button></div><div id="vsResult"></div>';
+  const run=async()=>{
+    const name=document.getElementById('vsName').value.trim();
+    if(!name) return;
+    document.getElementById('vsResult').innerHTML='<div class="eload">AI 對比中…</div>';
+    const sys='你是競爭策略分析師。我方畫布如下，請與指定競爭對手做商業模式對比。僅輸出 JSON，繁體中文：\n{"dims":[{"k":"面向(如目標客群/價值主張/通路/定價/優勢)","ours":"我方","theirs":"對方"}],"advantage":["我方優勢"],"risk":["我方風險或劣勢"]}\n面向請列 5~7 項。';
+    try{
+      const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()+'\n\n競爭對手：'+name}],MODEL));
+      let rows=(d.dims||[]).map(x=>'<tr><td>'+esc(x.k)+'</td><td>'+esc(x.ours)+'</td><td>'+esc(x.theirs)+'</td></tr>').join('');
+      document.getElementById('vsResult').innerHTML=
+        '<table class="vtable"><tr><th>面向</th><th>我方</th><th>'+esc(name)+'</th></tr>'+rows+'</table>'+
+        '<div class="scell s-s" style="margin-top:11px"><h4>✅ 我方優勢</h4><ul>'+liList(d.advantage)+'</ul></div>'+
+        '<div class="scell s-w" style="margin-top:9px"><h4>⚠️ 我方風險</h4><ul>'+liList(d.risk)+'</ul></div>';
+    }catch(e){ document.getElementById('vsResult').innerHTML='<div class="eload">✗ '+esc(e.message)+'</div>'; }
+  };
+  document.getElementById('vsGo').onclick=run;
+  document.getElementById('vsName').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+  document.getElementById('vsName').focus();
+}
+
+async function extRisk(){
+  const body=extLoading('risk','📊 風險與可行性評分');
+  const sys='你是投資與營運風險評估顧問。依使用者畫布評分。僅輸出 JSON，分數為 1~10 整數，繁體中文：\n{"scores":{"市場潛力":7,"商業可行性":6,"獲利能力":5,"差異化":8,"風險控管":4,"資源到位":6},"summary":"一句總評","notes":["關鍵提醒3~5條"]}';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  body.innerHTML='<div class="radarwrap"><canvas id="radarCv" width="420" height="360"></canvas><div class="rsum">'+esc(d.summary||'')+'</div><ul class="rnotes">'+liList(d.notes)+'</ul></div>';
+  drawRadar(document.getElementById('radarCv'),d.scores||{});
+}
+
+function drawRadar(cv,scores){
+  const ctx=cv.getContext('2d'), W=cv.width, H=cv.height, cx=W/2, cy=H/2+6, R=120;
+  const keys=Object.keys(scores); const n=keys.length; if(!n) return;
+  ctx.clearRect(0,0,W,H);
+  const ang=i=>-Math.PI/2 + i*2*Math.PI/n;
+  // 網格
+  for(let g=1;g<=5;g++){
+    ctx.beginPath();
+    for(let i=0;i<n;i++){ const r=R*g/5, x=cx+r*Math.cos(ang(i)), y=cy+r*Math.sin(ang(i)); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.closePath(); ctx.strokeStyle='rgba(120,140,170,.18)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  // 軸線+標籤
+  ctx.fillStyle='#8194b0'; ctx.font='12px "Noto Sans TC",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<n;i++){
+    const x=cx+R*Math.cos(ang(i)), y=cy+R*Math.sin(ang(i));
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.strokeStyle='rgba(120,140,170,.18)'; ctx.stroke();
+    const lx=cx+(R+26)*Math.cos(ang(i)), ly=cy+(R+18)*Math.sin(ang(i));
+    ctx.fillText(keys[i],lx,ly);
+    const v=Math.max(0,Math.min(10,scores[keys[i]]||0));
+    ctx.fillStyle='#6ee7d2'; ctx.font='bold 11px sans-serif';
+    const vx=cx+(R+26)*Math.cos(ang(i)), vy=cy+(R+18)*Math.sin(ang(i))+13;
+    ctx.fillText('('+v+')',vx,vy);
+    ctx.fillStyle='#8194b0'; ctx.font='12px "Noto Sans TC",sans-serif';
+  }
+  // 數據多邊形
+  ctx.beginPath();
+  for(let i=0;i<n;i++){ const v=Math.max(0,Math.min(10,scores[keys[i]]||0)), r=R*v/10, x=cx+r*Math.cos(ang(i)), y=cy+r*Math.sin(ang(i)); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+  ctx.closePath();
+  ctx.fillStyle='rgba(110,231,210,.22)'; ctx.fill();
+  ctx.strokeStyle='#6ee7d2'; ctx.lineWidth=2; ctx.stroke();
+  for(let i=0;i<n;i++){ const v=Math.max(0,Math.min(10,scores[keys[i]]||0)), r=R*v/10, x=cx+r*Math.cos(ang(i)), y=cy+r*Math.sin(ang(i)); ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fillStyle='#f5c451'; ctx.fill(); }
+}
+
+async function extText(key,title,instruction){
+  const body=extLoading(key,title);
+  const sys='你是資深商業顧問。'+instruction+'\n僅輸出內文，不要 markdown 標記符號（如 # 或 *），用繁體中文。';
+  const txt=(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL,{json:false})).trim();
+  body.innerHTML='<div class="etext"></div>';
+  body.querySelector('.etext').textContent=txt;
+  addCopy(key,()=>txt);
+}
+
+/* OKR 目標 */
+async function extOKR(){
+  const body=extLoading('okr','🎯 OKR 目標');
+  const scope=extMode==='personal'?'個人職涯與成長':(extMode==='lean'?'新創推進':'企業經營');
+  const sys='你是 OKR 教練。依使用者畫布為「'+scope+'」設定 OKR。僅輸出 JSON，繁體中文：\n{"objectives":[{"o":"鼓舞人心、有方向感的目標","krs":["可衡量的關鍵結果(盡量含數字或明確標準)","...","..."]}]}\n請給 3 個 objective，每個 3 條 KR。';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  body.innerHTML='<div class="okr">'+(d.objectives||[]).map((o,i)=>
+    '<div class="obj"><div class="ot">O'+(i+1)+'｜'+esc(o.o)+'</div><ul>'+liList(o.krs)+'</ul></div>').join('')+'</div>';
+}
+
+/* 30/60/90 天行動計畫（勾選追蹤，存 localStorage） */
+let checkMap=null;
+function loadChecks(){ if(!checkMap){ try{checkMap=JSON.parse(localStorage.getItem('bmc_action_checks')||'{}')}catch{checkMap={}} } return checkMap; }
+function saveChecks(){ try{localStorage.setItem('bmc_action_checks',JSON.stringify(checkMap))}catch(e){} }
+async function extAction(){
+  const body=extLoading('action','✅ 30/60/90 天行動計畫');
+  const sys='你是執行教練。依使用者畫布產出 30/60/90 天行動計畫。僅輸出 JSON，繁體中文，每階段 3~5 條「具體可執行、動詞開頭」的動作：\n{"d30":["..."],"d60":["..."],"d90":["..."]}';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  const checks=loadChecks();
+  body.innerHTML='<div class="plan306" id="planRoot"></div>';
+  const root=body.querySelector('#planRoot');
+  [['p30','🚀 30 天',d.d30],['p60','📈 60 天',d.d60],['p90','🏆 90 天',d.d90]].forEach(([cls,title,arr])=>{
+    const p=document.createElement('div'); p.className='pphase '+cls;
+    const h=document.createElement('h4'); h.innerHTML=title+'<span class="pprog"></span>'; p.appendChild(h);
+    (arr||[]).forEach(t=>{
+      const lab=document.createElement('label'); lab.className='ptask'+(checks[t]?' done':'');
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!checks[t];
+      const sp=document.createElement('span'); sp.textContent=t;
+      cb.onchange=()=>{ checks[t]=cb.checked; saveChecks(); lab.classList.toggle('done',cb.checked); updateProg(root); };
+      lab.appendChild(cb); lab.appendChild(sp); p.appendChild(lab);
+    });
+    root.appendChild(p);
+  });
+  updateProg(root);
+}
+function updateProg(scope){
+  scope.querySelectorAll('.pphase').forEach(p=>{
+    const all=p.querySelectorAll('.ptask input').length, done=p.querySelectorAll('.ptask input:checked').length;
+    const el=p.querySelector('.pprog'); if(el) el.textContent=done+'/'+all;
+  });
+}
+
+/* Ikigai 生き甲斐圖 */
+async function extIkigai(){
+  const body=extLoading('ikigai','🌸 Ikigai 生き甲斐圖');
+  const sys='你是個人成長與生涯設計顧問。請依使用者畫布，以「個人」視角產出 Ikigai 生き甲斐分析（若畫布為企業，則從負責人/團隊個人角度詮釋）。僅輸出 JSON，繁體中文，每個清單 2~4 條，四句交集各一句：\n{"love":["你熱愛的"],"good":["你擅長的"],"need":["世界需要的"],"paid":["能獲得報酬的"],"passion":"熱情(熱愛∩擅長)","mission":"使命(熱愛∩世界需要)","profession":"專業(擅長∩報酬)","vocation":"天職(世界需要∩報酬)","ikigai":"你的生き甲斐 一句話"}';
+  const d=parseJSON(await callGroq([{role:'system',content:sys},{role:'user',content:ctxJSON()}],MODEL));
+  body.innerHTML=ikigaiSVG()+
+    '<div class="ik-grid">'+
+      '<div class="ik-cell ik-love"><h4>❤️ 你熱愛的</h4><ul>'+liList(d.love)+'</ul></div>'+
+      '<div class="ik-cell ik-good"><h4>⭐ 你擅長的</h4><ul>'+liList(d.good)+'</ul></div>'+
+      '<div class="ik-cell ik-need"><h4>🌏 世界需要的</h4><ul>'+liList(d.need)+'</ul></div>'+
+      '<div class="ik-cell ik-paid"><h4>💰 能獲得報酬的</h4><ul>'+liList(d.paid)+'</ul></div>'+
+    '</div>'+
+    '<div class="ik-mid">'+
+      '<div class="ik-int"><b>熱情</b>　'+esc(d.passion||'')+'</div>'+
+      '<div class="ik-int"><b>使命</b>　'+esc(d.mission||'')+'</div>'+
+      '<div class="ik-int"><b>專業</b>　'+esc(d.profession||'')+'</div>'+
+      '<div class="ik-int"><b>天職</b>　'+esc(d.vocation||'')+'</div>'+
+    '</div>'+
+    '<div class="ik-center">🌸 你的生き甲斐<br>'+esc(d.ikigai||'')+'</div>';
+}
+function ikigaiSVG(){
+  return `<svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+  <g fill-opacity="0.30" stroke-width="1.5">
+    <circle cx="190" cy="122" r="104" fill="#f472b6" stroke="#f472b6"/>
+    <circle cx="258" cy="190" r="104" fill="#60a5fa" stroke="#60a5fa"/>
+    <circle cx="190" cy="258" r="104" fill="#f5c451" stroke="#f5c451"/>
+    <circle cx="122" cy="190" r="104" fill="#34d399" stroke="#34d399"/>
+  </g>
+  <g font-family="'Noto Sans TC',sans-serif" text-anchor="middle" fill="#e8eef9">
+    <text x="190" y="48" font-size="14" font-weight="700">熱愛</text>
+    <text x="332" y="194" font-size="14" font-weight="700">擅長</text>
+    <text x="190" y="344" font-size="14" font-weight="700">報酬</text>
+    <text x="48" y="194" font-size="14" font-weight="700">世界需要</text>
+  </g>
+  <g font-family="'Noto Sans TC',sans-serif" text-anchor="middle" fill="#0a1014" font-size="11" font-weight="700">
+    <text x="240" y="140">熱情</text>
+    <text x="240" y="246">專業</text>
+    <text x="140" y="246">天職</text>
+    <text x="140" y="140">使命</text>
+  </g>
+  <text x="190" y="194" text-anchor="middle" font-family="'Noto Serif TC',serif" font-size="13" font-weight="900" fill="#0a1014">生き甲斐</text>
+  </svg>`;
+}
+
+/* ===== 下載 PNG（固定 16:9 / 1920×1080） ===== */
+$('pngBtn').onclick=async()=>{
+  const el=$('bmc');
+  const W=1920, H=1080;
+  const holder=document.createElement('div');
+  holder.style.cssText='position:fixed;left:-99999px;top:0;width:'+W+'px;height:'+H+'px;background:#fbfbf7;';
+  const clone=el.cloneNode(true);
+  clone.classList.add('bmc-shot');
+  clone.style.width=W+'px';
+  clone.style.height=H+'px';
+  clone.style.aspectRatio='auto';
+  clone.style.padding='34px';
+  clone.style.borderRadius='0';
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+  try{
+    const cv=await html2canvas(clone,{width:W,height:H,windowWidth:W,windowHeight:H,scale:1,backgroundColor:'#fbfbf7'});
+    const a=document.createElement('a');
+    a.download='BMC_'+(DATA?.company||'canvas')+'_16x9.png';
+    a.href=cv.toDataURL('image/png');
+    a.click();
+  }finally{ holder.remove(); }
+};
+
+function setStatus(t,cls=''){ const s=$('status'); s.textContent=t; s.className='status '+cls; }
+</script>
+</body>
+</html>

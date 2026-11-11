@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>意境壓縮器 v2 · Token 瘦身引擎</title>
+<style>
+:root{
+  --bg0:#070a12;--bg1:#0b1020;--bg2:#0f1628;
+  --card:rgba(255,255,255,.04);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --txt:#e8edf6;--mut:#8b97ad;--mut2:#5d6b82;
+  --gold:#e8c66a;--gold2:#d4af37;--jade:#34d399;--jade2:#2dd4bf;--red:#f87171;--blue:#60a5fa;
+  --glow:0 0 30px rgba(232,198,106,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC','PingFang TC',system-ui,sans-serif;
+  background:radial-gradient(1200px 600px at 80% -10%,rgba(52,211,153,.07),transparent 60%),
+    radial-gradient(1000px 500px at 0% 0%,rgba(232,198,106,.06),transparent 55%),
+    linear-gradient(160deg,var(--bg0),var(--bg1) 50%,var(--bg2));
+  color:var(--txt);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding:28px 22px 60px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.brand h1{font-size:25px;font-weight:800;letter-spacing:.5px;
+  background:linear-gradient(92deg,var(--gold),#fff6dd 40%,var(--jade));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{color:var(--mut);font-size:13.5px;margin-top:4px}
+.badge{font-size:11px;color:var(--gold);border:1px solid rgba(232,198,106,.3);padding:3px 9px;border-radius:20px;background:rgba(232,198,106,.06)}
+.note{font-size:12px;color:var(--mut);background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.note b{color:var(--blue)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.pad{padding:18px}
+.layout{display:grid;grid-template-columns:minmax(420px,5fr) 6fr;gap:16px;align-items:start}
+.leftcol{position:sticky;top:18px}
+.rightcol{min-width:0}
+.placeholder{border:1.5px dashed var(--line2);border-radius:16px;background:rgba(255,255,255,.02);
+  min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:30px}
+.outpanel{margin-top:14px}
+.urlrow{display:flex;gap:8px;margin-top:6px}
+.urlrow input{flex:1}
+.srcmodels{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center;font-size:11.5px;color:var(--mut)}
+.srcmodels select{width:auto;padding:6px 9px;font-size:11.5px}
+.srcprev{margin-top:10px;display:none;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.22);overflow:hidden}
+.srcprev.show{display:block}
+.spvhead{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.03);font-size:11.5px;color:var(--mut);font-weight:600}
+.spvhead .x{cursor:pointer;color:var(--mut2)}.spvhead .x:hover{color:var(--red)}
+.spvbody{padding:12px}
+.spvbody img{max-width:100%;max-height:260px;border-radius:8px;display:block;margin:0 auto;object-fit:contain}
+.spvbody audio{width:100%;display:block}
+.spvtext{font-size:12px;color:var(--mut);white-space:pre-wrap;max-height:140px;overflow:auto;line-height:1.55;font-family:ui-monospace,Menlo,monospace;background:rgba(0,0,0,.2);padding:10px;border-radius:8px}
+.spvmore{font-size:11px;color:var(--gold);cursor:pointer;margin-top:6px;display:inline-block}
+.keeps{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 2px}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--txt);cursor:pointer;font-weight:500;margin:0}
+.chk input{width:auto;accent-color:var(--gold2);width:16px;height:16px;cursor:pointer}
+.auditbox{margin-top:14px;padding:15px;border-radius:14px;background:rgba(232,198,106,.05);border:1px solid rgba(232,198,106,.22)}
+.ahead{display:flex;align-items:center;justify-content:space-between}
+.apill{font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;background:rgba(52,211,153,.15);color:var(--jade)}
+.apill.warn{background:rgba(248,113,113,.15);color:#fca5a5}
+.amissing{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;padding:3px 9px;border-radius:7px;font-family:ui-monospace,Menlo,monospace}
+.chip.miss{background:rgba(248,113,113,.14);color:#fca5a5;border:1px solid rgba(248,113,113,.3)}
+.chip.ok{background:rgba(52,211,153,.12);color:#6ee7b7;border:1px solid rgba(52,211,153,.25)}
+label{display:block;font-size:11.5px;color:var(--mut);margin-bottom:6px;font-weight:600;letter-spacing:.3px}
+input,select,textarea{width:100%;background:rgba(0,0,0,.28);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:11px 13px;font-size:13.5px;font-family:inherit;outline:none;transition:.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(212,175,55,.12)}
+select option{background:#0f1628}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.settings>div:first-child{grid-column:1/-1}
+.levels{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.lv{flex:1;min-width:150px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:.18s}
+.lv:hover{border-color:var(--line2)}
+.lv.on{border-color:var(--gold2);background:rgba(232,198,106,.07);box-shadow:0 0 0 2px rgba(232,198,106,.12)}
+.lv .ln{font-weight:800;font-size:14px;color:var(--gold)}
+.lv .ld{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+textarea.src{min-height:150px;resize:vertical;font-size:13.5px;line-height:1.6;margin-top:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.btn{border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13.5px;padding:12px 22px;border-radius:11px;transition:.2s;letter-spacing:.3px}
+.btn.primary{background:linear-gradient(92deg,var(--gold),var(--gold2));color:#0b1020;box-shadow:var(--glow)}
+.btn.primary:hover{transform:translateY(-1px)}
+.btn.ghost{background:rgba(255,255,255,.04);color:var(--txt);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:var(--gold2);color:var(--gold)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
+.status{font-size:12.5px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mut2)}
+.dot.busy{background:var(--gold);animation:pulse 1s infinite}.dot.ok{background:var(--jade)}.dot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tip{font-size:11.5px;color:var(--mut2);margin-top:10px;line-height:1.5}
+.tip code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;color:var(--gold)}
+
+.results{margin-top:20px;display:none}
+.results.show{display:block;animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.tokgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{padding:16px;border-radius:14px;border:1px solid var(--line);position:relative;overflow:hidden}
+.stat.raw{background:linear-gradient(160deg,rgba(248,113,113,.08),rgba(248,113,113,.02))}
+.stat.cmp{background:linear-gradient(160deg,rgba(52,211,153,.08),rgba(52,211,153,.02))}
+.stat.save{background:linear-gradient(160deg,rgba(232,198,106,.1),rgba(232,198,106,.02));border-color:rgba(232,198,106,.25)}
+.stat.fid{background:linear-gradient(160deg,rgba(96,165,250,.1),rgba(96,165,250,.02));border-color:rgba(96,165,250,.25)}
+.stat .k{font-size:11.5px;color:var(--mut);font-weight:600}
+.stat .v{font-size:30px;font-weight:800;margin:3px 0;font-variant-numeric:tabular-nums}
+.stat.raw .v{color:#fca5a5}.stat.cmp .v{color:#6ee7b7}.stat.save .v{color:var(--gold)}.stat.fid .v{color:#93c5fd}
+.stat .sub{font-size:11px;color:var(--mut2)}
+.ratio{font-size:12.5px;color:var(--mut);margin-top:6px}.ratio b{color:var(--gold)}
+.bars{margin-top:14px;padding:14px 16px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid var(--line)}
+.bar{margin:8px 0}
+.bar .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:5px}
+.bar .lab b{color:var(--txt);font-variant-numeric:tabular-nums}
+.track{height:13px;border-radius:8px;background:rgba(255,255,255,.05);overflow:hidden}
+.fill{height:100%;border-radius:8px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.fill.raw{background:linear-gradient(90deg,#ef4444,#fca5a5)}.fill.cmp{background:linear-gradient(90deg,var(--jade2),var(--jade))}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--mut2)}.meta b{color:var(--mut)}
+
+.fidbox{margin-top:14px;padding:16px;border-radius:14px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.2);display:none}
+.fidbox.show{display:block}
+.fidhead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gauge{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff;flex:0 0 auto}
+.fidlists{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12.5px}
+.fidlists .kept b{color:var(--jade)}.fidlists .lost b{color:var(--red)}
+.fidlists ul{margin:6px 0 0 18px}.fidlists li{margin:2px 0;color:var(--mut)}
+.fidnote{font-size:12.5px;color:var(--txt);margin-top:8px;background:rgba(0,0,0,.2);padding:8px 12px;border-radius:8px}
+
+.compare{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.col{display:flex;flex-direction:column}
+.colhead{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-radius:12px 12px 0 0;border:1px solid var(--line);border-bottom:none}
+.colhead.raw{background:rgba(248,113,113,.07)}.colhead.cmp{background:rgba(52,211,153,.07)}
+.colhead .t{font-weight:700;font-size:13.5px}.colhead.raw .t{color:#fca5a5}.colhead.cmp .t{color:#6ee7b7}
+.colhead .tk{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.body{flex:1;border:1px solid var(--line);border-radius:0 0 12px 12px;background:rgba(0,0,0,.22);padding:15px;overflow:auto;max-height:520px;white-space:pre-wrap;font-size:13px;line-height:1.65}
+.body.cmp{color:#bfe9d4}
+.drop{border:1.5px dashed var(--line2);border-radius:12px;padding:16px;text-align:center;color:var(--mut);cursor:pointer;transition:.2s;background:rgba(0,0,0,.15);margin-top:6px}
+.drop:hover,.drop.hot{border-color:var(--gold2);color:var(--txt);background:rgba(232,198,106,.05)}
+.drop b{color:var(--gold)}
+.fileinfo{font-size:11.5px;color:var(--mut2);margin-top:6px}
+.md-render{padding:15px;overflow:auto;max-height:520px;display:none}
+.md-render h1,.md-render h2,.md-render h3{color:var(--gold);margin:12px 0 7px;line-height:1.3}
+.md-render h1{font-size:19px;border-bottom:1px solid var(--line);padding-bottom:5px}.md-render h2{font-size:16px}.md-render h3{font-size:14.5px}
+.md-render p{margin:7px 0;font-size:13.5px}.md-render ul,.md-render ol{margin:7px 0 7px 20px;font-size:13.5px}.md-render li{margin:3px 0}
+.md-render code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:5px;font-size:12px;color:var(--jade)}
+.md-render pre{background:rgba(0,0,0,.4);padding:11px;border-radius:8px;overflow:auto;margin:9px 0}.md-render pre code{background:none;padding:0}
+.md-render blockquote{border-left:3px solid var(--gold2);padding-left:11px;color:var(--mut);margin:9px 0}
+.md-render table{border-collapse:collapse;width:100%;margin:9px 0;font-size:12.5px}
+.md-render th,.md-render td{border:1px solid var(--line2);padding:6px 9px;text-align:left}.md-render th{background:rgba(232,198,106,.1);color:var(--gold)}
+.md-render strong{color:#fff}.md-render a{color:var(--blue)}.md-render hr{border:none;border-top:1px solid var(--line);margin:12px 0}
+@media(max-width:980px){.layout{grid-template-columns:1fr}.leftcol{position:static}}
+@media(max-width:880px){.settings{grid-template-columns:1fr}.tokgrid{grid-template-columns:1fr 1fr}.fidlists{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>意境壓縮器 v2 · Token 瘦身引擎</h1>
+      <p>借鏡 MarkItDown 理念——用最少 token 表達相同意境</p>
+    </div>
+    <span class="badge">Groq · 三段壓縮 · 意境保留度檢測</span>
+  </header>
+
+  <div class="note">💡 <b>原理</b>：MarkItDown 的核心是「用最精簡的標記保留結構，主流 LLM 原生看得懂」。本工具把同樣思路推到內容層——在保住核心意境、數據與語氣的前提下，重寫成更省 token 的表達，並量化省了多少、意境保留幾分。</div>
+
+  <div class="layout">
+    <!-- 左：輸入與設定 -->
+    <div class="panel pad leftcol">
+      <div class="settings">
+        <div>
+          <label>GROQ API KEY（可多把，用空格/逗號/換行分隔自動輪替）</label>
+          <input id="key" type="password" placeholder="gsk_xxx  gsk_yyy ..." autocomplete="off">
+        </div>
+        <div>
+          <label>TPM 上限</label>
+          <input id="tpm" type="number" value="12000" min="1000" step="1000">
+        </div>
+        <div>
+          <label>模型</label>
+          <select id="model">
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
+            <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+            <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
+          </select>
+        </div>
+      </div>
+
+      <label>壓縮強度</label>
+      <div class="levels" id="levels">
+        <div class="lv" data-lv="1"><div class="ln">L1 結構化</div><div class="ld">MarkItDown 式精簡 Markdown，保留全部資訊與語氣</div></div>
+        <div class="lv on" data-lv="2"><div class="ln">L2 精煉</div><div class="ld">刪贅字、合併重複、長句改短，明顯減字</div></div>
+        <div class="lv" data-lv="3"><div class="ln">L3 電報體</div><div class="ld">符號/縮寫/要點，極限壓縮，仍可還原意境</div></div>
+      </div>
+
+      <label style="margin-top:12px">必留項目（寫入壓縮指令，避免壓掉關鍵）</label>
+      <div class="keeps">
+        <label class="chk"><input type="checkbox" id="kNum" checked><span>數字 / 金額 / 日期</span></label>
+        <label class="chk"><input type="checkbox" id="kProp" checked><span>專有名詞 / 人名</span></label>
+        <label class="chk"><input type="checkbox" id="kTone"><span>語氣 / 風格</span></label>
+      </div>
+
+      <div id="singleInput">
+        <label style="margin-top:12px;color:var(--red)">外部連結（網頁 URL，自動抓取轉文字）</label>
+        <div class="urlrow">
+          <input id="url" type="text" placeholder="https://example.com/article（貼網址後按抓取）">
+          <button class="btn ghost sm" id="urlgo">抓取</button>
+        </div>
+        <label style="margin-top:12px">上傳檔案（PDF / TXT / MD / 圖片 OCR / 音檔語音）</label>
+        <div class="drop" id="drop">
+          <div style="font-size:14px;margin-bottom:3px">📄 拖曳 <b>PDF · TXT · MD · 圖片 · 音檔</b>，或 <b>點擊選擇</b></div>
+          <div style="font-size:11.5px">圖片走 Vision OCR、音檔走 Whisper 語音轉錄，再壓縮</div>
+          <input type="file" id="file" accept=".pdf,.txt,.md,.markdown,.png,.jpg,.jpeg,.webp,.gif,.bmp,.mp3,.wav,.m4a,.ogg,.flac,.webm,.mp4,.mpeg,.mpga,application/pdf,text/plain,image/*,audio/*" hidden>
+        </div>
+        <div class="fileinfo" id="fileinfo"></div>
+        <div class="srcprev" id="srcprev">
+          <div class="spvhead"><span id="spvLabel">來源預覽</span><span class="x" id="spvClose">✕ 關閉</span></div>
+          <div class="spvbody" id="spvBody"></div>
+        </div>
+        <textarea id="raw" class="src" placeholder="貼上文案，或用上方 URL / 檔案 / 圖片 / 音檔自動帶入"></textarea>
+        <div class="srcmodels">
+          <span>影像 OCR 模型</span>
+          <select id="visionModel">
+            <option value="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout（快）</option>
+            <option value="meta-llama/llama-4-maverick-17b-128e-instruct">llama-4-maverick（強）</option>
+          </select>
+          <span>語音模型</span>
+          <select id="whisperModel">
+            <option value="whisper-large-v3-turbo">whisper-v3-turbo（快）</option>
+            <option value="whisper-large-v3">whisper-large-v3（準）</option>
+          </select>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="run">壓縮並比對</button>
+          <button class="btn ghost" id="fid" disabled>檢測意境保留度</button>
+          <button class="btn ghost sm" id="prev">預覽文案</button>
+          <button class="btn ghost sm" id="sample">載入範例</button>
+        </div>
+      </div>
+
+      <div class="status" style="margin-top:10px"><span class="dot" id="dot"></span><span id="msg">就緒</span></div>
+      <div class="tip">來源支援：<code>貼上</code>、<code>PDF/TXT/MD</code>、<code>網頁 URL</code>（Jina Reader）、<code>圖片 OCR</code>（Llama-4 Vision）、<code>音檔語音</code>（Whisper）。內建 <code>TPM 節流</code>、<code>TPD 模型降級</code>、<code>429 重試</code>、<code>多金鑰輪替</code>。Token 為 cl100k 估算。音檔上限 25MB。</div>
+    </div>
+
+    <!-- 右：產出結果 -->
+    <div class="rightcol">
+      <div class="placeholder" id="placeholder">
+        <div style="font-size:44px;opacity:.35">📑</div>
+        <div style="font-weight:700;color:var(--mut)">壓縮結果將顯示在這裡</div>
+        <div style="font-size:12px;color:var(--mut2);margin-top:4px">左側輸入 → 壓縮並比對 → Token 對照 · 意境保留度 · Markdown 輸出</div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="tokgrid">
+          <div class="stat raw"><div class="k">原文</div><div class="v" id="rawTok">0</div><div class="sub">Tokens</div></div>
+          <div class="stat cmp"><div class="k">壓縮後</div><div class="v" id="cmpTok">0</div><div class="sub">Tokens</div></div>
+          <div class="stat save"><div class="k" id="saveK">省下 Token</div><div class="v" id="saveV">0%</div><div class="ratio" id="ratio">壓縮比 <b>—</b></div></div>
+          <div class="stat fid"><div class="k">意境保留度</div><div class="v" id="fidV">—</div><div class="sub" id="fidSub">尚未檢測</div></div>
+        </div>
+
+        <div class="bars">
+          <div class="bar"><div class="lab"><span>🔴 原文</span><b id="bRaw">0 tok</b></div><div class="track"><div class="fill raw" id="fRaw"></div></div></div>
+          <div class="bar"><div class="lab"><span>🟢 壓縮後</span><b id="bCmp">0 tok</b></div><div class="track"><div class="fill cmp" id="fCmp"></div></div></div>
+          <div class="meta" id="metaRow"></div>
+        </div>
+
+        <div class="fidbox" id="fidbox">
+          <div class="fidhead">
+            <div class="gauge" id="gauge">–</div>
+            <div><div style="font-weight:700;color:#93c5fd">意境保留度評審</div><div style="font-size:12px;color:var(--mut)" id="fidNoteTop"></div></div>
+          </div>
+          <div class="fidlists">
+            <div class="kept"><b>✓ 已保留</b><ul id="keptList"></ul></div>
+            <div class="lost"><b>✗ 流失/弱化</b><ul id="lostList"></ul></div>
+          </div>
+          <div class="fidnote" id="fidNote"></div>
+        </div>
+
+        <div class="auditbox" id="auditbox">
+          <div class="ahead"><div style="font-weight:700;color:var(--gold)">🔍 數字 / 專名稽核</div><div class="apill" id="apill">—</div></div>
+          <div style="font-size:11.5px;color:var(--mut);margin:2px 0 8px">自動抓原文的數字、金額、日期、英數專名，檢查壓縮版是否遺漏</div>
+          <div class="amissing" id="amissing"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost sm" id="aiprop">AI 補抓人名/專名</button>
+            <span style="font-size:11px;color:var(--mut2)" id="aiPropNote"></span>
+          </div>
+        </div>
+
+        <div class="outpanel">
+          <div class="colhead cmp">
+            <div class="t">🟢 壓縮後（相同意境）</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn ghost sm" id="tSrc">原始碼</button>
+              <button class="btn ghost sm" id="tPrev">預覽</button>
+              <button class="btn ghost sm" id="copy">複製</button>
+              <button class="btn ghost sm" id="dl">下載 .md</button>
+              <button class="btn ghost sm" id="dljson">下載 JSON</button>
+            </div>
+          </div>
+          <div class="body cmp" id="cmpView"></div>
+          <div class="md-render" id="cmpRender" style="border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;background:rgba(0,0,0,.22)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){function add(u,next){var s=document.createElement('script');s.src=u;s.onerror=next||function(){};document.head.appendChild(s);}
+add('https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js',function(){add('https://unpkg.com/opencc-js@1.0.5/dist/umd/full.js');});})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var GROQ="https://api.groq.com/openai/v1/chat/completions";
+  var encoder=null,lastRaw="",lastCmp="",lastRawTok=0,lastCmpTok=0,level=2;
+
+  import('https://esm.sh/gpt-tokenizer').then(function(m){ encoder=(m&&(m.encode||(m.default&&m.default.encode)))||null; }).catch(function(){encoder=null;});
+
+  try{var k=localStorage.getItem('groq_key');if(k)$('key').value=k;}catch(e){}
+  $('key').addEventListener('change',function(){try{localStorage.setItem('groq_key',$('key').value.trim());}catch(e){}});
+  try{var tp=localStorage.getItem('groq_tpm');if(tp)$('tpm').value=tp;}catch(e){}
+  $('tpm').addEventListener('change',function(){try{localStorage.setItem('groq_tpm',$('tpm').value);}catch(e){}});
+
+  document.querySelectorAll('.lv').forEach(function(el){el.addEventListener('click',function(){
+    document.querySelectorAll('.lv').forEach(function(x){x.classList.remove('on');});el.classList.add('on');level=parseInt(el.dataset.lv,10);
+  });});
+
+  function countTokens(t){if(!t)return 0;if(encoder){try{return encoder(t).length;}catch(e){}}
+    var cjk=(t.match(/[\u3400-\u9FFF\uF900-\uFAFF\u3040-\u30FF\uAC00-\uD7AF\uFF00-\uFFEF]/g)||[]).length;return Math.round(cjk*1.0+(t.length-cjk)/4);}
+  function setStatus(s,c){$('msg').textContent=s;$('dot').className='dot'+(c?' '+c:'');}
+
+  // ---- file upload (PDF / TXT / MD) ----
+  if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}
+  var drop=$('drop'),file=$('file');
+  drop.addEventListener('click',function(){file.click();});
+  drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('hot');});
+  drop.addEventListener('dragleave',function(){drop.classList.remove('hot');});
+  drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('hot');if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0]);});
+  file.addEventListener('change',function(){if(file.files[0])readFile(file.files[0]);});
+  function isImg(f,n){return (f.type||'').indexOf('image/')===0||/\.(png|jpe?g|webp|gif|bmp)$/.test(n);}
+  function isAudio(f,n){return (f.type||'').indexOf('audio/')===0||(f.type||'').indexOf('video/')===0||/\.(mp3|wav|m4a|ogg|flac|webm|mp4|mpeg|mpga)$/.test(n);}
+
+  // ---- 來源預覽 ----
+  var srcURL=null;
+  function clearPreview(){if(srcURL){try{URL.revokeObjectURL(srcURL);}catch(e){}srcURL=null;}$('srcprev').classList.remove('show');$('spvBody').innerHTML='';}
+  function previewImage(f){clearPreview();srcURL=URL.createObjectURL(f);$('spvLabel').textContent='來源預覽 · 圖片（'+f.name+'）';var im=new Image();im.src=srcURL;$('spvBody').appendChild(im);$('srcprev').classList.add('show');}
+  function previewAudio(f){clearPreview();srcURL=URL.createObjectURL(f);$('spvLabel').textContent='來源預覽 · 音檔（'+f.name+'）';var a=document.createElement('audio');a.controls=true;a.src=srcURL;$('spvBody').appendChild(a);$('srcprev').classList.add('show');}
+  function previewText(text,label){clearPreview();text=text||'';$('spvLabel').textContent='來源預覽 · '+(label||'文字')+'（'+text.length.toLocaleString()+' 字）';
+    var snip=text.length>600?text.slice(0,600)+' …':text;
+    var box=document.createElement('div');box.className='spvtext';box.id='spvText';box.textContent=snip;$('spvBody').appendChild(box);
+    if(text.length>600){var more=document.createElement('span');more.className='spvmore';more.textContent='展開全部';
+      more.addEventListener('click',function(){if(more.textContent==='展開全部'){box.textContent=text;more.textContent='收合';}else{box.textContent=snip;more.textContent='展開全部';}});$('spvBody').appendChild(more);}
+    $('srcprev').classList.add('show');}
+  $('spvClose').addEventListener('click',clearPreview);
+  $('prev').addEventListener('click',function(){var t=$('raw').value;if(!t.trim()){setStatus('沒有可預覽的文案','err');return;}previewText(t,'文案');});
+
+  function readFile(f){
+    var name=(f.name||'').toLowerCase();
+    if(isImg(f,name)){ previewImage(f); setStatus('影像 OCR 中（'+$('visionModel').value.split('/').pop()+'）...','busy');
+      ocrImage(f).then(function(t){$('raw').value=t;afterLoad(f.name+'（OCR）',t,true);}).catch(function(e){setStatus('OCR 失敗：'+e.message,'err');});return; }
+    if(isAudio(f,name)){ previewAudio(f); if(f.size>25*1024*1024){setStatus('音檔超過 25MB 上限，請壓縮或裁切','err');return;}
+      setStatus('語音轉錄中（'+$('whisperModel').value+'）...','busy');
+      transcribeAudio(f).then(function(t){$('raw').value=t;afterLoad(f.name+'（語音）',t,true);}).catch(function(e){setStatus('轉錄失敗：'+e.message,'err');});return; }
+    if(f.type==='application/pdf'||name.endsWith('.pdf')){ readPdf(f); return; }
+    setStatus('讀取文字檔...','busy');
+    var fr=new FileReader();
+    fr.onload=function(){ $('raw').value=fr.result||''; afterLoad(f.name,$('raw').value); };
+    fr.onerror=function(){ setStatus('檔案讀取失敗','err'); };
+    fr.readAsText(f,'utf-8');
+  }
+
+  // ---- 外部來源：URL / 音檔 / 圖像 OCR ----
+  function fileToDataURL(f){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=rej;fr.readAsDataURL(f);});}
+  function ocrImage(f){
+    return fileToDataURL(f).then(function(durl){
+      var instr='你是 OCR 引擎。辨識圖片中的所有文字，原樣輸出為乾淨的繁體中文 Markdown（保留標題、條列、表格結構與數字）；不要描述圖片、不要加任何說明，只輸出文字內容。';
+      var msgs=[{role:'user',content:[{type:'text',text:instr},{type:'image_url',image_url:{url:durl}}]}];
+      return groqChat(msgs,2000,$('visionModel').value).then(function(j){return (j.choices&&j.choices[0]&&j.choices[0].message.content||'').trim();});
+    });
+  }
+  var _cc=null;
+  function toTraditional(t){
+    if(!t)return t;
+    if(!_cc&&window.OpenCC){try{_cc=OpenCC.Converter({from:'cn',to:'twp'});}catch(e){_cc=null;}}
+    try{return _cc?_cc(t):t;}catch(e){return t;}
+  }
+  function transcribeAudio(f){
+    var keys=getKeys();if(!keys.length)return Promise.reject(new Error('請先填入 Groq API Key'));
+    function tryKey(ti){
+      var key=keys[keyIdx%keys.length],fd=new FormData();
+      fd.append('file',f,f.name||'audio');fd.append('model',$('whisperModel').value);fd.append('response_format','text');
+      fd.append('language','zh');fd.append('prompt','請以繁體中文輸出，保留專有名詞與數字。');
+      return fetch('https://api.groq.com/openai/v1/audio/transcriptions',{method:'POST',headers:{'Authorization':'Bearer '+key},body:fd})
+        .then(function(r){return r.text().then(function(txt){
+          if(r.ok)return toTraditional(txt.trim());
+          if(r.status===429&&keys.length>1&&ti<keys.length-1){keyIdx=(keyIdx+1)%keys.length;return tryKey(ti+1);}
+          throw new Error(txt.slice(0,160));
+        });});
+    }
+    return tryKey(0);
+  }
+  function stripHtml(html){var d=document.createElement('div');d.innerHTML=(html||'').replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'');return (d.textContent||'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();}
+  function fetchUrl(url){
+    if(!/^https?:\/\//i.test(url))url='https://'+url;
+    return fetch('https://r.jina.ai/'+url).then(function(r){if(!r.ok)throw new Error('reader '+r.status);return r.text();})
+      .catch(function(){return fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)).then(function(r){return r.text();}).then(stripHtml);});
+  }
+  $('urlgo').addEventListener('click',function(){
+    var u=$('url').value.trim();if(!u){setStatus('請輸入網址','err');return;}
+    $('urlgo').disabled=true;setStatus('抓取網頁中...','busy');
+    fetchUrl(u).then(function(t){t=(t||'').trim();if(!t)throw new Error('抓不到內容');$('raw').value=t;afterLoad('URL：'+u,t);$('urlgo').disabled=false;})
+      .catch(function(e){setStatus('抓取失敗：'+e.message+'（可能 CORS，換個來源或貼上內文）','err');$('urlgo').disabled=false;});
+  });
+  function readPdf(f){
+    setStatus('讀取 PDF...','busy');
+    var fr=new FileReader();
+    fr.onload=function(){
+      pdfjsLib.getDocument({data:fr.result}).promise.then(function(pdf){
+        var n=pdf.numPages,order=[];for(var i=1;i<=n;i++)order.push(i);
+        return Promise.all(order.map(function(i){
+          return pdf.getPage(i).then(function(pg){return pg.getTextContent().then(function(tc){
+            return tc.items.map(function(it){return it.str;}).join(' ');});});
+        })).then(function(arr){
+          var full=arr.join('\n\n');$('raw').value=full;afterLoad(f.name+'（'+n+' 頁）',full);
+        });
+      }).catch(function(err){setStatus('PDF 讀取失敗：'+err.message,'err');});
+    };
+    fr.readAsArrayBuffer(f);
+  }
+  function afterLoad(label,text,keepPreview){
+    $('fileinfo').innerHTML='已載入 <b style="color:var(--gold)">'+label+'</b> · '+text.length.toLocaleString()+' 字元 · 約 '+countTokens(text).toLocaleString()+' tokens';
+    if(!keepPreview)previewText(text,label);
+    setStatus('已載入，選好強度後按「壓縮並比對」','ok');
+  }
+
+  // ---- groq: key rotation + model fallback + TPM throttle + TPM/TPD 429 handling ----
+  var keyIdx=0,usageLog=[],modelChain=[],activeStep=0;
+  function getKeys(){return $('key').value.split(/[\s,]+/).map(function(s){return s.trim();}).filter(Boolean);}
+  function tpmLimit(){return Math.max(1000,parseInt($('tpm').value,10)||12000);}
+  function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+  function usedInWindow(){var now=Date.now();usageLog=usageLog.filter(function(e){return now-e.t<60000;});return usageLog.reduce(function(a,e){return a+e.tok;},0);}
+  function waitBudget(reserve){var lim=tpmLimit();if(reserve>lim)return Promise.resolve();
+    function loop(){var used=usedInWindow();if(used+reserve<=lim)return Promise.resolve();
+      var now=Date.now(),earliest=usageLog.length?usageLog[0].t:now,wait=Math.max(800,(earliest+60000)-now+200);
+      setStatus('TPM 排隊中，'+Math.ceil(wait/1000)+'s 後續傳（已用 '+used+'/'+lim+'）','busy');return sleep(wait).then(loop);}
+    return loop();}
+  function parseRetry(msg){var m=/try again in ([\d.]+)([ms])/i.exec(msg||'');if(!m)return 0;var v=parseFloat(m[1]);return Math.ceil((m[2]==='m'?v*60:v)*1000)+300;}
+  function buildChain(){var sel=$('model'),opts=[].map.call(sel.options,function(o){return o.value;}),start=sel.selectedIndex<0?0:sel.selectedIndex,chain=[opts[start]];for(var i=0;i<opts.length;i++){if(i!==start)chain.push(opts[i]);}return chain;}
+  function curModel(){if(!modelChain.length)modelChain=buildChain();return modelChain[Math.min(activeStep,modelChain.length-1)];}
+  function syncModelUI(){var m=curModel(),sel=$('model');for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===m){sel.selectedIndex=i;break;}}}
+  $('model').addEventListener('change',function(){activeStep=0;modelChain=buildChain();});
+
+  function groqChat(messages,maxTok,modelOverride){
+    var keys=getKeys();if(!keys.length)return Promise.reject(new Error('請先填入 Groq API Key'));
+    maxTok=maxTok||2048;
+    var estIn=messages.reduce(function(a,m){return a+countTokens(typeof m.content==='string'?m.content:'');},0),reserve=estIn+maxTok;
+    function attempt(tries,keysTried){return waitBudget(reserve).then(function(){
+      var key=keys[keyIdx%keys.length],model=modelOverride||curModel();
+      return fetch(GROQ,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({model:model,messages:messages,temperature:0.2,max_tokens:maxTok,stream:false})})
+        .then(function(r){return r.json().then(function(j){return {r:r,j:j};});})
+        .then(function(o){
+          if(o.r.ok){var tot=(o.j.usage&&o.j.usage.total_tokens)||(estIn+maxTok);usageLog.push({t:Date.now(),tok:tot});return o.j;}
+          var em=(o.j.error&&o.j.error.message)||('HTTP '+o.r.status);
+          // 模型不存在 / 無權限 / 已下架 → 從鏈中移除並改用下一個（非 vision 覆寫時）
+          var modelBad=/does not exist|do not have access|model_not_found|decommissioned|deprecated|not found/i.test(em);
+          if(modelBad&&!modelOverride){
+            var bad=curModel();modelChain=modelChain.filter(function(m){return m!==bad;});
+            if(activeStep>=modelChain.length)activeStep=Math.max(0,modelChain.length-1);
+            if(modelChain.length){syncModelUI();setStatus('模型 '+bad+' 無法使用，已跳過 → 改用 '+curModel(),'busy');return attempt(4,0);}
+            throw new Error('沒有可用的模型，請在上方改選有權限的模型。');
+          }
+          if(modelBad){throw new Error('影像/語音模型無法使用，請改選其他模型。');}
+          if(o.r.status===429){
+            var isTPD=/per day|TPD/i.test(em),tooLarge=/too large|reduce your message/i.test(em),w=parseRetry(em);
+            // 0) 單次請求過大：換每分鐘上限更大的模型（非 vision 覆寫時）
+            if(tooLarge){
+              if(!modelOverride&&activeStep<modelChain.length-1){var d0=curModel();activeStep++;syncModelUI();setStatus('單次請求過大：'+d0+' → 改用上限更大的 '+curModel(),'busy');return attempt(4,0);}
+              throw new Error('單次請求超過模型每分鐘上限。請縮短輸入、調小分段，或改用上限較高的模型／升級 Dev Tier。');
+            }
+            // 1) 先輪替金鑰
+            if(keys.length>1&&keysTried<keys.length-1){keyIdx=(keyIdx+1)%keys.length;setStatus('限速，切換金鑰 #'+((keyIdx%keys.length)+1)+' 重試...','busy');return attempt(tries,keysTried+1);}
+            // 2) 每日額度用罄 或 等待過久 → 降級模型（非 vision 覆寫時）
+            if(!modelOverride&&(isTPD||w>40000)&&activeStep<modelChain.length-1){var dead=curModel();activeStep++;syncModelUI();setStatus((isTPD?'每日額度(TPD)用罄':'等待過久')+'：'+dead+' → 自動改用 '+curModel(),'busy');return attempt(4,0);}
+            // 3) TPM 短暫限速 → 等待重試
+            if(!isTPD&&w&&w<=40000&&tries>0){setStatus('TPM 限速，等待 '+Math.ceil(w/1000)+'s 後重試...','busy');return sleep(w).then(function(){return attempt(tries-1,0);});}
+            if(isTPD){throw new Error('今日額度(TPD)用罄。請改用其他金鑰、明日再試，或升級 Dev Tier。');}
+          }
+          throw new Error(em);
+        });
+    });}
+    return attempt(4,0);
+  }
+
+  var LEVELS={
+    1:'你是 token 壓縮引擎。把輸入用「最精簡的 Markdown 結構」重寫：保留所有關鍵資訊、數據與語氣意境；移除冗餘修飾、重複、空話、客套；能用標題/條列就不要長段落。輸出繁體中文，只輸出壓縮結果，不要任何說明或前後綴。',
+    2:'你是 token 壓縮引擎。在「不流失核心意境、關鍵資訊與語氣」前提下，最大幅度壓縮字數：刪贅字虛詞、合併重複、長句拆短、被動改主動、去除鋪陳客套。輸出繁體中文，只輸出壓縮結果，不要任何說明。',
+    3:'你是極限 token 壓縮引擎。把輸入壓成「電報體要點」：用符號(→ + / ・)、縮寫、條列取代完整句；刪除所有非必要虛詞、連接詞、語助詞；只留可還原核心意境與數據的最小骨架。務必保留數字、專有名詞、關鍵動作。輸出繁體中文，只輸出壓縮結果，不要說明。'
+  };
+
+  function chunk(text,size){if(text.length<=size)return[text];var parts=[],paras=text.split(/\n\s*\n/),buf="";
+    for(var i=0;i<paras.length;i++){if((buf+'\n\n'+paras[i]).length>size&&buf){parts.push(buf);buf=paras[i];}else buf=buf?buf+'\n\n'+paras[i]:paras[i];}
+    if(buf)parts.push(buf);return parts;}
+
+  function retentionSuffix(){
+    var p=[];
+    if($('kNum').checked)p.push('完整保留所有數字、金額、百分比、日期、單位，一個都不能漏或改');
+    if($('kProp').checked)p.push('完整保留所有專有名詞、人名、品牌、產品、地名');
+    if($('kTone').checked)p.push('盡量保留原文的語氣與風格');
+    return p.length?(' 額外硬性要求：'+p.join('；')+'。'):'';
+  }
+  function buildSys(){return LEVELS[level]+retentionSuffix();}
+
+  function compressOne(text,onProg){
+    var sys=buildSys(),chunks=chunk(text,3000),out=new Array(chunks.length);
+    return new Promise(function(resolve,reject){
+      var idx=0;
+      function next(){
+        if(idx>=chunks.length){resolve(out.join('\n\n'));return;}
+        var i=idx++;if(onProg)onProg(i+1,chunks.length);
+        var mt=Math.min(3000,Math.max(400,Math.round(countTokens(chunks[i])*0.9)+150));
+        groqChat([{role:'system',content:sys},{role:'user',content:chunks[i]}],mt)
+          .then(function(j){out[i]=(j.choices&&j.choices[0]&&j.choices[0].message.content||'').trim();next();})
+          .catch(reject);
+      }
+      next();
+    });
+  }
+
+  function run(){
+    var raw=$('raw').value.trim();if(!raw){setStatus('請先貼上文案','err');return;}
+    $('run').disabled=true;$('fid').disabled=true;setStatus('壓縮中...','busy');
+    compressOne(raw,function(c,n){setStatus('Groq 壓縮中 '+c+'/'+n+' ...','busy');})
+      .then(function(cmp){finish(raw,cmp);})
+      .catch(function(err){setStatus('錯誤：'+err.message,'err');$('run').disabled=false;});
+  }
+
+  function finish(raw,cmp){
+    lastRaw=raw;lastCmp=cmp;lastRawTok=countTokens(raw);lastCmpTok=countTokens(cmp);
+    $('placeholder').style.display='none';
+    $('results').classList.add('show');
+    $('cmpView').textContent=cmp;
+    try{$('cmpRender').innerHTML=DOMPurify.sanitize(marked.parse(cmp));}catch(e){$('cmpRender').textContent=cmp;}
+    $('cmpView').style.display='';$('cmpRender').style.display='none';
+    renderTokens();$('fidbox').classList.remove('show');
+    $('fidV').textContent='—';$('fidSub').textContent='可按「檢測意境保留度」';
+    runAudit();
+    $('aiPropNote').textContent='';
+    setStatus('壓縮完成','ok');$('run').disabled=false;$('fid').disabled=false;
+  }
+
+  function renderTokens(){
+    var rt=lastRawTok,ct=lastCmpTok;
+    $('rawTok').textContent=rt.toLocaleString();$('cmpTok').textContent=ct.toLocaleString();
+    var diff=rt-ct,pct=rt>0?Math.round(diff/rt*1000)/10:0;
+    if(diff>=0){$('saveK').textContent='省下 Token';$('saveV').textContent=pct+'%';$('saveV').style.color='var(--gold)';}
+    else{$('saveK').textContent='增加 Token';$('saveV').textContent='+'+Math.abs(pct)+'%';$('saveV').style.color='var(--red)';}
+    $('ratio').innerHTML='壓縮比 <b>'+(rt/(ct||1)).toFixed(2)+'×</b>';
+    var max=Math.max(rt,ct,1);$('fRaw').style.width=(rt/max*100)+'%';$('fCmp').style.width=(ct/max*100)+'%';
+    $('bRaw').textContent=rt.toLocaleString()+' tok';$('bCmp').textContent=ct.toLocaleString()+' tok';
+    $('metaRow').innerHTML='<span><b>原文字元</b> '+lastRaw.length.toLocaleString()+'</span>'+
+      '<span><b>壓縮字元</b> '+lastCmp.length.toLocaleString()+'</span>'+
+      '<span><b>每次省</b> '+diff.toLocaleString()+' tok</span>'+
+      '<span><b>跑 100 次省</b> '+(diff*100).toLocaleString()+' tok</span>';
+  }
+
+  // 將文字裁切到約 maxTok（取頭 70% + 尾 30%），長文評審用
+  function trimForBudget(t,maxTok){
+    if(countTokens(t)<=maxTok)return t;
+    var ratio=t.length/Math.max(1,countTokens(t)),keep=Math.max(300,Math.floor(maxTok*ratio));
+    var head=Math.floor(keep*0.7),tail=keep-head;
+    return t.slice(0,head)+'\n…（中略，長文抽樣）…\n'+t.slice(t.length-tail);
+  }
+  function checkFidelity(){
+    if(!lastRaw||!lastCmp){setStatus('請先壓縮','err');return;}
+    $('fid').disabled=true;setStatus('意境保留度評審中...','busy');
+    // 預算：合併 payload 控在約 5000 token，避免超過免費層單次 TPM 上限
+    var BUD=5000,orig=lastRaw,comp=lastCmp,sampled=false;
+    if(countTokens(orig)+countTokens(comp)>BUD){
+      sampled=true;
+      comp=trimForBudget(lastCmp,Math.min(countTokens(lastCmp),Math.round(BUD*0.4)));
+      orig=trimForBudget(lastRaw,Math.max(800,BUD-countTokens(comp)));
+    }
+    var sys='你是意境保留度評審。比較原文與壓縮版，判斷壓縮版是否保留原文的核心意境、關鍵資訊與語氣。'+(sampled?'（兩者為長文抽樣，請就可見內容評估）':'')+'只輸出 JSON：{"score":0到100整數,"kept":["保留要點"],"lost":["流失或弱化要點"],"note":"一句話總評"}，不要任何其他文字或圍欄。';
+    var usr='【原文】\n'+orig+'\n\n【壓縮版】\n'+comp;
+    if(sampled)setStatus('長文：抽樣評審中...','busy');
+    groqChat([{role:'system',content:sys},{role:'user',content:usr}],600).then(function(j){
+      var t=(j.choices&&j.choices[0]&&j.choices[0].message.content||'').replace(/^```(json)?|```$/g,'').trim();
+      var data;try{data=JSON.parse(t);}catch(e){var m=t.match(/\{[\s\S]*\}/);data=m?JSON.parse(m[0]):null;}
+      if(!data){setStatus('評審回傳格式異常','err');$('fid').disabled=false;return;}
+      data.__sampled=sampled;renderFidelity(data);setStatus(sampled?'抽樣評審完成':'意境保留度完成','ok');$('fid').disabled=false;
+    }).catch(function(err){setStatus('評審失敗：'+err.message,'err');$('fid').disabled=false;});
+  }
+
+  function renderFidelity(d){
+    var sc=Math.max(0,Math.min(100,parseInt(d.score,10)||0));
+    $('fidbox').classList.add('show');
+    $('fidV').textContent=sc;$('fidSub').textContent=sc>=85?'高度保留':sc>=70?'大致保留':sc>=50?'部分流失':'明顯流失';
+    var col=sc>=85?'#34d399':sc>=70?'#e8c66a':sc>=50?'#fb923c':'#f87171';
+    $('fidV').style.color=col;
+    var g=$('gauge');g.textContent=sc;g.style.background='conic-gradient('+col+' '+(sc*3.6)+'deg, rgba(255,255,255,.08) 0deg)';
+    g.style.boxShadow='0 0 18px '+col+'55';
+    $('fidNoteTop').textContent=(d.kept?d.kept.length:0)+' 項保留 · '+(d.lost?d.lost.length:0)+' 項流失'+(d.__sampled?' · 長文抽樣':'');
+    var kl=$('keptList');kl.innerHTML='';(d.kept||[]).forEach(function(x){var li=document.createElement('li');li.textContent=x;kl.appendChild(li);});
+    var ll=$('lostList');ll.innerHTML='';if((d.lost||[]).length){(d.lost).forEach(function(x){var li=document.createElement('li');li.textContent=x;ll.appendChild(li);});}else{ll.innerHTML='<li style="color:var(--jade)">無明顯流失</li>';}
+    $('fidNote').textContent='📝 '+(d.note||'');
+  }
+
+  $('tSrc').addEventListener('click',function(){$('cmpView').style.display='';$('cmpRender').style.display='none';});
+  $('tPrev').addEventListener('click',function(){$('cmpView').style.display='none';$('cmpRender').style.display='block';});
+  $('copy').addEventListener('click',function(){navigator.clipboard.writeText(lastCmp).then(function(){var b=$('copy');b.textContent='已複製';setTimeout(function(){b.textContent='複製';},1200);});});
+  $('dl').addEventListener('click',function(){var blob=new Blob([lastCmp],{type:'text/markdown;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='compressed.md';a.click();});
+
+  $('sample').addEventListener('click',function(){
+    $('raw').value='各位親愛的貴賓您好，非常感謝您在百忙之中撥冗閱讀這份說明。我們益師傅雙拼肉多多自助便當，是一間專門為辛勤工作的上班族朋友所精心打造的台式便當餐廳。本店最大的特色，就是您可以依照自己的喜好，自由地挑選兩種主菜做搭配，無論是香嫩多汁的招牌炸雞腿，或是滷得入味的爌肉，通通都能任您組合。除此之外，我們每天都會準備超過二十種以上、新鮮現炒的精緻配菜，讓您在享用美味的同時，也能攝取到均衡的營養。我們衷心期盼，能夠成為您每一天午餐時光最值得信賴的溫暖選擇。';
+    setStatus('已載入範例，選好強度後按「壓縮並比對」','ok');
+  });
+
+  // ===== 工具 =====
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  function dlBlob(content,name,type){var blob=new Blob([content],{type:(type||'text/plain')+';charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+
+  // ===== 數字 / 專名稽核（前端、免費、即時）=====
+  function extractEntities(text){
+    var set={},push=function(s){s=(s||'').trim();if(s&&!set[s])set[s]=1;},m;
+    var pats=[
+      /\d{4}\s?[-/年]\s?\d{1,2}\s?[-/月]\s?\d{0,2}\s?日?/g,
+      /\d{1,4}\s?年(?:\d{1,2}月)?(?:\d{1,2}日)?/g,
+      /(?:NT\$|US\$|\$|€|£|¥)\s?\d[\d,]*(?:\.\d+)?/g,
+      /\d[\d,]*(?:\.\d+)?\s?(?:元|塊|萬|億|千|百|美元|台幣|新台幣|歐元|日圓|円|％|%|人|位|名|個|天|小時|分鐘|公斤|公克|公里|公尺|坪|樓|期|版|代)/g,
+      /[A-Za-z][A-Za-z0-9.\-&]{2,}/g,
+      /\d[\d,]*(?:\.\d+)?/g
+    ];
+    pats.forEach(function(re){while((m=re.exec(text))){push(m[0]);}});
+    return Object.keys(set);
+  }
+  function cleanupEntities(list){
+    var STOP={PDF:1,TXT:1,API:1,JSON:1,CSV:1,Markdown:1,MarkItDown:1};
+    list=list.filter(function(s){return s.length>=1&&!STOP[s];});
+    return list.filter(function(s,i){return !list.some(function(o,j){return j!==i&&o.length>s.length&&o.indexOf(s)>=0;});});
+  }
+  function auditPair(raw,cmp){var ents=cleanupEntities(extractEntities(raw)),miss=ents.filter(function(e){return cmp.indexOf(e)<0;});return {total:ents.length,miss:miss};}
+  function runAudit(){
+    var a=auditPair(lastRaw,lastCmp);$('auditbox').style.display='block';
+    var pill=$('apill');
+    if(!a.total){pill.className='apill';pill.textContent='無可稽核項';$('amissing').innerHTML='<span style="font-size:12px;color:var(--mut2)">原文未偵測到數字/英數專名</span>';return;}
+    if(a.miss.length){pill.className='apill warn';pill.textContent='⚠ 遺漏 '+a.miss.length+' / '+a.total;
+      $('amissing').innerHTML=a.miss.slice(0,80).map(function(x){return '<span class="chip miss">✗ '+esc(x)+'</span>';}).join('');}
+    else{pill.className='apill';pill.textContent='✓ 全數保留 '+a.total+'/'+a.total;
+      $('amissing').innerHTML='<span class="chip ok">✓ '+a.total+' 項數字/專名全數出現在壓縮版</span>';}
+  }
+  $('aiprop').addEventListener('click',function(){
+    if(!lastRaw||!lastCmp){return;}
+    $('aiprop').disabled=true;$('aiPropNote').textContent='AI 抓取專名中...';
+    var src=trimForBudget(lastRaw,4000);
+    var sys='從文字抽取所有「人名、公司/組織、產品/品牌、地名、專有名詞」。只輸出 JSON 字串陣列，例如 ["台積電","張忠謀"]；沒有則 []。不要任何其他文字或圍欄。';
+    groqChat([{role:'system',content:sys},{role:'user',content:src}],500).then(function(j){
+      var t=(j.choices&&j.choices[0]&&j.choices[0].message.content||'').replace(/^```(json)?|```$/g,'').trim(),arr;
+      try{arr=JSON.parse(t);}catch(e){var mm=t.match(/\[[\s\S]*\]/);arr=mm?JSON.parse(mm[0]):[];}
+      arr=(arr||[]).filter(function(x){return typeof x==='string'&&x.trim();});
+      var miss=arr.filter(function(e){return lastCmp.indexOf(e)<0;});
+      $('aiPropNote').textContent='AI 專名 '+arr.length+' 項，遺漏 '+miss.length+' 項';
+      var add=miss.map(function(x){return '<span class="chip miss">✗ '+esc(x)+'</span>';}).join('')||(arr.length?'<span class="chip ok">✓ AI 專名全數保留</span>':'');
+      if(add)$('amissing').insertAdjacentHTML('beforeend',add);
+      $('aiprop').disabled=false;
+    }).catch(function(err){$('aiPropNote').textContent='失敗：'+err.message;$('aiprop').disabled=false;});
+  });
+
+  // ===== Markdown → 結構化 JSON =====
+  function mdToStructuredFrom(md,name,rt,ct){
+    var lines=(md||'').split(/\r?\n/),title=null,sections=[],cur=null;
+    lines.forEach(function(line){
+      var h=/^(#{1,6})\s+(.*)$/.exec(line);
+      if(h){var lvl=h[1].length,txt=h[2].trim();if(lvl===1&&!title)title=txt;cur={heading:txt,level:lvl,content:''};sections.push(cur);}
+      else{if(!cur){cur={heading:'',level:0,content:''};sections.push(cur);}cur.content+=(cur.content?'\n':'')+line;}
+    });
+    sections.forEach(function(s){s.content=s.content.trim();});
+    sections=sections.filter(function(s){return s.heading||s.content;});
+    return {title:title||(name||'untitled'),source:name||null,level:level,tokens:{original:rt,compressed:ct},sections:sections};
+  }
+  $('dljson').addEventListener('click',function(){
+    dlBlob(JSON.stringify(mdToStructuredFrom(lastCmp,'single',lastRawTok,lastCmpTok),null,2),'compressed.json','application/json');
+  });
+
+  $('run').addEventListener('click',run);
+  $('fid').addEventListener('click',checkFidelity);
+})();
+</script>
+</body>
+</html>

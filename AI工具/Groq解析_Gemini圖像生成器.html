@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groq 解析 × Gemini 圖像生成器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入 Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        /* 自定義加載動畫 (暗色調) */
+        .loader {
+            border: 5px solid #4a5568; /* gray-700 */
+            border-top: 5px solid #f97316; /* orange-500 */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        .loader-sm { /* 小尺寸加載動畫 */
+            border-width: 3px;
+            width: 30px;
+            height: 30px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 讓密碼輸入框的顯示/隱藏圖示顏色正確 */
+        .password-toggle-icon {
+            color: #9ca3af; /* gray-400 */
+        }
+        
+        /* 同色系捲軸 */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111827; /* gray-900 */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #374151; /* gray-700 */
+            border-radius: 10px;
+            border: 3px solid #111827; /* gray-900 */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #f97316; /* orange-500 */
+        }
+
+        /* Firefox 捲軸支援 */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #374151 #111827;
+        }
+
+        /* 自定義複選框/單選框樣式 */
+        .style-checkbox:checked + .style-checkbox-label,
+        .celebrity-checkbox:checked + .celebrity-checkbox-label {
+            background-color: #4f46e5; /* indigo-600 */
+            color: #ffffff;
+            border-color: #6366f1; /* indigo-500 */
+        }
+        .layout-radio:checked + .layout-radio-label {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex items-start justify-center min-h-screen p-3 md:p-4">
+
+    <div class="w-full max-w-[1720px] bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-6 border border-gray-700">
+        <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4 px-1">
+            <h1 class="text-xl md:text-2xl font-bold text-white">🎨 Groq 解析 × Gemini 圖像生成</h1>
+            <p class="text-xs text-gray-500">解析：Groq (Llama) ｜ 生成：gemini-3.1-flash-lite-image</p>
+        </div>
+        
+        <!-- API 金鑰驗證區 (可折疊) -->
+        <div id="api-section" class="mb-4 bg-gray-900/50 rounded-lg border border-gray-700 transition-all duration-300">
+            <div id="toggle-api-section-btn" class="flex justify-between items-center px-4 py-2.5 cursor-pointer">
+                <h2 id="api-section-title" class="text-base font-semibold text-white">步驟 1: 驗證 API 金鑰 (Groq + Gemini)</h2>
+                <i data-lucide="chevron-down" class="transition-transform duration-300 w-4 h-4"></i>
+            </div>
+            <div id="api-key-content" class="px-4 pb-4 transition-all duration-300 overflow-hidden">
+                 <div class="flex flex-col lg:flex-row lg:items-end gap-3">
+                    <div class="relative w-full">
+                        <label class="block text-xs text-emerald-400 mb-1 font-semibold">Groq 金鑰（文字與圖像解析）</label>
+                        <input type="password" id="groq-api-key" class="w-full p-2 pl-3 pr-9 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-sm text-gray-200 placeholder-gray-500" placeholder="gsk_...">
+                        <button id="toggle-groq-password" type="button" class="absolute bottom-0 right-0 flex items-center px-2.5 h-[38px] text-gray-400 hover:text-white">
+                           <i data-lucide="eye-off" class="password-toggle-icon w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="relative w-full">
+                        <label class="block text-xs text-orange-400 mb-1 font-semibold">Gemini 金鑰（圖像生成）</label>
+                        <input type="password" id="api-key" class="w-full p-2 pl-3 pr-9 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-sm text-gray-200 placeholder-gray-500" placeholder="AIza...">
+                        <button id="toggle-password" type="button" class="absolute bottom-0 right-0 flex items-center px-2.5 h-[38px] text-gray-400 hover:text-white">
+                           <i data-lucide="eye-off" class="password-toggle-icon w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <button id="validate-key-btn" class="w-full lg:w-auto bg-indigo-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 transition shrink-0 min-w-[110px] text-sm h-[38px]">
+                        驗證連線
+                    </button>
+                </div>
+                <p id="api-key-status" class="text-xs mt-2 min-h-[1rem]"></p>
+                <p id="api-key-hint" class="text-xs text-gray-500 mt-0.5"></p> 
+                <div class="text-xs text-gray-500 mt-1">
+                    Groq 金鑰於 <span class="text-emerald-400">console.groq.com</span> 取得；Gemini 金鑰於 <span class="text-orange-400">Google AI Studio</span> 取得並啟用 "Generative Language API"。
+                </div>
+            </div>
+        </div>
+
+        <!-- 輸入與生成區 -->
+        <div id="generator-section" class="grid grid-cols-1 lg:grid-cols-12 gap-6 opacity-40 pointer-events-none">
+            <!-- 左側：設定與輸入 -->
+            <div class="lg:col-span-5 flex flex-col space-y-5">
+                <div id="prompt-area">
+                    <label for="prompt" class="block text-lg font-medium text-gray-300 mb-2">步驟 2: 輸入提示 (Prompt)</label>
+                    <textarea id="prompt" rows="4" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-gray-200 placeholder-gray-500" placeholder="描述您的圖像或故事主題（可用中文，Groq 會自動解析並優化為英文提示詞）"></textarea>
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" id="enable-groq-analysis" checked class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                        <label for="enable-groq-analysis" class="ml-2 text-sm text-emerald-400">啟用 Groq AI 解析優化（自動分析上傳圖像 + 優化提示詞）</label>
+                    </div>
+                </div>
+                <!-- Groq 解析結果 -->
+                <div id="analysis-result-area" class="hidden bg-gray-900/60 border border-emerald-800/60 rounded-lg p-4 space-y-2">
+                    <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2"><i data-lucide="brain-circuit" class="w-4 h-4"></i>Groq AI 解析結果</h3>
+                    <div id="analysis-image-desc" class="hidden">
+                        <p class="text-xs text-gray-500 mb-1">圖像解析：</p>
+                        <p id="analysis-image-desc-text" class="text-xs text-gray-300 leading-relaxed"></p>
+                    </div>
+                    <div id="analysis-prompt-block">
+                        <p class="text-xs text-gray-500 mb-1">優化後提示詞：</p>
+                        <p id="analysis-prompt-text" class="text-xs text-gray-300 leading-relaxed font-mono"></p>
+                    </div>
+                </div>
+                
+                <!-- 佈局選擇器 -->
+                <div>
+                    <label class="block text-lg font-medium text-gray-300 mb-3">步驟 3: 選擇生成佈局與模式</label>
+                    <div id="layout-selector" class="grid grid-cols-3 sm:grid-cols-3 gap-2">
+                        <div><input type="radio" name="layout" id="layout-1" value="1" class="layout-radio hidden" checked><label for="layout-1" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">單張大圖</label></div>
+                        <div><input type="radio" name="layout" id="layout-2" value="2" class="layout-radio hidden"><label for="layout-2" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">並排雙圖</label></div>
+                        <div><input type="radio" name="layout" id="layout-4" value="4" class="layout-radio hidden"><label for="layout-4" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">四格圖</label></div>
+                        <div><input type="radio" name="layout" id="layout-overlay" value="overlay" class="layout-radio hidden"><label for="layout-overlay" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">漸變融合</label></div>
+                        <div><input type="radio" name="layout" id="layout-9" value="9" class="layout-radio hidden"><label for="layout-9" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">Q版貼圖</label></div>
+                        <div><input type="radio" name="layout" id="layout-changeclothes" value="changeclothes" class="layout-radio hidden"><label for="layout-changeclothes" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">換衣</label></div>
+                        <div><input type="radio" name="layout" id="layout-exploded" value="exploded_view" class="layout-radio hidden"><label for="layout-exploded" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">分解物品</label></div>
+                        <div><input type="radio" name="layout" id="layout-crosssection" value="cross_section" class="layout-radio hidden"><label for="layout-crosssection" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">立體剖面</label></div>
+                        <div><input type="radio" name="layout" id="layout-comic" value="comic" class="layout-radio hidden"><label for="layout-comic" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">6幅漫畫</label></div>
+                        <div><input type="radio" name="layout" id="layout-sevengrid" value="seven_grid" class="layout-radio hidden"><label for="layout-sevengrid" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">7格資訊圖</label></div>
+                         <div><input type="radio" name="layout" id="layout-weather" value="weather" class="layout-radio hidden"><label for="layout-weather" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">城市天氣</label></div>
+                         <div><input type="radio" name="layout" id="layout-idphoto" value="id_photo" class="layout-radio hidden"><label for="layout-idphoto" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">證件照</label></div>
+                         <div><input type="radio" name="layout" id="layout-celebrity" value="celebrity" class="layout-radio hidden"><label for="layout-celebrity" class="layout-radio-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">名人合照</label></div>
+                    </div>
+                </div>
+                
+                <!-- 名人合照選項 -->
+                <div id="celebrity-options-area" class="hidden space-y-4">
+                    <h3 class="text-lg font-medium text-gray-300">步驟 4: 選擇合照對象 (可複選)</h3>
+                    <div>
+                        <label for="custom-celebrity" class="block text-sm font-medium text-gray-400 mb-1">自行輸入人物 (以逗號分隔)</label>
+                        <input type="text" id="custom-celebrity" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-gray-200" placeholder="例如： Iron Man, Wonder Woman">
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-gray-400 mb-2">🌍 世界名人</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <div><input type="checkbox" id="celeb-dicaprio" value="Leonardo DiCaprio" class="celebrity-checkbox hidden"><label for="celeb-dicaprio" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">李奧納多</label></div>
+                           <div><input type="checkbox" id="celeb-swift" value="Taylor Swift" class="celebrity-checkbox hidden"><label for="celeb-swift" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">泰勒絲</label></div>
+                           <div><input type="checkbox" id="celeb-musk" value="Elon Musk" class="celebrity-checkbox hidden"><label for="celeb-musk" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">伊隆·馬斯克</label></div>
+                           <div><input type="checkbox" id="celeb-keanu" value="Keanu Reeves" class="celebrity-checkbox hidden"><label for="celeb-keanu" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">基努·李維</label></div>
+                           <div><input type="checkbox" id="celeb-hanks" value="Tom Hanks" class="celebrity-checkbox hidden"><label for="celeb-hanks" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">湯姆·漢克斯</label></div>
+                           <div><input type="checkbox" id="celeb-anne" value="Anne Hathaway" class="celebrity-checkbox hidden"><label for="celeb-anne" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">安·海瑟薇</label></div>
+                           <div><input type="checkbox" id="celeb-rock" value="Dwayne Johnson" class="celebrity-checkbox hidden"><label for="celeb-rock" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">巨石強森</label></div>
+                           <div><input type="checkbox" id="celeb-emma" value="Emma Watson" class="celebrity-checkbox hidden"><label for="celeb-emma" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">艾瑪·華森</label></div>
+                           <div><input type="checkbox" id="celeb-will" value="Will Smith" class="celebrity-checkbox hidden"><label for="celeb-will" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">威爾·史密斯</label></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-400 mb-2">📜 歷史名人</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <div><input type="checkbox" id="celeb-einstein" value="Albert Einstein" class="celebrity-checkbox hidden"><label for="celeb-einstein" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">愛因斯坦</label></div>
+                           <div><input type="checkbox" id="celeb-davinci" value="Leonardo da Vinci" class="celebrity-checkbox hidden"><label for="celeb-davinci" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">達文西</label></div>
+                           <div><input type="checkbox" id="celeb-cleopatra" value="Cleopatra" class="celebrity-checkbox hidden"><label for="celeb-cleopatra" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">克麗奧佩脫拉</label></div>
+                           <div><input type="checkbox" id="celeb-napoleon" value="Napoleon Bonaparte" class="celebrity-checkbox hidden"><label for="celeb-napoleon" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">拿破崙</label></div>
+                           <div><input type="checkbox" id="celeb-curie" value="Marie Curie" class="celebrity-checkbox hidden"><label for="celeb-curie" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">瑪麗·居禮</label></div>
+                           <div><input type="checkbox" id="celeb-shakespeare" value="William Shakespeare" class="celebrity-checkbox hidden"><label for="celeb-shakespeare" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">莎士比亞</label></div>
+                           <div><input type="checkbox" id="celeb-newton" value="Isaac Newton" class="celebrity-checkbox hidden"><label for="celeb-newton" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">牛頓</label></div>
+                           <div><input type="checkbox" id="celeb-caesar" value="Julius Caesar" class="celebrity-checkbox hidden"><label for="celeb-caesar" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">凱撒大帝</label></div>
+                           <div><input type="checkbox" id="celeb-joan" value="Joan of Arc" class="celebrity-checkbox hidden"><label for="celeb-joan" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">聖女貞德</label></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-400 mb-2">🎤 國際歌星</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <div><input type="checkbox" id="celeb-michael" value="Michael Jackson" class="celebrity-checkbox hidden"><label for="celeb-michael" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">麥可·傑克森</label></div>
+                           <div><input type="checkbox" id="celeb-freddie" value="Freddie Mercury" class="celebrity-checkbox hidden"><label for="celeb-freddie" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">佛萊迪·摩克瑞</label></div>
+                           <div><input type="checkbox" id="celeb-beyonce" value="Beyoncé" class="celebrity-checkbox hidden"><label for="celeb-beyonce" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">碧昂絲</label></div>
+                           <div><input type="checkbox" id="celeb-ed" value="Ed Sheeran" class="celebrity-checkbox hidden"><label for="celeb-ed" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">紅髮艾德</label></div>
+                           <div><input type="checkbox" id="celeb-adele" value="Adele" class="celebrity-checkbox hidden"><label for="celeb-adele" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">愛黛兒</label></div>
+                           <div><input type="checkbox" id="celeb-bruno" value="Bruno Mars" class="celebrity-checkbox hidden"><label for="celeb-bruno" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">布魯諾·馬爾斯</label></div>
+                           <div><input type="checkbox" id="celeb-gaga" value="Lady Gaga" class="celebrity-checkbox hidden"><label for="celeb-gaga" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">女神卡卡</label></div>
+                           <div><input type="checkbox" id="celeb-bieber" value="Justin Bieber" class="celebrity-checkbox hidden"><label for="celeb-bieber" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">小賈斯汀</label></div>
+                           <div><input type="checkbox" id="celeb-rihanna" value="Rihanna" class="celebrity-checkbox hidden"><label for="celeb-rihanna" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">蕾哈娜</label></div>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-gray-400 mb-2">🏰 世界景點</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <div><input type="checkbox" id="celeb-eiffel" value="the Eiffel Tower in Paris" class="celebrity-checkbox hidden"><label for="celeb-eiffel" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">巴黎鐵塔</label></div>
+                           <div><input type="checkbox" id="celeb-liberty" value="the Statue of Liberty in New York" class="celebrity-checkbox hidden"><label for="celeb-liberty" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">自由女神像</label></div>
+                           <div><input type="checkbox" id="celeb-wall" value="the Great Wall of China" class="celebrity-checkbox hidden"><label for="celeb-wall" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">萬里長城</label></div>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-gray-400 mb-2">🏛️ 世界遺跡</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           <div><input type="checkbox" id="celeb-pyramids" value="the Pyramids of Giza" class="celebrity-checkbox hidden"><label for="celeb-pyramids" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">吉薩金字塔</label></div>
+                           <div><input type="checkbox" id="celeb-machu" value="Machu Picchu" class="celebrity-checkbox hidden"><label for="celeb-machu" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">馬丘比丘</label></div>
+                           <div><input type="checkbox" id="celeb-colosseum" value="the Colosseum in Rome" class="celebrity-checkbox hidden"><label for="celeb-colosseum" class="celebrity-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">羅馬競技場</label></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 證件照選項 -->
+                <div id="id-photo-options-area" class="hidden space-y-4">
+                    <h3 class="text-lg font-medium text-gray-300">步驟 4: 證件照設定</h3>
+                    <div>
+                        <label for="clothing-type" class="block text-sm font-medium text-gray-400 mb-1">服裝類型</label>
+                        <select id="clothing-type" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-gray-200">
+                            <option value="white shirt">襯衫 (白)</option>
+                            <option value="blue shirt">襯衫 (藍)</option>
+                            <option value="black polo shirt">Polo 衫 (黑)</option>
+                            <option value="white polo shirt">Polo 衫 (白)</option>
+                            <option value="dark suit with white shirt">西裝 (深色)</option>
+                            <option value="light grey suit with white shirt">西裝 (淺灰)</option>
+                            <option value="safari jacket">獵裝</option>
+                            <option value="elegant dress">洋裝</option>
+                            <option value="cheongsam">旗袍</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label for="clothing-color" class="block text-sm font-medium text-gray-400 mb-1">服裝顏色 (可選)</label>
+                        <select id="clothing-color" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-gray-200">
+                            <option value="">預設</option>
+                            <option value="black">黑色</option>
+                            <option value="white">白色</option>
+                            <option value="gray">灰色</option>
+                            <option value="navy blue">深藍色</option>
+                            <option value="light blue">淺藍色</option>
+                            <option value="red">紅色</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">照片類型</label>
+                        <div class="flex gap-4">
+                           <label class="flex items-center"><input type="radio" name="shot-type" value="half-body" checked class="text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500"> <span class="ml-2">半身</span></label>
+                           <label class="flex items-center"><input type="radio" name="shot-type" value="full-body" class="text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500"> <span class="ml-2">全身</span></label>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 城市天氣選擇器 -->
+                <div id="city-weather-area" class="hidden">
+                    <label for="city-select" class="block text-lg font-medium text-gray-300 mb-2">步驟 2: 選擇城市</label>
+                    <select id="city-select" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-gray-200">
+                        <option value="Taipei">臺北 (Taipei)</option>
+                        <option value="Tokyo">東京 (Tokyo)</option>
+                        <option value="Seoul">首爾 (Seoul)</option>
+                        <option value="Beijing">北京 (Beijing)</option>
+                        <option value="Shanghai">上海 (Shanghai)</option>
+                        <option value="Hong Kong">香港 (Hong Kong)</option>
+                        <option value="Singapore">新加坡 (Singapore)</option>
+                        <option value="New York">紐約 (New York)</option>
+                        <option value="Los Angeles">洛杉磯 (Los Angeles)</option>
+                        <option value="London">倫敦 (London)</option>
+                        <option value="Paris">巴黎 (Paris)</option>
+                        <option value="Berlin">柏林 (Berlin)</option>
+                        <option value="Rome">羅馬 (Rome)</option>
+                        <option value="Sydney">雪梨 (Sydney)</option>
+                        <option value="Dubai">杜拜 (Dubai)</option>
+                        <option value="Cairo">開羅 (Cairo)</option>
+                    </select>
+                </div>
+
+                <!-- 風格選擇器 -->
+                <div id="style-selection-area">
+                    <label id="style-selector-label" class="block text-lg font-medium text-gray-300 mb-3">步驟 4: 選擇藝術風格</label>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-400 mb-2">🎨 藝術繪畫</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div><input type="checkbox" id="style-watercolor" value="watercolor painting, soft and gentle brushstrokes" class="style-checkbox hidden"><label for="style-watercolor" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">水彩畫</label></div>
+                                <div><input type="checkbox" id="style-oil" value="oil painting, textured, thick brushstrokes" class="style-checkbox hidden"><label for="style-oil" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">油畫</label></div>
+                                <div><input type="checkbox" id="style-sketch" value="pencil sketch, monochrome, detailed lines" class="style-checkbox hidden"><label for="style-sketch" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">素描</label></div>
+                                <div><input type="checkbox" id="style-chalk" value="highly stylized chalk art on a blackboard, strong chalk texture, bold imperfect outlines, soft, desaturated pastel colors, smudged hand-drawn shading, artistic and non-photorealistic" class="style-checkbox hidden"><label for="style-chalk" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">粉筆畫</label></div>
+                                <div><input type="checkbox" id="style-digital" value="digital art, vibrant colors, detailed illustration" class="style-checkbox hidden"><label for="style-digital" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">數位藝術</label></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-400 mb-2">🎬 動畫卡通</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div><input type="checkbox" id="style-pixar" value="Pixar animation style, 3D rendered, cute and expressive" class="style-checkbox hidden"><label for="style-pixar" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">皮克斯</label></div>
+                                <div><input type="checkbox" id="style-anime" value="Japanese anime style, cel shading, vibrant" class="style-checkbox hidden"><label for="style-anime" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">日本動漫</label></div>
+                                <div><input type="checkbox" id="style-disney" value="classic Disney animation style, hand-drawn look" class="style-checkbox hidden"><label for="style-disney" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">迪士尼</label></div>
+                            </div>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-gray-400 mb-2">📷 攝影質感</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div><input type="checkbox" id="style-photo" value="photorealistic, 8k, ultra detailed, high quality" class="style-checkbox hidden"><label for="style-photo" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">照片寫實</label></div>
+                                <div><input type="checkbox" id="style-cinematic" value="cinematic lighting, dramatic mood, epic scale" class="style-checkbox hidden"><label for="style-cinematic" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">電影光效</label></div>
+                                <div><input type="checkbox" id="style-vintage" value="vintage photo, retro, faded colors, film grain" class="style-checkbox hidden"><label for="style-vintage" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">復古照片</label></div>
+                            </div>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-gray-400 mb-2">🌟 主題風格</h4>
+                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div><input type="checkbox" id="style-cyberpunk" value="cyberpunk, neon lights, futuristic city, dystopian" class="style-checkbox hidden"><label for="style-cyberpunk" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">賽博龐克</label></div>
+                                <div><input type="checkbox" id="style-fantasy" value="fantasy art, magical, enchanting, epic" class="style-checkbox hidden"><label for="style-fantasy" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">奇幻</label></div>
+                                <div><input type="checkbox" id="style-scifi" value="sci-fi art, futuristic technology, spaceships, aliens" class="style-checkbox hidden"><label for="style-scifi" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">科幻</label></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-400 mb-2">🕹️ 特殊風格</h4>
+                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div><input type="checkbox" id="style-pixel" value="pixel art, 16-bit, retro gaming style" class="style-checkbox hidden"><label for="style-pixel" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">像素藝術</label></div>
+                                <div><input type="checkbox" id="style-lowpoly" value="low poly, geometric, minimalist, vibrant colors" class="style-checkbox hidden"><label for="style-lowpoly" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">低面多邊形</label></div>
+                                <div><input type="checkbox" id="style-minecraft" value="Recreate the subject of the image as a 3D model built with blocks in the style of Minecraft. The final image should look like a screenshot from the game, showcasing a detailed, blocky, and pixelated 3D structure within a Minecraft world environment." class="style-checkbox hidden"><label for="style-minecraft" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">Minecraft</label></div>
+                                <div><input type="checkbox" id="style-figure" value="a 1/7 scale commercial model of the character in the image was created in a realistic style and in a real environment. The model is placed on a computer desk. The model base is a round transparent acrylic with no text on it. The computer screen shows the ZBrush modeling process for the figure. Next to the computer screen is a BANDAI-style toy box with the original painting printed on it, which is a 2D flat illustration. Real people like the model characters are also included in the image." class="style-checkbox hidden"><label for="style-figure" class="style-checkbox-label cursor-pointer block text-center p-2 rounded-lg border border-gray-600 bg-gray-700 hover:bg-gray-600 transition text-sm">真實公仔</label></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="image-upload-area">
+                    <label for="image-upload" id="body-image-label" class="block text-lg font-medium text-gray-300 mb-2">步驟 5: 上傳參考圖 (選填)</label>
+                    <input type="file" id="image-upload" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-500/10 file:text-orange-300 hover:file:bg-orange-500/20 cursor-pointer">
+                    <p class="text-xs text-gray-500 mt-1">「7格資訊圖」可選填人像（角色將依人像繪製）；「Q版貼圖」、「換衣」、「分解物品」、「立體剖面」、「6幅漫畫」、「證件照」與「名人合照」功能必須上傳圖像。</p>
+                </div>
+
+                <!-- 參考圖預覽 -->
+                <div id="body-image-container" class="hidden">
+                    <h3 class="font-medium text-gray-300 mb-2">主體圖預覽：</h3>
+                    <div class="aspect-video rounded-lg overflow-hidden border-2 border-gray-700">
+                         <img id="body-image-preview" src="#" alt="主體圖片預覽" class="object-contain w-full h-full bg-gray-900/50">
+                    </div>
+                </div>
+                
+                <!-- 衣服上傳區 -->
+                <div id="clothes-upload-area" class="hidden space-y-6">
+                    <div>
+                        <label for="clothes-image-upload" class="block text-lg font-medium text-gray-300 mb-2">步驟 6: 上傳衣服圖像</label>
+                        <input type="file" id="clothes-image-upload" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500/10 file:text-purple-300 hover:file:bg-purple-500/20 cursor-pointer">
+                    </div>
+                    <!-- 衣服圖預覽 -->
+                    <div id="clothes-image-container" class="hidden">
+                        <h3 class="font-medium text-gray-300 mb-2">衣服圖預覽：</h3>
+                        <div class="aspect-video rounded-lg overflow-hidden border-2 border-gray-700">
+                             <img id="clothes-image-preview" src="#" alt="衣服圖片預覽" class="object-contain w-full h-full bg-gray-900/50">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generate-btn" class="w-full bg-orange-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 transition-transform transform hover:scale-105">
+                    生成圖像
+                </button>
+            </div>
+
+            <!-- 右側：生成結果 -->
+            <div class="lg:col-span-7">
+                <div class="lg:sticky lg:top-4 flex flex-col bg-gray-900/50 rounded-lg p-4 min-h-[420px] lg:min-h-[calc(100vh-130px)] border-2 border-dashed border-gray-700">
+                    <p class="text-gray-600 text-sm mb-2">生成結果</p>
+                    <div class="flex-grow flex flex-col items-center justify-center w-full">
+                        <div id="loading-spinner" class="hidden flex-col items-center">
+                            <div class="loader"></div>
+                            <p class="mt-4 text-gray-400">圖像生成中，請稍候...</p>
+                        </div>
+                        <!-- 新的網格佈局容器 -->
+                        <div id="image-grid-container" class="w-full hidden"></div>
+                        <!-- 錯誤訊息 -->
+                        <p id="error-message" class="text-red-400 text-center font-medium hidden w-full"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 放大預覽 Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden cursor-pointer">
+        <div class="relative max-w-4xl max-h-[90vh] cursor-default">
+            <img id="modal-image" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg">
+            <button id="close-modal-btn" class="absolute -top-3 -right-3 bg-white text-black rounded-full p-2 leading-none hover:bg-gray-200 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        window.onload = () => {
+            initializeApp();
+        };
+
+        function initializeApp() {
+             const requiredElementIds = [
+                'api-key', 'groq-api-key', 'toggle-password', 'toggle-groq-password', 'validate-key-btn', 'api-key-status', 'api-key-hint',
+                'analysis-result-area', 'analysis-image-desc', 'analysis-image-desc-text', 'analysis-prompt-text', 'enable-groq-analysis', 
+                'generator-section', 'prompt', 'image-upload', 'generate-btn', 
+                'body-image-container', 'body-image-preview', 'loading-spinner', 'image-grid-container', 
+                'error-message', 'layout-selector', 'style-selector-label', 'preview-modal', 'modal-image', 
+                'close-modal-btn', 'style-selection-area', 'toggle-api-section-btn', 'api-key-content', 
+                'api-section-title', 'clothes-upload-area', 'clothes-image-upload', 'clothes-image-container', 
+                'clothes-image-preview', 'body-image-label', 'prompt-area', 'image-upload-area', 'city-weather-area',
+                'id-photo-options-area', 'celebrity-options-area'
+            ];
+
+            for (const id of requiredElementIds) {
+                if (!document.getElementById(id)) {
+                    console.error(`嚴重初始化錯誤：找不到必要的 HTML 元素，ID 為 "${id}"。請檢查 HTML 結構。`);
+                    return; 
+                }
+            }
+            console.log("所有必要的 HTML 元素都已找到，繼續初始化...");
+
+            // DOM Elements (omitted for brevity)
+            const apiKeyInput = document.getElementById('api-key');
+            const groqApiKeyInput = document.getElementById('groq-api-key');
+            const toggleGroqPasswordBtn = document.getElementById('toggle-groq-password');
+            const analysisResultArea = document.getElementById('analysis-result-area');
+            const analysisImageDesc = document.getElementById('analysis-image-desc');
+            const analysisImageDescText = document.getElementById('analysis-image-desc-text');
+            const analysisPromptText = document.getElementById('analysis-prompt-text');
+            const enableGroqAnalysis = document.getElementById('enable-groq-analysis');
+            const togglePasswordBtn = document.getElementById('toggle-password');
+            const validateKeyBtn = document.getElementById('validate-key-btn');
+            const apiKeyStatus = document.getElementById('api-key-status');
+            const apiKeyHint = document.getElementById('api-key-hint');
+            const generatorSection = document.getElementById('generator-section');
+            const promptInput = document.getElementById('prompt');
+            const imageUpload = document.getElementById('image-upload');
+            const generateBtn = document.getElementById('generate-btn');
+            const bodyImageContainer = document.getElementById('body-image-container');
+            const bodyImagePreview = document.getElementById('body-image-preview');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const imageGridContainer = document.getElementById('image-grid-container');
+            const errorMessage = document.getElementById('error-message');
+            const layoutSelector = document.getElementById('layout-selector');
+            const styleSelectorLabel = document.getElementById('style-selector-label');
+            const styleSelectionArea = document.getElementById('style-selection-area');
+            const previewModal = document.getElementById('preview-modal');
+            const modalImage = document.getElementById('modal-image');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const toggleApiBtn = document.getElementById('toggle-api-section-btn');
+            const apiKeyContent = document.getElementById('api-key-content');
+            const apiSectionTitle = document.getElementById('api-section-title');
+            const clothesUploadArea = document.getElementById('clothes-upload-area');
+            const clothesImageUpload = document.getElementById('clothes-image-upload');
+            const clothesImageContainer = document.getElementById('clothes-image-container');
+            const clothesImagePreview = document.getElementById('clothes-image-preview');
+            const bodyImageLabel = document.getElementById('body-image-label');
+            const promptArea = document.getElementById('prompt-area');
+            const imageUploadArea = document.getElementById('image-upload-area');
+            const cityWeatherArea = document.getElementById('city-weather-area');
+            const idPhotoOptionsArea = document.getElementById('id-photo-options-area');
+            const celebrityOptionsArea = document.getElementById('celebrity-options-area');
+            
+            let bodyImageData = null;
+            let clothesImageData = null;
+            let validatedApiKey = null;
+            let validatedGroqKey = null;
+
+            // Groq 模型 fallback 鏈
+            const GROQ_TEXT_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
+            const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct'];
+            const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-lite-image';
+
+            generatorSection.style.opacity = '0.4';
+            generatorSection.style.pointerEvents = 'none';
+
+            const setStatus = (message, type, hint = '') => {
+                apiKeyStatus.textContent = message;
+                const typeClasses = {
+                    yellow: 'text-yellow-400', blue: 'text-blue-400',
+                    green: 'text-green-400', red: 'text-red-400',
+                };
+                apiKeyStatus.className = `text-sm mt-3 min-h-[1.25rem] ${typeClasses[type] || 'text-gray-400'}`;
+                apiKeyHint.textContent = hint;
+            };
+
+            toggleApiBtn.addEventListener('click', () => {
+                const isHidden = apiKeyContent.classList.contains('hidden');
+                apiKeyContent.classList.toggle('hidden');
+                const icon = toggleApiBtn.querySelector('i');
+                icon.classList.toggle('rotate-180', !isHidden);
+                try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } catch (e) {}
+            });
+
+            toggleGroqPasswordBtn.addEventListener('click', () => {
+                const icon = toggleGroqPasswordBtn.querySelector('i');
+                if (groqApiKeyInput.type === 'password') {
+                    groqApiKeyInput.type = 'text';
+                    icon.setAttribute('data-lucide', 'eye');
+                } else {
+                    groqApiKeyInput.type = 'password';
+                    icon.setAttribute('data-lucide', 'eye-off');
+                }
+                try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } catch (e) {}
+            });
+
+            togglePasswordBtn.addEventListener('click', () => {
+                const icon = togglePasswordBtn.querySelector('i');
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    icon.setAttribute('data-lucide', 'eye');
+                } else {
+                    apiKeyInput.type = 'password';
+                    icon.setAttribute('data-lucide', 'eye-off');
+                }
+                try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } catch (e) { console.error("Lucide icon 切換失敗:", e); }
+            });
+            
+            layoutSelector.addEventListener('change', (event) => {
+                const layoutValue = event.target.value;
+                const multiImageLayouts = ['1', '2', '4'];
+                const specialModes = ['9', 'changeclothes', 'exploded_view', 'cross_section', 'comic'];
+                const weatherMode = 'weather';
+                const idPhotoMode = 'id_photo';
+                const celebrityMode = 'celebrity';
+
+                // Reset UI state to default
+                clothesUploadArea.classList.add('hidden');
+                cityWeatherArea.classList.add('hidden');
+                idPhotoOptionsArea.classList.add('hidden');
+                celebrityOptionsArea.classList.add('hidden');
+                styleSelectionArea.style.display = 'block';
+                imageUploadArea.style.display = 'block';
+                promptArea.style.display = 'block';
+                bodyImageLabel.textContent = '步驟 5: 上傳參考圖 (選填)';
+                promptInput.placeholder = "描述您的圖像或故事主題";
+                
+                document.querySelectorAll('.style-checkbox:checked, .celebrity-checkbox:checked').forEach(cb => cb.checked = false);
+                
+                if(multiImageLayouts.includes(layoutValue) || layoutValue === 'overlay') {
+                    const firstStyle = styleSelectionArea.querySelector('.style-checkbox');
+                    if(firstStyle) firstStyle.checked = true;
+                }
+
+                if (multiImageLayouts.includes(layoutValue)) {
+                    const numImages = parseInt(layoutValue, 10);
+                    styleSelectorLabel.textContent = `步驟 4: 請選擇 ${numImages} 種藝術風格`;
+                } else if (layoutValue === 'overlay') {
+                    styleSelectorLabel.textContent = `步驟 4: 請選擇 2+ 種藝術風格`;
+                } else if (specialModes.includes(layoutValue)) {
+                    styleSelectionArea.style.display = 'none';
+                    bodyImageLabel.textContent = '步驟 5: 上傳主體圖像 (必要)';
+                    if (layoutValue === 'changeclothes') clothesUploadArea.classList.remove('hidden');
+                } else if (layoutValue === weatherMode) {
+                    styleSelectionArea.style.display = 'none';
+                    imageUploadArea.style.display = 'none';
+                    promptArea.style.display = 'none';
+                    cityWeatherArea.classList.remove('hidden');
+                } else if (layoutValue === idPhotoMode) {
+                    promptArea.style.display = 'none';
+                    styleSelectionArea.style.display = 'none';
+                    idPhotoOptionsArea.classList.remove('hidden');
+                    bodyImageLabel.textContent = '步驟 5: 上傳人物照片 (必要)';
+                } else if (layoutValue === celebrityMode) {
+                    promptArea.style.display = 'none';
+                    styleSelectionArea.style.display = 'none';
+                    celebrityOptionsArea.classList.remove('hidden');
+                    bodyImageLabel.textContent = '步驟 5: 上傳您的照片 (必要)';
+                }
+            });
+
+            validateKeyBtn.addEventListener('click', validateApiKey);
+            imageUpload.addEventListener('change', handleImageUpload(true));
+            clothesImageUpload.addEventListener('change', handleImageUpload(false));
+            generateBtn.addEventListener('click', startGeneration);
+            
+            const closeModal = () => previewModal.classList.add('hidden');
+            closeModalBtn.addEventListener('click', closeModal);
+            previewModal.addEventListener('click', (e) => {
+                if (e.target === previewModal) closeModal();
+            });
+
+            async function validateApiKey() {
+                validateKeyBtn.disabled = true;
+                validateKeyBtn.innerHTML = `<div class="flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>驗證中...</div>`;
+                const apiKey = apiKeyInput.value.trim();
+                const groqKey = groqApiKeyInput.value.trim();
+                const resetBtn = () => { validateKeyBtn.disabled = false; validateKeyBtn.textContent = '驗證連線'; };
+                if (!groqKey) { setStatus('請輸入 Groq API 金鑰。', 'yellow'); resetBtn(); return; }
+                if (!apiKey) { setStatus('請輸入 Gemini API 金鑰。', 'yellow'); resetBtn(); return; }
+                // 不做格式攔截，直接以實際 API 呼叫驗證金鑰有效性
+                setStatus('正在驗證 Groq 金鑰...', 'blue');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                try {
+                    // 1) 驗證 Groq
+                    const groqResp = await fetch('https://api.groq.com/openai/v1/models', {
+                        method: 'GET',
+                        headers: { 'Authorization': `Bearer ${groqKey}` },
+                        signal: controller.signal
+                    });
+                    if (!groqResp.ok) {
+                        const gErr = await groqResp.json().catch(() => ({}));
+                        throw new Error(`Groq 金鑰無效 (${groqResp.status}): ${gErr.error?.message || '請檢查金鑰'}`);
+                    }
+                    setStatus('✅ Groq 金鑰有效，正在驗證 Gemini 金鑰...', 'blue');
+                    // 2) 驗證 Gemini（使用圖像生成模型）
+                    const validationUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${apiKey}`;
+                    const response = await fetch(validationUrl, { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents:[{parts:[{text: "test"}]}], generationConfig: { responseModalities: ["TEXT"] } }),
+                        signal: controller.signal 
+                    });
+                    clearTimeout(timeoutId);
+                    if (response.ok) {
+                        setStatus('✅ Groq + Gemini 金鑰皆驗證成功！您現在可以開始生成圖像。', 'green');
+                        validatedApiKey = apiKey;
+                        validatedGroqKey = groqKey;
+                        generatorSection.style.opacity = '1';
+                        generatorSection.style.pointerEvents = 'auto';
+                        apiKeyInput.disabled = true;
+                        groqApiKeyInput.disabled = true;
+                        validateKeyBtn.textContent = '驗證成功';
+                        validateKeyBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                        validateKeyBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+                        apiSectionTitle.textContent = '✅ 步驟 1: Groq + Gemini 金鑰已驗證';
+                        apiKeyContent.classList.add('hidden');
+                        toggleApiBtn.querySelector('i').classList.add('rotate-180');
+                    } else {
+                        const errorData = await response.json().catch(() => ({ error: { message: '無法解析錯誤回應' }}));
+                        const detailMessage = errorData.error?.details?.[0]?.reason || errorData.error?.message;
+                        throw new Error(detailMessage || `HTTP 錯誤: ${response.status}`);
+                    }
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    console.error('API Key 驗證失敗:', error);
+                    let errorMsg, errorHint;
+                    if (error.name === 'AbortError') {
+                        errorMsg = '❌ 驗證失敗: 請求超時。';
+                        errorHint = '提示：請檢查您的網路連線。';
+                    } else {
+                        errorMsg = `❌ 驗證失敗: ${error.message}`;
+                        errorHint = '提示：請打開開發者工具(F12)查看 Console。';
+                    }
+                    setStatus(errorMsg, 'red', errorHint);
+                    validatedApiKey = null;
+                    validatedGroqKey = null;
+                } finally {
+                    if (!validatedApiKey) {
+                        validateKeyBtn.disabled = false;
+                        validateKeyBtn.textContent = '驗證連線';
+                    }
+                }
+            }
+
+            function handleImageUpload(isBodyImage) {
+                 return (event) => {
+                    const file = event.target.files[0];
+                    const container = isBodyImage ? bodyImageContainer : clothesImageContainer;
+                    const preview = isBodyImage ? bodyImagePreview : clothesImagePreview;
+                    if (!file) {
+                        container.classList.add('hidden');
+                        if (isBodyImage) bodyImageData = null; else clothesImageData = null;
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const base64String = e.target.result.split(',')[1];
+                        const imageData = { mimeType: file.type, data: base64String };
+                        if (isBodyImage) bodyImageData = imageData; else clothesImageData = imageData;
+                        preview.src = e.target.result;
+                        container.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                };
+            }
+            
+            async function startGeneration() {
+                if (!validatedApiKey) { showError("請先驗證您的 API 金鑰！"); return; }
+                const selectedLayout = document.querySelector('input[name="layout"]:checked').value;
+                setLoading(true);
+                
+                let basePrompt = promptInput.value.trim();
+                 if (!basePrompt && ['1','2','4','overlay', 'comic', 'seven_grid'].includes(selectedLayout)) { 
+                    showError("此模式需要文字提示！"); 
+                     setLoading(false);
+                    return; 
+                }
+
+                // Groq 解析：適用於使用提示詞的模式（天氣/證件照/名人合照使用內建範本，略過）
+                const promptModes = ['1','2','4','overlay','9','changeclothes','exploded_view','cross_section','comic'];
+                if (promptModes.includes(selectedLayout)) {
+                    basePrompt = await runGroqAnalysis(basePrompt);
+                }
+
+                const handlers = {
+                    'seven_grid': () => handleSevenGridGeneration(promptInput.value.trim()),
+                    '1': () => handleGridGeneration(basePrompt, document.querySelectorAll('.style-checkbox:checked')),
+                    '2': () => handleGridGeneration(basePrompt, document.querySelectorAll('.style-checkbox:checked')),
+                    '4': () => handleGridGeneration(basePrompt, document.querySelectorAll('.style-checkbox:checked')),
+                    'overlay': () => handleOverlayGeneration(basePrompt, document.querySelectorAll('.style-checkbox:checked')),
+                    '9': () => handleStickerSheetGeneration(basePrompt),
+                    'changeclothes': () => handleChangeClothesGeneration(basePrompt),
+                    'exploded_view': () => handleExplodedViewGeneration(basePrompt),
+                    'cross_section': () => handleCrossSectionGeneration(basePrompt),
+                    'comic': () => handleComicGeneration(basePrompt),
+                    'weather': handleCityWeatherGeneration,
+                    'id_photo': handleIdPhotoGeneration,
+                    'celebrity': handleCelebrityPhotoshootGeneration,
+                };
+                
+                if (handlers[selectedLayout]) {
+                    await handlers[selectedLayout]();
+                }
+
+                setLoading(false);
+                try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } 
+                catch (e) { console.error("渲染最終圖示時出錯:", e); }
+            }
+            
+            // ===== Groq API：文字與圖像解析 =====
+            async function callGroq(messages, models, maxTokens = 1024) {
+                let lastError = null;
+                for (const model of models) {
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        try {
+                            const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${validatedGroqKey}`
+                                },
+                                body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: 0.6 })
+                            });
+                            if (resp.status === 429) {
+                                // TPM/TPD 限流：短暫等待後重試，再失敗則換下一個模型
+                                lastError = new Error(`Groq 模型 ${model} 已達速率上限 (429)`);
+                                await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+                                continue;
+                            }
+                            const data = await resp.json();
+                            if (!resp.ok) {
+                                throw new Error(data.error?.message || `Groq HTTP ${resp.status}`);
+                            }
+                            const content = data.choices?.[0]?.message?.content?.trim();
+                            if (content) return content;
+                            throw new Error('Groq 回應為空');
+                        } catch (err) {
+                            lastError = err;
+                            console.warn(`Groq 模型 ${model} 失敗 (第 ${attempt + 1} 次):`, err.message);
+                            if (!err.message.includes('429')) break; // 非限流錯誤直接換模型
+                        }
+                    }
+                }
+                throw lastError || new Error('所有 Groq 模型皆失敗');
+            }
+
+            // 圖像解析：Groq Vision 描述上傳圖像
+            async function groqAnalyzeImage(imageData) {
+                const messages = [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: 'Describe this image concisely in English for use as an image-generation reference: main subject, appearance, clothing, colors, pose, background, and overall style. Respond with the description only, no preamble, under 120 words.' },
+                        { type: 'image_url', image_url: { url: `data:${imageData.mimeType};base64,${imageData.data}` } }
+                    ]
+                }];
+                return await callGroq(messages, GROQ_VISION_MODELS, 512);
+            }
+
+            // 文字解析：Groq 將使用者提示優化為詳細英文圖像生成提示詞
+            async function groqOptimizePrompt(userPrompt, imageDesc = null) {
+                const sysContent = 'You are an expert image-generation prompt engineer. Convert the user\'s idea (possibly in Chinese) into ONE detailed English image-generation prompt. Keep the original intent and any specified subjects. Add concrete visual details: composition, lighting, mood, color palette. Do NOT add art-style keywords (style is appended separately). Respond with the prompt only, no quotes, no preamble, under 100 words.';
+                const userContent = imageDesc
+                    ? `User idea: "${userPrompt}"\nReference image content (the generation will use this image as input): "${imageDesc}"\nWrite the optimized prompt, ensuring it works with the reference image.`
+                    : `User idea: "${userPrompt}"\nWrite the optimized prompt.`;
+                const messages = [
+                    { role: 'system', content: sysContent },
+                    { role: 'user', content: userContent }
+                ];
+                return await callGroq(messages, GROQ_TEXT_MODELS, 512);
+            }
+
+            // 解析管線：圖像解析 + 提示詞優化，並更新 UI
+            async function runGroqAnalysis(basePrompt) {
+                analysisResultArea.classList.add('hidden');
+                analysisImageDesc.classList.add('hidden');
+                if (!enableGroqAnalysis.checked || !validatedGroqKey) return basePrompt;
+                const spinnerText = document.querySelector('#loading-spinner p');
+                let imageDesc = null;
+                try {
+                    if (bodyImageData) {
+                        if (spinnerText) spinnerText.textContent = 'Groq 正在解析上傳圖像...';
+                        imageDesc = await groqAnalyzeImage(bodyImageData);
+                        analysisImageDescText.textContent = imageDesc;
+                        analysisImageDesc.classList.remove('hidden');
+                    }
+                    if (spinnerText) spinnerText.textContent = 'Groq 正在優化提示詞...';
+                    const optimized = await groqOptimizePrompt(basePrompt || '(no text prompt, rely on the reference image)', imageDesc);
+                    analysisPromptText.textContent = optimized;
+                    analysisResultArea.classList.remove('hidden');
+                    if (spinnerText) spinnerText.textContent = '圖像生成中，請稍候...';
+                    try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } catch (e) {}
+                    return optimized;
+                } catch (err) {
+                    console.warn('Groq 解析失敗，改用原始提示詞:', err.message);
+                    analysisPromptText.textContent = `(Groq 解析失敗：${err.message}，已改用原始提示詞)`;
+                    analysisResultArea.classList.remove('hidden');
+                    if (spinnerText) spinnerText.textContent = '圖像生成中，請稍候...';
+                    return basePrompt;
+                }
+            }
+
+            async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+                 for (let i = 0; i < retries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        const data = await response.json();
+                        if (!response.ok) {
+                             throw new Error(`API 錯誤: ${response.status} ${response.statusText} - ${data.error?.message || '未知錯誤'}`);
+                        }
+                        return data;
+                    } catch (error) {
+                        if (i === retries - 1) throw error;
+                        console.warn(`請求失敗，正在重試... (${i + 1}/${retries})`);
+                        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                    }
+                }
+            }
+
+            async function generateImageApi(prompt, images = []) {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${validatedApiKey}`;
+                const parts = [{ text: prompt }];
+                images.filter(img => img).forEach(imgData => {
+                    parts.push({ inlineData: { mimeType: imgData.mimeType, data: imgData.data } });
+                });
+                const payload = {
+                    contents: [{ parts }],
+                    generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+                };
+                const result = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const imagePart = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (imagePart && imagePart.inlineData.data) {
+                    return `data:image/png;base64,${imagePart.inlineData.data}`;
+                } else {
+                    const candidate = result?.candidates?.[0];
+                    let failureReason = 'API 回應格式錯誤或無圖片。';
+                     if (result?.promptFeedback?.blockReason) {
+                         failureReason = `提示詞被拒絕 (${result.promptFeedback.blockReason})。`;
+                    } else if (candidate) {
+                        failureReason = `因 "${candidate.finishReason}" 中斷。`;
+                    }
+                    throw new Error(failureReason);
+                }
+            }
+
+            function setupResultContainer(layoutType, numImages) {
+                const imageGridContainer = document.getElementById('image-grid-container');
+                imageGridContainer.innerHTML = '';
+                imageGridContainer.classList.remove('hidden');
+                const gridClasses = { 1: 'grid-cols-1', 2: 'grid-cols-2', 4: 'grid-cols-2' };
+                const isSingleCell = !Object.keys(gridClasses).includes(layoutType.toString());
+                imageGridContainer.className = `w-full grid ${isSingleCell ? 'grid-cols-1' : gridClasses[numImages]} gap-4`;
+                const cells = [];
+                const numToCreate = isSingleCell ? 1 : numImages;
+                for (let i = 0; i < numToCreate; i++) {
+                    const cellHTML = `<div class="aspect-square bg-gray-900/50 rounded-lg flex items-center justify-center relative border border-gray-700 group"><div class="loader loader-sm"></div><div class="image-wrapper w-full h-full"></div><div class="actions-overlay absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity hidden"><button class="preview-btn bg-gray-800/60 p-2 rounded-full text-white hover:bg-orange-600/80 backdrop-blur-sm" title="放大預覽"><i data-lucide="zoom-in" class="w-5 h-5"></i></button><a href="#" class="download-btn bg-gray-800/60 p-2 rounded-full text-white hover:bg-orange-600/80 backdrop-blur-sm" title="下載圖片"><i data-lucide="download" class="w-5 h-5"></i></a></div><p class="error-text absolute bottom-1 left-1 right-1 p-1 bg-red-900/80 text-white text-xs rounded hidden text-center"></p></div>`;
+                    imageGridContainer.insertAdjacentHTML('beforeend', cellHTML);
+                    cells.push(imageGridContainer.lastElementChild);
+                }
+                return cells;
+            }
+            
+            async function populateImageCell(prompt, cell, images) {
+                const { loader, error, imageWrapper, actionsOverlay, downloadBtn, previewBtn } = getCellElements(cell);
+                try {
+                    const imgSrc = await generateImageApi(prompt, images);
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-full h-full object-contain rounded-lg";
+                    imageWrapper.appendChild(img);
+                    downloadBtn.href = imgSrc;
+                    const shortPrompt = prompt.split(',')[0].trim().replace(/\s+/g, '-').substring(0, 20);
+                    downloadBtn.download = `gemini-${shortPrompt}-${Date.now()}.png`;
+                    previewBtn.addEventListener('click', () => {
+                        modalImage.src = imgSrc;
+                        previewModal.classList.remove('hidden');
+                    });
+                    actionsOverlay.classList.remove('hidden');
+                } catch (err) {
+                    console.error(`圖片生成失敗 (Prompt: ${prompt}):`, err);
+                    error.textContent = err.message.substring(0, 100);
+                    error.classList.remove('hidden');
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            }
+            
+            function getCellElements(cell) {
+                return {
+                    loader: cell.querySelector('.loader-sm'), error: cell.querySelector('.error-text'),
+                    imageWrapper: cell.querySelector('.image-wrapper'), actionsOverlay: cell.querySelector('.actions-overlay'),
+                    downloadBtn: cell.querySelector('.download-btn'), previewBtn: cell.querySelector('.preview-btn'),
+                };
+            }
+
+            async function handleGridGeneration(basePrompt, checkedStyles) {
+                 const numImages = parseInt(document.querySelector('input[name="layout"]:checked').value, 10);
+                 if (checkedStyles.length !== numImages) {
+                    showError(`佈局與風格數量不符！請為 "${numImages} 圖" 佈局選擇 ${numImages} 種藝術風格。`);
+                    return;
+                }
+                const cells = setupResultContainer(checkedStyles.length, checkedStyles.length);
+                const generationPromises = Array.from(checkedStyles).map((checkbox, index) => {
+                    const finalPrompt = `${basePrompt}, ${checkbox.value}`;
+                    return populateImageCell(finalPrompt, cells[index], [bodyImageData]);
+                });
+                await Promise.allSettled(generationPromises);
+            }
+            
+            async function handleOverlayGeneration(basePrompt, checkedStyles) {
+                if (checkedStyles.length < 2) {
+                    showError('漸變融合效果需要至少選擇 2 種藝術風格。');
+                    return;
+                }
+                 const [cell] = setupResultContainer('overlay', 1);
+                 const { loader, error: errorEl, imageWrapper, actionsOverlay, downloadBtn, previewBtn } = getCellElements(cell);
+                const generationPromises = Array.from(checkedStyles).map(checkbox => {
+                    const stylePrompt = checkbox.value;
+                    const finalPrompt = `${basePrompt}, ${stylePrompt}`;
+                    return generateImageApi(finalPrompt, [bodyImageData]);
+                });
+                const results = await Promise.allSettled(generationPromises);
+                const successfulImages = results
+                    .filter(res => res.status === 'fulfilled')
+                    .map(res => res.value);
+                if (successfulImages.length === 0) {
+                    const firstError = results.find(res => res.status === 'rejected')?.reason?.message || '所有圖片生成失敗。';
+                    errorEl.textContent = firstError;
+                    errorEl.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                    return;
+                }
+                try {
+                    const imageObjects = await Promise.all(successfulImages.map(loadImage));
+                    const canvas = document.createElement('canvas');
+                    const firstImage = imageObjects[0];
+                    canvas.width = firstImage.naturalWidth || 1024;
+                    canvas.height = firstImage.naturalHeight || 1024;
+                    canvas.className = "w-full h-full object-contain rounded-lg";
+                    const mainCtx = canvas.getContext('2d');
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    const numImages = imageObjects.length;
+                    const sectionWidth = canvas.width / numImages;
+                    const blendWidth = sectionWidth * 0.4;
+                    imageObjects.forEach((img, i) => {
+                        tempCtx.globalCompositeOperation = 'source-over';
+                        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        const opaqueStartX = (i === 0) ? 0 : (i * sectionWidth) + (blendWidth / 2);
+                        const opaqueEndX = (i === numImages - 1) ? canvas.width : ((i + 1) * sectionWidth) - (blendWidth / 2);
+                        tempCtx.fillStyle = 'white';
+                        tempCtx.fillRect(opaqueStartX, 0, opaqueEndX - opaqueStartX, tempCanvas.height);
+                        if (i > 0) {
+                            const gradStart = i * sectionWidth - blendWidth / 2;
+                            const gradient = tempCtx.createLinearGradient(gradStart, 0, gradStart + blendWidth, 0);
+                            gradient.addColorStop(0, 'rgba(255,255,255,0)');
+                            gradient.addColorStop(1, 'rgba(255,255,255,1)');
+                            tempCtx.fillStyle = gradient;
+                            tempCtx.fillRect(gradStart, 0, blendWidth, tempCanvas.height);
+                        }
+                        if (i < numImages - 1) {
+                            const gradStart = (i + 1) * sectionWidth - blendWidth / 2;
+                            const gradient = tempCtx.createLinearGradient(gradStart, 0, gradStart + blendWidth, 0);
+                            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+                            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+                            tempCtx.fillStyle = gradient;
+                            tempCtx.fillRect(gradStart, 0, blendWidth, tempCanvas.height);
+                        }
+                        tempCtx.globalCompositeOperation = 'source-in';
+                        tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        mainCtx.drawImage(tempCanvas, 0, 0);
+                    });
+                    imageWrapper.appendChild(canvas);
+                    const canvasDataUrl = canvas.toDataURL('image/png');
+                    downloadBtn.href = canvasDataUrl;
+                    downloadBtn.download = `gemini-overlay.png`;
+                    previewBtn.addEventListener('click', () => {
+                        modalImage.src = canvasDataUrl;
+                        previewModal.classList.remove('hidden');
+                    });
+                    actionsOverlay.classList.remove('hidden');
+                } catch (err) {
+                     console.error(`漸變融合圖片渲染失敗:`, err);
+                     errorEl.textContent = '圖片渲染失敗。';
+                     errorEl.classList.remove('hidden');
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            }
+
+            async function handleStickerSheetGeneration(basePrompt) {
+                if (!bodyImageData) { showError('「Q版貼圖」功能必須上傳一張參考圖。'); return; }
+                const [cell] = setupResultContainer('sticker', 1);
+                const stickerPrompt = `Create a sticker sheet in a 3x3 grid format. Based on the provided image and the concept of "${basePrompt}", generate 9 distinct cute chibi-style (Q-version) stickers. Each sticker must have a prominent white outline. The overall background of the sheet should be a simple light gray.`;
+                await populateImageCell(stickerPrompt, cell, [bodyImageData]);
+            }
+
+            async function handleChangeClothesGeneration(basePrompt) { 
+                 if (!bodyImageData) { showError('「換衣」功能必須上傳一張主體圖像。'); return; }
+                if (!clothesImageData) { showError('「換衣」功能必須上傳一張衣服圖像。'); return; }
+                const [cell] = setupResultContainer('changeclothes', 1);
+                const changeClothesPrompt = `Task: Virtual Try-On. Image 1 is the model. Image 2 is the clothing. Dress the model from Image 1 with the clothing from Image 2. IMPORTANT: The person, pose, and background of Image 1 MUST be preserved. Fit the clothes naturally. Context: ${basePrompt}`;
+                await populateImageCell(changeClothesPrompt, cell, [bodyImageData, clothesImageData]);
+             }
+
+            async function handleExplodedViewGeneration(basePrompt) {
+                 if (!bodyImageData) { showError('「分解物品」功能必須上傳一張參考圖。'); return; }
+                const [cell] = setupResultContainer('exploded_view', 1);
+                const explodedViewPrompt = `Generate a technical "exploded view" diagram of the object in the image. Components should be separated but logically arranged to show assembly. Style: clean engineering illustration. Context: "${basePrompt}"`;
+                await populateImageCell(explodedViewPrompt, cell, [bodyImageData]);
+            }
+
+            async function handleCrossSectionGeneration(basePrompt) { 
+                if (!bodyImageData) { showError('「立體剖面」功能必須上傳一張參考圖。'); return; }
+                const [cell] = setupResultContainer('cross_section', 1);
+                const crossSectionPrompt = `Generate a detailed 3D cross-section of the object in the image. Show internal structures accurately. Also, create an exploded view of the components next to it. Each part must have clear English labels for name and function. Context: "${basePrompt}"`;
+                await populateImageCell(crossSectionPrompt, cell, [bodyImageData]);
+            }
+
+            async function handleComicGeneration(storyTheme) {
+                if (!bodyImageData) { showError('「6幅漫畫」功能必須上傳一張代表主角的圖像。'); return; }
+                const [cell] = setupResultContainer('comic', 1);
+                const comicPrompt = `**Task: Create a 6-panel comic strip in a single image.**
+**Story Theme:** "${storyTheme}"
+**Main Character:** Use the character from the provided image as the main character. You MUST maintain the character's appearance, clothing, and key features consistently across all six panels.
+**Instructions:**
+1.  **Develop a simple, sequential story** based on the theme. The story should have a clear beginning, middle, and end.
+2.  **Illustrate the story in six panels**, arranged in a 2x3 grid.
+3.  **Add a short, simple English dialogue or caption** to each panel to help tell the story.
+4.  **Style:** The entire image should have a consistent comic book art style.
+5.  **Output:** Generate one single image that contains the complete 6-panel comic strip.`;
+                await populateImageCell(comicPrompt, cell, [bodyImageData]);
+            }
+            
+            // ===== 7格資訊圖：頂部主視覺 + 六格說明（Groq 整理重點 → Gemini 生成） =====
+            const SEVEN_GRID_STYLE = `整體風格（必須嚴格遵守）：正方形 1:1 的直式資訊圖表，頂部為橫幅主視覺標題區，下方為六個說明窗格（3列 x 2行），每格以粗黑色邊框分隔。乾淨、可愛的 Q 版卡通風格，粗黑色輪廓線，鮮明平坦的色彩，米黃色紙質紋理背景。主標題使用超大號粗體中文字，黑色配深紅色漸層描邊；重點詞句使用紅色粗體字；其他配角或反派一律畫成灰黑色剪影小人。所有文字必須是正確清晰的繁體中文。每一格圖像中不要有編號。`;
+
+            async function buildSevenGridPrompt(content, characterDesc) {
+                const charLine = characterDesc
+                    ? `主角人物特徵（每一格都必須出現同一位角色，外觀必須依據此描述保持一致）：${characterDesc}`
+                    : `主角人物：依內容重點自行設計一位貫穿全圖的 Q 版角色（每一格外觀保持一致）；若內容不適合人物，則以重點示意圖示為主。`;
+                const sys = `你是資訊圖表提示詞工程師。使用者會提供一段文章或摘要內容，請完成：
+1. 整理出 1 個主標題、1 個副標題、以及 7 個重點。
+2. 第 1 個重點放在「頂部主視覺區」，其餘 6 個重點依序放入六個窗格（由上至下、由左至右）。
+3. 直接輸出一份完整的繁體中文圖像生成提示詞，結構如下：
+【整體風格與角色設定】（把提供的風格描述與人物特徵完整寫入）
+【頂部主視覺區】文字：主標題、副標、標籤文字。畫面：具體描述主角動作、表情、象徵物件。
+【左上格】【右上格】【左中格】【右中格】【左下格】【右下格】每格都要有：文字（格內標題與短句）與畫面（主角的具體動作、表情、場景、象徵物件，畫面必須呼應該重點的意境）。
+只輸出提示詞本身，不要任何前言或說明。`;
+                const user = `風格描述：${SEVEN_GRID_STYLE}\n${charLine}\n\n內容如下：\n${content}`;
+                return await callGroq([
+                    { role: 'system', content: sys },
+                    { role: 'user', content: user }
+                ], GROQ_TEXT_MODELS, 2048);
+            }
+
+            async function handleSevenGridGeneration(content) {
+                const spinnerText = document.querySelector('#loading-spinner p');
+                analysisResultArea.classList.add('hidden');
+                analysisImageDesc.classList.add('hidden');
+                let characterDesc = null;
+                try {
+                    if (bodyImageData && validatedGroqKey) {
+                        if (spinnerText) spinnerText.textContent = 'Groq 正在解析上傳的 Q 版人像...';
+                        characterDesc = await groqAnalyzeImage(bodyImageData);
+                        analysisImageDescText.textContent = characterDesc;
+                        analysisImageDesc.classList.remove('hidden');
+                    }
+                    if (spinnerText) spinnerText.textContent = 'Groq 正在整理 7 大重點與提示詞...';
+                    let finalPrompt;
+                    try {
+                        finalPrompt = await buildSevenGridPrompt(content, characterDesc);
+                    } catch (groqErr) {
+                        console.warn('Groq 整理失敗，改用範本組合:', groqErr.message);
+                        finalPrompt = `${SEVEN_GRID_STYLE}\n主題內容：${content}\n請整理出 1 個主標題與 7 個重點：第 1 個重點作為頂部主視覺區（大標題+副標+主角畫面），其餘 6 個重點依序畫入六個窗格，每格含中文標題短句與呼應意境的主角畫面。`;
+                    }
+                    analysisPromptText.textContent = finalPrompt;
+                    analysisResultArea.classList.remove('hidden');
+                    if (spinnerText) spinnerText.textContent = '圖像生成中，請稍候...';
+                    try { if (typeof lucide !== 'undefined' && lucide) { lucide.createIcons(); } } catch (e) {}
+
+                    const [cell] = setupResultContainer('seven_grid', 1);
+                    const genPrompt = bodyImageData
+                        ? `${finalPrompt}\n\n重要：全圖中的主角必須完全依照提供的參考圖像的 Q 版角色繪製（髮型、服裝、五官、比例一致），並套用上述風格。圖像比例 1:1。`
+                        : `${finalPrompt}\n\n圖像比例 1:1。`;
+                    await populateImageCell(genPrompt, cell, bodyImageData ? [bodyImageData] : []);
+                } catch (err) {
+                    showError(`7格資訊圖生成失敗：${err.message}`);
+                }
+            }
+
+            async function handleCityWeatherGeneration() {
+                const city = document.getElementById('city-select').value;
+                if (!city) {
+                    showError('請選擇一個城市。');
+                    return;
+                }
+                const [cell] = setupResultContainer('weather', 1);
+                try {
+                    const weatherResponse = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+                    if (!weatherResponse.ok) throw new Error('無法獲取天氣資料');
+                    const weatherData = await weatherResponse.json();
+                    const weatherDesc = weatherData.current_condition[0].weatherDesc[0].value;
+                    const localTimeStr = weatherData.nearest_area[0].localtime;
+                    const sunriseStr = weatherData.weather[0].astronomy[0].sunrise;
+                    const sunsetStr = weatherData.weather[0].astronomy[0].sunset;
+                    const localTime = new Date(localTimeStr);
+                    const localHours = localTime.getHours() + localTime.getMinutes() / 60;
+                    const parseTime = (timeStr) => {
+                        const [time, modifier] = timeStr.split(' ');
+                        let [hours, minutes] = time.split(':').map(Number);
+                        if (modifier === 'PM' && hours < 12) hours += 12;
+                        if (modifier === 'AM' && hours === 12) hours = 0;
+                        return hours + minutes / 60;
+                    };
+                    const sunriseHour = parseTime(sunriseStr);
+                    const sunsetHour = parseTime(sunsetStr);
+                    const isDay = localHours >= sunriseHour && localHours < sunsetHour;
+                    const timeOfDayTheme = isDay ? "a light-colored, bright background for daytime" : "a dark-colored background for nighttime";
+                    const finalPrompt = `Create an isometric diorama scene of the city of ${city}, viewed from a clear 45° top-down angle. The scene should feature iconic landmarks and characteristic architecture of the city. The current weather, which is "${weatherDesc}", should be subtly integrated into the scene (e.g., soft clouds, gentle rain effects, bright sun). The overall aesthetic is a miniature model with photorealistic PBR (Physically-Based Rendering) and realistic lighting. The scene must have a clean, solid-colored background (${timeOfDayTheme}). The composition should be centered to highlight the meticulous detail of the 3D model. Also, include a small, stylized icon representing the weather (${weatherDesc}) discreetly in a corner of the image.`;
+                    await populateImageCell(finalPrompt, cell, []);
+                } catch (err) {
+                    console.error('天氣圖像生成失敗:', err);
+                    showError(`生成失敗: ${err.message}`);
+                }
+            }
+
+            async function handleIdPhotoGeneration() {
+                if (!bodyImageData) {
+                    showError('「證件照」功能必須上傳一張人物照片。');
+                    return;
+                }
+                const clothingType = document.getElementById('clothing-type').value;
+                const clothingColor = document.getElementById('clothing-color').value;
+                const shotType = document.querySelector('input[name="shot-type"]:checked').value;
+                let finalClothing = clothingColor ? `${clothingColor} ${clothingType}` : clothingType;
+                const prompt = `Create a professional ID photo based on the uploaded image.
+- **Task:** Convert the person in the image into a standard ID photo.
+- **Background:** MUST be a solid, pure white background.
+- **Clothing:** Change the person's clothes to formal attire: ${finalClothing}.
+- **Pose:** The person should be facing forward, looking directly at the camera.
+- **Expression:** The person should have a confident and neutral or slightly smiling expression.
+- **Format:** Generate a clean ${shotType} shot.
+- **Crucial Rule:** Preserve the person's facial features and identity from the original image. Only modify the background, clothing, and ensure the expression is suitable for an ID photo.`;
+                const [cell] = setupResultContainer('id_photo', 1);
+                await populateImageCell(prompt, cell, [bodyImageData]);
+            }
+
+            async function handleCelebrityPhotoshootGeneration() {
+                if (!bodyImageData) {
+                    showError('「名人合照」功能必須上傳您的照片。');
+                    return;
+                }
+                const selectedCelebs = Array.from(document.querySelectorAll('.celebrity-checkbox:checked')).map(cb => cb.value);
+                const customCelebs = document.getElementById('custom-celebrity').value.split(',').map(s => s.trim()).filter(s => s);
+                const allCelebs = [...selectedCelebs, ...customCelebs];
+
+                if (allCelebs.length === 0) {
+                    showError('請至少選擇或輸入一位名人進行合照。');
+                    return;
+                }
+                const celebrityList = allCelebs.join(', ');
+
+                const prompt = `An ultra-realistic 8K cinematic shot. The person from the uploaded image, smiling and wearing casual attire (no glasses), is taking a selfie with a smartphone. Happily posing alongside them or in the background are ${celebrityList}. They are all striking playful poses (if they are people). The scene is bright, dynamic, and fun, with vibrant colors, sharp details, and realistic lighting and shadows. The style should resemble a real photograph with natural facial expressions and exquisite cinematic quality.`;
+                
+                const [cell] = setupResultContainer('celebrity', 1);
+                await populateImageCell(prompt, cell, [bodyImageData]);
+            }
+            
+            function setLoading(isLoading) {
+                const generateBtn = document.getElementById('generate-btn');
+                const loadingSpinner = document.getElementById('loading-spinner');
+                const imageGridContainer = document.getElementById('image-grid-container');
+                const errorMessage = document.getElementById('error-message');
+                generateBtn.disabled = isLoading;
+                errorMessage.classList.add('hidden');
+                loadingSpinner.classList.toggle('hidden', !isLoading);
+                imageGridContainer.classList.toggle('hidden', isLoading);
+            }
+            
+            function showError(message) {
+                setLoading(false);
+                const imageGridContainer = document.getElementById('image-grid-container');
+                const errorMessage = document.getElementById('error-message');
+                imageGridContainer.classList.add('hidden');
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+            }
+            
+            function loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = (err) => reject(err);
+                });
+            }
+            
+            try {
+                if(typeof lucide !== 'undefined' && lucide) {
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                console.error("Lucide icon initialization failed.", e);
+            }
+        }
+    </script>
+</body>
+</html>
+

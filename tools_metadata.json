@@ -1,0 +1,418 @@
+[
+  {
+    "category": "中醫研究",
+    "icon": "🌿",
+    "file_name": "nihaisha/index.html",
+    "path": "nihaisha/index.html",
+    "title": "倪海廈經方中醫工作台 v4.0",
+    "desc": "金匱要略、傷寒論方證速查，條文圖譜與辨證階梯引導。"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "台股AI全方位儀表板.html",
+    "path": "股票工具/台股AI全方位儀表板.html",
+    "title": "台股 AI 全方位分析儀表板",
+    "desc": "股票工具 · 台股AI全方位儀表板"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "台股AI分析儀表板.html",
+    "path": "股票工具/台股AI分析儀表板.html",
+    "title": "台股 AI 主力行為判讀系統",
+    "desc": "股票工具 · 台股AI分析儀表板"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "股王拉霸選股攻略_v1.html",
+    "path": "股票工具/股王拉霸選股攻略_v1.html",
+    "title": "🎰 股王拉霸選股攻略 v1",
+    "desc": "股票工具 · 股王拉霸選股攻略_v1"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "股王鳥卦選股攻略_v1_6.html",
+    "path": "股票工具/股王鳥卦選股攻略_v1_6.html",
+    "title": "🐦 股王鳥卦選股攻略 v1.6",
+    "desc": "股票工具 · 股王鳥卦選股攻略_v1_6"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "量化策略實驗室.html",
+    "path": "股票工具/量化策略實驗室.html",
+    "title": "量化策略實驗室",
+    "desc": "股票工具 · 量化策略實驗室"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "釣魚選股_v16.html",
+    "path": "股票工具/釣魚選股_v16.html",
+    "title": "🎣 股王釣魚選股攻略 v16",
+    "desc": "股票工具 · 釣魚選股_v16"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "長期投資分析_v2.html",
+    "path": "股票工具/長期投資分析_v2.html",
+    "title": "台股長期投資分析系統 v2",
+    "desc": "股票工具 · 長期投資分析_v2"
+  },
+  {
+    "category": "股票工具",
+    "icon": "📈",
+    "file_name": "index.html",
+    "path": "股票工具/tw-stock-ai/index.html",
+    "title": "台股個股資料分析與 Groq AI 洞察系統",
+    "desc": "股票工具 · index"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "AI_Agent_架構流光圖 (1).html",
+    "path": "AI工具/AI_Agent_架構流光圖 (1).html",
+    "title": "AI Agent 完整架構 · 流光互動圖",
+    "desc": "AI工具 · AI_Agent_架構流光圖 (1)"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "Agent_運用模式_流光動態圖.html",
+    "path": "AI工具/Agent_運用模式_流光動態圖.html",
+    "title": "Agent 十種運用模式｜流光動態圖",
+    "desc": "AI工具 · Agent_運用模式_流光動態圖"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "Groq解析_Gemini圖像生成器.html",
+    "path": "AI工具/Groq解析_Gemini圖像生成器.html",
+    "title": "Groq 解析 × Gemini 圖像生成器",
+    "desc": "AI工具 · Groq解析_Gemini圖像生成器"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "HTML反向工程_R2.html",
+    "path": "AI工具/HTML反向工程_R2.html",
+    "title": "🔍 HTML 反向工程 — 提示詞產生器",
+    "desc": "AI工具 · HTML反向工程_R2"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "SDLC_vs_ADLC_流光圖.html",
+    "path": "AI工具/SDLC_vs_ADLC_流光圖.html",
+    "title": "SDLC vs ADLC 流光圖",
+    "desc": "AI工具 · SDLC_vs_ADLC_流光圖"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "Skills 配對器_Groq版_v3.html",
+    "path": "AI工具/Skills 配對器_Groq版_v3.html",
+    "title": "Skills 配對器_Groq版_v3",
+    "desc": "AI工具 · Skills 配對器_Groq版_v3"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "TTS益值玩 (9).html",
+    "path": "AI工具/TTS益值玩 (9).html",
+    "title": "TTS益值玩 · 多引擎台語語音實驗室",
+    "desc": "AI工具 · TTS益值玩 (9)"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "Token 瘦身引擎 v2.html",
+    "path": "AI工具/Token 瘦身引擎 v2.html",
+    "title": "意境壓縮器 v2 · Token 瘦身引擎",
+    "desc": "AI工具 · Token 瘦身引擎 v2"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "企業提示詞工程產生器-v2.html",
+    "path": "AI工具/企業提示詞工程產生器-v2.html",
+    "title": "企業提示詞工程產生器 · Prompt Studio",
+    "desc": "AI工具 · 企業提示詞工程產生器-v2"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "提示詞大師.html",
+    "path": "AI工具/提示詞大師.html",
+    "title": "提示詞大師 · Prompt Master",
+    "desc": "AI工具 · 提示詞大師"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "數據清洗正規化分析_v6.html",
+    "path": "AI工具/數據清洗正規化分析_v6.html",
+    "title": "數據清洗、正規化 及 分析",
+    "desc": "AI工具 · 數據清洗正規化分析_v6"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "程式反向工程 (3).html",
+    "path": "AI工具/程式反向工程 (3).html",
+    "title": "🔍 程式反向工程 — 提示詞產生器",
+    "desc": "AI工具 · 程式反向工程 (3)"
+  },
+  {
+    "category": "AI工具",
+    "icon": "🤖",
+    "file_name": "風格擷取師_R2.html",
+    "path": "AI工具/風格擷取師_R2.html",
+    "title": "風格擷取師 R2 · 圖像風格紀錄生成器（完整配置盤點版）",
+    "desc": "AI工具 · 風格擷取師_R2"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "AI_SWOT分析工具_專業版_v3.8_Groq.html",
+    "path": "文書行政/AI_SWOT分析工具_專業版_v3.8_Groq.html",
+    "title": "AI SWOT 分析工具 - 專業版",
+    "desc": "文書行政 · AI_SWOT分析工具_專業版_v3.8_Groq"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "Markdown-Editor-v2.html",
+    "path": "文書行政/Markdown-Editor-v2.html",
+    "title": "Markdown 編輯器 v2",
+    "desc": "文書行政 · Markdown-Editor-v2"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "Mermaid_Editor_企業版 (5).html",
+    "path": "文書行政/Mermaid_Editor_企業版 (5).html",
+    "title": "Mermaid Editor",
+    "desc": "文書行政 · Mermaid_Editor_企業版 (5)"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "PDF拆分工具-new.html",
+    "path": "文書行政/PDF拆分工具-new.html",
+    "title": "📚 PDF自動切割工具",
+    "desc": "文書行政 · PDF拆分工具-new"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "Spin3D (2).html",
+    "path": "文書行政/Spin3D (2).html",
+    "title": "Spin3D 動態展演工坊",
+    "desc": "文書行政 · Spin3D (2)"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "nexus_atlas-new.html",
+    "path": "文書行政/nexus_atlas-new.html",
+    "title": "星脈圖譜 · AI 關聯星圖產生器",
+    "desc": "文書行政 · nexus_atlas-new"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "圖表大師 II.html",
+    "path": "文書行政/圖表大師 II.html",
+    "title": "圖表大師 v4 · ECF",
+    "desc": "文書行政 · 圖表大師 II"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "數據清洗正規化分析_v6.html",
+    "path": "文書行政/數據清洗正規化分析_v6.html",
+    "title": "數據清洗、正規化 及 分析",
+    "desc": "文書行政 · 數據清洗正規化分析_v6"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "文案策略X光機.html",
+    "path": "文書行政/文案策略X光機.html",
+    "title": "文案策略X光機",
+    "desc": "文書行政 · 文案策略X光機"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "組織架構圖產生器_v17.html",
+    "path": "文書行政/組織架構圖產生器_v17.html",
+    "title": "組織架構圖產生器",
+    "desc": "文書行政 · 組織架構圖產生器_v17"
+  },
+  {
+    "category": "文書行政",
+    "icon": "📑",
+    "file_name": "職場_Agent_應用_流光動態圖.html",
+    "path": "文書行政/職場_Agent_應用_流光動態圖.html",
+    "title": "職場 Agent 應用｜流光動態圖",
+    "desc": "文書行政 · 職場_Agent_應用_流光動態圖"
+  },
+  {
+    "category": "商業",
+    "icon": "💼",
+    "file_name": "BMC商業模式畫布生成器_v3.html",
+    "path": "商業/BMC商業模式畫布生成器_v3.html",
+    "title": "BMC 商業模式畫布生成器 · Groq",
+    "desc": "商業 · BMC商業模式畫布生成器_v3"
+  },
+  {
+    "category": "商業",
+    "icon": "💼",
+    "file_name": "台灣薪資位階_3D高質版.html",
+    "path": "商業/台灣薪資位階_3D高質版.html",
+    "title": "台灣薪資位階 · 3D 高質版",
+    "desc": "商業 · 台灣薪資位階_3D高質版"
+  },
+  {
+    "category": "商業",
+    "icon": "💼",
+    "file_name": "消費族群分析儀_Groq版_v17.html",
+    "path": "商業/消費族群分析儀_Groq版_v17.html",
+    "title": "消費族群分析儀 · 消費洞察平台",
+    "desc": "商業 · 消費族群分析儀_Groq版_v17"
+  },
+  {
+    "category": "商業",
+    "icon": "💼",
+    "file_name": "行銷組合演進器_4P5P7P.html",
+    "path": "商業/行銷組合演進器_4P5P7P.html",
+    "title": "行銷組合演進器｜4P → 5P → 7P",
+    "desc": "商業 · 行銷組合演進器_4P5P7P"
+  },
+  {
+    "category": "學務",
+    "icon": "🎓",
+    "file_name": "Agent_應用_流光動態圖_企業學校版.html",
+    "path": "學務/Agent_應用_流光動態圖_企業學校版.html",
+    "title": "Agent 應用｜流光動態圖",
+    "desc": "學務 · Agent_應用_流光動態圖_企業學校版"
+  },
+  {
+    "category": "學務",
+    "icon": "🎓",
+    "file_name": "Mermaid_Editor_學校版 (7).html",
+    "path": "學務/Mermaid_Editor_學校版 (7).html",
+    "title": "Mermaid Editor",
+    "desc": "學務 · Mermaid_Editor_學校版 (7)"
+  },
+  {
+    "category": "學務",
+    "icon": "🎓",
+    "file_name": "新出題小幫手-風格學習-Groq版.html",
+    "path": "學務/新出題小幫手-風格學習-Groq版.html",
+    "title": "新出題小幫手-風格學習-Groq版",
+    "desc": "學務 · 新出題小幫手-風格學習-Groq版"
+  },
+  {
+    "category": "學務",
+    "icon": "🎓",
+    "file_name": "貼課通-學生專業版_v4.0.html",
+    "path": "學務/貼課通-學生專業版_v4.0.html",
+    "title": "貼課通 v4.0 · 學生版（加入課堂）",
+    "desc": "學務 · 貼課通-學生專業版_v4.0"
+  },
+  {
+    "category": "學務",
+    "icon": "🎓",
+    "file_name": "貼課通-教師專業版_v4.0.html",
+    "path": "學務/貼課通-教師專業版_v4.0.html",
+    "title": "貼課通 v4.0 · 專業版（課堂即時牆）",
+    "desc": "學務 · 貼課通-教師專業版_v4.0"
+  },
+  {
+    "category": "娛樂",
+    "icon": "🎮",
+    "file_name": "1943-3D.html",
+    "path": "娛樂/1943-3D.html",
+    "title": "1943 — 街機空戰",
+    "desc": "娛樂 · 1943-3D"
+  },
+  {
+    "category": "娛樂",
+    "icon": "🎮",
+    "file_name": "AI_滑塊拼圖遊戲_v3.html",
+    "path": "娛樂/AI_滑塊拼圖遊戲_v3.html",
+    "title": "AI 滑塊拼圖",
+    "desc": "娛樂 · AI_滑塊拼圖遊戲_v3"
+  },
+  {
+    "category": "娛樂",
+    "icon": "🎮",
+    "file_name": "小蜜蜂3D-星海遠征.html",
+    "path": "娛樂/小蜜蜂3D-星海遠征.html",
+    "title": "小蜜蜂 3D · 星海遠征",
+    "desc": "娛樂 · 小蜜蜂3D-星海遠征"
+  },
+  {
+    "category": "娛樂",
+    "icon": "🎮",
+    "file_name": "金屬音律播放器_語音辨識版.html",
+    "path": "娛樂/金屬音律播放器_語音辨識版.html",
+    "title": "金屬音律播放器",
+    "desc": "娛樂 · 金屬音律播放器_語音辨識版"
+  },
+  {
+    "category": "娛樂",
+    "icon": "🎮",
+    "file_name": "青蛙過街-3D.html",
+    "path": "娛樂/青蛙過街-3D.html",
+    "title": "青蛙過街 3D · 河岸冒險",
+    "desc": "娛樂 · 青蛙過街-3D"
+  },
+  {
+    "category": "生活工具",
+    "icon": "🍳",
+    "file_name": "AI料理王_Groq_Gemini3_5.html",
+    "path": "生活工具/AI料理王_Groq_Gemini3_5.html",
+    "title": "🍳 AI料理王",
+    "desc": "生活工具 · AI料理王_Groq_Gemini3_5"
+  },
+  {
+    "category": "命理",
+    "icon": "☯️",
+    "file_name": "八字姓名學_v7.html",
+    "path": "命理/八字姓名學_v7.html",
+    "title": "ECF 八字×姓名合參",
+    "desc": "命理 · 八字姓名學_v7"
+  },
+  {
+    "category": "命理",
+    "icon": "☯️",
+    "file_name": "星命譜.html",
+    "path": "命理/星命譜.html",
+    "title": "星命譜｜八字・姓名・星座血型",
+    "desc": "命理 · 星命譜"
+  },
+  {
+    "category": "多媒體",
+    "icon": "🎙️",
+    "file_name": "Podcast-prompt.html",
+    "path": "多媒體/Podcast-prompt.html",
+    "title": "CAST PROMPT — 語音摘要提示詞工具",
+    "desc": "多媒體 · Podcast-prompt"
+  },
+  {
+    "category": "多媒體",
+    "icon": "🎙️",
+    "file_name": "TTS益值玩 (9).html",
+    "path": "多媒體/TTS益值玩 (9).html",
+    "title": "TTS益值玩 · 多引擎台語語音實驗室",
+    "desc": "多媒體 · TTS益值玩 (9)"
+  }
+]

@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金屬音律播放器</title>
+<style>
+:root{
+  --bg1:#1a202c; --bg2:#2d3748; --m1:#2d3748; --m2:#4a5568; --m3:#718096; --m4:#a0aec0;
+  --txt:#e2e8f0; --sub:#a0aec0; --accent:#fed7aa; --green:#22c55e; --red:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:var(--txt); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  -webkit-user-select:none; user-select:none;
+}
+textarea,input{-webkit-user-select:text;user-select:text;font-family:inherit}
+
+/* ===== 主容器 ===== */
+.app{
+  position:relative; width:100%; max-width:1152px; height:80vh; max-height:680px; min-height:560px;
+  border-radius:16px; display:flex; gap:18px; padding:18px; overflow:hidden;
+  background:linear-gradient(145deg,#4a5568 0%,#3a4556 45%,#2d3748 100%);
+  box-shadow:0 30px 70px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.18),inset 0 -3px 6px rgba(0,0,0,.45);
+}
+.app::before{ /* 拉絲紋理 */
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:16px;opacity:.35;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),
+             radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.12),transparent 55%);
+}
+.panel{position:relative;z-index:1;display:flex;flex-direction:column;min-height:0}
+.left{flex:0 0 40%;gap:12px;overflow-y:auto;overflow-x:hidden;padding-right:4px}
+.right{flex:1;gap:12px;min-width:0}
+/* 金屬風捲軸（全站） */
+*{scrollbar-width:thin;scrollbar-color:#718096 #1f2733}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:linear-gradient(90deg,#1a202c,#2d3748);border-radius:10px;box-shadow:inset 2px 2px 4px rgba(0,0,0,.7),inset -1px -1px 2px rgba(255,255,255,.06)}
+::-webkit-scrollbar-thumb{border-radius:10px;border:2px solid transparent;background-clip:padding-box;
+  background-color:#718096;background-image:linear-gradient(90deg,#cbd5e0,#a0aec0 35%,#718096 70%,#4a5568)}
+::-webkit-scrollbar-thumb:hover{background-image:linear-gradient(90deg,#fed7aa,#fb923c 50%,#c2410c)}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-corner{background:transparent}
+
+.well{
+  border-radius:12px;
+  background:linear-gradient(145deg,#1f2733,#2d3748);
+  box-shadow:inset 3px 3px 9px rgba(0,0,0,.65),inset -2px -2px 6px rgba(255,255,255,.06);
+}
+.plate{
+  border-radius:12px;padding:12px;
+  background:linear-gradient(145deg,#556074,#3a4556);
+  box-shadow:3px 3px 10px rgba(0,0,0,.45),-1px -1px 4px rgba(255,255,255,.08),inset 0 1px 0 rgba(255,255,255,.15);
+}
+
+/* ===== 標題 ===== */
+.brand{display:flex;align-items:center;justify-content:space-between}
+.brand h1{font-size:19px;letter-spacing:2px;color:var(--accent);text-shadow:0 0 10px rgba(254,215,170,.35),0 2px 2px rgba(0,0,0,.6)}
+.brand small{color:var(--sub);font-size:11px;letter-spacing:1px}
+.now{padding:10px 14px}
+.now .label{font-size:11px;color:var(--sub);letter-spacing:1px}
+.now .title{font-size:15px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+
+/* ===== 視覺化 ===== */
+.viz{height:140px;padding:6px;flex-shrink:0}
+.viz canvas{width:100%;height:100%;display:block;border-radius:8px}
+
+/* ===== 進度條 ===== */
+.progress-wrap{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.track-bar{position:relative;flex:1;height:8px;border-radius:8px;cursor:pointer;touch-action:none;
+  background:linear-gradient(#1a202c,#2d3748);box-shadow:inset 2px 2px 4px rgba(0,0,0,.7),inset -1px -1px 2px rgba(255,255,255,.08)}
+.track-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:8px;
+  background:linear-gradient(90deg,#f97316,#facc15);box-shadow:0 0 8px rgba(250,204,21,.6)}
+.track-thumb{position:absolute;top:50%;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#f1f5f9,#a0aec0 45%,#4a5568);
+  box-shadow:2px 2px 5px rgba(0,0,0,.6),inset 0 1px 1px rgba(255,255,255,.7)}
+
+/* ===== 控制按鈕 ===== */
+.controls{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px}
+.btns{display:flex;align-items:center;gap:12px}
+.mbtn{
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;
+  background:linear-gradient(145deg,#cbd5e0 0%,#a0aec0 30%,#718096 70%,#4a5568 100%);
+  box-shadow:4px 4px 10px rgba(0,0,0,.55),-2px -2px 6px rgba(255,255,255,.12),
+    inset 0 1px 1px rgba(255,255,255,.6),inset 0 -2px 3px rgba(0,0,0,.25);
+  transition:transform .08s,box-shadow .08s;
+}
+.mbtn svg{width:20px;height:20px;fill:#1f2733;filter:drop-shadow(0 1px 0 rgba(255,255,255,.35))}
+.mbtn.big{width:72px;height:72px}
+.mbtn.big svg{width:30px;height:30px}
+.mbtn:active,.mbtn.pressed{transform:scale(.95);
+  background:linear-gradient(145deg,#4a5568,#718096 60%,#a0aec0);
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.55),inset -2px -2px 5px rgba(255,255,255,.18)}
+#btnPlay svg{fill:var(--green);filter:drop-shadow(0 0 4px rgba(34,197,94,.5))}
+#btnStop svg{fill:var(--red);filter:drop-shadow(0 0 4px rgba(239,68,68,.5))}
+
+/* ===== 音量旋鈕 ===== */
+.knob-box{display:flex;flex-direction:column;align-items:center;gap:4px}
+.knob{width:60px;height:60px;border-radius:50%;position:relative;cursor:grab;touch-action:none;
+  background:radial-gradient(circle at 35% 28%,#f8fafc 0%,#cbd5e0 18%,#718096 55%,#2d3748 100%);
+  box-shadow:4px 5px 12px rgba(0,0,0,.65),-2px -2px 6px rgba(255,255,255,.12),inset 0 -3px 6px rgba(0,0,0,.35)}
+.knob:active{cursor:grabbing}
+.knob::after{content:"";position:absolute;inset:9px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,255,255,.06) 0 4deg,rgba(0,0,0,.06) 4deg 8deg)}
+.knob-dot{position:absolute;left:50%;top:6px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;z-index:2;
+  background:#fdba74;box-shadow:0 0 6px #fb923c,0 0 12px rgba(251,146,60,.8)}
+.knob-rot{position:absolute;inset:0;border-radius:50%}
+.knob-label{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+
+/* ===== EQ ===== */
+.sec-title{font-size:12px;color:var(--accent);letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.sec-title span{color:var(--sub);font-size:11px}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.pbtn{border:none;cursor:pointer;padding:7px 4px;border-radius:8px;font-size:12px;font-family:inherit;color:#1f2733;font-weight:600;
+  background:linear-gradient(145deg,#cbd5e0,#a0aec0 40%,#718096);
+  box-shadow:3px 3px 7px rgba(0,0,0,.5),-1px -1px 3px rgba(255,255,255,.12),inset 0 1px 1px rgba(255,255,255,.6);transition:.08s}
+.pbtn:active,.pbtn.active{color:#fdba74;text-shadow:0 0 6px rgba(251,146,60,.7);
+  background:linear-gradient(145deg,#2d3748,#4a5568);
+  box-shadow:inset 3px 3px 7px rgba(0,0,0,.6),inset -1px -1px 3px rgba(255,255,255,.12)}
+.eq{display:flex;justify-content:space-between;padding:10px 8px 6px}
+.band{display:flex;flex-direction:column;align-items:center;gap:6px;width:9%}
+.band .val{font-size:10px;color:var(--accent);font-variant-numeric:tabular-nums;height:12px}
+.vtrack{position:relative;width:8px;height:80px;border-radius:8px;cursor:pointer;touch-action:none;
+  background:linear-gradient(90deg,#1a202c,#2d3748);box-shadow:inset 2px 2px 4px rgba(0,0,0,.75),inset -1px -1px 2px rgba(255,255,255,.08)}
+.vtrack::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:1px;background:rgba(255,255,255,.15)}
+.vfill{position:absolute;left:0;right:0;bottom:0;border-radius:8px;
+  background:linear-gradient(0deg,#facc15,#f97316 55%,#ef4444);box-shadow:0 0 7px rgba(249,115,22,.65)}
+.vthumb{position:absolute;left:50%;width:22px;height:22px;margin-left:-11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#f1f5f9,#a0aec0 45%,#4a5568);
+  box-shadow:2px 3px 6px rgba(0,0,0,.65),inset 0 1px 1px rgba(255,255,255,.7)}
+.band .hz{font-size:10px;color:var(--sub)}
+
+/* ===== 右側分頁 ===== */
+.tabs{display:flex;gap:8px;padding:6px}
+.tab{flex:1;border:none;cursor:pointer;padding:9px 6px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;color:var(--sub);
+  background:transparent;transition:.12s}
+.tab.active{color:var(--accent);background:linear-gradient(145deg,#556074,#3a4556);
+  box-shadow:3px 3px 8px rgba(0,0,0,.5),-1px -1px 3px rgba(255,255,255,.1),inset 0 1px 0 rgba(255,255,255,.15)}
+.pane{display:none;flex:1;min-height:0;flex-direction:column;gap:10px;overflow-y:auto;padding:2px}
+.pbar{height:8px;border-radius:8px;overflow:hidden;background:linear-gradient(#1a202c,#2d3748);box-shadow:inset 2px 2px 4px rgba(0,0,0,.7),inset -1px -1px 2px rgba(255,255,255,.08)}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f97316,#facc15);box-shadow:0 0 8px rgba(250,204,21,.6);transition:width .3s}
+select:disabled{opacity:.55}
+select option{color:#1a202c;background:#ffffff}
+select option:checked{color:#1a202c;background:#fed7aa}
+.pane.show{display:flex}
+.pane>*{flex-shrink:0}
+#pane-sr #dictateBox,#pane-sr #commandBox{flex:1 0 auto !important;min-height:auto !important}
+#pane-sr #dictateBox>*,#pane-sr #commandBox>*{flex-shrink:0}
+#pane-sr #transcript{flex:1 0 180px;min-height:180px}
+#pane-sr #cmdLog{flex:1 0 160px;min-height:160px}
+#pane-sr .row{flex-shrink:0}
+#srSupport{flex-shrink:0;margin-top:2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.obtn{border:none;cursor:pointer;padding:10px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#1f1300;
+  background:linear-gradient(145deg,#fed7aa,#fb923c 45%,#c2410c);
+  box-shadow:4px 4px 10px rgba(0,0,0,.5),-1px -1px 4px rgba(255,255,255,.12),inset 0 1px 1px rgba(255,255,255,.6);transition:.08s}
+.obtn:active{transform:scale(.97);box-shadow:inset 3px 3px 8px rgba(0,0,0,.5),inset -1px -1px 3px rgba(255,255,255,.2)}
+.rbtn{border:none;cursor:pointer;padding:10px 16px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;color:#fff;
+  background:linear-gradient(145deg,#f87171,#dc2626 50%,#991b1b);
+  box-shadow:4px 4px 10px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.45);transition:.08s}
+.rbtn:active{transform:scale(.97);box-shadow:inset 3px 3px 8px rgba(0,0,0,.55)}
+.gbtn{border:none;cursor:pointer;padding:8px 12px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;color:#1f2733;
+  background:linear-gradient(145deg,#cbd5e0,#a0aec0 40%,#718096);
+  box-shadow:3px 3px 7px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.6);transition:.08s}
+.gbtn:active{transform:scale(.96);box-shadow:inset 2px 2px 6px rgba(0,0,0,.55)}
+.gbtn:disabled,.obtn:disabled{opacity:.5;cursor:not-allowed}
+.spacer{flex:1}
+.count{font-size:12px;color:var(--sub)}
+
+/* 播放清單 */
+.list{flex:1;min-height:0;overflow-y:auto;padding:8px}
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--sub);font-size:13px;text-align:center;padding:20px}
+.empty b{color:var(--accent);font-size:15px}
+.item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;margin-bottom:4px;
+  border:1px solid transparent;transition:background .12s}
+.item:hover{background:rgba(255,255,255,.05)}
+.item.cur{background:linear-gradient(90deg,rgba(251,146,60,.22),rgba(251,146,60,.04));border-color:rgba(251,146,60,.35)}
+.item.cur .nm{color:var(--accent)}
+.item.dragging{opacity:.4}
+.item.over-top{box-shadow:0 -2px 0 #fb923c}
+.item.over-bot{box-shadow:0 2px 0 #fb923c}
+.item .no{width:26px;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.item .grip{color:#718096;font-size:14px;cursor:grab}
+.item .nm{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .eqi{display:none;gap:2px;align-items:flex-end;height:12px}
+.item.cur.playing .eqi{display:flex}
+.eqi i{width:3px;background:#fb923c;animation:eqb .8s infinite ease-in-out}
+.eqi i:nth-child(2){animation-delay:.2s}.eqi i:nth-child(3){animation-delay:.4s}
+@keyframes eqb{0%,100%{height:3px}50%{height:12px}}
+.del{width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:14px;line-height:22px;opacity:0;
+  background:linear-gradient(145deg,#f87171,#b91c1c);box-shadow:1px 1px 4px rgba(0,0,0,.5);transition:opacity .12s}
+.item:hover .del{opacity:1}
+@media (hover:none){.del{opacity:.85}}
+
+/* 語音辨識 */
+.field{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+select,input[type=text],input[type=password]{
+  background:linear-gradient(145deg,#1f2733,#2d3748);color:var(--txt);border:none;border-radius:8px;padding:8px 10px;font-size:13px;
+  box-shadow:inset 2px 2px 5px rgba(0,0,0,.6),inset -1px -1px 2px rgba(255,255,255,.06);outline:none}
+select:focus,input:focus,textarea:focus{box-shadow:inset 2px 2px 5px rgba(0,0,0,.6),0 0 0 1px rgba(251,146,60,.6)}
+.seg{display:flex;border-radius:9px;padding:3px;gap:3px;background:linear-gradient(145deg,#1f2733,#2d3748);box-shadow:inset 2px 2px 5px rgba(0,0,0,.6)}
+.seg button{border:none;background:transparent;color:var(--sub);font-family:inherit;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer}
+.seg button.active{color:#1f2733;font-weight:700;background:linear-gradient(145deg,#fed7aa,#fb923c)}
+.mic{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;position:relative;
+  background:linear-gradient(145deg,#cbd5e0,#a0aec0 30%,#718096 70%,#4a5568);
+  box-shadow:4px 4px 10px rgba(0,0,0,.55),-2px -2px 6px rgba(255,255,255,.12),inset 0 1px 1px rgba(255,255,255,.6)}
+.mic svg{width:24px;height:24px;fill:#1f2733}
+.mic.on{background:linear-gradient(145deg,#f87171,#dc2626 50%,#991b1b);box-shadow:inset 3px 3px 8px rgba(0,0,0,.5),0 0 18px rgba(239,68,68,.6)}
+.mic.on svg{fill:#fff}
+.mic.on::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(239,68,68,.6);animation:ring 1.4s infinite}
+@keyframes ring{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.status{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:#718096}
+.status.on .dot{background:#ef4444;box-shadow:0 0 8px #ef4444}
+.interim{min-height:38px;padding:9px 12px;font-size:13px;color:#fdba74;font-style:italic}
+.interim:empty::before{content:"（即時辨識內容會顯示在這裡）";color:#718096;font-style:normal}
+textarea{flex:1;min-height:130px;resize:none;border:none;outline:none;padding:12px;font-size:14px;line-height:1.7;color:var(--txt);
+  border-radius:12px;background:linear-gradient(145deg,#1f2733,#2d3748);box-shadow:inset 3px 3px 9px rgba(0,0,0,.65),inset -2px -2px 6px rgba(255,255,255,.06)}
+.cmdlog{max-height:120px;overflow-y:auto;padding:8px 10px;font-size:12px;line-height:1.7}
+.cmdlog div{color:var(--sub)}.cmdlog b{color:var(--accent);font-weight:600}
+.hint{font-size:11px;color:#94a3b8;line-height:1.6}
+.chk{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);cursor:pointer}
+.chk input{accent-color:#fb923c}
+
+/* AI */
+.ai-out{flex:1;min-height:90px;overflow-y:auto;padding:12px;font-size:13px;line-height:1.75;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
+.ai-out.loading{color:var(--accent)}
+.ai-box{padding:12px;display:flex;flex-direction:column;gap:8px}
+.ai-box .ttl{font-size:12px;color:var(--accent)}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;z-index:99;
+  padding:10px 18px;border-radius:10px;font-size:13px;color:var(--txt);transition:.25s;
+  background:linear-gradient(145deg,#556074,#2d3748);box-shadow:0 8px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.dropping .list{box-shadow:inset 0 0 0 2px #fb923c,inset 3px 3px 9px rgba(0,0,0,.65)}
+
+/* ===== 響應式 ===== */
+@media (max-width:1024px){
+  body{padding:10px;align-items:flex-start}
+  .app{flex-direction:column;height:auto;max-height:none;min-height:0}
+  .left,.right{flex:none;width:100%;overflow:visible;padding-right:0}
+  .right{min-height:560px}
+}
+@media (max-width:480px){
+  .app{padding:12px;gap:12px}
+  .mbtn{width:46px;height:46px}.mbtn.big{width:64px;height:64px}
+  .btns{gap:8px}.controls{padding:12px 10px}
+  .vtrack{height:72px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- ========== 左側：播放器 ========== -->
+  <section class="panel left">
+    <div class="brand">
+      <h1>◆ 金屬音律播放器</h1>
+      <small>MP3 / WAV · EQ · VOICE</small>
+    </div>
+
+    <div class="well now">
+      <div class="label">NOW PLAYING</div>
+      <div class="title" id="nowTitle">尚未選擇曲目</div>
+    </div>
+
+    <div class="well viz"><canvas id="viz"></canvas></div>
+
+    <div class="progress-wrap">
+      <span id="tCur">0:00</span>
+      <div class="track-bar" id="seek"><div class="track-fill" id="seekFill"></div><div class="track-thumb" id="seekThumb"></div></div>
+      <span id="tDur">0:00</span>
+    </div>
+
+    <div class="plate controls">
+      <div class="btns">
+        <button class="mbtn" id="btnPrev" title="上一首"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM9.5 12 19 5v14z"/></svg></button>
+        <button class="mbtn big" id="btnPlay" title="播放 / 暫停"><svg viewBox="0 0 24 24" id="icoPlay"><path d="M7 4.5v15L19.5 12z"/></svg></button>
+        <button class="mbtn" id="btnStop" title="停止"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg></button>
+        <button class="mbtn" id="btnNext" title="下一首"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM14.5 12 5 19V5z"/></svg></button>
+      </div>
+      <div class="knob-box">
+        <div class="knob" id="knob" title="按住拖曳：向左加大、向右降低"><div class="knob-rot" id="knobRot"><div class="knob-dot"></div></div></div>
+        <div class="knob-label" id="volLabel">音量 70%</div>
+      </div>
+    </div>
+
+    <div class="plate">
+      <div class="sec-title">音質等化器 EQ <span>雙擊滑桿歸零</span></div>
+      <div class="presets" id="presets"></div>
+      <div class="well eq" id="eq"></div>
+    </div>
+  </section>
+
+  <!-- ========== 右側：清單 / 語音 / AI ========== -->
+  <section class="panel right">
+    <div class="well tabs">
+      <button class="tab active" data-tab="pl">🎶 播放清單</button>
+      <button class="tab" data-tab="sr">🎙 語音辨識</button>
+      <button class="tab" data-tab="ai">✨ AI 助理</button>
+    </div>
+
+    <!-- 播放清單 -->
+    <div class="pane show" id="pane-pl">
+      <div class="row">
+        <button class="obtn" id="btnAdd">＋ 選擇檔案</button>
+        <input type="file" id="file" accept=".mp3,.wav,audio/mpeg,audio/wav,audio/x-wav" multiple hidden>
+        <span class="count" id="plCount">共 0 首</span>
+        <span class="spacer"></span>
+        <button class="rbtn" id="btnClear">全部清除</button>
+      </div>
+      <div class="well list scroll" id="list"></div>
+    </div>
+
+    <!-- 語音辨識 -->
+    <div class="pane" id="pane-sr">
+      <div class="row" style="gap:8px">
+        <div class="seg" id="srcSeg">
+          <button class="active" data-src="mic">🎤 麥克風</button>
+          <button data-src="file">📁 音訊檔案</button>
+        </div>
+        <select id="srLang">
+          <option value="zh-TW">中文（台灣）</option>
+          <option value="cmn-Hans-CN">中文（普通話）</option>
+          <option value="en-US">English (US)</option>
+          <option value="ja-JP">日本語</option>
+          <option value="ko-KR">한국어</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="stamp">麥克風加時間戳</label>
+      </div>
+
+      <!-- 麥克風來源 -->
+      <div class="row" id="micBox">
+        <button class="mic" id="btnMic" title="開始 / 停止辨識"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z"/></svg></button>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px">
+          <div class="seg" id="modeSeg" style="align-self:flex-start">
+            <button class="active" data-mode="dictate">聽寫文字</button>
+            <button data-mode="command">語音指令</button>
+          </div>
+          <div class="row" style="gap:12px">
+            <div class="status" id="srStatus"><span class="dot"></span><span id="srStatusTxt">待命中</span></div>
+            <label class="chk"><input type="checkbox" id="duck" checked>辨識時降低音樂音量</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 檔案來源 -->
+      <div class="well ai-box" id="fileBox" style="display:none">
+        <div class="ttl">選擇播放清單曲目，或另外上傳音訊／影片檔</div>
+        <div class="row" style="gap:8px">
+          <select id="fsTrack" style="flex:1;min-width:160px"></select>
+          <button class="gbtn" id="btnFsUp">上傳音檔</button>
+          <input type="file" id="fsFile" accept="audio/*,video/*,.mp3,.wav,.m4a,.ogg,.webm,.flac,.mp4" hidden>
+        </div>
+        <div class="row" style="gap:8px">
+          <select id="fsEngine" style="flex:1;min-width:160px">
+            <option value="local">本地 Whisper（完全免費・瀏覽器運算）</option>
+            <option value="groq">Groq Whisper（需 Key・免費額度・較快）</option>
+          </select>
+          <select id="fsModel" style="flex:1;min-width:160px">
+            <option value="onnx-community/whisper-tiny">tiny（約 40MB・最快）</option>
+            <option value="onnx-community/whisper-base" selected>base（約 80MB・建議）</option>
+            <option value="onnx-community/whisper-small">small（約 250MB・較準）</option>
+          </select>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="obtn" id="btnTrans">開始轉錄</button>
+          <button class="gbtn" id="btnCancel" disabled>取消</button>
+          <span class="count" id="fsStatus">選好檔案後按「開始轉錄」</span>
+        </div>
+        <div class="pbar"><i id="fsBar"></i></div>
+      </div>
+
+      <div class="well interim" id="interim"></div>
+
+      <div id="dictateBox" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+        <textarea id="transcript" placeholder="辨識完成的文字會累積在這裡，可直接編輯…"></textarea>
+        <div class="row">
+          <button class="gbtn" id="btnCopy">複製</button>
+          <button class="gbtn" id="btnTxt">下載 TXT</button>
+          <button class="gbtn" id="btnSrt">下載 SRT</button>
+          <button class="gbtn" id="btnClrTxt">清除</button>
+          <span class="spacer"></span>
+          <button class="gbtn" id="btnToAI">送到 AI 助理 →</button>
+        </div>
+      </div>
+
+      <div id="commandBox" style="display:none;flex-direction:column;gap:10px;flex:1;min-height:0">
+        <div class="well cmdlog scroll" id="cmdLog" style="flex:1;max-height:none"><div>指令紀錄會顯示在這裡</div></div>
+        <div class="hint">指令範例：播放、暫停、停止、下一首、上一首、播放第三首、播放 ＋歌名、大聲一點、小聲一點、音量 50、靜音、搖滾模式／流行／古典／重低音／人聲／平衡。<br>無法辨識的口語指令，若已設定 Groq API Key，會交給 AI 解析。</div>
+      </div>
+      <div class="hint" id="srSupport">🎤 麥克風：瀏覽器內建 Web Speech API（免費，建議 Chrome / Edge）。📁 檔案：本地 Whisper 模型在瀏覽器內運算（免費，首次需下載模型，之後自動快取）。轉錄的曲目播放時會同步顯示字幕。</div>
+    </div>
+
+    <!-- AI 助理 -->
+    <div class="pane" id="pane-ai">
+      <div class="well ai-box">
+        <div class="ttl">Groq API 設定（金鑰只存在本機瀏覽器）</div>
+        <div class="row" style="gap:8px">
+          <input type="password" id="gKey" placeholder="gsk_…" style="flex:2;min-width:160px">
+          <button class="gbtn" id="btnSaveKey">儲存</button>
+        </div>
+        <div class="row" style="gap:8px">
+          <select id="gModel" style="flex:1;min-width:180px" title="文字模型（由 Groq 即時取得）"><option value="">（輸入 Key 後自動載入模型清單）</option></select>
+          <button class="gbtn" id="btnModels" title="重新取得 Groq 可用模型">🔄 更新模型</button>
+        </div>
+      </div>
+      <div class="row">
+        <button class="obtn" data-ai="polish">潤飾辨識文字</button>
+        <button class="gbtn" data-ai="summary">摘要重點</button>
+        <button class="gbtn" data-ai="notes">條列筆記</button>
+        <button class="gbtn" data-ai="en">翻譯英文</button>
+      </div>
+      <div class="well ai-box">
+        <div class="ttl">AI 調音：描述想要的聲音（可用語音說）</div>
+        <div class="row" style="gap:8px">
+          <input type="text" id="eqPrompt" placeholder="例：溫暖一點、人聲清楚、低音不要太轟" style="flex:1;min-width:160px">
+          <button class="gbtn" id="btnEqMic" title="語音輸入">🎙</button>
+          <button class="obtn" id="btnAiEq">產生 EQ</button>
+        </div>
+      </div>
+      <div class="well ai-out scroll" id="aiOut">AI 結果會顯示在這裡。</div>
+      <div class="row">
+        <button class="gbtn" id="btnAiCopy">複製結果</button>
+        <button class="gbtn" id="btnAiReplace">取代辨識文字</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch{} }
+};
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+const fmt = s => { if (!isFinite(s)) return '0:00'; s = Math.floor(s); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
+
+/* ================= 音訊引擎 ================= */
+const audio = new Audio();
+audio.preload = 'auto';
+const FREQS = [60,170,310,600,1000,3000,6000,12000,14000,16000];
+const PRESETS = {
+  '平衡':[0,0,0,0,0,0,0,0,0,0],
+  '搖滾':[5,4,3,1,-1,-1,1,3,4,5],
+  '流行':[-1,1,3,4,3,0,-1,-1,-1,-1],
+  '古典':[4,3,2,1,-1,-1,0,2,3,4],
+  '重低音':[8,7,5,3,1,0,0,0,0,0],
+  '人聲':[-2,-1,0,3,5,5,3,1,0,-1]
+};
+let ctx = null, filters = [], analyser = null, gainNode = null, ranges = [], freqData;
+let eqGains = PRESETS['平衡'].slice();
+let volume = parseFloat(store.get('mp_vol', '0.7')) || 0.7;
+let ducking = false;
+
+function initAudio(){
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = ctx.createMediaElementSource(audio);
+  let node = src;
+  FREQS.forEach((f, i) => {
+    const b = ctx.createBiquadFilter();
+    b.type = i === 0 ? 'lowshelf' : i === FREQS.length - 1 ? 'highshelf' : 'peaking';
+    b.frequency.value = f; b.Q.value = 1.1; b.gain.value = eqGains[i];
+    node.connect(b); node = b; filters.push(b);
+  });
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 4096; analyser.smoothingTimeConstant = 0.78;
+  gainNode = ctx.createGain();
+  node.connect(analyser); analyser.connect(gainNode); gainNode.connect(ctx.destination);
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+  buildRanges();
+  applyGain();
+}
+function applyGain(){
+  if (!gainNode) return;
+  const target = volume * (ducking ? 0.25 : 1);
+  gainNode.gain.setTargetAtTime(target, ctx.currentTime, 0.08);
+}
+
+/* ================= 播放清單 ================= */
+let tracks = [];   // {id,name,url}
+let current = -1;
+let uid = 0;
+const list = $('#list');
+
+function addFiles(files){
+  const ok = [...files].filter(f => /\.(mp3|wav)$/i.test(f.name) || /audio\/(mpeg|wav|x-wav|wave)/.test(f.type));
+  if (!ok.length){ toast('只支援 .mp3 與 .wav'); return; }
+  ok.forEach(f => tracks.push({ id: ++uid, name: f.name.replace(/\.(mp3|wav)$/i, ''), url: URL.createObjectURL(f), file: f }));
+  renderList();
+  toast(`已加入 ${ok.length} 首`);
+}
+function renderList(){
+  refreshFsOptions();
+  $('#plCount').textContent = `共 ${tracks.length} 首`;
+  if (!tracks.length){
+    list.innerHTML = `<div class="empty"><b>播放清單是空的</b>點「＋ 選擇檔案」或把 MP3 / WAV 拖曳到這裡</div>`;
+    return;
+  }
+  list.innerHTML = '';
+  tracks.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'item' + (i === current ? ' cur' : '') + (i === current && !audio.paused ? ' playing' : '');
+    el.draggable = true; el.dataset.idx = i;
+    el.innerHTML = `<span class="grip">⋮⋮</span><span class="no">${String(i+1).padStart(2,'0')}</span><span class="nm"></span><span class="eqi"><i></i><i></i><i></i></span><button class="del" title="刪除">×</button>`;
+    el.querySelector('.nm').textContent = t.name;
+    el.querySelector('.nm').title = t.name;
+    el.addEventListener('click', e => { if (e.target.classList.contains('del')) return; loadTrack(i); play(); });
+    el.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); removeTrack(i); });
+    el.addEventListener('dragstart', e => { dragIdx = i; el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(i)); });
+    el.addEventListener('dragend', () => { dragIdx = null; clearOver(); el.classList.remove('dragging'); });
+    el.addEventListener('dragover', e => {
+      if (dragIdx === null) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect(); const top = e.clientY < r.top + r.height/2;
+      clearOver(); el.classList.add(top ? 'over-top' : 'over-bot');
+    });
+    el.addEventListener('drop', e => {
+      if (dragIdx === null) return;
+      e.preventDefault(); e.stopPropagation();
+      const r = el.getBoundingClientRect(); const top = e.clientY < r.top + r.height/2;
+      let to = i + (top ? 0 : 1);
+      moveTrack(dragIdx, to);
+    });
+    list.appendChild(el);
+  });
+}
+let dragIdx = null;
+function clearOver(){ $$('.item').forEach(x => x.classList.remove('over-top','over-bot')); }
+function moveTrack(from, to){
+  if (from < to) to--;
+  if (from === to) { renderList(); return; }
+  const curId = tracks[current]?.id;
+  const [t] = tracks.splice(from, 1);
+  tracks.splice(to, 0, t);
+  current = curId ? tracks.findIndex(x => x.id === curId) : -1;
+  renderList();
+}
+function removeTrack(i){
+  const t = tracks[i];
+  if (i === current){ stop(); audio.removeAttribute('src'); audio.load(); current = -1; setNow(); }
+  else if (i < current) current--;
+  URL.revokeObjectURL(t.url);
+  tracks.splice(i, 1);
+  renderList();
+}
+function clearAll(){
+  if (!tracks.length) return;
+  stop(); audio.removeAttribute('src'); audio.load();
+  tracks.forEach(t => URL.revokeObjectURL(t.url));
+  tracks = []; current = -1; setNow(); renderList();
+  toast('已清空播放清單');
+}
+// 外部檔案拖曳
+const app = $('#app');
+app.addEventListener('dragover', e => { if (dragIdx === null && e.dataTransfer.types.includes('Files')){ e.preventDefault(); app.classList.add('dropping'); } });
+app.addEventListener('dragleave', e => { if (e.target === app) app.classList.remove('dropping'); });
+app.addEventListener('drop', e => {
+  app.classList.remove('dropping');
+  if (dragIdx === null && e.dataTransfer.files.length){ e.preventDefault(); addFiles(e.dataTransfer.files); switchTab('pl'); }
+});
+
+/* ================= 播放控制 ================= */
+function setNow(){ $('#nowTitle').textContent = current >= 0 ? tracks[current].name : '尚未選擇曲目'; }
+function loadTrack(i){
+  if (i < 0 || i >= tracks.length) return;
+  current = i; audio.src = tracks[i].url; setNow(); renderList();
+}
+async function play(){
+  if (!tracks.length){ toast('請先加入音樂檔案'); return; }
+  initAudio();
+  if (ctx.state === 'suspended') await ctx.resume();
+  if (current < 0) loadTrack(0);
+  try{ await audio.play(); }catch(err){ toast('無法播放：' + err.message); }
+}
+function pause(){ audio.pause(); }
+function toggle(){ audio.paused ? play() : pause(); }
+function stop(){ audio.pause(); try{ audio.currentTime = 0; }catch{} updateProgress(); }
+function next(){ if (current < tracks.length - 1){ loadTrack(current + 1); play(); } else { stop(); toast('已是最後一首'); } }
+function prev(){
+  if (audio.currentTime > 3){ audio.currentTime = 0; return; }
+  if (current > 0){ loadTrack(current - 1); play(); } else if (tracks.length){ audio.currentTime = 0; }
+}
+audio.addEventListener('ended', () => {
+  if (current < tracks.length - 1){ loadTrack(current + 1); play(); }
+  else { stop(); toast('播放清單已播放完畢'); }
+});
+const PLAY_ICO = '<path d="M7 4.5v15L19.5 12z"/>', PAUSE_ICO = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+function syncPlayIcon(){ $('#icoPlay').innerHTML = audio.paused ? PLAY_ICO : PAUSE_ICO; renderList(); }
+audio.addEventListener('play', syncPlayIcon);
+audio.addEventListener('pause', syncPlayIcon);
+audio.addEventListener('loadedmetadata', () => { $('#tDur').textContent = fmt(audio.duration); });
+
+$('#btnPlay').onclick = toggle;
+$('#btnStop').onclick = stop;
+$('#btnNext').onclick = next;
+$('#btnPrev').onclick = prev;
+$('#btnAdd').onclick = () => $('#file').click();
+$('#file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('#btnClear').onclick = clearAll;
+
+/* ================= 進度條 ================= */
+const seek = $('#seek'); let seeking = false;
+function updateProgress(pct){
+  const d = audio.duration;
+  if (pct === undefined) pct = d ? audio.currentTime / d : 0;
+  $('#seekFill').style.width = (pct*100) + '%';
+  $('#seekThumb').style.left = (pct*100) + '%';
+  $('#tCur').textContent = fmt(d ? pct * d : 0);
+  $('#tDur').textContent = fmt(d);
+}
+function seekPct(e){ const r = seek.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1); }
+seek.addEventListener('pointerdown', e => { if (!audio.duration) return; seeking = true; seek.setPointerCapture(e.pointerId); updateProgress(seekPct(e)); });
+seek.addEventListener('pointermove', e => { if (seeking) updateProgress(seekPct(e)); });
+seek.addEventListener('pointerup', e => { if (!seeking) return; seeking = false; audio.currentTime = seekPct(e) * audio.duration; });
+
+/* ================= 音量旋鈕（左拖加大、右拖降低） ================= */
+const knob = $('#knob');
+function setVolume(v, silent){
+  volume = clamp(v, 0, 1);
+  $('#knobRot').style.transform = `rotate(${-135 + volume * 270}deg)`;
+  $('#volLabel').textContent = `音量 ${Math.round(volume*100)}%`;
+  store.set('mp_vol', String(volume));
+  applyGain();
+  if (!silent) {}
+}
+let kDrag = null;
+knob.addEventListener('pointerdown', e => { kDrag = { x: e.clientX, v: volume }; knob.setPointerCapture(e.pointerId); });
+knob.addEventListener('pointermove', e => { if (!kDrag) return; setVolume(kDrag.v + (kDrag.x - e.clientX) / 160); });
+knob.addEventListener('pointerup', () => { kDrag = null; });
+knob.addEventListener('wheel', e => { e.preventDefault(); setVolume(volume + (e.deltaY < 0 ? 0.05 : -0.05)); }, { passive:false });
+setVolume(volume, true);
+
+/* ================= EQ ================= */
+const eqEl = $('#eq');
+const bandEls = [];
+FREQS.forEach((f, i) => {
+  const b = document.createElement('div'); b.className = 'band';
+  b.innerHTML = `<div class="val">0</div><div class="vtrack"><div class="vfill"></div><div class="vthumb"></div></div><div class="hz">${f >= 1000 ? (f/1000) + 'k' : f}</div>`;
+  eqEl.appendChild(b);
+  const tr = b.querySelector('.vtrack');
+  const pick = e => { const r = tr.getBoundingClientRect(); return Math.round(clamp((1 - (e.clientY - r.top) / r.height) * 24 - 12, -12, 12)); };
+  let d = false;
+  tr.addEventListener('pointerdown', e => { d = true; tr.setPointerCapture(e.pointerId); setBand(i, pick(e)); markPreset(null); });
+  tr.addEventListener('pointermove', e => { if (d){ setBand(i, pick(e)); } });
+  tr.addEventListener('pointerup', () => d = false);
+  tr.addEventListener('dblclick', () => { setBand(i, 0); markPreset(null); });
+  bandEls.push(b);
+});
+function setBand(i, g){
+  eqGains[i] = g;
+  const pct = (g + 12) / 24, b = bandEls[i];
+  b.querySelector('.vfill').style.height = (pct * 100) + '%';
+  b.querySelector('.vthumb').style.bottom = `calc(${pct * 100}% - 11px)`;
+  b.querySelector('.val').textContent = (g > 0 ? '+' : '') + g;
+  if (filters[i]) filters[i].gain.setTargetAtTime(g, ctx.currentTime, 0.03);
+}
+function applyGains(arr){ arr.forEach((g, i) => setBand(i, clamp(Math.round(g), -12, 12))); }
+const presetsEl = $('#presets');
+Object.keys(PRESETS).forEach(name => {
+  const btn = document.createElement('button'); btn.className = 'pbtn'; btn.textContent = name; btn.dataset.name = name;
+  btn.onclick = () => applyPreset(name);
+  presetsEl.appendChild(btn);
+});
+function markPreset(name){ $$('.pbtn').forEach(b => b.classList.toggle('active', b.dataset.name === name)); }
+function applyPreset(name){ if (!PRESETS[name]) return false; applyGains(PRESETS[name]); markPreset(name); return true; }
+applyPreset('平衡');
+
+/* ================= 視覺化：128 條、非線性分組、五色漸層 ================= */
+const BARS = 128;
+const canvas = $('#viz'), c2d = canvas.getContext('2d');
+const heights = new Float32Array(BARS);
+const peaks = new Float32Array(BARS);
+function buildRanges(){
+  ranges = [];
+  const n = analyser.frequencyBinCount, hz = ctx.sampleRate / 2 / n;
+  const fMin = 30, fMax = 16000;
+  for (let i = 0; i < BARS; i++){
+    const f0 = fMin * Math.pow(fMax/fMin, i/BARS), f1 = fMin * Math.pow(fMax/fMin, (i+1)/BARS);
+    const lo = Math.max(1, Math.floor(f0/hz)); const hi = Math.min(n - 1, Math.max(lo, Math.ceil(f1/hz) - 1));
+    ranges.push([lo, hi]);
+  }
+}
+function resizeCanvas(){
+  const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(r.width * dpr)); canvas.height = Math.max(1, Math.round(r.height * dpr));
+}
+new ResizeObserver(resizeCanvas).observe(canvas);
+function draw(){
+  requestAnimationFrame(draw);
+  if (!seeking) updateProgress();
+  liveSubtitle();
+  const w = canvas.width, h = canvas.height;
+  if (!w || !h) return;
+  const active = analyser && !audio.paused;
+  if (active) analyser.getByteFrequencyData(freqData);
+  for (let i = 0; i < BARS; i++){
+    let v = 0;
+    if (active){
+      const [lo, hi] = ranges[i];
+      for (let k = lo; k <= hi; k++) if (freqData[k] > v) v = freqData[k];
+      v = clamp((v / 255) * (1 + (i / BARS) * 0.45), 0, 1);
+    }
+    heights[i] = v > heights[i] ? v : heights[i] * 0.9 + v * 0.1;
+    peaks[i] = Math.max(peaks[i] - 0.008, heights[i]);
+  }
+  c2d.clearRect(0, 0, w, h);
+  const grad = c2d.createLinearGradient(0, h, 0, 0);
+  grad.addColorStop(0, '#3b82f6'); grad.addColorStop(.25, '#22c55e'); grad.addColorStop(.5, '#eab308');
+  grad.addColorStop(.75, '#f97316'); grad.addColorStop(1, '#ef4444');
+  c2d.fillStyle = grad;
+  const bw = w / BARS, minH = h * 0.015;
+  for (let i = 0; i < BARS; i++){
+    const x = Math.floor(i * bw), nx = Math.floor((i + 1) * bw);
+    const bh = Math.max(minH, heights[i] * h * 0.96);
+    c2d.fillRect(x, h - bh, nx - x, bh);
+  }
+  c2d.fillStyle = 'rgba(254,215,170,.85)';
+  for (let i = 0; i < BARS; i++){
+    if (peaks[i] < 0.03) continue;
+    const x = Math.floor(i * bw), nx = Math.floor((i + 1) * bw);
+    c2d.fillRect(x, h - peaks[i] * h * 0.96 - 2, nx - x, 2);
+  }
+}
+requestAnimationFrame(draw);
+
+/* ================= 分頁 ================= */
+function switchTab(id){
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  $$('.pane').forEach(p => p.classList.toggle('show', p.id === 'pane-' + id));
+}
+$$('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+
+/* ================= 語音辨識（Web Speech API，免費） ================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, mode = 'dictate';
+if (!SR){
+  $('#srSupport').innerHTML = '⚠ 此瀏覽器不支援 Web Speech API 語音辨識，請改用 Chrome 或 Edge。';
+  $('#srSupport').style.color = '#fca5a5';
+}
+$('#srLang').value = store.get('mp_lang', 'zh-TW');
+$('#srLang').onchange = () => { store.set('mp_lang', $('#srLang').value); if (listening){ stopRec(); setTimeout(startRec, 300); } };
+$$('#modeSeg button').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  $$('#modeSeg button').forEach(x => x.classList.toggle('active', x === b));
+  updateBoxes();
+});
+function setStatus(txt, on){ $('#srStatusTxt').textContent = txt; $('#srStatus').classList.toggle('on', !!on); $('#btnMic').classList.toggle('on', !!on); }
+function setDuck(on){ ducking = on && $('#duck').checked; applyGain(); }
+$('#duck').onchange = () => setDuck(listening);
+
+function startRec(){
+  if (!SR){ toast('此瀏覽器不支援語音辨識'); return; }
+  rec = new SR();
+  rec.lang = $('#srLang').value;
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  rec.onstart = () => { setStatus(mode === 'command' ? '聆聽指令中…' : '聽寫中…', true); setDuck(true); };
+  rec.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const r = e.results[i];
+      if (r.isFinal) handleFinal(r[0].transcript.trim());
+      else interim += r[0].transcript;
+    }
+    $('#interim').textContent = interim;
+  };
+  rec.onerror = e => {
+    const map = { 'not-allowed':'麥克風權限被拒絕', 'service-not-allowed':'語音服務不可用', 'no-speech':'沒有偵測到聲音', 'audio-capture':'找不到麥克風', 'network':'網路錯誤（Chrome 語音辨識需連網）' };
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+    toast('語音辨識：' + (map[e.error] || e.error));
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') listening = false;
+  };
+  rec.onend = () => {
+    if (listening){ try{ rec.start(); }catch{} }
+    else { setStatus('待命中', false); setDuck(false); $('#interim').textContent = ''; }
+  };
+  listening = true;
+  try{ rec.start(); }catch(err){ toast(err.message); }
+}
+function stopRec(){ listening = false; try{ rec && rec.stop(); }catch{} }
+$('#btnMic').onclick = () => listening ? stopRec() : startRec();
+
+function handleFinal(text){
+  if (!text) return;
+  $('#interim').textContent = '';
+  if (mode === 'command'){ runCommand(text); return; }
+  const ta = $('#transcript');
+  const t = new Date();
+  const stamp = $('#stamp').checked ? `[${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}] ` : '';
+  ta.value += (ta.value && !ta.value.endsWith('\n') ? '\n' : '') + stamp + text;
+  ta.scrollTop = ta.scrollHeight;
+}
+
+// 單次辨識（AI 調音用）
+function oneShot(cb){
+  if (!SR){ toast('此瀏覽器不支援語音辨識'); return; }
+  if (listening) stopRec();
+  const r = new SR(); r.lang = $('#srLang').value; r.interimResults = false; r.continuous = false;
+  $('#btnEqMic').textContent = '…';
+  r.onresult = e => cb(e.results[0][0].transcript.trim());
+  r.onerror = e => { if (e.error !== 'no-speech') toast('語音辨識：' + e.error); };
+  r.onend = () => { $('#btnEqMic').textContent = '🎙'; setDuck(false); };
+  setDuck(true);
+  setTimeout(() => { try{ r.start(); }catch{} }, 250);
+}
+
+// 逐字稿工具
+$('#btnCopy').onclick = () => copyText($('#transcript').value);
+$('#btnClrTxt').onclick = () => { $('#transcript').value = ''; };
+$('#btnTxt').onclick = () => {
+  const v = $('#transcript').value; if (!v.trim()){ toast('沒有內容'); return; }
+  downloadText(v, `語音辨識_${dateTag()}.txt`);
+};
+function dateTag(){ const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
+function downloadText(v, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([v], {type:'text/plain;charset=utf-8'}));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('#btnToAI').onclick = () => switchTab('ai');
+function copyText(v){
+  if (!v.trim()){ toast('沒有內容'); return; }
+  (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('已複製'), () => {
+    const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); toast('已複製');
+  });
+}
+
+
+/* ================= 語音來源切換：麥克風 / 音訊檔案 ================= */
+let srcMode = 'mic';
+function updateBoxes(){
+  const mic = srcMode === 'mic';
+  $('#micBox').style.display = mic ? 'flex' : 'none';
+  $('#fileBox').style.display = mic ? 'none' : 'flex';
+  const cmd = mic && mode === 'command';
+  $('#dictateBox').style.display = cmd ? 'none' : 'flex';
+  $('#commandBox').style.display = cmd ? 'flex' : 'none';
+}
+$$('#srcSeg button').forEach(b => b.onclick = () => {
+  srcMode = b.dataset.src;
+  $$('#srcSeg button').forEach(x => x.classList.toggle('active', x === b));
+  if (srcMode === 'file' && listening) stopRec();
+  updateBoxes();
+});
+
+/* ================= 檔案轉錄（本地 Whisper / Groq Whisper） ================= */
+let extraFile = null;
+function refreshFsOptions(){
+  const sel = $('#fsTrack'); if (!sel) return;
+  const prevVal = sel.value; sel.innerHTML = '';
+  if (extraFile) sel.add(new Option('📎 ' + extraFile.name, 'x'));
+  tracks.forEach((t, i) => sel.add(new Option(`${String(i+1).padStart(2,'0')}. ${t.name}`, 't:' + t.id)));
+  if (!sel.options.length) sel.add(new Option('（播放清單是空的，請上傳音檔）', ''));
+  if ([...sel.options].some(o => o.value === prevVal)) sel.value = prevVal;
+  else if (current >= 0) sel.value = 't:' + tracks[current].id;
+}
+$('#btnFsUp').onclick = () => $('#fsFile').click();
+$('#fsFile').onchange = e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  extraFile = f; refreshFsOptions(); $('#fsTrack').value = 'x';
+  $('#fsStatus').textContent = `已選擇：${f.name}（${(f.size/1048576).toFixed(1)} MB）`;
+};
+$('#fsEngine').onchange = () => { $('#fsModel').style.display = $('#fsEngine').value === 'local' ? '' : 'none'; };
+
+const WL = { 'zh-TW':['chinese','zh'], 'cmn-Hans-CN':['chinese','zh'], 'en-US':['english','en'], 'ja-JP':['japanese','ja'], 'ko-KR':['korean','ko'] };
+const TF_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+const WORKER_BODY = `
+let asr = null, TF = null;
+async function setup(){
+  if (TF) return TF;
+  TF = await import('${TF_URL}');
+  TF.env.allowLocalModels = false;
+  try { await caches.keys(); } catch (e) { TF.env.useBrowserCache = false; }
+  try { TF.env.backends.onnx.wasm.numThreads = 1; } catch (e) {}
+  return TF;
+}
+self.onmessage = async (e) => {
+  const d = e.data;
+  try {
+    if (d.type === 'ping') { self.postMessage({ type: 'pong' }); return; }
+    if (d.type === 'load') {
+      const T = await setup();
+      asr = await T.pipeline('automatic-speech-recognition', d.model, { dtype: 'q8', device: 'wasm',
+        progress_callback: p => self.postMessage({ type: 'dl', p: { status: p.status, file: p.file, loaded: p.loaded, total: p.total } }) });
+      self.postMessage({ type: 'ready' });
+    } else if (d.type === 'run') {
+      const out = await asr(d.audio, { language: d.lang, task: 'transcribe' });
+      self.postMessage({ type: 'result', text: (out && out.text) || '' });
+    }
+  } catch (err) { self.postMessage({ type: 'error', message: String((err && err.message) || err) }); }
+};`;
+let whisper = null;
+async function getWhisper(model, onDl, onInfo){
+  if (whisper && whisper.model === model) return whisper;
+  if (whisper && whisper.terminate) whisper.terminate();
+  whisper = null;
+  const errs = [];
+  for (const kind of ['classic', 'module']){
+    try {
+      onInfo(`啟動背景運算（${kind}）…`);
+      whisper = await workerWhisper(model, onDl, kind);
+      return whisper;
+    } catch (err) { errs.push(kind + '：' + err.message); console.warn('Whisper worker 失敗', kind, err); }
+  }
+  // 兩種背景執行緒都失敗：主執行緒運算會讓頁面卡住，先詢問
+  const ok = confirm('瀏覽器無法啟動背景運算執行緒。\n\n' + errs.join('\n') +
+    '\n\n改在主畫面運算會導致頁面暫時無回應（每 28 秒音訊約卡 5–20 秒）。\n建議改用「Groq Whisper」或用本機伺服器開啟此檔。\n\n仍要繼續嗎？');
+  if (!ok) throw new Error('已取消（背景執行緒無法啟動）');
+  whisper = await mainWhisper(model, onDl);
+  return whisper;
+}
+function workerWhisper(model, onDl, kind){
+  return new Promise((resolve, reject) => {
+    let w, ready = false, pend = null, booted = false;
+    try {
+      const url = URL.createObjectURL(new Blob([WORKER_BODY], { type: 'text/javascript' }));
+      w = kind === 'module' ? new Worker(url, { type: 'module' }) : new Worker(url);
+    } catch (e) { reject(e); return; }
+    const bootTimer = setTimeout(() => { if (!booted){ w.terminate(); reject(new Error('啟動逾時')); } }, 8000);
+    const fail = msg => {
+      if (!ready){ clearTimeout(bootTimer); w.terminate(); reject(new Error(msg)); }
+      else if (pend){ pend.rej(new Error(msg)); pend = null; }
+    };
+    w.onerror = e => { if (e.preventDefault) e.preventDefault(); fail(e.message || 'Worker 錯誤'); };
+    w.onmessage = e => {
+      const d = e.data;
+      if (d.type === 'pong'){ booted = true; clearTimeout(bootTimer); w.postMessage({ type: 'load', model }); }
+      else if (d.type === 'dl') onDl(d.p);
+      else if (d.type === 'ready'){
+        ready = true;
+        resolve({ model, terminate: () => w.terminate(),
+          run: (audio, lang) => new Promise((res, rej) => { pend = { res, rej }; w.postMessage({ type: 'run', audio, lang }, [audio.buffer]); }) });
+      }
+      else if (d.type === 'result'){ if (pend){ pend.res(d.text); pend = null; } }
+      else if (d.type === 'error') fail(d.message);
+    };
+    w.postMessage({ type: 'ping' });
+  });
+}
+async function mainWhisper(model, onDl){
+  const T = await import(TF_URL);
+  T.env.allowLocalModels = false;
+  const asr = await T.pipeline('automatic-speech-recognition', model, { dtype: 'q8', device: 'wasm', progress_callback: onDl });
+  return { model, run: async (audio, lang) => { await new Promise(r => setTimeout(r, 30)); return (await asr(audio, { language: lang, task: 'transcribe' })).text || ''; } };
+}
+
+// 簡轉繁（OpenCC，免費）
+let s2t;
+function loadOpenCC(){
+  if (s2t !== undefined) return Promise.resolve(s2t);
+  return new Promise(res => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js';
+    sc.onload = () => { try { s2t = OpenCC.Converter({ from: 'cn', to: 'tw' }); } catch { s2t = null; } res(s2t); };
+    sc.onerror = () => { s2t = null; res(null); };
+    document.head.appendChild(sc);
+  });
+}
+
+async function decode16k(file){
+  const ab = await file.arrayBuffer();
+  const ac = new OfflineAudioContext(1, 16000, 16000);
+  const buf = await ac.decodeAudioData(ab);
+  const n = buf.length, ch = buf.numberOfChannels, out = new Float32Array(n);
+  for (let c = 0; c < ch; c++){ const d = buf.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / ch; }
+  return out;
+}
+function rms(a){ let s = 0, n = 0; for (let i = 0; i < a.length; i += 4){ s += a[i]*a[i]; n++; } return Math.sqrt(s / Math.max(1, n)); }
+const HALLU = /(amara\.org|字幕由|明镜|明鏡|点点栏目|點點欄目|不吝点赞|不吝點贊|订阅转发|訂閱轉發|thanks for watching)/i;
+function cleanWhisper(t){ t = (t || '').replace(/\s+/g, ' ').trim(); return HALLU.test(t) ? '' : t; }
+const mmss = s => { s = Math.floor(s); return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); };
+function fsProg(p, txt){ $('#fsBar').style.width = (clamp(p,0,1)*100) + '%'; if (txt) $('#fsStatus').textContent = txt; }
+function setFsBusy(b){
+  $('#btnTrans').disabled = b; $('#btnCancel').disabled = !b;
+  ['#fsTrack','#fsEngine','#fsModel','#btnFsUp'].forEach(q => $(q).disabled = b);
+}
+
+let transcribing = false, cancelReq = false, segs = [], segsTrackId = null, liveSub = '';
+function appendSeg(st, t){
+  const ta = $('#transcript');
+  ta.value += `\n[${mmss(st)}] ${t}`;
+  ta.scrollTop = ta.scrollHeight;
+}
+async function groqWhisper(file, lang){
+  const key = $('#gKey').value.trim();
+  if (!key) throw new Error('請先在「AI 助理」分頁輸入 Groq API Key');
+  const fd = new FormData();
+  fd.append('file', file, file.name || 'audio.mp3');
+  fd.append('model', 'whisper-large-v3-turbo');
+  fd.append('response_format', 'verbose_json');
+  fd.append('language', lang);
+  fd.append('temperature', '0');
+  const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method:'POST', headers:{ Authorization:'Bearer ' + key }, body: fd });
+  if (!r.ok){ let t = await r.text(); try{ t = JSON.parse(t).error.message; }catch{} throw new Error(`Groq ${r.status}：${t.slice(0,200)}`); }
+  return r.json();
+}
+async function transcribeFile(){
+  if (transcribing) return;
+  const v = $('#fsTrack').value; let file = null, tid = null;
+  if (v === 'x') file = extraFile;
+  else if (v.startsWith('t:')){ const t = tracks.find(x => 't:' + x.id === v); if (t){ file = t.file; tid = t.id; } }
+  if (!file){ toast('請先選擇曲目或上傳音檔'); return; }
+  const lang = $('#srLang').value;
+  const [wlang, glang] = WL[lang] || ['chinese', 'zh'];
+  transcribing = true; cancelReq = false; setFsBusy(true);
+  segs = []; segsTrackId = tid; liveSub = '';
+  const ta = $('#transcript');
+  ta.value += (ta.value.trim() ? '\n\n' : '') + `【${file.name}】`;
+  try{
+    fsProg(0, '準備中…');
+    const conv = lang === 'zh-TW' ? (await loadOpenCC()) || (t => t) : (t => t);
+    if ($('#fsEngine').value === 'groq'){
+      if (file.size > 25 * 1048576) throw new Error('Groq 免費方案單檔上限 25MB，請改用本地 Whisper');
+      fsProg(.35, '上傳至 Groq 轉錄中…');
+      const res = await groqWhisper(file, glang);
+      const list = res.segments && res.segments.length ? res.segments : [{ start:0, end:0, text: res.text || '' }];
+      list.forEach(s => { const t = conv(cleanWhisper(s.text)); if (t){ segs.push({ start:s.start, end:s.end, text:t }); appendSeg(s.start, t); } });
+    } else {
+      fsProg(0, '解碼音訊…');
+      const pcm = await decode16k(file);
+      const dur = pcm.length / 16000;
+      const dl = {};
+      const eng = await getWhisper($('#fsModel').value, p => {
+        if (p && p.status === 'progress' && p.file){
+          dl[p.file] = [p.loaded || 0, p.total || 0];
+          let a = 0, b = 0; for (const k in dl){ a += dl[k][0]; b += dl[k][1]; }
+          fsProg(b ? a/b : 0, `下載模型 ${b ? Math.round(a/b*100) : 0}%（首次較久，之後自動快取）`);
+        }
+      }, info => fsProg(0, info));
+      const CH = 28 * 16000;
+      for (let s = 0; s < pcm.length; s += CH){
+        if (cancelReq) break;
+        const st = s / 16000, en = Math.min(dur, (s + CH) / 16000);
+        fsProg(s / pcm.length, `轉錄中 ${mmss(st)} / ${mmss(dur)}（${segs.length} 段）`);
+        await new Promise(r => setTimeout(r, 0));
+        const seg = pcm.slice(s, Math.min(pcm.length, s + CH));
+        if (rms(seg) < 0.004) continue;
+        const t = conv(cleanWhisper(await eng.run(seg, wlang)));
+        if (t){ segs.push({ start:st, end:en, text:t }); appendSeg(st, t); }
+      }
+    }
+    fsProg(1, cancelReq ? `已取消，完成 ${segs.length} 段` : `✔ 完成，共 ${segs.length} 段`);
+    if (!segs.length && !cancelReq) toast('沒有辨識到語音內容');
+  }catch(err){
+    console.error(err);
+    $('#fsStatus').textContent = '⚠ ' + err.message;
+    toast('轉錄失敗：' + err.message);
+  }
+  transcribing = false; setFsBusy(false);
+}
+$('#btnTrans').onclick = transcribeFile;
+$('#btnCancel').onclick = () => { cancelReq = true; $('#fsStatus').textContent = '取消中（完成目前片段後停止）…'; };
+
+// 轉錄曲目播放時同步字幕
+function liveSubtitle(){
+  if (!segsTrackId || listening || current < 0 || !tracks[current] || tracks[current].id !== segsTrackId) return;
+  const ct = audio.currentTime;
+  const s = audio.paused ? null : segs.find(x => ct >= x.start && ct < x.end);
+  const txt = s ? '♪ ' + s.text : '';
+  if (txt !== liveSub){ liveSub = txt; $('#interim').textContent = txt; }
+}
+
+// SRT 字幕下載
+$('#btnSrt').onclick = () => {
+  if (!segs.length){ toast('請先用「音訊檔案」轉錄'); return; }
+  const p = (n, l=2) => String(n).padStart(l, '0');
+  const ts = s => { const ms = Math.round(s * 1000); return `${p(Math.floor(ms/3600000))}:${p(Math.floor(ms%3600000/60000))}:${p(Math.floor(ms%60000/1000))},${p(ms%1000,3)}`; };
+  downloadText(segs.map((s, i) => `${i+1}\n${ts(s.start)} --> ${ts(s.end)}\n${s.text}\n`).join('\n'), `字幕_${dateTag()}.srt`);
+};
+
+/* ================= 語音指令 ================= */
+function logCmd(heard, result){
+  const box = $('#cmdLog');
+  if (box.firstChild && box.firstChild.textContent === '指令紀錄會顯示在這裡') box.innerHTML = '';
+  const d = document.createElement('div');
+  d.innerHTML = `<b></b> → <span></span>`;
+  d.querySelector('b').textContent = '「' + heard + '」';
+  d.querySelector('span').textContent = result;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+function cnNum(s){
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  const m = { 零:0, 一:1, 二:2, 兩:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9 };
+  if (s === '十') return 10;
+  let r = 0;
+  if (s.includes('十')){ const [a, b] = s.split('十'); r = (a ? m[a] : 1) * 10 + (b ? m[b] : 0); }
+  else r = m[s];
+  return isNaN(r) ? null : r;
+}
+function execAction(a, v){
+  switch(a){
+    case 'play': play(); return '播放';
+    case 'pause': pause(); return '暫停';
+    case 'stop': stop(); return '停止';
+    case 'next': next(); return '下一首';
+    case 'prev': prev(); return '上一首';
+    case 'volume_up': setVolume(volume + 0.15); return `音量 ${Math.round(volume*100)}%`;
+    case 'volume_down': setVolume(volume - 0.15); return `音量 ${Math.round(volume*100)}%`;
+    case 'mute': setVolume(0); return '靜音';
+    case 'set_volume': setVolume(clamp(+v, 0, 100) / 100); return `音量 ${Math.round(volume*100)}%`;
+    case 'preset': return applyPreset(v) ? `EQ：${v}` : '找不到此模式';
+    case 'track': {
+      const i = (+v) - 1;
+      if (i >= 0 && i < tracks.length){ loadTrack(i); play(); return `播放第 ${i+1} 首：${tracks[i].name}`; }
+      return '沒有這一首';
+    }
+  }
+  return null;
+}
+function localParse(t){
+  const s = t.replace(/[，。！？、\s]/g, '').toLowerCase();
+  let m;
+  if ((m = s.match(/音量(?:調到|設為|設定為|到)?(\d{1,3})/))) return ['set_volume', m[1]];
+  if ((m = s.match(/第([0-9零一二兩三四五六七八九十]+)首/))) { const n = cnNum(m[1]); if (n) return ['track', n]; }
+  for (const name of Object.keys(PRESETS)) if (s.includes(name)) return ['preset', name];
+  if (/暫停|pause/.test(s)) return ['pause'];
+  if (/停止|stop/.test(s)) return ['stop'];
+  if (/下一首|下一曲|換一首|next/.test(s)) return ['next'];
+  if (/上一首|上一曲|previous/.test(s)) return ['prev'];
+  if (/靜音|mute/.test(s)) return ['mute'];
+  if (/大聲|音量加|調高音量|音量大|louder|volumeup/.test(s)) return ['volume_up'];
+  if (/小聲|音量減|調低音量|降低音量|音量小|quieter|volumedown/.test(s)) return ['volume_down'];
+  if ((m = s.match(/^(?:播放|我想聽|放)(.+)$/))) {
+    const q = m[1];
+    const i = tracks.findIndex(x => x.name.toLowerCase().replace(/\s/g,'').includes(q) || q.includes(x.name.toLowerCase().replace(/\s/g,'')));
+    if (i >= 0) return ['track', i + 1];
+  }
+  if (/播放|繼續|開始|play/.test(s)) return ['play'];
+  return null;
+}
+async function runCommand(text){
+  const p = localParse(text);
+  if (p){ logCmd(text, execAction(p[0], p[1])); return; }
+  if (!$('#gKey').value.trim()){ logCmd(text, '無法辨識（設定 Groq Key 可啟用 AI 解析）'); return; }
+  logCmd(text, 'AI 解析中…');
+  try{
+    const sys = `你是音樂播放器的語音指令解析器。只輸出 JSON：{"action":"play|pause|stop|next|prev|volume_up|volume_down|mute|set_volume|preset|track|none","value":null}。
+set_volume 的 value 為 0-100 整數；preset 的 value 只能是：${Object.keys(PRESETS).join('、')}；track 的 value 為第幾首(1起算)。
+目前播放清單：${tracks.map((t,i)=>`${i+1}.${t.name}`).join('；') || '空'}。`;
+    const out = await groq([{role:'system',content:sys},{role:'user',content:text}], { json:true, temperature:0 });
+    const j = parseJSON(out);
+    const r = j && j.action !== 'none' ? execAction(j.action, j.value) : null;
+    const box = $('#cmdLog'); box.lastChild.querySelector('span').textContent = r ? '(AI) ' + r : '(AI) 無法對應到指令';
+  }catch(err){ const box = $('#cmdLog'); box.lastChild.querySelector('span').textContent = err.message; }
+}
+
+/* ================= Groq API ================= */
+$('#gKey').value = store.get('mp_groq_key', '');
+// 文字模型清單：由 Groq /models 即時取得，不寫死模型名稱
+const PREFER = [/gpt-oss-120b/i, /llama-4.*maverick/i, /qwen3/i, /kimi/i, /llama-4.*scout/i, /gpt-oss-20b/i, /llama/i];
+const NOT_CHAT = /whisper|tts|playai|guard|orpheus|distil|compound|embed|vision-only/i;
+let modelsLoaded = false;
+async function loadModels(silent){
+  const key = $('#gKey').value.trim();
+  const sel = $('#gModel');
+  if (!key){ if (!silent) toast('請先輸入 Groq API Key'); return false; }
+  const btn = $('#btnModels'); btn.disabled = true; btn.textContent = '載入中…';
+  try{
+    const r = await fetch('https://api.groq.com/openai/v1/models', { headers:{ Authorization:'Bearer ' + key } });
+    if (!r.ok){ let t = await r.text(); try{ t = JSON.parse(t).error.message; }catch{} throw new Error(`Groq ${r.status}：${t.slice(0,150)}`); }
+    const d = await r.json();
+    const ids = (d.data || []).filter(m => m.active !== false && !NOT_CHAT.test(m.id)).map(m => m.id).sort();
+    if (!ids.length) throw new Error('沒有取得可用的文字模型');
+    const saved = store.get('mp_groq_model', '');
+    let pick = ids.includes(saved) ? saved : null;
+    if (!pick) for (const re of PREFER){ const m = ids.find(x => re.test(x)); if (m){ pick = m; break; } }
+    pick = pick || ids[0];
+    sel.innerHTML = '';
+    ids.forEach(id => sel.add(new Option(id, id)));
+    sel.value = pick; store.set('mp_groq_model', pick);
+    modelsLoaded = true;
+    if (!silent) toast(`已載入 ${ids.length} 個模型`);
+    return true;
+  }catch(err){ if (!silent) toast('取得模型失敗：' + err.message); return false; }
+  finally{ btn.disabled = false; btn.textContent = '🔄 更新模型'; }
+}
+$('#btnModels').onclick = () => loadModels(false);
+$('#gModel').onchange = () => store.set('mp_groq_model', $('#gModel').value);
+$('#btnSaveKey').onclick = async () => { store.set('mp_groq_key', $('#gKey').value.trim()); toast('已儲存'); await loadModels(false); };
+if ($('#gKey').value.trim()) loadModels(true);
+
+async function groq(messages, { json = false, temperature = 0.4 } = {}, retried = false){
+  const key = $('#gKey').value.trim();
+  if (!key) throw new Error('請先在「AI 助理」分頁輸入 Groq API Key');
+  if (!modelsLoaded || !$('#gModel').value) await loadModels(true);
+  const model = $('#gModel').value;
+  if (!model) throw new Error('取不到可用模型，請按「🔄 更新模型」');
+  const body = { model, messages, temperature };
+  if (json) body.response_format = { type: 'json_object' };
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key }, body: JSON.stringify(body)
+  });
+  if (!r.ok){
+    let t = await r.text(), code = '';
+    try{ const j = JSON.parse(t).error; t = j.message; code = j.code || ''; }catch{}
+    // 模型下架或不存在：自動改用最新清單再試一次
+    if (!retried && (/decommission|model_not_found|does not exist|not found/i.test(code + ' ' + t))){
+      modelsLoaded = false; store.set('mp_groq_model', '');
+      if (await loadModels(true)){ toast('原模型已下架，已改用 ' + $('#gModel').value); return groq(messages, { json, temperature }, true); }
+    }
+    throw new Error(`Groq ${r.status}：${t.slice(0,200)}`);
+  }
+  const d = await r.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+function parseJSON(s){ try{ return JSON.parse(s); }catch{ const m = s.match(/\{[\s\S]*\}/); try{ return m ? JSON.parse(m[0]) : null; }catch{ return null; } } }
+
+const aiOut = $('#aiOut');
+const AI_TASKS = {
+  polish:'將以下語音辨識文字整理成通順的繁體中文：補上標點、修正同音錯字與口語贅字，保留原意，不要加入新內容，只輸出結果。',
+  summary:'用繁體中文摘要以下語音辨識內容，先給一句總結，再列出 3-6 個重點（條列）。',
+  notes:'把以下語音辨識內容整理成結構化的繁體中文條列筆記，含小標題與重點，必要時列出待辦事項。',
+  en:'將以下內容翻譯成自然流暢的英文，只輸出翻譯結果。'
+};
+$$('[data-ai]').forEach(b => b.onclick = async () => {
+  const src = $('#transcript').value.trim();
+  if (!src){ toast('辨識文字是空的，先到「語音辨識」聽寫'); return; }
+  aiOut.classList.add('loading'); aiOut.textContent = 'AI 處理中…';
+  $$('[data-ai]').forEach(x => x.disabled = true);
+  try{
+    const out = await groq([{ role:'system', content:'你是專業的文字編輯助理，回覆使用繁體中文（翻譯任務除外），不使用 Markdown 粗體符號。' },
+                            { role:'user', content: AI_TASKS[b.dataset.ai] + '\n\n---\n' + src }]);
+    aiOut.textContent = out.trim();
+  }catch(err){ aiOut.textContent = '⚠ ' + err.message; }
+  aiOut.classList.remove('loading');
+  $$('[data-ai]').forEach(x => x.disabled = false);
+});
+$('#btnAiCopy').onclick = () => copyText(aiOut.textContent);
+$('#btnAiReplace').onclick = () => {
+  const v = aiOut.textContent.trim();
+  if (!v || v.startsWith('⚠') || v === 'AI 結果會顯示在這裡。'){ toast('沒有可用結果'); return; }
+  $('#transcript').value = v; toast('已取代辨識文字');
+};
+
+// AI 調音
+$('#btnEqMic').onclick = () => oneShot(t => { $('#eqPrompt').value = t; aiEq(); });
+$('#btnAiEq').onclick = aiEq;
+$('#eqPrompt').addEventListener('keydown', e => { if (e.key === 'Enter') aiEq(); });
+async function aiEq(){
+  const want = $('#eqPrompt').value.trim();
+  if (!want){ toast('請描述想要的聲音'); return; }
+  const btn = $('#btnAiEq'); btn.disabled = true;
+  aiOut.classList.add('loading'); aiOut.textContent = 'AI 調音中…';
+  try{
+    const cur = current >= 0 ? tracks[current].name : '未知';
+    const out = await groq([
+      { role:'system', content:`你是專業錄音師。依使用者描述設計 10 段等化器，頻段依序為 ${FREQS.map(f=>f>=1000?f/1000+'kHz':f+'Hz').join(', ')}。每段增益為 -12 到 12 的整數。只輸出 JSON：{"name":"模式名稱(繁中)","gains":[10個整數],"reason":"繁中說明 2-3 句"}` },
+      { role:'user', content:`目前曲目：${cur}\n需求：${want}` }
+    ], { json:true, temperature:0.3 });
+    const j = parseJSON(out);
+    if (!j || !Array.isArray(j.gains) || j.gains.length !== 10) throw new Error('AI 回傳格式不正確，請再試一次');
+    initAudio();
+    applyGains(j.gains); markPreset(null);
+    aiOut.textContent = `🎚 ${j.name || 'AI 自訂'}\n\n${FREQS.map((f,i)=>`${f>=1000?f/1000+'k':f}Hz：${j.gains[i]>0?'+':''}${Math.round(j.gains[i])} dB`).join('\n')}\n\n${j.reason || ''}`;
+    toast('已套用 AI 調音');
+  }catch(err){ aiOut.textContent = '⚠ ' + err.message; }
+  aiOut.classList.remove('loading'); btn.disabled = false;
+}
+
+/* ================= 鍵盤快捷鍵 ================= */
+document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.code === 'Space'){ e.preventDefault(); toggle(); }
+  else if (e.code === 'ArrowRight') next();
+  else if (e.code === 'ArrowLeft') prev();
+  else if (e.code === 'ArrowUp'){ e.preventDefault(); setVolume(volume + 0.05); }
+  else if (e.code === 'ArrowDown'){ e.preventDefault(); setVolume(volume - 0.05); }
+});
+
+renderList();
+})();
+</script>
+</body>
+</html>

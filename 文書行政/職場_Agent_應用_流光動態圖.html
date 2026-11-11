@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>職場 Agent 應用｜流光動態圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dde5f0; --panel:#e6ecf5; --panel2:#eef2f8; --line:#c3cfe0;
+  --text:#1f2a3d; --muted:#5b6a82; --faint:#8a97ab;
+  --gold:#a8781c; --jade:#2f8f78; --blue:#3f7fc2; --violet:#7a5fc8; --coral:#d24a4a; --io:#4b5a72;
+  --edge:#b4c2d6; --nodebg:#fbf5e4; --stagebg:#e9eef6; --grid:rgba(31,42,61,.06);
+  --serif:"Noto Serif TC","Songti TC",serif; --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1424; --panel:rgba(20,32,55,.72); --panel2:rgba(26,40,66,.6); --line:#24365a;
+    --text:#e8ecf3; --muted:#9aa7bd; --faint:#64738d;
+    --gold:#e0c074; --jade:#52d3b6; --blue:#74a9ff; --violet:#b49cff; --coral:#f08a7c; --io:#c9d2e0;
+    --edge:#26385a; --nodebg:#101b30; --stagebg:#0a1120; --grid:rgba(120,150,200,.07);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1424; --panel:rgba(20,32,55,.72); --panel2:rgba(26,40,66,.6); --line:#24365a;
+  --text:#e8ecf3; --muted:#9aa7bd; --faint:#64738d;
+  --gold:#e0c074; --jade:#52d3b6; --blue:#74a9ff; --violet:#b49cff; --coral:#f08a7c; --io:#c9d2e0;
+  --edge:#26385a; --nodebg:#101b30; --stagebg:#0a1120; --grid:rgba(120,150,200,.07);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-family:var(--serif);font-weight:900;font-size:24px;letter-spacing:.04em}
+header h1 small{display:block;font-family:var(--sans);font-weight:400;font-size:13px;color:var(--muted);letter-spacing:0}
+.spacer{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 14px;font-size:14px;color:var(--muted)}
+.seg button.sel{background:var(--panel2);color:var(--text);box-shadow:inset 0 -2px 0 var(--gold)}
+.icon-btn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:14px}
+
+/* 單一模式 */
+#focus{display:grid;grid-template-columns:220px minmax(0,1fr) 340px;gap:18px;padding:18px 22px}
+#list{display:flex;flex-direction:column;gap:4px}
+#list button{display:flex;gap:10px;align-items:baseline;text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:8px 10px}
+#list button .n{font-family:var(--mono);font-size:12px;color:var(--faint);min-width:20px}
+#list button b{font-weight:500;font-size:15px;display:block}
+#list button em{font-style:normal;font-size:12px;color:var(--muted)}
+#list button:hover{background:var(--panel2)}
+#list button.sel{background:var(--panel);border-color:var(--line)}
+#list button.sel .n{color:var(--gold)}
+
+.stage-wrap{min-width:0}
+.stage{background:var(--stagebg);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px}
+.stage svg{display:block;width:100%;height:auto}
+.stage .ptitle{position:absolute;left:20px;top:14px;font-family:var(--serif);font-size:22px;font-weight:900;pointer-events:none}
+.stage .ptitle span{display:block;font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)}
+.caption{display:flex;gap:14px;align-items:center;min-height:56px;margin-top:12px;padding:10px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.caption .cnt{font-family:var(--mono);font-size:13px;color:var(--gold);white-space:nowrap}
+.caption .txt{font-size:16px;transition:opacity .25s}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.controls button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 14px;font-size:14px}
+.controls button.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700}
+.controls label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:6px}
+.controls input[type=range]{width:110px;accent-color:var(--gold)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:2px solid;margin-right:6px;vertical-align:-1px}
+
+#info{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;align-self:start}
+#info h2{margin:0 0 4px;font-family:var(--serif);font-size:22px}
+#info .en{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#info .lead{margin:10px 0 0;font-size:15px}
+#info h3{margin:18px 0 6px;font-size:13px;color:var(--gold);font-weight:700;padding-bottom:4px;border-bottom:1px solid var(--line)}
+#info ol{margin:0;padding-left:22px;font-size:14px}
+#info ol li{padding:3px 0;color:var(--muted);transition:color .2s}
+#info ol li.cur{color:var(--text);font-weight:500}
+#info ol li.cur::marker{color:var(--gold)}
+#info ul{margin:0;padding-left:18px;font-size:14px}
+#info ul li{padding:2px 0}
+#info .pc{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px}
+#info .pc div b{display:block;font-size:12px;margin-bottom:2px}
+#info .pc .p b{color:var(--jade)} #info .pc .c b{color:var(--coral)}
+
+/* 總覽 */
+#grid{display:none;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;padding:18px 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--gold)}
+.card h4{margin:0 0 8px;font-family:var(--serif);font-size:17px;display:flex;justify-content:space-between;align-items:baseline}
+.card h4 span{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted)}
+.card .stage{border-radius:10px}
+.card .mini-cap{font-size:13px;color:var(--muted);margin-top:8px;min-height:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.grid #focus{display:none} body.grid #grid{display:grid}
+
+/* SVG 元素 */
+.edge-base{fill:none;stroke:var(--edge);stroke-width:2}
+.edge-hot{fill:none;stroke:var(--gold);stroke-width:3;opacity:0}
+.arrow{fill:var(--edge)}
+.edge.hidden,.node.hidden{opacity:0;pointer-events:none}
+.edge,.node{transition:opacity .45s}
+.node .body{fill:var(--nodebg);stroke:var(--kc);stroke-width:1.6;transition:stroke-width .3s}
+.node .lbl{fill:var(--text);font-family:var(--sans);font-weight:700;text-anchor:middle;dominant-baseline:central}
+.node .sub{fill:var(--muted);font-family:var(--mono);text-anchor:middle;dominant-baseline:central}
+.node .ring{fill:none;stroke:var(--kc);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.node.on .body{stroke-width:3}
+.node.on{filter:drop-shadow(0 0 10px var(--kc))}
+.node.on .ring{animation:ring 1.4s ease-out infinite}
+.node.on .sub{fill:var(--kc)}
+.node.done .body{stroke-width:2.2}
+@keyframes ring{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
+.k-llm{--kc:var(--gold)} .k-tool{--kc:var(--jade)} .k-data{--kc:var(--blue)} .k-gate{--kc:var(--violet)} .k-human{--kc:var(--coral)} .k-io{--kc:var(--io)}
+.particle{filter:drop-shadow(0 0 6px currentColor)}
+
+@media (prefers-reduced-motion: reduce){.node.on .ring{animation:none}}
+@media (max-width:1180px){#focus{grid-template-columns:200px minmax(0,1fr)} #info{grid-column:1/-1}}
+@media (max-width:760px){
+  header{padding:12px 14px} header h1{font-size:20px}
+  #focus{grid-template-columns:1fr;padding:12px 14px;gap:12px}
+  #list{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  #list button{flex:0 0 auto} #list button em{display:none}
+  .stage .ptitle{font-size:16px;left:12px;top:8px}
+  #grid{grid-template-columns:1fr;padding:12px 14px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>職場 Agent 應用<small>流光動態圖：看 Email、行事曆、報表與簽核如何由 Agent 串起來</small></h1>
+  <div class="spacer"></div>
+  <div class="seg" role="tablist">
+    <button id="vFocus" class="sel">單一情境</button>
+    <button id="vGrid">全部總覽</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" title="切換深淺色">◐</button>
+</header>
+
+<main>
+  <section id="focus">
+    <nav id="list" aria-label="情境清單"></nav>
+    <div class="stage-wrap">
+      <div class="stage" id="mainStage"><div class="ptitle" id="ptitle"></div></div>
+      <div class="caption"><span class="cnt" id="cnt">1／1</span><span class="txt" id="cap"></span></div>
+      <div class="controls">
+        <button class="primary" id="playBtn">暫停</button>
+        <button id="prevBtn">上一步</button>
+        <button id="nextBtn">下一步</button>
+        <button id="restartBtn">重播</button>
+        <label>速度 <input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="spdV">1.0×</span></label>
+        <label><input type="checkbox" id="auto"> 播完自動換下一個情境</label>
+      </div>
+      <div class="legend">
+        <span><i style="border-color:var(--gold)"></i>LLM／Agent</span>
+        <span><i style="border-color:var(--jade)"></i>工具</span>
+        <span><i style="border-color:var(--blue)"></i>資料／記憶</span>
+        <span><i style="border-color:var(--violet);transform:rotate(45deg) scale(.8)"></i>判斷閘門</span>
+        <span><i style="border-color:var(--coral);border-radius:6px"></i>人</span>
+        <span><i style="border-color:var(--io);border-radius:6px"></i>輸入／輸出</span>
+      </div>
+    </div>
+    <aside id="info"></aside>
+  </section>
+  <section id="grid"></section>
+</main>
+
+<script>
+/* ========== 模式資料 ========== */
+const S=(e,cap,o={})=>Object.assign({e:e.map(x=>x.split('>')),cap},o);
+
+const PATTERNS=[
+{id:'mail',name:'Email 智慧分類回覆',en:'Inbox Triage Agent',short:'收信、分類、草擬、通知',
+ lead:'每封新信先由分類 Agent 判讀意圖：急件摘要推播、客戶詢價查 CRM 後草擬回信給你確認、電子報自動封存。',
+ nodes:[['inbox','io',80,280,'收件匣','Gmail／Outlook'],['cls','gate',275,280,'分類 Agent','判讀意圖'],['urg','llm',515,100,'急件 Agent','摘要重點'],['quo','llm',515,280,'回信 Agent','草擬回覆'],['arc','tool',515,460,'自動封存','電子報／廣告'],['ntf','tool',770,100,'LINE 通知','推播給你'],['crm','data',770,450,'客戶資料','CRM'],['hm','human',745,280,'你確認','待審'],['send','tool',915,280,'寄出','Gmail']],
+ edges:[['inbox','cls'],['cls','urg'],['cls','quo'],['cls','arc'],['urg','ntf'],['quo','crm',22],['crm','quo',22],['quo','hm'],['hm','send']],
+ script:L=>{const k=L%3;
+   if(k===0)return[S(['inbox>cls'],'新信：「想詢問 50 人企業內訓報價」',{set:{cls:'判讀意圖',hm:'待審'}}),S(['cls>quo'],'判斷為客戶詢價 → 交給回信 Agent',{set:{cls:'詢價'}}),
+     S(['quo>crm'],'查 CRM：這位客戶過去的合作紀錄'),S(['crm>quo'],'取得去年合作方案與聯絡窗口',{set:{quo:'草擬中'}}),
+     S(['quo>hm'],'草擬好回信，先放草稿匣等你確認',{set:{quo:'草稿完成'}}),S(['hm>send'],'你按下確認 → 寄出',{set:{hm:'已確認 ✓',send:'已寄出'}})];
+   if(k===1)return[S(['inbox>cls'],'新信：「明天的簡報檔打不開，急！」',{set:{cls:'判讀意圖'}}),S(['cls>urg'],'判斷為急件 → 交給急件 Agent',{set:{cls:'急件'}}),S(['urg>ntf'],'摘要成三行重點，用 LINE 立刻推播給你',{set:{ntf:'已推播'}})];
+   return[S(['inbox>cls'],'新信：某平台每週電子報',{set:{cls:'判讀意圖'}}),S(['cls>arc'],'判斷為電子報 → 加標籤封存，不打擾你',{set:{cls:'電子報',arc:'已封存'}})];},
+ when:['路由（依信件意圖分流）','工具呼叫（CRM、LINE）','人機協作（寄出前確認）'],
+ cases:['Gmail／Outlook','CRM 客戶資料','LINE／Teams 通知'],
+ pros:'每天少看大半無關信件，回信速度變快',cons:'對外寄信一定要保留人工確認'},
+
+{id:'meet',name:'會議紀錄自動化',en:'Meeting Notes Agent',short:'錄音 → 紀錄 → 待辦',
+ lead:'會議錄音轉成逐字稿後，由紀錄 Agent 萃取決議與待辦，再同時分派到待辦系統、行事曆和 Email。',
+ nodes:[['rec','io',80,280,'會議錄音','Teams／Meet'],['stt','tool',250,280,'語音轉文字','逐字稿'],['sum','llm',450,280,'紀錄 Agent','摘要決議'],['todo','tool',700,100,'待辦清單','Planner'],['cal','tool',700,280,'行事曆','下次會議'],['mail','tool',700,460,'Email','寄與會者'],['done','io',910,280,'完成','全員同步']],
+ edges:[['rec','stt'],['stt','sum'],['sum','todo'],['sum','cal'],['sum','mail'],['todo','done'],['cal','done'],['mail','done']],
+ script:L=>[S(['rec>stt'],'週會結束，60 分鐘錄音自動上傳',{set:{sum:'摘要決議',todo:'Planner',cal:'下次會議',mail:'寄與會者'}}),
+   S(['stt>sum'],'逐字稿交給紀錄 Agent',{set:{stt:'逐字稿 ✓'}}),
+   S(['sum>todo','sum>cal','sum>mail'],'萃取出 3 項決議、5 項待辦，同時分派',{set:{sum:'3 決議／5 待辦'}}),
+   S(['todo>done','cal>done','mail>done'],'待辦指派到人、下次會議排好、紀錄寄出',{set:{todo:'已指派',cal:'已排程',mail:'已寄出'}})],
+ when:['提示鏈（轉寫 → 摘要）','平行化（三個工具同時執行）'],
+ cases:['Teams／Google Meet 錄音','Planner／Trello','Google 行事曆','Email'],
+ pros:'會後不用再花一小時整理紀錄',cons:'涉及機密的會議要確認錄音授權'},
+
+{id:'report',name:'週報自動產出',en:'Reporting Agent',short:'抓資料 → 分析 → 簡報',
+ lead:'每週固定時間抓取銷售系統與各分店 Excel，交給分析工具計算，找出異常，產生圖表與簡報寄給主管。',
+ nodes:[['erp','data',100,110,'銷售系統','ERP'],['xls','data',100,450,'分店 Excel','雲端硬碟'],['ag','llm',350,280,'報表 Agent','彙整分析'],['calc','tool',600,110,'資料分析','Python'],['chart','tool',600,450,'圖表產生','趨勢圖'],['ppt','io',850,280,'週報簡報','PPT'],['boss','human',850,460,'主管','收到週報']],
+ edges:[['erp','ag'],['xls','ag'],['ag','calc',22],['calc','ag',22],['ag','chart'],['chart','ppt'],['ppt','boss']],
+ script:L=>[S(['erp>ag','xls>ag'],'每週一 08:00 自動抓取 ERP 與各分店 Excel',{set:{ag:'彙整分析'}}),
+   S(['ag>calc'],'交給分析工具計算週營收與成長率'),S(['calc>ag'],'發現：A 店營收下滑最多',{set:{ag:'找到異常'}}),
+   S(['ag>chart'],'產生趨勢圖並標註異常點'),S(['chart>ppt'],'組成 5 頁週報簡報',{set:{ppt:'5 頁 ✓'}}),
+   S(['ppt>boss'],'08:30 寄給主管，信件內附三行重點')],
+ when:['排程觸發','工具呼叫（程式計算，不讓 LLM 心算）','提示鏈（分析 → 圖表 → 簡報）'],
+ cases:['ERP／POS 系統','Excel／Google 試算表','PowerPoint','Email'],
+ pros:'週報從半天縮到幾分鐘，數字由程式計算更可靠',cons:'資料來源格式變動時要更新流程'},
+
+{id:'leave',name:'請假報帳簽核',en:'Approval Agent',short:'規則檢查 → 主管簽核',
+ lead:'員工送出申請後，簽核 Agent 先查規章做初審，不合規自動退件說明原因；合規才送主管簽核，核准後同步更新系統。',
+ nodes:[['emp','io',80,280,'員工','送出申請'],['ag','gate',290,280,'簽核 Agent','規則檢查'],['rule','data',290,475,'人事規章','知識庫'],['mgr','human',540,140,'主管','待簽'],['sys','tool',790,140,'HR 系統','登錄'],['cal','tool',790,330,'團隊行事曆','同步']],
+ edges:[['emp','ag',30],['ag','emp',30],['ag','rule',22],['rule','ag',22],['ag','mgr'],['mgr','sys'],['sys','cal']],
+ script:L=>L%2===0?[S(['emp>ag'],'小王申請特休 3 天',{set:{ag:'規則檢查',mgr:'待簽',rule:'知識庫'}}),S(['ag>rule'],'查規章與假別餘額'),S(['rule>ag'],'特休剩 5 天，符合規定',{set:{ag:'初審通過'}}),
+     S(['ag>mgr'],'送主管簽核，附上代理人與專案影響'),S(['mgr>sys'],'主管核准，自動登錄 HR 系統',{set:{mgr:'核准 ✓'}}),S(['sys>cal'],'團隊行事曆同步標示請假')]
+   :[S(['emp>ag'],'小陳送出報帳 12,000 元',{set:{ag:'規則檢查',mgr:'待簽'}}),S(['ag>rule'],'查報帳規定'),S(['rule>ag'],'超過 10,000 元須附發票正本',{set:{rule:'缺附件'}}),
+     S(['ag>emp'],'自動退件並說明：請補發票正本',{set:{ag:'退件'}})],
+ when:['路由（合規／不合規）','RAG（查規章）','人機協作（主管簽核）'],
+ cases:['HR 系統','Google 表單／簽核系統','行事曆'],
+ pros:'主管只看已過初審的案件，退件理由一次說清楚',cons:'規章更新時知識庫要同步'},
+
+{id:'cs',name:'客服工單處理',en:'Customer Service Agent',short:'自動回覆或轉真人',
+ lead:'客服 Agent 先理解問題：查得到的直接回覆；情緒激動或需判斷的，開工單並附摘要交給真人接手。',
+ nodes:[['cust','io',80,280,'客戶','LINE／官網'],['bot','llm',290,280,'客服 Agent','理解問題'],['kb','data',290,470,'知識庫','FAQ／政策'],['ord','tool',560,110,'訂單系統','查物流'],['tk','tool',580,450,'工單系統','建立工單'],['staff','human',830,450,'客服人員','接手']],
+ edges:[['cust','bot',30],['bot','cust',30],['bot','kb',22],['kb','bot',22],['bot','ord',22],['ord','bot',22],['bot','tk'],['tk','staff']],
+ script:L=>L%2===0?[S(['cust>bot'],'客戶：「我的訂單到哪了？」',{set:{bot:'理解問題'}}),S(['bot>ord'],'查詢訂單系統'),S(['ord>bot'],'已出貨，預計明天送達',{set:{ord:'已出貨'}}),S(['bot>cust'],'30 秒內自動回覆物流進度',{set:{bot:'已回覆'}})]
+   :[S(['cust>bot'],'客戶：「收到的商品破損，很生氣！」',{set:{bot:'理解問題'}}),S(['bot>kb'],'查退換貨政策'),S(['kb>bot'],'破損需拍照確認，屬人工判斷',{set:{bot:'情緒：不滿'}}),
+     S(['bot>tk'],'開立工單，附上對話摘要與照片',{set:{tk:'高優先'}}),S(['tk>staff'],'真人客服接手，不用再請客戶重講一次',{set:{staff:'處理中'}})],
+ when:['路由（自動回覆／轉真人）','ReAct（查訂單、查政策）','人機協作（真人接手）'],
+ cases:['LINE 官方帳號／官網客服','訂單系統','Jira／工單系統'],
+ pros:'常見問題即時回覆，真人專心處理難題',cons:'情緒與賠償判斷要交給人'},
+
+{id:'hire',name:'履歷篩選邀約',en:'Recruiting Agent',short:'解析 → 評分 → 邀約',
+ lead:'大量履歷先解析成結構化資料，由篩選 Agent 對照職缺條件評分並寫出理由，HR 確認後自動安排面試與寄送通知。',
+ nodes:[['in','io',80,280,'履歷信箱','104／Email'],['ps','tool',255,280,'履歷解析','PDF → 欄位'],['jd','data',470,100,'職缺條件','JD'],['ev','llm',470,280,'篩選 Agent','對照評分'],['hr','human',700,280,'HR','確認名單'],['cal','tool',900,140,'面試排程','行事曆'],['mail','tool',900,420,'通知信','感謝函']],
+ edges:[['in','ps'],['ps','ev'],['jd','ev'],['ev','hr'],['hr','cal'],['hr','mail']],
+ script:L=>[S(['in>ps'],'本週收到 120 份履歷',{set:{ev:'對照評分',hr:'確認名單'}}),S(['ps>ev','jd>ev'],'轉成結構化資料，對照職缺必備條件',{set:{ps:'120 份 ✓'}}),
+   S(['ev>hr'],'產出前 10 名與評分理由，送 HR 確認',{set:{ev:'Top 10'}}),S(['hr>cal','hr>mail'],'確認後：自動邀約面試、其餘寄感謝函',{set:{hr:'已確認 ✓'}})],
+ when:['提示鏈（解析 → 評分）','人機協作（HR 確認）','平行化（邀約與通知同時）'],
+ cases:['104／Email 信箱','Google 行事曆','Email 範本'],
+ pros:'HR 不用逐份看完，評分理由可追查',cons:'要定期檢查評分是否有偏見'},
+
+{id:'sched',name:'會議安排秘書',en:'Scheduling Agent',short:'查空檔、約時間、訂會議室',
+ lead:'秘書 Agent 用「思考 → 行動 → 觀察」的方式來回查行事曆、寄信詢問、預約會議室，直到把會議排好。',
+ nodes:[['u','io',90,290,'你','下指令'],['ag','llm',380,290,'秘書 Agent','思考'],['cal','tool',680,95,'行事曆','查空檔'],['mail','tool',790,290,'Email','詢問對方'],['room','tool',680,485,'會議室','預約']],
+ edges:[['u','ag',30],['ag','u',30],['ag','cal',22],['cal','ag',22],['ag','mail',22],['mail','ag',22],['ag','room',22],['room','ag',22]],
+ script:L=>[S(['u>ag'],'你：「下週幫我約 A 公司開會」',{set:{ag:'Thought'}}),S(['ag>cal'],'Action：查你下週的空檔',{set:{ag:'Action'}}),
+   S(['cal>ag'],'Observation：週二、週四下午有空',{set:{ag:'Observation'}}),S(['ag>mail'],'Action：寄信給 A 公司，提供兩個時段',{set:{ag:'Action'}}),
+   S(['mail>ag'],'Observation：對方回覆週四 14:00',{set:{ag:'Observation'}}),S(['ag>room'],'Action：預約會議室並建立視訊連結',{set:{ag:'Action'}}),
+   S(['room>ag'],'Observation：302 會議室已預約',{set:{ag:'Observation'}}),S(['ag>u'],'完成：邀請已寄出並加入雙方行事曆',{set:{ag:'Answer'}})],
+ when:['ReAct 工具迴圈（步數由 Agent 自己決定）'],
+ cases:['Google 行事曆／Outlook','Email','會議室預約系統'],
+ pros:'省掉來回喬時間的信件往返',cons:'對外寄信的語氣與內容要先設好範本'},
+
+{id:'quote',name:'報價單產出',en:'Quotation Agent',short:'擷取 → 撰寫 → 毛利把關',
+ lead:'從客戶需求信擷取規格，對照價目表撰寫報價單，審核 Agent 檢查毛利，不達標就退回調整，通過後交業務確認寄出。',
+ nodes:[['req','io',80,280,'需求信','客戶'],['ext','llm',240,280,'擷取 Agent','需求規格'],['price','data',430,105,'價目表','產品／課程'],['wr','llm',430,280,'報價 Agent','撰寫報價單'],['chk','gate',620,280,'審核 Agent','毛利檢查'],['sales','human',790,280,'業務','確認'],['send','tool',925,280,'寄出','PDF']],
+ edges:[['req','ext'],['ext','wr'],['price','wr'],['wr','chk'],['chk','wr',-120],['chk','sales'],['sales','send']],
+ script:L=>[S(['req>ext'],'客戶來信：企業內訓 3 場、每場 40 人',{set:{chk:'毛利檢查',wr:'撰寫報價單'}}),S(['ext>wr','price>wr'],'擷取規格並對照價目表',{set:{ext:'3 場×40 人'}}),
+   S(['wr>chk'],'第 1 版報價單送審',{set:{wr:'報價 v1'}}),S(['chk>wr'],'毛利 18%，低於 25% 門檻 → 退回調整',{set:{chk:'18% ✗'}}),
+   S(['wr>chk'],'調整方案：改為 2 場實體＋1 場線上',{set:{wr:'報價 v2'}}),S(['chk>sales'],'毛利 28%，通過，交業務確認',{set:{chk:'28% ✓'}}),
+   S(['sales>send'],'業務確認後轉成 PDF 寄給客戶',{set:{sales:'已確認 ✓'}})],
+ when:['提示鏈（擷取 → 撰寫）','評估-優化（毛利不達標就重寫）','人機協作（業務確認）'],
+ cases:['Email','價目表（Excel）','PDF 產生'],
+ pros:'報價格式一致，自動守住毛利底線',cons:'特殊折扣仍要業務判斷'},
+
+{id:'social',name:'社群行銷團隊',en:'Marketing Multi-Agent',short:'研究、文案、設計分工',
+ lead:'行銷總監 Agent 分派任務：研究 Agent 找熱門話題交棒給文案 Agent，同時生成主視覺，審核後自動排程發布。',
+ nodes:[['u','io',80,280,'你','新品上市'],['sup','llm',270,280,'行銷總監','分工'],['res','llm',500,100,'研究 Agent','熱門話題'],['cp','llm',500,280,'文案 Agent','三版文案'],['img','tool',500,460,'圖像生成','主視覺'],['hm','human',740,280,'品牌審核','待審'],['sch','tool',915,280,'排程發布','FB／IG']],
+ edges:[['u','sup'],['sup','res'],['res','cp'],['sup','img'],['cp','hm'],['img','hm'],['hm','sch']],
+ script:L=>[S(['u>sup'],'新便當上市，需要一週社群貼文',{set:{hm:'待審'}}),S(['sup>res'],'總監指派研究 Agent 找本週熱門話題'),
+   S(['res>cp','sup>img'],'研究交棒給文案；同時生成主視覺',{set:{res:'3 個話題'}}),S(['cp>hm','img>hm'],'三版文案＋主視覺送你審核',{set:{cp:'3 版 ✓',img:'4 張 ✓'}}),
+   S(['hm>sch'],'核准後自動排程一週貼文',{set:{hm:'核准 ✓',sch:'7 篇已排程'}})],
+ when:['多代理協作（主管分工）','平行化（文案與設計同時）','人機協作（品牌審核）'],
+ cases:['Facebook／Instagram','圖像生成工具','Canva','排程工具'],
+ pros:'一人也能有完整行銷團隊的產能',cons:'品牌語氣與圖片版權要人把關'},
+
+{id:'contract',name:'合約審閱',en:'Contract Review Agent',short:'分段同時審 → 風險報告',
+ lead:'合約切成不同面向，由三個 Agent 同時審閱並比對公司標準條款，彙整成風險報告交給法務做最後判斷。',
+ nodes:[['doc','io',80,280,'合約 PDF','供應商'],['sp','gate',240,280,'分段','依條款'],['a','llm',480,110,'條款 Agent','違約／賠償'],['b','llm',480,280,'付款 Agent','金額／期限'],['c','llm',480,450,'保密 Agent','NDA'],['tpl','data',720,95,'標準條款','公司範本'],['agg','llm',720,280,'彙整 Agent','風險報告'],['law','human',910,280,'法務','最後判斷']],
+ edges:[['doc','sp'],['sp','a'],['sp','b'],['sp','c'],['tpl','a'],['a','agg'],['b','agg'],['c','agg'],['agg','law']],
+ script:L=>[S(['doc>sp'],'供應商寄來 20 頁合約',{set:{agg:'風險報告'}}),S(['sp>a','sp>b','sp>c'],'三個 Agent 同時審閱不同面向'),
+   S(['tpl>a'],'比對公司標準條款，找出差異',{set:{a:'2 處差異'}}),S(['a>agg','b>agg','c>agg'],'彙整出 4 項高風險條款',{set:{agg:'4 項風險'}}),
+   S(['agg>law'],'附上修改建議交法務做最後判斷',{set:{law:'審閱中'}})],
+ when:['平行化（分段同時審）','RAG（比對標準條款）','人機協作（法務決定）'],
+ cases:['PDF／Word 合約','公司條款範本庫','雲端硬碟'],
+ pros:'法務直接看重點，審閱時間大幅縮短',cons:'AI 只做標記，法律判斷必須由人負責'}
+];
+
+
+/* ========== 工具函式 ========== */
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const tw=(s,f)=>{let w=0;for(const ch of s)w+=/[\u2E80-\uFFFF]/.test(ch)?f:f*.6;return w;};
+const ease=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const KCOL={llm:'var(--gold)',tool:'var(--jade)',data:'var(--blue)',gate:'var(--violet)',human:'var(--coral)',io:'var(--io)'};
+const TRAVEL=1250,DWELL=750,ENDWAIT=1500;
+let SPEED=1;
+
+/* ========== 舞台引擎 ========== */
+class Stage{
+  constructor(host,pat,mini=false){
+    this.pat=pat;this.mini=mini;this.host=host;this.loop=0;this.onStep=null;this.onLoop=null;
+    this.svg=el('svg',{viewBox:'0 0 1000 560',role:'img','aria-label':pat.name+' 動態流程圖'});
+    host.appendChild(this.svg);this.build();this.reset();this.start(0);
+  }
+  build(){
+    const svg=this.svg,fs=this.mini?20:15;
+    this.gE=el('g',{},svg);this.gP=el('g',{},svg);this.gN=el('g',{},svg);
+    this.N={};
+    for(const [id,k,x,y,label,sub,hid] of this.pat.nodes){
+      const lw=tw(label,fs),sw=this.mini?0:tw(sub||'',11);
+      let w=Math.max(this.mini?84:100,lw+30,sw+26),h=this.mini?52:60;
+      const g=el('g',{class:`node k-${k}`,transform:`translate(${x},${y})`},this.gN);
+      let shape,hw=w/2,hh=h/2;
+      if(k==='gate'){hw=w/2+16;hh=h/2+12;shape=['polygon',{points:`0,${-hh} ${hw},0 0,${hh} ${-hw},0`}];}
+      else if(k==='data'){const e=8;shape=['path',{d:`M${-hw},${-hh+e} A${hw},${e} 0 0 1 ${hw},${-hh+e} V${hh-e} A${hw},${e} 0 0 1 ${-hw},${hh-e} Z M${-hw},${-hh+e} A${hw},${e} 0 0 0 ${hw},${-hh+e}`}];}
+      else if(k==='tool'){const c=10;shape=['polygon',{points:`${-hw+c},${-hh} ${hw-c},${-hh} ${hw},${-hh+c} ${hw},${hh-c} ${hw-c},${hh} ${-hw+c},${hh} ${-hw},${hh-c} ${-hw},${-hh+c}`}];}
+      else{const r=(k==='io'||k==='human')?hh:12;shape=['rect',{x:-hw,y:-hh,width:hw*2,height:hh*2,rx:r}];}
+      el(shape[0],Object.assign({class:'ring'},shape[1]),g);
+      el(shape[0],Object.assign({class:'body'},shape[1]),g);
+      const lb=el('text',{class:'lbl',y:this.mini?0:-9,'font-size':fs},g);lb.textContent=label;
+      const sb=el('text',{class:'sub',y:13,'font-size':11},g);sb.textContent=sub||'';if(this.mini)sb.style.display='none';
+      this.N[id]={id,k,x,y,hw,hh,g,sb,sub0:sub||'',hid:!!hid,vis:true};
+    }
+    this.E={};
+    for(const [a,b,bend=0] of this.pat.edges){
+      const A=this.N[a],B=this.N[b],dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy);
+      const nx=-dy/len,ny=dx/len,cx=(A.x+B.x)/2+nx*bend,cy=(A.y+B.y)/2+ny*bend;
+      const P=[];for(let i=0;i<=90;i++){const t=i/90,u=1-t;P.push([u*u*A.x+2*u*t*cx+t*t*B.x,u*u*A.y+2*u*t*cy+t*t*B.y]);}
+      const inside=(n,p)=>{const ax=Math.abs(p[0]-n.x),ay=Math.abs(p[1]-n.y);return n.k==='gate'?(ax/(n.hw+4)+ay/(n.hh+4)<=1):(ax<=n.hw+5&&ay<=n.hh+5);};
+      let s=0,e=P.length-1;while(s<e&&inside(A,P[s]))s++;while(e>s&&inside(B,P[e]))e--;
+      const pts=P.slice(s,e+1),cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+      const d='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+      const g=el('g',{class:'edge'},this.gE);
+      el('path',{class:'edge-base',d},g);const hot=el('path',{class:'edge-hot',d},g);
+      const pe=pts[pts.length-1],pb=pts[Math.max(0,pts.length-4)],ang=Math.atan2(pe[1]-pb[1],pe[0]-pb[0])*180/Math.PI;
+      const ar=el('polygon',{class:'arrow',points:'0,0 -11,-5.5 -11,5.5',transform:`translate(${pe[0]},${pe[1]}) rotate(${ang})`},g);
+      this.E[a+'>'+b]={a,b,g,hot,ar,pts,cum,L:cum[cum.length-1],heat:0,active:false};
+    }
+  }
+  at(E,u){const d=u*E.L,c=E.cum;let i=1;while(i<c.length-1&&c[i]<d)i++;const f=(d-c[i-1])/((c[i]-c[i-1])||1),p=E.pts[i-1],q=E.pts[i];return[p[0]+(q[0]-p[0])*f,p[1]+(q[1]-p[1])*f];}
+  setVis(){for(const n of Object.values(this.N))n.g.classList.toggle('hidden',!n.vis);
+    for(const E of Object.values(this.E))E.g.classList.toggle('hidden',!(this.N[E.a].vis&&this.N[E.b].vis));}
+  reset(){
+    this.steps=this.pat.script(this.loop);this.si=0;this.t=0;this.phase='travel';
+    for(const n of Object.values(this.N)){n.vis=!n.hid;n.g.classList.remove('on','done');n.sb.textContent=n.sub0;}
+    for(const E of Object.values(this.E)){E.heat=0;E.active=false;E.hot.style.opacity=0;E.ar.style.fill='';}
+    this.clearP();this.setVis();
+  }
+  clearP(){this.gP.textContent='';this.parts=[];}
+  start(i,instant=false){
+    this.si=i;this.t=0;this.phase='travel';const s=this.steps[i];
+    if(s.show)s.show.forEach(id=>this.N[id].vis=true);
+    if(s.set)for(const id in s.set)this.N[id].sb.textContent=s.set[id];
+    this.setVis();this.clearP();
+    for(const [a,b] of s.e){const E=this.E[a+'>'+b];if(!E){console.warn('缺邊',a,b);continue;}
+      E.active=true;E.heat=1;this.N[a].g.classList.add('on');this.N[a].g.classList.remove('done');
+      if(!instant){const col=KCOL[this.N[a].k],grp=el('g',{class:'particle',style:`color:${col}`},this.gP),cs=[];
+        for(let k=0;k<10;k++)cs.push(el('circle',{r:Math.max(1.2,(this.mini?7:5.5)-k*.5),fill:col,opacity:(1-k/10).toFixed(2)},grp));
+        this.parts.push({E,cs});}}
+    if(this.onStep)this.onStep(this,i,this.steps.length,s.cap);
+  }
+  arrive(){
+    const s=this.steps[this.si],tg=new Set(s.e.map(x=>x[1]));
+    for(const n of Object.values(this.N))if(n.g.classList.contains('on')&&!tg.has(n.id)){n.g.classList.remove('on');n.g.classList.add('done');}
+    tg.forEach(id=>{this.N[id].g.classList.add('on');this.N[id].g.classList.remove('done');});
+    for(const [a,b] of s.e){const E=this.E[a+'>'+b];if(E){E.active=false;E.ar.style.fill=KCOL[this.N[a].k];}}
+    this.clearP();this.phase='dwell';this.t=0;
+  }
+  jump(i){
+    const n=Math.max(0,Math.min(i,this.steps.length-1));this.reset();
+    for(let j=0;j<n;j++){this.start(j,true);this.arrive();}
+    for(const E of Object.values(this.E))E.heat=E.heat?0.35:0;
+    this.start(n);
+  }
+  next(){if(this.si>=this.steps.length-1){this.loop++;if(this.onLoop)this.onLoop(this);this.reset();this.start(0);}else this.jump(this.si+1);}
+  prev(){this.jump(this.si-(this.phase==='travel'&&this.t<300?1:0)-(this.phase!=='travel'?0:0));}
+  tick(dt){
+    dt*=SPEED;this.t+=dt;
+    for(const E of Object.values(this.E)){if(!E.active)E.heat=Math.max(0,E.heat-dt/1800);E.hot.style.opacity=E.heat.toFixed(3);
+      if(E.heat===0)E.ar.style.fill='';}
+    if(this.phase==='travel'){
+      const p=Math.min(1,this.t/TRAVEL);
+      for(const P of this.parts){P.cs.forEach((c,k)=>{const u=Math.max(0,ease(Math.max(0,p-k*.018)));const q=this.at(P.E,u);c.setAttribute('cx',q[0]);c.setAttribute('cy',q[1]);});}
+      if(p>=1)this.arrive();
+    }else if(this.phase==='dwell'){
+      if(this.t>=DWELL){if(this.si<this.steps.length-1)this.start(this.si+1);else{this.phase='end';this.t=0;}}
+    }else if(this.phase==='end'){
+      if(this.t>=ENDWAIT){this.loop++;if(this.onLoop)this.onLoop(this);this.reset();this.start(0);}
+    }
+  }
+}
+
+/* ========== 介面 ========== */
+const $=s=>document.querySelector(s);
+let cur=0,main=null,minis=[],playing=true,view='focus';
+
+function renderList(){
+  $('#list').innerHTML=PATTERNS.map((p,i)=>`<button data-i="${i}" class="${i===cur?'sel':''}"><span class="n">${String(i+1).padStart(2,'0')}</span><span><b>${p.name}</b><em>${p.short}</em></span></button>`).join('');
+  $('#list').querySelectorAll('button').forEach(b=>b.onclick=()=>select(+b.dataset.i));
+}
+function renderInfo(st){
+  const p=PATTERNS[cur];
+  $('#info').innerHTML=`<h2>${p.name}</h2><div class="en">${p.en}</div><p class="lead">${p.lead}</p>
+   <h3>運作步驟（本輪）</h3><ol id="stepList">${st.steps.map(s=>`<li>${s.cap}</li>`).join('')}</ol>
+   <h3>使用的 Agent 模式</h3><ul>${p.when.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <h3>串接的工具</h3><ul>${p.cases.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <h3>效益與注意</h3><div class="pc"><div class="p"><b>效益</b>${p.pros}</div><div class="c"><b>注意</b>${p.cons}</div></div>`;
+}
+function select(i){
+  cur=(i+PATTERNS.length)%PATTERNS.length;const p=PATTERNS[cur];
+  const host=$('#mainStage');host.querySelectorAll('svg').forEach(s=>s.remove());
+  $('#ptitle').innerHTML=`${p.name}<span>${p.en}</span>`;
+  main=new Stage(host,p);
+  main.onStep=(st,si,n,cap)=>{$('#cnt').textContent=`${si+1}／${n}`;const t=$('#cap');t.style.opacity=0;setTimeout(()=>{t.textContent=cap;t.style.opacity=1;},120);
+    document.querySelectorAll('#stepList li').forEach((li,k)=>li.classList.toggle('cur',k===si));};
+  main.onLoop=st=>{if($('#auto').checked){setTimeout(()=>select(cur+1),0);return;}renderInfo(st);};
+  renderInfo(main);main.onStep(main,0,main.steps.length,main.steps[0].cap);renderList();
+}
+function buildGrid(){
+  const g=$('#grid');g.innerHTML='';minis=[];
+  PATTERNS.forEach((p,i)=>{
+    const c=document.createElement('div');c.className='card';c.tabIndex=0;
+    c.innerHTML=`<h4>${p.name}<span>${p.en}</span></h4><div class="stage"></div><div class="mini-cap"></div>`;
+    g.appendChild(c);const st=new Stage(c.querySelector('.stage'),p,true),mc=c.querySelector('.mini-cap');
+    st.onStep=(s,si,n,cap)=>mc.textContent=cap;st.onStep(st,0,st.steps.length,st.steps[0].cap);
+    const go=()=>{setView('focus');select(i);};c.onclick=go;c.onkeydown=e=>{if(e.key==='Enter')go();};
+    minis.push(st);
+  });
+}
+function setView(v){view=v;document.body.classList.toggle('grid',v==='grid');$('#vFocus').classList.toggle('sel',v==='focus');$('#vGrid').classList.toggle('sel',v==='grid');
+  if(v==='grid'&&!minis.length)buildGrid();}
+
+$('#vFocus').onclick=()=>setView('focus');$('#vGrid').onclick=()=>setView('grid');
+$('#playBtn').onclick=()=>{playing=!playing;$('#playBtn').textContent=playing?'暫停':'播放';};
+$('#nextBtn').onclick=()=>main.next();
+$('#prevBtn').onclick=()=>main.jump(main.si-1);
+$('#restartBtn').onclick=()=>{main.loop=0;main.reset();renderInfo(main);main.start(0);};
+$('#speed').oninput=e=>{SPEED=+e.target.value;$('#spdV').textContent=SPEED.toFixed(1)+'×';};
+$('#themeBtn').onclick=()=>{const r=document.documentElement,dark=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0c1424';
+  r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('agentFlowTheme',r.dataset.theme);}catch(e){}};
+try{const t=localStorage.getItem('agentFlowTheme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
+document.addEventListener('keydown',e=>{if(view!=='focus'||e.target.tagName==='INPUT')return;
+  if(e.key===' '){e.preventDefault();$('#playBtn').click();}
+  else if(e.key==='ArrowRight')main.next();else if(e.key==='ArrowLeft')main.jump(main.si-1);
+  else if(e.key==='ArrowDown'){e.preventDefault();select(cur+1);}else if(e.key==='ArrowUp'){e.preventDefault();select(cur-1);}});
+
+let last=performance.now();
+function frame(now){const dt=Math.min(64,now-last);last=now;
+  if(playing){if(view==='focus'&&main)main.tick(dt);if(view==='grid')minis.forEach(s=>s.tick(dt));}
+  requestAnimationFrame(frame);}
+select(0);requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SDLC vs ADLC 流光圖</title>
+<style>
+:root{--bg:#050812;--panel:#0c1225;--panel2:#111a33;--line:#1d2848;--txt:#e7ecff;--mut:#8a96bb;--s:#38bdf8;--s2:#2563eb;--a:#f472b6;--a2:#a78bfa;--ok:#34d399;--warn:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 20% -10%,#0f1d44 0%,transparent 60%),radial-gradient(900px 500px at 100% 100%,#2a0f3a 0%,transparent 60%),var(--bg);color:var(--txt);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;min-height:100vh}
+header{padding:18px 24px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between}
+h1{font-size:22px;letter-spacing:1px}
+h1 .s{color:var(--s)} h1 .a{background:linear-gradient(90deg,var(--a),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);font-size:13px;margin-top:4px}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button,.btn{background:transparent;border:0;color:var(--mut);padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;transition:.2s}
+.seg button.on{background:linear-gradient(135deg,#1e3a8a,#6b21a8);color:#fff}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt)}
+.btn:hover,.seg button:hover{color:#fff}
+.btn.play{background:linear-gradient(135deg,#0ea5e9,#a855f7);border:0;color:#fff;min-width:84px}
+.btn.rec{border-color:#7f1d1d;color:#fecaca}.btn.rec.on{background:#dc2626;color:#fff;animation:blink 1s infinite}@keyframes blink{50%{opacity:.6}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111a33;border:1px solid #334;color:#e7ecff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:9;display:none}
+label.sp{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+input[type=range]{accent-color:#a78bfa;width:90px}
+main{display:grid;grid-template-columns:1fr 380px;gap:16px;padding:6px 24px 16px}
+.stage{background:linear-gradient(180deg,rgba(13,19,38,.85),rgba(8,12,26,.85));border:1px solid var(--line);border-radius:18px;position:relative;overflow:hidden}
+.stage svg{width:100%;height:auto;display:block}
+.grp{transition:opacity .5s}
+.grp.dim{opacity:.13}
+.node{cursor:pointer}
+.node .ring{fill:none;stroke-width:2;opacity:.35;transform-box:fill-box;transform-origin:center}
+.node .core{fill:#0b1124;stroke-width:2.5;transition:.3s}
+.node .ico{font-size:20px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node .num{font-size:10px;fill:var(--mut);text-anchor:middle;font-weight:700}
+.node .lb{font-size:15px;fill:var(--txt);text-anchor:middle;font-weight:700}
+.node .en{font-size:10.5px;fill:var(--mut);text-anchor:middle;letter-spacing:.5px}
+.node.done .core{fill:#111d3c}
+.node.on .core{filter:url(#glow);stroke-width:4}
+.node.on .ring{opacity:.9;animation:pulse 1.4s ease-out infinite}
+.node.on .lb{fill:#fff}
+@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+.trackTitle{font-size:16px;font-weight:800;letter-spacing:1px}
+.trackSub{font-size:11.5px;fill:var(--mut)}
+.flowLine{fill:none;stroke-width:3;stroke-linecap:round}
+.dash{fill:none;stroke-width:1.5;stroke-dasharray:6 7;animation:dash 1.2s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-26}}
+.legend{position:absolute;left:14px;bottom:10px;font-size:11.5px;color:var(--mut);display:flex;gap:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:560px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:99px;font-weight:700}
+.badge.sdlc{background:rgba(56,189,248,.14);color:var(--s);border:1px solid rgba(56,189,248,.4)}
+.badge.adlc{background:rgba(244,114,182,.14);color:var(--a);border:1px solid rgba(244,114,182,.4)}
+.ptitle{font-size:24px;font-weight:800;line-height:1.25}
+.pen{color:var(--mut);font-size:13px;margin-top:2px}
+.pdesc{font-size:14.5px;line-height:1.75;color:#cfd7f5}
+.box{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7}
+.box h4{font-size:12.5px;color:var(--mut);margin-bottom:6px;letter-spacing:1px}
+.box ul{padding-left:18px}
+.box.case{border-left:3px solid var(--ok)}
+.box.case h4{color:var(--ok)}
+.box.pair{border-left:3px solid var(--warn)}
+.box.pair h4{color:var(--warn)}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog div{height:100%;width:0;background:linear-gradient(90deg,var(--s),var(--a));transition:width .5s}
+.stepnav{display:flex;gap:8px;margin-top:auto}
+.stepnav .btn{flex:1}
+.fade{animation:fade .45s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+section.cmp{padding:4px 24px 30px}
+.cmpWrap{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;overflow-x:auto}
+.cmpWrap h2{font-size:17px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+th{color:var(--mut);font-weight:600;font-size:12.5px}
+td:first-child{color:#cfd7f5;font-weight:700;white-space:nowrap}
+td.s{color:#bfe6ff} td.a{color:#ffd1e8}
+tr{transition:background .3s} tr:hover{background:rgba(167,139,250,.07)}
+.sum{margin-top:14px;font-size:14px;line-height:1.8;color:#cfd7f5;background:linear-gradient(90deg,rgba(56,189,248,.08),rgba(244,114,182,.08));border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+footer{color:var(--mut);font-size:11.5px;text-align:center;padding:0 0 22px}
+@media (max-width:1050px){main{grid-template-columns:1fr}aside{min-height:auto}}
+@media (max-width:600px){header,main,section.cmp{padding-left:12px;padding-right:12px}h1{font-size:18px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1><span class="s">SDLC</span> vs <span class="a">ADLC</span>　開發生命週期流光圖</h1>
+    <div class="sub">傳統軟體「線性交付」 ↔ AI 代理「持續迴圈」｜點節點看說明與職場案例</div>
+  </div>
+  <div class="ctrl">
+    <div class="seg" id="modeSeg">
+      <button data-m="dual" class="on">雙軌對照</button>
+      <button data-m="sdlc">只看 SDLC</button>
+      <button data-m="adlc">只看 ADLC</button>
+    </div>
+    <button class="btn play" id="playBtn">▶ 播放</button>
+    <button class="btn" id="resetBtn">↺ 重來</button>
+    <button class="btn rec" id="recBtn" title="錄製完整一輪動畫並下載影片">⏺ 錄製下載影片</button>
+    <label class="sp">速度 <input type="range" id="spd" min="0.5" max="2.5" step="0.25" value="1"><span id="spdV">1x</span></label>
+  </div>
+</header>
+
+<main>
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1000 640" aria-label="SDLC 與 ADLC 流程動畫">
+      <defs>
+        <linearGradient id="gS" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+        <linearGradient id="gA" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+        <radialGradient id="rc"><stop offset="0" stop-color="#a78bfa" stop-opacity=".22"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></radialGradient>
+        <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="soft" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <marker id="arS" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10z" fill="#2563eb"/></marker>
+      </defs>
+
+      <!-- SDLC -->
+      <g id="gSDLC" class="grp">
+        <text x="40" y="44" class="trackTitle" fill="#38bdf8">SDLC 軟體開發生命週期</text>
+        <text x="40" y="64" class="trackSub">Software Development Life Cycle｜線性・確定性・交付即完成</text>
+        <path id="pS" class="flowLine" d="M80,135 L920,135" stroke="url(#gS)" stroke-opacity=".55" marker-end="url(#arS)"/>
+        <path class="dash" d="M920,170 C920,232 80,232 80,170" stroke="#38bdf8" stroke-opacity=".25"/>
+        <text x="500" y="222" text-anchor="middle" class="trackSub">改版時才回到起點（新專案週期）</text>
+        <g id="partS"></g><g id="nodesS"></g><g id="cometS" filter="url(#soft)"></g>
+      </g>
+
+      <!-- ADLC -->
+      <g id="gADLC" class="grp">
+        <text x="40" y="268" class="trackTitle" fill="#f472b6">ADLC 代理開發生命週期</text>
+        <text x="40" y="288" class="trackSub">Agent Development Life Cycle｜迴圈・機率性・上線才開始</text>
+        <ellipse cx="500" cy="452" rx="250" ry="92" fill="url(#rc)"/>
+        <path id="pA" class="flowLine" d="M500,335 A360,117 0 0 1 500,569 A360,117 0 0 1 500,335" stroke="url(#gA)" stroke-opacity=".55"/>
+        <text x="500" y="440" text-anchor="middle" font-size="22" font-weight="800" fill="#f9a8d4">♾ 持續迴圈</text>
+        <text x="500" y="466" text-anchor="middle" class="trackSub">觀測 → 評估 → 調整 → 再部署</text>
+        <g id="partA"></g><g id="nodesA"></g><g id="cometA" filter="url(#soft)"></g>
+      </g>
+    </svg>
+    <div class="legend"><span><i style="background:#38bdf8"></i>SDLC 程式碼驅動</span><span><i style="background:#f472b6"></i>ADLC 模型＋提示＋工具驅動</span><span>⌨ 空白鍵 播放／暫停　← → 上下一步</span></div>
+  </div>
+
+  <aside id="panel">
+    <div><span class="badge sdlc" id="pBadge">SDLC</span> <span style="color:var(--mut);font-size:12px" id="pStep"></span></div>
+    <div class="prog"><div id="pProg"></div></div>
+    <div id="pBody"></div>
+    <div class="stepnav"><button class="btn" id="prevBtn">◀ 上一步</button><button class="btn" id="nextBtn">下一步 ▶</button></div>
+  </aside>
+</main>
+
+<section class="cmp">
+  <div class="cmpWrap">
+    <h2>📊 SDLC vs ADLC 核心差異對照</h2>
+    <table>
+      <thead><tr><th>比較面向</th><th>SDLC 傳統軟體</th><th>ADLC AI 代理</th></tr></thead>
+      <tbody id="cmpBody"></tbody>
+    </table>
+    <div class="sum">💡 <b>一句話：</b>SDLC 是「把規則寫死再交付」，終點是上線；ADLC 是「給目標、脈絡與工具，讓代理在護欄內自行判斷」，上線只是迴圈的起點——要靠評估與觀測持續校準。</div>
+  </div>
+</section>
+<footer>主題參考：YouTube Shorts〈SDLC vs ADLC: The Future of Agentic AI!〉｜內容為繁體中文教學整理</footer>
+
+<script>
+const DATA={
+ sdlc:{color:'#38bdf8',name:'SDLC',nodes:[
+  {ico:'🗺️',zh:'規劃',en:'Planning',desc:'確立專案範圍、時程、預算與人力。範圍一旦定案，後續都依此推進。',pts:['定義專案目標與範圍','估算時程、成本、風險','產出專案計畫書'],case:'人資部要做「線上請假系統」，PM 訂出 3 個月時程、2 位工程師、預算 60 萬。',pair:[0,'ADLC 定義的是「代理要達成的目標與權限邊界」，而非功能清單。']},
+  {ico:'📋',zh:'需求分析',en:'Requirements',desc:'把需求寫成明確規格：什麼輸入，產生什麼輸出，每條規則都要寫清楚。',pts:['訪談使用者','撰寫需求規格書 SRS','規則可窮舉、可驗證'],case:'規格寫明：請假 3 天以上需二級主管核准；特休不足時自動轉事假。',pair:[1,'ADLC 改成整理「知識與脈絡」，因為代理面對的情境無法窮舉。']},
+  {ico:'📐',zh:'系統設計',en:'Design',desc:'規劃系統架構、資料庫表格、API 與畫面流程。',pts:['架構與模組切分','資料庫 Schema','UI/UX 線框圖'],case:'設計「請假單」「簽核紀錄」「員工假別」三張資料表與簽核畫面。',pair:[2,'ADLC 設計的是「系統提示詞＋可呼叫工具」，決定代理能說什麼、做什麼。']},
+  {ico:'💻',zh:'程式開發',en:'Development',desc:'工程師以 if / else 寫出確定性邏輯，每一步行為都由程式碼決定。',pts:['依規格逐項實作','版本控制與 Code Review','同輸入 → 永遠同輸出'],case:'工程師寫出：if 天數≥3 then 送二級主管，else 送直屬主管。',pair:[3,'ADLC 是「編排」：串接模型、記憶、工具與多代理分工，行為由模型推理產生。']},
+  {ico:'🧪',zh:'測試驗證',en:'Testing',desc:'單元測試、整合測試、使用者驗收。結果非對即錯，通過就能上線。',pts:['單元／整合／驗收測試','Pass / Fail 二元判定','修 Bug 直到全部通過'],case:'測試 50 個案例：請 5 天假是否正確送到二級主管？全數通過即驗收。',pair:[4,'ADLC 用「評估集＋評分」：準確率、幻覺率、任務完成率，是分數不是對錯。']},
+  {ico:'🚀',zh:'部署上線',en:'Deployment',desc:'正式環境發布，開放使用者使用，專案主體宣告完成。',pts:['正式環境發布','教育訓練','專案結案'],case:'系統上線，全公司開始用線上請假，專案結案驗收。',pair:[6,'ADLC 常採灰度發布：先 10% 流量、保留人工接手，並同步監控成本。']},
+  {ico:'🔧',zh:'維運維護',en:'Maintenance',desc:'處理 Bug 與小改版。系統行為穩定，不會自己變化。',pts:['Bug 修正','小幅功能調整','大改版 → 開新週期'],case:'年底勞基法修正，開新需求單調整特休計算規則。',pair:[7,'ADLC 上線後是「持續觀測」：追蹤每次推理軌跡，回饋到下一輪調整。']}
+ ]},
+ adlc:{color:'#f472b6',name:'ADLC',nodes:[
+  {ico:'🎯',zh:'目標定義',en:'Goal & Scope',desc:'定義代理要完成的任務、成功指標，以及「能做／不能做」的權限邊界。',pts:['任務目標與 KPI','代理角色設定','權限與責任邊界'],case:'電商客服 Agent：目標 70% 退貨詢問自動結案，但不得自行承諾賠償。',pair:[0,'SDLC 規劃的是功能與時程；ADLC 規劃的是「目標＋邊界」。']},
+  {ico:'📚',zh:'資料與脈絡',en:'Data & Context',desc:'整理代理需要的知識：文件、FAQ、歷史紀錄，透過 RAG 或脈絡工程提供給模型。',pts:['知識庫整理與切塊','RAG 檢索','脈絡工程 Context Engineering'],case:'把退貨政策、商品手冊、過去 1 萬筆客服對話整理成知識庫。',pair:[1,'SDLC 寫規格窮舉規則；ADLC 提供脈絡，讓代理自行推理沒寫到的情境。']},
+  {ico:'🛠️',zh:'提示與工具',en:'Prompt & Tools',desc:'撰寫系統提示詞，並設計代理可呼叫的工具（API、資料庫查詢、寄信等）。',pts:['System Prompt 設計','工具 / MCP 介面定義','輸出格式規範'],case:'提供工具：查訂單、查物流、建立退貨單、轉真人客服。',pair:[2,'SDLC 設計畫面與資料表；ADLC 設計「說話方式＋行動能力」。']},
+  {ico:'🧩',zh:'編排建構',en:'Orchestration',desc:'組合模型、記憶、規劃與工具呼叫流程，必要時多代理分工協作。',pts:['單代理 / 多代理架構','短期與長期記憶','任務規劃與迴圈控制'],case:'分診 Agent 判斷意圖 → 退貨 Agent 處理 → 摘要 Agent 寫工單。',pair:[3,'SDLC 寫死流程；ADLC 讓模型在框架內決定下一步。']},
+  {ico:'📏',zh:'評估測試',en:'Evals',desc:'建立評估資料集，以分數衡量品質：正確率、幻覺率、語氣、工具使用正確性。',pts:['黃金測試集','LLM-as-Judge 評分','回歸測試防退化'],case:'用 300 題真實客訴測試：正確率 92%、幻覺 1.5%，達標才放行。',pair:[4,'SDLC 是 Pass/Fail；ADLC 是機率性，要看分數分布與失敗案例。']},
+  {ico:'🛡️',zh:'護欄與人審',en:'Guardrails & HITL',desc:'加上安全護欄與人工審核點，高風險動作必須經過人類確認。',pts:['輸入 / 輸出過濾','敏感動作需人工核准','個資與權限保護'],case:'退款超過 3,000 元或客戶情緒激動 → 自動轉主管審核。',pair:[4,'SDLC 少有此階段；ADLC 因代理會「自主行動」，護欄是必要工程。']},
+  {ico:'🚀',zh:'部署上線',en:'Deploy',desc:'漸進式上線，控制推理成本與延遲，保留回滾與人工接手機制。',pts:['灰度 / 金絲雀發布','Token 成本控管','回滾機制'],case:'先開放 10% 客服流量，一週後依數據擴大到 50%。',pair:[5,'SDLC 上線＝結案；ADLC 上線＝真正的學習開始。']},
+  {ico:'📡',zh:'觀測與回饋',en:'Observe & Improve',desc:'追蹤每次推理軌跡、成本與失敗案例，回饋到目標、脈絡、提示的下一輪調整。',pts:['Trace 推理軌跡','使用者回饋與失敗分析','模型更新後重新評估'],case:'發現代理常誤判「換貨」為「退貨」→ 補知識與提示 → 回到迴圈重跑評估。',pair:[6,'SDLC 維護是修 Bug；ADLC 是持續校準行為，迴圈永不結束。']}
+ ]}
+};
+const CMP=[
+ ['核心產物','程式碼（確定性邏輯）','模型＋提示詞＋工具＋知識'],
+ ['行為特性','確定性：同輸入必同輸出','機率性：同輸入可能不同輸出'],
+ ['流程形狀','線性 / 瀑布，階段依序完成','迴圈，各階段反覆迭代'],
+ ['測試方式','單元測試 Pass / Fail','評估集打分、LLM-as-Judge'],
+ ['上線意義','專案終點，轉入維護','學習起點，持續觀測調校'],
+ ['主要風險','程式 Bug、需求遺漏','幻覺、越權行動、提示注入、成本失控'],
+ ['關鍵角色','PM、工程師、測試人員','工程師＋領域專家＋評估者＋人工審核'],
+ ['成本結構','以開發人力為主','開發人力＋持續推理 Token 成本'],
+ ['控制手段','寫死規則','目標、脈絡、護欄、人在迴圈中']
+];
+document.getElementById('cmpBody').innerHTML=CMP.map(r=>`<tr><td>${r[0]}</td><td class="s">${r[1]}</td><td class="a">${r[2]}</td></tr>`).join('');
+
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+const TR={
+ sdlc:{path:document.getElementById('pS'),nodesG:document.getElementById('nodesS'),partG:document.getElementById('partS'),cometG:document.getElementById('cometS'),loop:false,grad:'url(#gS)'},
+ adlc:{path:document.getElementById('pA'),nodesG:document.getElementById('nodesA'),partG:document.getElementById('partA'),cometG:document.getElementById('cometA'),loop:true,grad:'url(#gA)'}
+};
+for(const k in TR){
+ const tr=TR[k],d=DATA[k],N=d.nodes.length;tr.len=tr.path.getTotalLength();tr.els=[];
+ d.nodes.forEach((n,i)=>{
+  n.t=tr.loop?i/N:i/(N-1);
+  const p=tr.path.getPointAtLength(n.t*tr.len);
+  const g=el('g',{class:'node',transform:`translate(${p.x},${p.y})`});
+  g.append(el('circle',{class:'ring',r:30,stroke:d.color}));
+  g.append(el('circle',{class:'core',r:25,stroke:tr.grad}));
+  const ic=el('text',{class:'ico',y:1});ic.textContent=n.ico;g.append(ic);
+  const up=tr.loop&&p.y<432;
+  const nm=el('text',{class:'num',y:up?42:-34});nm.textContent=String(i+1).padStart(2,'0');g.append(nm);
+  let lx=0,ly=up?-56:50;
+  if(up&&Math.abs(p.x-500)>100){lx=p.x>500?100:-100;ly=-2;}
+  const lb=el('text',{class:'lb',x:lx,y:ly});lb.textContent=n.zh;g.append(lb);
+  const en=el('text',{class:'en',x:lx,y:ly+16});en.textContent=n.en;g.append(en);
+  g.addEventListener('click',()=>{stop();go(k,i)});
+  tr.nodesG.append(g);tr.els.push(g);
+ });
+ // ambient particles
+ tr.parts=[];
+ for(let j=0;j<(tr.loop?34:22);j++){const c=el('circle',{r:Math.random()*1.6+1,fill:d.color,opacity:Math.random()*.5+.3});tr.partG.append(c);tr.parts.push({c,u:Math.random(),sp:(Math.random()*.03+.035)*(tr.loop?.7:1)})}
+ // comet trail
+ tr.trail=[];for(let j=0;j<10;j++){const c=el('circle',{r:7-j*.55,fill:j===0?'#fff':d.color,opacity:1-j*.09});tr.cometG.append(c);tr.trail.push(c)}
+ tr.comet=null;
+}
+
+let mode='dual',cur={k:'sdlc',i:0},playing=false,timer=null,speed=1,visited={sdlc:new Set(),adlc:new Set()};
+function seq(){if(mode==='sdlc')return DATA.sdlc.nodes.map((_,i)=>['sdlc',i]);if(mode==='adlc')return DATA.adlc.nodes.map((_,i)=>['adlc',i]);return [...DATA.sdlc.nodes.map((_,i)=>['sdlc',i]),...DATA.adlc.nodes.map((_,i)=>['adlc',i])]}
+function go(k,i,fromAnim){
+ const prev=cur;cur={k,i};
+ const tr=TR[k],N=DATA[k].nodes.length;
+ // comet from previous node of same track
+ let fi=null;
+ if(prev.k===k&&prev.i!==i)fi=prev.i;else if(i>0)fi=i-1;else if(tr.loop&&fromAnim)fi=N-1;
+ if(fi!==null){let t0=DATA[k].nodes[fi].t,t1=DATA[k].nodes[i].t;if(tr.loop&&t1<t0)t1+=1;tr.comet={t0,t1,st:performance.now(),dur:1100/speed}}
+ for(const kk in TR)TR[kk].els.forEach((g,j)=>{g.classList.toggle('on',kk===k&&j===i);g.classList.toggle('done',visited[kk].has(j))});
+ visited[k].add(i);
+ render();
+}
+function render(){
+ const {k,i}=cur,d=DATA[k],n=d.nodes[i],other=k==='sdlc'?'adlc':'sdlc',pn=DATA[other].nodes[n.pair[0]];
+ const b=document.getElementById('pBadge');b.className='badge '+k;b.textContent=k==='sdlc'?'SDLC 傳統軟體':'ADLC AI 代理';
+ const s=seq(),pos=s.findIndex(x=>x[0]===k&&x[1]===i);
+ document.getElementById('pStep').textContent=`第 ${i+1} / ${d.nodes.length} 階段`;
+ document.getElementById('pProg').style.width=((pos+1)/s.length*100||((i+1)/d.nodes.length*100))+'%';
+ document.getElementById('pBody').innerHTML=`<div class="fade" style="display:flex;flex-direction:column;gap:12px">
+  <div><div class="ptitle">${n.ico} ${n.zh}</div><div class="pen">${n.en}</div></div>
+  <div class="pdesc">${n.desc}</div>
+  <div class="box"><h4>◆ 階段重點</h4><ul>${n.pts.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+  <div class="box case"><h4>💼 職場案例</h4>${n.case}</div>
+  <div class="box pair"><h4>⇄ 對應 ${DATA[other].name}：${pn.ico} ${pn.zh}</h4>${n.pair[1]}</div></div>`;
+}
+function setMode(m){mode=m;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+ document.getElementById('gSDLC').classList.toggle('dim',m==='adlc');document.getElementById('gADLC').classList.toggle('dim',m==='sdlc');
+ const s=seq();if(!s.some(x=>x[0]===cur.k))go(s[0][0],0);else render();if(playing){stop();play()}}
+function step(dir){const s=seq();let p=s.findIndex(x=>x[0]===cur.k&&x[1]===cur.i);p=(p+dir+s.length)%s.length;go(s[p][0],s[p][1],true)}
+function play(){playing=true;document.getElementById('playBtn').textContent='⏸ 暫停';timer=setInterval(()=>step(1),3400/speed)}
+function stop(){playing=false;clearInterval(timer);document.getElementById('playBtn').textContent='▶ 播放'}
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+document.getElementById('playBtn').onclick=()=>playing?stop():play();
+document.getElementById('nextBtn').onclick=()=>{stop();step(1)};
+document.getElementById('prevBtn').onclick=()=>{stop();step(-1)};
+document.getElementById('resetBtn').onclick=()=>{stop();visited={sdlc:new Set(),adlc:new Set()};const s=seq();cur={k:'',i:-1};go(s[0][0],s[0][1]);play()};
+document.getElementById('spd').oninput=e=>{speed=+e.target.value;document.getElementById('spdV').textContent=speed+'x';if(playing){stop();play()}};
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();playing?stop():play()}if(e.key==='ArrowRight'){stop();step(1)}if(e.key==='ArrowLeft'){stop();step(-1)}});
+
+let last=performance.now();
+function frame(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ for(const k in TR){const tr=TR[k];
+  tr.parts.forEach(p=>{p.u=(p.u+p.sp*dt*speed)%1;const q=tr.path.getPointAtLength(p.u*tr.len);p.c.setAttribute('cx',q.x);p.c.setAttribute('cy',q.y)});
+  const c=tr.comet;
+  if(c){let pr=Math.min(1,(now-c.st)/c.dur);const e=pr<.5?2*pr*pr:1-Math.pow(-2*pr+2,2)/2;const t=c.t0+(c.t1-c.t0)*e;
+   tr.trail.forEach((tc,j)=>{let tt=t-j*.006*(tr.loop?1:1.4);if(!tr.loop)tt=Math.max(c.t0,tt);tt=((tt%1)+1)%1;if(!tr.loop&&t>=1&&j===0)tt=1;const q=tr.path.getPointAtLength(Math.min(tr.len,tt*tr.len));tc.setAttribute('cx',q.x);tc.setAttribute('cy',q.y);tc.setAttribute('opacity',(1-j*.09)*(pr<1?1:Math.max(0,1-(now-c.st-c.dur)/400)))});
+   if(now-c.st>c.dur+400){tr.comet=null;tr.trail.forEach(tc=>tc.setAttribute('opacity',0))}
+  }else tr.trail.forEach(tc=>tc.setAttribute('opacity',0));
+ }
+ requestAnimationFrame(frame);
+}
+
+// ===== 錄製下載影片 =====
+const recBtn=document.getElementById('recBtn');let curRec=null,recTimer=null;
+function toast(t,ms=3500){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',ms)}
+recBtn.onclick=async()=>{
+ if(curRec){clearTimeout(recTimer);stop();curRec.stop();return}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){toast('此瀏覽器不支援錄影，請改用 Chrome 或 Edge');return}
+ toast('請在跳出視窗選擇「這個分頁」後按分享',5000);
+ let stream;
+ try{stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:false,preferCurrentTab:true,selfBrowserSurface:'include'})}catch(e){toast('已取消錄影');return}
+ const types=['video/mp4;codecs=avc1.42E01E','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'];
+ const mt=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
+ const rec=new MediaRecorder(stream,mt?{mimeType:mt,videoBitsPerSecond:8000000}:{});
+ const chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ rec.onstop=()=>{
+  stream.getTracks().forEach(t=>t.stop());curRec=null;recBtn.classList.remove('on');recBtn.textContent='⏺ 錄製下載影片';
+  const ext=mt.includes('mp4')?'mp4':'webm';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks,{type:mt||'video/webm'}));a.download='SDLC_vs_ADLC_流光圖.'+ext;document.body.append(a);a.click();a.remove();
+  toast(ext==='mp4'?'影片已下載（MP4）':'此瀏覽器僅支援 WebM，已下載 WebM 檔',5000);
+ };
+ stream.getVideoTracks()[0].onended=()=>{if(curRec&&curRec.state!=='inactive'){clearTimeout(recTimer);stop();curRec.stop()}};
+ curRec=rec;recBtn.classList.add('on');recBtn.textContent='⏹ 停止並下載';
+ window.scrollTo(0,0);stop();visited={sdlc:new Set(),adlc:new Set()};
+ await new Promise(r=>setTimeout(r,600));
+ rec.start(500);
+ const s=seq();cur={k:'',i:-1};go(s[0][0],s[0][1]);play();
+ recTimer=setTimeout(()=>{stop();if(rec.state!=='inactive')rec.stop()},s.length*3400/speed+1500);
+};
+requestAnimationFrame(frame);
+go('sdlc',0);
+setTimeout(play,800);
+</script>
+<div class="toast" id="toast"></div>
+</body>
+</html>

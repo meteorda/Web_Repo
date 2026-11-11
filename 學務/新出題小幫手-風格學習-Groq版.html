@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-lang-key="pageTitle">📝 出題小幫手</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <style>
+        :root {
+            --bg-grad-start: #2e3440; --bg-grad-end: #1e22a; --text-main: #eceff4;
+            --text-light: #d8dee9; --header-bg: rgba(20, 24, 30, 0.8);
+            --card-bg: rgba(30, 35, 43, 0.8); --input-bg: rgba(13, 17, 23, 0.7);
+            --border-main: #4c566a; --border-light: rgba(129, 161, 193, 0.2);
+            --primary: #d1b48c; --primary-light: rgba(209, 180, 140, 0.6);
+            --primary-focus-shadow: rgba(209, 180, 140, 0.2);
+            --success: #8fbc8f; --danger: #bf616a; --info: #81a1c1;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+        }
+        body.light-theme {
+            --bg-grad-start: #f8f9fa; --bg-grad-end: #e9ecef; --text-main: #212529;
+            --text-light: #495057; --header-bg: rgba(255, 255, 255, 0.8);
+            --card-bg: rgba(255, 255, 255, 0.9); --input-bg: rgba(233, 236, 239, 0.7);
+            --border-main: #ced4da; --border-light: rgba(0, 0, 0, 0.1);
+            --primary: #856404; --primary-light: rgba(133, 100, 4, 0.6);
+            --primary-focus-shadow: rgba(133, 100, 4, 0.2);
+            --success: #28a745; --danger: #dc3545; --info: #007bff;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100vh; overflow: hidden; }
+        body {
+            font-family: 'Microsoft JhengHei UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(145deg, var(--bg-grad-start), var(--bg-grad-end));
+            color: var(--text-main); display: flex; flex-direction: column; transition: background 0.5s, color 0.5s;
+        }
+        ::-webkit-scrollbar { width: 12px; height: 12px; }
+        ::-webkit-scrollbar-track { background: var(--bg-grad-end); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 10px; border: 2px solid var(--bg-grad-end); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        .container { max-width: 1800px; width: 100%; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; flex-grow: 1; min-height: 0; }
+        .header { text-align: center; margin-bottom: 15px; background: var(--header-bg); backdrop-filter: blur(20px); border-radius: 25px; padding: 15px 30px; border: 1px solid var(--primary-light); box-shadow: 0 20px 60px var(--shadow-color); flex-shrink: 0; position: relative; }
+        .header h1 { font-size: 2.2rem; color: var(--primary); margin-bottom: 8px; font-weight: 800; }
+        .header h1::before { content: "📝 "; }
+        .header p { color: var(--text-light); font-size: 1rem; opacity: 0.9; }
+        .layout-container { display: flex; gap: 30px; flex-grow: 1; min-height: 0; overflow: hidden; }
+        .left-column { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 30px; overflow-y: auto; padding-right: 15px; }
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border-radius: 25px; padding: 30px; border: 1px solid var(--border-light); box-shadow: 0 20px 60px var(--shadow-color); }
+        .card h3 { color: var(--primary); margin-bottom: 25px; font-size: 1.4rem; font-weight: 700; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 10px; color: var(--text-light); font-weight: 600; font-size: 18px; }
+        .form-control { width: 100%; padding: 20px 24px; background: var(--input-bg); border: 1px solid var(--border-main); border-radius: 15px; color: var(--text-main); font-size: 1rem; transition: all 0.3s ease; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-focus-shadow); }
+        select.form-control option { color: #212529; }
+        #quizDifficulty.difficulty-easy { background-color: rgba(143, 188, 143, 0.2); border-color: var(--success); }
+        #quizDifficulty.difficulty-medium { background-color: rgba(129, 161, 193, 0.2); border-color: var(--info); }
+        #quizDifficulty.difficulty-hard { background-color: rgba(191, 97, 106, 0.2); border-color: var(--danger); }
+        .btn { background: linear-gradient(45deg, var(--primary), #b99867); color: #2e3440; border: none; padding: 18px 35px; border-radius: 15px; cursor: pointer; font-size: 18px; font-weight: 700; transition: all 0.4s ease; margin: 5px; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(209, 180, 140, 0.4); }
+        .btn-secondary { background: linear-gradient(45deg, #4c566a, #3b4252); color: #eceff4; }
+        .btn-success { background: linear-gradient(45deg, var(--success), #79a879); color: #2e3440; }
+        .btn-danger { background: linear-gradient(45deg, var(--danger), #a94b54); color: #eceff4; }
+        .api-status { display: flex; align-items: center; gap: 10px; margin-top: 15px; padding: 12px 18px; border-radius: 15px; font-size: 16px; font-weight: 600; }
+        .api-status.connected { background: rgba(143, 188, 143, 0.15); color: var(--success); border: 1px solid rgba(143, 188, 143, 0.5); }
+        .api-status.disconnected { background: rgba(191, 97, 106, 0.15); color: var(--danger); border: 1px solid rgba(191, 97, 106, 0.5); }
+        .file-upload { border: 3px dashed var(--primary-light); border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; background: rgba(13, 17, 23, 0.05); transition: all 0.4s ease; margin-top: 10px; }
+        .file-upload:hover { border-color: var(--primary); background: var(--primary-focus-shadow); }
+        .file-upload.dragover { border-color: var(--primary); background: rgba(209, 180, 140, 0.1); }
+        .file-list { margin-top: 15px; max-height: 150px; overflow-y: auto; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(46, 52, 64, 0.8); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border-light); }
+        body.light-theme .file-item { background: #e9ecef; }
+        .file-info { color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; min-width: 0; padding-right: 10px; }
+        .file-item .btn-danger { padding: 8px 16px; font-size: 14px; margin-left: 10px; flex-shrink: 0; }
+        .quiz-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+        .number-input { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px; background: var(--input-bg); border-radius: 20px; border: 1px solid var(--border-main); }
+        .number-input input { width: 80px; height: 50px; text-align: center; font-size: 20px; font-weight: 800; background: rgba(13, 17, 23, 0.8); border: 2px solid var(--primary-light); border-radius: 15px; color: var(--primary); }
+        body.light-theme .number-input input { background: #fff; }
+        .number-input span { color: var(--primary); font-weight: 600; font-size: 1rem; }
+        .preview-area { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+        .preview-area .card { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+        .preview-content { background: var(--input-bg); border-radius: 12px; padding: 20px; white-space: pre-wrap; font-size: 1rem; line-height: 1.6; border: 1px solid var(--primary-light); color: var(--text-main); flex-grow: 1; overflow-y: auto; min-height: 200px; }
+        .loading { display: flex; align-items: center; gap: 10px; color: var(--primary); }
+        .spinner { width: 20px; height: 20px; border: 2px solid var(--primary-light); border-top: 2px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn-group { margin-top: 20px; text-align: center; }
+        .theme-toggle-btn { position: fixed; top: 25px; right: 25px; background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #audioPlayerContainer { margin-top: 20px; }
+        #audioPlayer { width: 100%; }
+        .hidden { display: none !important; }
+        #qaContainer { border-top: 2px solid var(--primary-light); margin-top: 30px; padding-top: 30px; }
+        #chatBox { height: 300px; overflow-y: auto; background: var(--input-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border-main); margin-bottom: 20px; }
+        .chat-message { max-width: 85%; padding: 12px 18px; border-radius: 20px; margin-bottom: 12px; line-height: 1.6; }
+        .user-message { background: var(--primary); color: #2e3440; margin-left: auto; border-bottom-right-radius: 5px; }
+        .bot-message { background-color: #4c566a; color: var(--text-main); margin-right: auto; border-bottom-left-radius: 5px; }
+        body.light-theme .bot-message { background-color: #e9ecef; color: var(--text-main); }
+        .chat-input-area { display: flex; gap: 15px; align-items: center; }
+        .chat-input-area input[type="text"] { flex-grow: 1; padding: 15px 20px; }
+        .chat-input-area .btn { padding: 15px 25px; font-size: 16px; margin: 0; }
+        .web-search-toggle { display: flex; align-items: center; gap: 8px; color: var(--text-light); margin-top: 10px; cursor: pointer; }
+        .language-selector { position: absolute; top: 15px; right: 80px; }
+        .language-selector select { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-main); border-radius: 8px; padding: 5px 10px; }
+        @media (max-width: 1024px) {
+            html, body { height: auto; overflow: auto; }
+            .layout-container { flex-direction: column; }
+            .left-column { overflow-y: visible; padding-right: 0; }
+            .preview-area { min-height: 80vh; }
+            .preview-content { min-height: 30vh; }
+            #chatBox { height: 40vh; }
+            .main-content { grid-template-columns: 1fr; }
+            .language-selector { position: static; margin: 10px auto 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()">🌙</button>
+        <div class="header">
+             <div class="language-selector">
+                <select id="uiLanguageSelector" onchange="setLanguage(this.value)"></select>
+            </div>
+            <h1 data-lang-key="headerTitle">出題小幫手</h1>
+            <p data-lang-key="headerSubtitle">智能考題生成系統 - 搭載 Groq AI 技術</p>
+        </div>
+        <div class="layout-container">
+            <div class="left-column">
+                <div class="main-content">
+                    <div class="card">
+                        <h3 data-lang-key="apiSettingsTitle">🔧 API 設定</h3>
+                        <div class="form-group">
+                            <label for="apiKey" data-lang-key="apiKeyLabel">Groq API Key</label>
+                            <input type="password" id="apiKey" class="form-control" data-lang-key-placeholder="apiKeyPlaceholder">
+                            <div style="margin-top: 10px;"><button class="btn btn-success" onclick="testApiConnection()" data-lang-key="testConnectionBtn">連線測試</button></div>
+                            <div id="apiStatus" class="api-status disconnected"><span data-lang-key="statusNotConnected"⚠️ 未連線</span></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 data-lang-key="dataSourceTitle">📚 資料來源</h3>
+                        <!-- Content File Upload -->
+                        <div class="form-group">
+                            <label data-lang-key="fileUploadLabel">內容來源 (TXT, PDF, JPG, PNG, MP3, WAV)</label>
+                            <div class="file-upload" id="contentFileUploadZone" onclick="document.getElementById('contentFileInput').click()">
+                                <p data-lang-key="fileUploadPrompt">📄 點擊或拖拽 內容 文件到此處</p>
+                            </div>
+                            <input type="file" id="contentFileInput" multiple style="display: none;" accept=".txt,.pdf,.jpg,.jpeg,.png,.mp3,.wav,.m4a">
+                            <div id="contentFileList" class="file-list"></div>
+                        </div>
+                        <!-- Style File Upload -->
+                        <div class="form-group">
+                            <label data-lang-key="styleRefLabel">風格參考 (PDF, TXT)</label>
+                            <div class="file-upload" id="styleFileUploadZone" onclick="document.getElementById('styleFileInput').click()">
+                                <p data-lang-key="styleRefPrompt">🎨 點擊或拖拽 語氣/風格 範例文件</p>
+                            </div>
+                            <input type="file" id="styleFileInput" multiple style="display: none;" accept=".txt,.pdf">
+                            <div id="styleFileList" class="file-list"></div>
+                        </div>
+                        <!-- Text Input -->
+                        <div class="form-group">
+                            <label for="textInput" data-lang-key="pasteTextLabel">直接貼上文字 (內容來源)</label>
+                            <textarea id="textInput" class="form-control" rows="4" data-lang-key-placeholder="pasteTextPlaceholder"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 data-lang-key="quizSettingsTitle">⚙️ 考題設定</h3>
+                    <div class="form-group">
+                        <label for="quizLanguage" data-lang-key="quizLanguageLabel">出題語言</label>
+                        <select id="quizLanguage" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizMode" data-lang-key="quizModeLabel">選擇出題模式</label>
+                        <select id="quizMode" class="form-control">
+                            <option value="school" data-lang-key="modeSchool">學校出題 (素養導向)</option>
+                            <option value="education" data-lang-key="modeEducation">教育補習 (重點複習)</option>
+                            <option value="corporate" data-lang-key="modeCorporate">企業內訓 (實務應用)</option>
+                            <option value="certification" data-lang-key="modeCertification">專業證照 (精準測驗)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizDifficulty" data-lang-key="quizDifficultyLabel">選擇題目難易度 (若無風格參考)</label>
+                        <select id="quizDifficulty" class="form-control">
+                            <option value="easy" data-lang-key="difficultyEasy">簡單</option>
+                            <option value="medium" data-lang-key="difficultyMedium">中等</option>
+                            <option value="hard" data-lang-key="difficultyHard">困難</option>
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="voiceSelect" data-lang-key="voiceSelectLabel">選擇口音</label>
+                        <select id="voiceSelect" class="form-control"></select>
+                    </div>
+                    <div class="quiz-settings">
+                        <div class="form-group"><div class="number-input"><span data-lang-key="qTrueFalse">是非題</span><input type="number" id="trueFalseCount" value="0" min="0" max="50"></div></div>
+                        <div class="form-group"><div class="number-input"><span data-lang-key="qMultipleChoice">選擇題</span><input type="number" id="multipleChoiceCount" value="5" min="0" max="50"></div></div>
+                        <div class="form-group"><div class="number-input"><span data-lang-key="qFillBlank">填空題</span><input type="number" id="fillBlankCount" value="0" min="0" max="50"></div></div>
+                        <div class="form-group"><div class="number-input"><span data-lang-key="qEssay">問答題</span><input type="number" id="essayCount" value="0" min="0" max="20"></div></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="generateQuiz()" data-lang-key="generateQuizBtn">🎯 生成考題</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('previewContent').contentEditable = 'true';" data-lang-key="editResultBtn">✏️ 編輯結果</button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn" onclick="downloadFile('questions_txt')" data-lang-key="downloadQuestionsBtn">📥 下載題目(TXT)</button>
+                        <button class="btn" onclick="downloadFile('answers_txt')" data-lang-key="downloadAnswersBtn">📥 下載答案(TXT)</button>
+                    </div>
+                </div>
+            </div>
+            <div class="preview-area">
+                <div class="card">
+                    <h3 data-lang-key="previewTitle">👁️ 考題預覽</h3>
+                    <div id="previewContent" class="preview-content" data-lang-key="previewReady">準備就緒，請上傳資料並設定考題數量後點擊「生成考題」</div>
+                    <div id="audioPlayerContainer" class="hidden">
+                        <div id="ttsControls" class="hidden" style="margin-top: 15px;">
+                            <div id="ttsNowPlaying" style="margin-bottom: 10px; font-size: 0.9em; opacity: 0.85;"></div>
+                            <div class="btn-group">
+                                <button id="ttsPrevBtn" class="btn" data-lang-key="ttsPrevBtn">⏮ 上一題</button>
+                                <button id="ttsPauseBtn" class="btn" data-lang-key="ttsPauseBtn">⏸ 暫停</button>
+                                <button id="ttsStopBtn" class="btn" data-lang-key="ttsStopBtn">⏹ 停止</button>
+                                <button id="ttsNextBtn" class="btn" data-lang-key="ttsNextBtn">⏭ 下一題</button>
+                            </div>
+                        </div>
+                        <div class="btn-group" style="margin-top: 10px;">
+                             <button id="readAloudBtn" class="btn" data-lang-key="readAloudBtn">🔊 語音唸題</button>
+                        </div>
+                    </div>
+                    <div id="qaContainer" class="hidden">
+                        <h3 data-lang-key="qaTitle">💬 延伸提問</h3>
+                        <div id="chatBox">
+                             <div class="bot-message chat-message" data-lang-key="qaWelcome">您好！您可以針對產生的題目或原始資料進行提問。</div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="questionInput" class="form-control" data-lang-key-placeholder="qaPlaceholder">
+                            <button id="sendQuestionBtn" class="btn" data-lang-key="sendBtn">傳送</button>
+                        </div>
+                        <div class="web-search-toggle">
+                            <input type="checkbox" id="webSearchCheckbox" style="transform: scale(1.2); margin-right: 8px;">
+                            <label for="webSearchCheckbox" data-lang-key="webSearchLabel">啟用網路查詢</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let contentFiles = [];
+        let styleFiles = [];
+        let apiKey = '';
+        let generatedQuizText = '';
+        let sourceContentText = ''; 
+
+        // ===== Groq API 設定 =====
+        const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+        const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+        // 2026-08-16 Groq 已下架 llama-3.3-70b-versatile / llama-3.1-8b-instant；2026-07-17 下架 llama-4-scout
+        const GROQ_TEXT_MODEL = 'openai/gpt-oss-120b';
+        // 備援模型鏈：額度用盡(429)或模型下架(404)時依序自動切換（各模型為獨立額度）
+        const GROQ_TEXT_FALLBACKS = ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-20b'];
+        const GROQ_VISION_MODEL = 'qwen/qwen3.6-27b';
+        // gpt-oss 為推理模型，推理會吃 max_tokens；出題用 low 即可
+        function modelExtras(m) { return m.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}; }
+        const GROQ_COMPOUND_MODEL = 'groq/compound'; // 內建網路搜尋
+        // 免費層 TPM = 12000（輸入 + max_tokens 一起計算），保留緩衝
+        const GROQ_TPM_BUDGET = 11500;
+        const MAX_INPUT_TOKENS = 6000; // 來源資料上限（超過自動截斷），保留至少 5000+ tokens 給輸出以撰寫完整長題幹
+
+        // 粗估 token 數：中日韓字 ≈ 1.6 token/字，其他 ≈ 3.5 字元/token
+        function estimateTokens(text) {
+            let cjk = 0, other = 0;
+            for (const ch of text) {
+                if (/[\u3000-\u9fff\uf900-\ufaff\u3040-\u30ff\uff00-\uffef]/.test(ch)) cjk++;
+                else other++;
+            }
+            return Math.ceil(cjk * 1.6 + other / 3.5);
+        }
+
+        // 將文字截斷至指定 token 預算內（保留前段內容）
+        function truncateToTokens(text, budget) {
+            if (estimateTokens(text) <= budget) return text;
+            let lo = 0, hi = text.length;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                if (estimateTokens(text.slice(0, mid)) <= budget) lo = mid; else hi = mid - 1;
+            }
+            return text.slice(0, lo) + '\n\n（※ 內容過長，已自動截斷以符合 API 限制）';
+        }
+
+        // 共用：Groq Chat Completions（模型備援鏈 + TPM 預算管理 + 413 自動縮減）
+        async function groqChat(messages, { maxTokens = 2048, model = null, onRetry = null } = {}) {
+            // 指定 model 時只用該模型；否則走備援鏈
+            const modelChain = model ? [model] : GROQ_TEXT_FALLBACKS;
+            const inputTokens = estimateTokens(messages.map(x => typeof x.content === 'string' ? x.content : '').join(''));
+            let outTokens = Math.min(maxTokens, Math.max(1500, GROQ_TPM_BUDGET - inputTokens));
+            let lastError = null;
+
+            for (let mi = 0; mi < modelChain.length; mi++) {
+                const m = modelChain[mi];
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    try {
+                        const response = await fetchWithRetry(GROQ_CHAT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                            body: JSON.stringify({ model: m, messages, max_tokens: outTokens, temperature: 0.7, ...modelExtras(m) })
+                        }, onRetry);
+                        const data = await response.json();
+                        const text = data.choices?.[0]?.message?.content;
+                        if (text) return text;
+                        throw new Error('Empty response from model ' + m);
+                    } catch (err) {
+                        lastError = err;
+                        const isRate = err.message.includes('429');
+                        const isTooLarge = err.message.includes('413');
+                        const isGone = /\((404|400)\)/.test(err.message) && /does not exist|decommission|not found|no access|do not have access/i.test(err.message);
+                        // 404 / 模型下架 → 換下一個模型
+                        if (isGone && mi < modelChain.length - 1) { if (onRetry) onRetry(0, 0, 0); break; }
+                        const match = err.message.match(/Limit (\d+),? (?:Used \d+,? )?Requested (\d+)/i);
+
+                        // 429 額度用盡（每日或每分鐘）→ 直接跳下一個模型（各模型獨立額度）
+                        if (isRate && mi < modelChain.length - 1) {
+                            if (onRetry) onRetry(0, 0, 0); // 觸發 UI 更新（切換模型中）
+                            break; // 跳出 attempt 迴圈，換下一個模型
+                        }
+                        // 413 請求過大 → 縮 token 後於同模型重試
+                        if (isTooLarge && match) {
+                            const over = parseInt(match[2]) - parseInt(match[1]);
+                            outTokens = outTokens - over - 300;
+                            if (outTokens < 1200) {
+                                if (mi < modelChain.length - 1) break; // 縮無可縮，換下一個模型
+                                throw new Error('來源資料過多，超出模型限制。請減少上傳內容或題數，或至 console.groq.com 升級 Dev Tier。');
+                            }
+                            continue;
+                        }
+                        // 其他非額度錯誤：不換模型，直接拋出
+                        if (!isRate) throw err;
+                        // 已是最後一個模型的 429：交由 fetchWithRetry 的退避處理已結束，往下拋
+                        if (attempt + 1 >= 3) break;
+                    }
+                }
+            }
+            throw lastError;
+        }
+        
+        // --- 多國語言設定 ---
+        const translations = {
+            'zh-TW': {
+                pageTitle: "📝 出題小幫手", headerTitle: "出題小幫手", headerSubtitle: "智能考題生成系統 - 搭載 Groq AI 技術",
+                apiSettingsTitle: "🔧 API 設定", apiKeyLabel: "Groq API Key", apiKeyPlaceholder: "請輸入您的 Groq API Key",
+                testConnectionBtn: "連線測試", statusNotConnected: "⚠️ 未連線", statusConnected: "✅ 連線成功", statusConnecting: "測試連線中...", statusRetry: "連線失敗，{delay} 秒後重試... ({attempt}/{max})", switchingModel: "此模型今日額度已用完，正在切換備援模型...",
+                dataSourceTitle: "📚 資料來源", 
+                fileUploadLabel: "內容來源 (TXT, PDF, JPG, PNG, MP3, WAV)", fileUploadPrompt: "📄 點擊或拖拽 內容 文件到此處",
+                styleRefLabel: "風格參考 (PDF, TXT)", styleRefPrompt: "🎨 點擊或拖拽 語氣/風格 範例文件",
+                pasteTextLabel: "直接貼上文字 (內容來源)", pasteTextPlaceholder: "在此貼上文字內容...",
+                quizSettingsTitle: "⚙️ 考題設定", quizLanguageLabel: "出題語言", quizModeLabel: "選擇出題模式",
+                modeSchool: "學校出題 (素養導向)", modeEducation: "教育補習 (重點複習)", modeCorporate: "企業內訓 (實務應用)", modeCertification: "專業證照 (精準測驗)",
+                quizDifficultyLabel: "選擇題目難易度 (若無風格參考)", difficultyEasy: "簡單", difficultyMedium: "中等", difficultyHard: "困難",
+                voiceSelectLabel: "選擇口音",
+                qTrueFalse: "是非題", qMultipleChoice: "選擇題", qFillBlank: "填空題", qEssay: "問答題",
+                generateQuizBtn: "🎯 生成考題", editResultBtn: "✏️ 編輯結果",
+                downloadQuestionsBtn: "📥 下載題目(TXT)", downloadAnswersBtn: "📥 下載答案(TXT)",
+                previewTitle: "👁️ 考題預覽", previewReady: "準備就緒，請上傳資料並設定考題數量後點擊「生成考題」",
+                ttsGenerating: "正在生成語音...", readAloudBtn: "🔊 語音唸題", downloadAudioBtn: "📥 下載語音檔", ttsPrevBtn: "⏮ 上一題", ttsPauseBtn: "⏸ 暫停", ttsResumeBtn: "▶️ 繼續", ttsStopBtn: "⏹ 停止", ttsNextBtn: "⏭ 下一題", ttsProgress: "🔊 第 {n} / {total} 題",
+                qaTitle: "💬 延伸提問", qaWelcome: "您好！您可以針對產生的題目或原始資料進行提問。", qaPlaceholder: "請在此輸入您的問題...",
+                sendBtn: "傳送", webSearchLabel: "啟用網路查詢",
+                alert_noApiKey: "請先輸入 API Key", alert_generating: "正在處理資料並生成考題...", alert_noQuizContent: "請設定至少一種題型的題數",
+                alert_noDataSource: "資料來源為空，請上傳檔案或貼上文字。", alert_apiError: "API 回應格式錯誤或內容被過濾。", alert_generationFailed: "生成失敗:",
+                fileRemove: "移除", fileInfo: "{icon} {ext} 檔案 ({size})",
+                thinking: "正在思考中...",
+            },
+            'en': {
+                pageTitle: "📝 Quiz Generator", headerTitle: "Quiz Generator", headerSubtitle: "AI-Powered Question Generation System with Groq",
+                apiSettingsTitle: "🔧 API Settings", apiKeyLabel: "Groq API Key", apiKeyPlaceholder: "Enter your Groq API Key",
+                testConnectionBtn: "Test Connection", statusNotConnected: "⚠️ Not Connected", statusConnected: "✅ Connected", statusConnecting: "Testing connection...", statusRetry: "Connection failed, retrying in {delay}s... ({attempt}/{max})", switchingModel: "Daily limit reached for this model, switching to a backup model...",
+                dataSourceTitle: "📚 Data Source", 
+                fileUploadLabel: "Content Source (TXT, PDF, JPG, PNG, MP3, WAV)", fileUploadPrompt: "📄 Click or drag content files here",
+                styleRefLabel: "Style Reference (PDF, TXT)", styleRefPrompt: "🎨 Click or drag tone/style example files",
+                pasteTextLabel: "Paste Text Directly (Content Source)", pasteTextPlaceholder: "Paste your content here...",
+                quizSettingsTitle: "⚙️ Quiz Settings", quizLanguageLabel: "Question Language", quizModeLabel: "Select Quiz Mode",
+                modeSchool: "School (Competency-based)", modeEducation: "Tutoring (Key Point Review)", modeCorporate: "Corporate Training (Practical)", modeCertification: "Certification (Precise Test)",
+                quizDifficultyLabel: "Select Difficulty (if no style ref.)", difficultyEasy: "Easy", difficultyMedium: "Medium", difficultyHard: "Hard",
+                voiceSelectLabel: "Select Voice Accent",
+                qTrueFalse: "True/False", qMultipleChoice: "Multiple Choice", qFillBlank: "Fill-in-the-Blank", qEssay: "Essay",
+                generateQuizBtn: "🎯 Generate Quiz", editResultBtn: "✏️ Edit Result",
+                downloadQuestionsBtn: "📥 Download Questions (TXT)", downloadAnswersBtn: "📥 Download Answers (TXT)",
+                previewTitle: "👁️ Quiz Preview", previewReady: "Ready. Upload data, set question counts, and click 'Generate Quiz'.",
+                ttsGenerating: "Generating audio...", readAloudBtn: "🔊 Read Aloud", downloadAudioBtn: "📥 Download Audio", ttsPrevBtn: "⏮ Previous", ttsPauseBtn: "⏸ Pause", ttsResumeBtn: "▶️ Resume", ttsStopBtn: "⏹ Stop", ttsNextBtn: "⏭ Next", ttsProgress: "🔊 Question {n} / {total}",
+                qaTitle: "💬 Follow-up Questions", qaWelcome: "Hello! You can ask questions about the generated quiz or the source material.", qaPlaceholder: "Enter your question here...",
+                sendBtn: "Send", webSearchLabel: "Enable Web Search",
+                alert_noApiKey: "Please enter an API Key first.", alert_generating: "Processing data and generating quiz...", alert_noQuizContent: "Please set the number of questions for at least one question type.",
+                alert_noDataSource: "Data source is empty. Please upload a file or paste text.", alert_apiError: "API response format error or content was filtered.", alert_generationFailed: "Generation Failed:",
+                fileRemove: "Remove", fileInfo: "{icon} {ext} File ({size})",
+                thinking: "Thinking...",
+            },
+            'ja': {
+                pageTitle: "📝 問題作成アシスタント", headerTitle: "問題作成アシスタント", headerSubtitle: "Groq AI搭載のインテリジェント問題生成システム",
+                apiSettingsTitle: "🔧 API設定", apiKeyLabel: "Groq APIキー", apiKeyPlaceholder: "Groq APIキーを入力してください",
+                testConnectionBtn: "接続テスト", statusNotConnected: "⚠️ 未接続", statusConnected: "✅ 接続成功", statusConnecting: "接続をテスト中...", statusRetry: "接続に失敗しました。{delay}秒後に再試行します... ({attempt}/{max})", switchingModel: "このモデルの本日の上限に達しました。バックアップモデルに切り替えています...",
+                dataSourceTitle: "📚 データソース", 
+                fileUploadLabel: "コンテンツソース (TXT, PDF, JPG, PNG, MP3, WAV)", fileUploadPrompt: "📄 コンテンツファイルをここをクリックまたはドラッグ＆ドロップ",
+                styleRefLabel: "スタイル参照 (PDF, TXT)", styleRefPrompt: "🎨 トーン/スタイルの例ファイルをここにドラッグ",
+                pasteTextLabel: "テキストを直接貼り付け (コンテンツソース)", pasteTextPlaceholder: "ここにテキストを貼り付け...",
+                quizSettingsTitle: "⚙️ 問題設定", quizLanguageLabel: "出題言語", quizModeLabel: "出題モードを選択",
+                modeSchool: "学校教育（コンピテンシーベース）", modeEducation: "塾・予備校（重点復習）", modeCorporate: "企業研修（実践応用）", modeCertification: "専門資格（精密テスト）",
+                quizDifficultyLabel: "難易度を選択 (スタイル参照なしの場合)", difficultyEasy: "簡単", difficultyMedium: "普通", difficultyHard: "難しい",
+                voiceSelectLabel: "音声アクセントを選択",
+                qTrueFalse: "正誤問題", qMultipleChoice: "選択問題", qFillBlank: "穴埋め問題", qEssay: "記述問題",
+                generateQuizBtn: "🎯 問題を生成", editResultBtn: "✏️ 結果を編集",
+                downloadQuestionsBtn: "📥 問題をダウンロード (TXT)", downloadAnswersBtn: "📥 解答をダウンロード (TXT)",
+                previewTitle: "👁️ 問題プレビュー", previewReady: "準備完了。データをアップロードし、問題数を設定して「問題を生成」をクリックしてください。",
+                ttsGenerating: "音声を生成中...", readAloudBtn: "🔊 読み上げ", downloadAudioBtn: "📥 音声ファイルをダウンロード", ttsPrevBtn: "⏮ 前の問題", ttsPauseBtn: "⏸ 一時停止", ttsResumeBtn: "▶️ 再開", ttsStopBtn: "⏹ 停止", ttsNextBtn: "⏭ 次の問題", ttsProgress: "🔊 第 {n} / {total} 問",
+                qaTitle: "💬 追加の質問", qaWelcome: "こんにちは！生成された問題や元の資料について質問できます。", qaPlaceholder: "ここに質問を入力してください...",
+                sendBtn: "送信", webSearchLabel: "ウェブ検索を有効にする",
+                alert_noApiKey: "まずAPIキーを入力してください。", alert_generating: "データを処理し、問題を生成中...", alert_noQuizContent: "少なくとも1つの問題タイプの問題数を設定してください。",
+                alert_noDataSource: "データソースが空です。ファイルをアップロードするか、テキストを貼り付けてください。", alert_apiError: "API応答フォーマットエラーまたはコンテンツがフィルタリングされました。", alert_generationFailed: "生成に失敗しました:",
+                fileRemove: "削除", fileInfo: "{icon} {ext} ファイル ({size})",
+                thinking: "考え中...",
+            }
+        };
+        const supportedUiLanguages = { 'zh-TW': '繁體中文', 'en': 'English', 'ja': '日本語' };
+        const supportedQuizLanguages = { '繁體中文': '繁體中文', 'English': 'English', '日本語': '日本語', 'français': 'Français', 'español': 'Español', 'Deutsch': 'Deutsch' };
+        let currentLang = 'zh-TW';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateLanguageSelectors();
+            loadSettings();
+            
+            // Content file listeners
+            const contentFileInput = document.getElementById('contentFileInput');
+            contentFileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files), 'content'));
+            const contentFileUploadZone = document.getElementById('contentFileUploadZone');
+            contentFileUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); contentFileUploadZone.classList.add('dragover'); });
+            contentFileUploadZone.addEventListener('dragleave', () => contentFileUploadZone.classList.remove('dragover'));
+            contentFileUploadZone.addEventListener('drop', (e) => { e.preventDefault(); contentFileUploadZone.classList.remove('dragover'); handleFiles(Array.from(e.dataTransfer.files), 'content'); });
+            
+            // Style file listeners
+            const styleFileInput = document.getElementById('styleFileInput');
+            styleFileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files), 'style'));
+            const styleFileUploadZone = document.getElementById('styleFileUploadZone');
+            styleFileUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); styleFileUploadZone.classList.add('dragover'); });
+            styleFileUploadZone.addEventListener('dragleave', () => styleFileUploadZone.classList.remove('dragover'));
+            styleFileUploadZone.addEventListener('drop', (e) => { e.preventDefault(); styleFileUploadZone.classList.remove('dragover'); handleFiles(Array.from(e.dataTransfer.files), 'style'); });
+
+            const difficultySelector = document.getElementById('quizDifficulty');
+            difficultySelector.addEventListener('change', updateDifficultyColor);
+
+            document.getElementById('readAloudBtn').addEventListener('click', readQuestionsAloud);
+            document.getElementById('ttsPauseBtn').addEventListener('click', togglePauseTts);
+            document.getElementById('ttsStopBtn').addEventListener('click', stopTts);
+            document.getElementById('ttsPrevBtn').addEventListener('click', () => { if (ttsQueue.length) speakIndex(Math.max(0, ttsIndex - 1)); });
+            document.getElementById('ttsNextBtn').addEventListener('click', () => { if (ttsQueue.length) { if (ttsIndex + 1 < ttsQueue.length) speakIndex(ttsIndex + 1); else stopTts(); } });
+            document.getElementById('sendQuestionBtn').addEventListener('click', askQuestion);
+            document.getElementById('questionInput').addEventListener('keyup', (event) => { if (event.key === 'Enter') askQuestion(); });
+        });
+
+        // 介面語系 → 出題語言 自動對應
+        const uiToQuizLanguage = { 'zh-TW': '繁體中文', 'en': 'English', 'ja': '日本語' };
+
+        function setLanguage(lang, syncQuizLanguage = true) {
+            currentLang = lang;
+            document.documentElement.lang = lang.split('-')[0];
+            localStorage.setItem('uiLanguage', lang);
+
+            // 切換介面語系時，出題語言自動跟隨（使用者仍可事後手動改選其他語言）
+            const quizSelector = document.getElementById('quizLanguage');
+            if (syncQuizLanguage && quizSelector && quizSelector.options.length && uiToQuizLanguage[lang]) {
+                quizSelector.value = uiToQuizLanguage[lang];
+                localStorage.setItem('quizLanguage', quizSelector.value);
+            }
+            
+            const trans = translations[lang];
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.getAttribute('data-lang-key');
+                if (trans[key]) el.textContent = trans[key];
+            });
+            document.querySelectorAll('[data-lang-key-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-lang-key-placeholder');
+                if (trans[key]) el.placeholder = trans[key];
+            });
+            // update file lists after language change
+            updateFileList('content');
+            updateFileList('style');
+        }
+
+        function populateLanguageSelectors() {
+            const uiSelector = document.getElementById('uiLanguageSelector');
+            for (const [code, name] of Object.entries(supportedUiLanguages)) {
+                uiSelector.innerHTML += `<option value="${code}">${name}</option>`;
+            }
+            const quizSelector = document.getElementById('quizLanguage');
+            for (const [code, name] of Object.entries(supportedQuizLanguages)) {
+                quizSelector.innerHTML += `<option value="${code}">${name}</option>`;
+            }
+            populateVoiceSelector();
+        }
+        
+        function populateVoiceSelector() {
+            const select = document.getElementById('voiceSelect');
+            const fill = () => {
+                const all = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+                if (!all.length) return;
+                select.innerHTML = '';
+                const zh = all.filter(v => /^zh/i.test(v.lang));
+                const rest = all.filter(v => !/^zh/i.test(v.lang));
+                [...zh, ...rest].forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.name;
+                    option.textContent = `${v.name} (${v.lang})`;
+                    select.appendChild(option);
+                });
+                const saved = localStorage.getItem('voiceSelect');
+                if (saved && [...select.options].some(o => o.value === saved)) select.value = saved;
+                else if (zh.length) select.value = zh[0].name;
+            };
+            fill();
+            if (window.speechSynthesis) speechSynthesis.onvoiceschanged = fill;
+        }
+
+        function loadSettings() {
+            const savedLang = localStorage.getItem('uiLanguage') || 'zh-TW';
+            document.getElementById('uiLanguageSelector').value = savedLang;
+            setLanguage(savedLang, false); // 初始載入不覆蓋已儲存的出題語言
+
+            const theme = localStorage.getItem('quizAppTheme');
+            if (theme === 'light-theme') {
+                document.body.classList.add('light-theme');
+                document.getElementById('themeToggleBtn').textContent = '☀️';
+            }
+            document.getElementById('quizLanguage').value = localStorage.getItem('quizLanguage') || '繁體中文';
+            document.getElementById('quizMode').value = localStorage.getItem('quizMode') || 'school';
+            document.getElementById('quizDifficulty').value = localStorage.getItem('quizDifficulty') || 'medium';
+            document.getElementById('trueFalseCount').value = localStorage.getItem('trueFalseCount') || 0;
+            document.getElementById('multipleChoiceCount').value = localStorage.getItem('multipleChoiceCount') || 5;
+            document.getElementById('fillBlankCount').value = localStorage.getItem('fillBlankCount') || 0;
+            document.getElementById('essayCount').value = localStorage.getItem('essayCount') || 0;
+            updateDifficultyColor();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('quizLanguage', document.getElementById('quizLanguage').value);
+            localStorage.setItem('quizMode', document.getElementById('quizMode').value);
+            localStorage.setItem('quizDifficulty', document.getElementById('quizDifficulty').value);
+            localStorage.setItem('trueFalseCount', document.getElementById('trueFalseCount').value);
+            localStorage.setItem('multipleChoiceCount', document.getElementById('multipleChoiceCount').value);
+            localStorage.setItem('fillBlankCount', document.getElementById('fillBlankCount').value);
+            localStorage.setItem('essayCount', document.getElementById('essayCount').value);
+            localStorage.setItem('voiceSelect', document.getElementById('voiceSelect').value);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('quizAppTheme', isLight ? 'light-theme' : 'dark-theme');
+            document.getElementById('themeToggleBtn').textContent = isLight ? '☀️' : '🌙';
+        }
+
+        function updateDifficultyColor() {
+            const difficultySelector = document.getElementById('quizDifficulty');
+            const selectedValue = difficultySelector.value;
+            difficultySelector.classList.remove('difficulty-easy', 'difficulty-medium', 'difficulty-hard');
+            if (selectedValue === 'easy') difficultySelector.classList.add('difficulty-easy');
+            else if (selectedValue === 'medium') difficultySelector.classList.add('difficulty-medium');
+            else if (selectedValue === 'hard') difficultySelector.classList.add('difficulty-hard');
+        }
+
+        async function fetchWithRetry(url, options, onRetry, maxRetries = 3, baseDelay = 1000) {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                let suggestedDelay = 0;
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+                    const msg = errorData.error?.message || response.statusText;
+                    if (response.status === 429) {
+                        // Groq 429 會附帶 "Please try again in X.XXs / XmX.Xs"，依建議秒數等待
+                        const mSec = msg.match(/try again in ([\d.]+)s/i);
+                        const mMin = msg.match(/try again in (\d+)m([\d.]+)s/i);
+                        if (mMin) suggestedDelay = (parseInt(mMin[1]) * 60 + parseFloat(mMin[2])) * 1000;
+                        else if (mSec) suggestedDelay = parseFloat(mSec[1]) * 1000;
+                        throw new Error(`API Error (429): ${msg}`);
+                    }
+                    if (response.status >= 400 && response.status < 500) {
+                        // 其他 4xx（含 413）為請求本身問題，重送相同請求無意義，立即拋出交由上層處理
+                        const err = new Error(`API Error (${response.status}): ${msg}`);
+                        err.noRetry = true;
+                        throw err;
+                    }
+                    throw new Error(`Server Error: ${response.status} - The service is currently unavailable.`);
+                } catch (error) {
+                    if (error.noRetry || attempt + 1 >= maxRetries) throw error;
+                    const delay = Math.min(Math.max(suggestedDelay + 500, baseDelay * Math.pow(2, attempt)), 65000);
+                    if (onRetry) onRetry(attempt + 1, delay, maxRetries);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        async function testApiConnection() {
+            const keyInput = document.getElementById('apiKey');
+            const testKey = keyInput.value.trim();
+            if (!testKey) return alert(translations[currentLang].alert_noApiKey);
+            
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.innerHTML = `<div class="loading"><div class="spinner"></div>${translations[currentLang].statusConnecting}</div>`;
+            statusDiv.className = 'api-status';
+
+            try {
+                await fetchWithRetry(GROQ_CHAT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${testKey}` },
+                    body: JSON.stringify({ model: GROQ_TEXT_MODEL, messages: [{ role: 'user', content: 'Hello' }], max_tokens: 64, ...modelExtras(GROQ_TEXT_MODEL) })
+                }, (attempt, delay, max) => {
+                    const retryMsg = translations[currentLang].statusRetry
+                        .replace('{delay}', delay / 1000)
+                        .replace('{attempt}', attempt)
+                        .replace('{max}', max);
+                    statusDiv.innerHTML = `<div class="loading"><div class="spinner"></div>${retryMsg}</div>`;
+                });
+                apiKey = testKey;
+                updateApiStatus(true, `${translations[currentLang].statusConnected} (${GROQ_TEXT_MODEL})`);
+            } catch (error) {
+                updateApiStatus(false, error.message);
+            }
+        }
+
+        function updateApiStatus(connected, message = '') {
+            const statusDiv = document.getElementById('apiStatus');
+            if (connected) {
+                statusDiv.innerHTML = `<span>${message}</span>`;
+                statusDiv.className = 'api-status connected';
+            } else {
+                statusDiv.innerHTML = `<span>⚠️ ${message}</span>`;
+                statusDiv.className = 'api-status disconnected';
+            }
+        }
+
+        function handleFiles(files, type) {
+            const fileArray = (type === 'content') ? contentFiles : styleFiles;
+            files.forEach(file => { 
+                if (!fileArray.some(f => f.name === file.name && f.size === file.size)) {
+                    fileArray.push(file); 
+                }
+            });
+            updateFileList(type);
+        }
+
+        function updateFileList(type) {
+            const fileArray = (type === 'content') ? contentFiles : styleFiles;
+            const listElement = document.getElementById(type === 'content' ? 'contentFileList' : 'styleFileList');
+            listElement.innerHTML = '';
+            
+            fileArray.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                let icon = '📄';
+                if (type === 'content') {
+                   icon = file.type.startsWith('audio/') ? '🎵' : (file.type.startsWith('image/') ? '🖼️' : '📄');
+                } else {
+                   icon = '🎨'; // Style icon
+                }
+                const extension = file.name.split('.').pop().toUpperCase();
+                const fileInfoText = translations[currentLang].fileInfo
+                    .replace('{icon}', icon)
+                    .replace('{ext}', extension)
+                    .replace('{size}', formatFileSize(file.size));
+
+                fileItem.innerHTML = `
+                    <div class="file-info" title="${file.name} (${formatFileSize(file.size)})">${fileInfoText}</div>
+                    <button class="btn btn-danger" onclick="removeFile(${index}, '${type}')">${translations[currentLang].fileRemove}</button>`;
+                listElement.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(index, type) {
+            const fileArray = (type === 'content') ? contentFiles : styleFiles;
+            fileArray.splice(index, 1);
+            updateFileList(type);
+        }
+
+        function formatFileSize(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024; const dm = decimals < 0 ? 0 : decimals; const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function getPromptForMode(mode, difficulty, contentText, counts, targetLanguage, styleReferenceText = '') {
+            let difficultyInstruction = '';
+            switch (difficulty) {
+                case 'easy': difficultyInstruction = '題目必須簡單明瞭，主要測試基本記憶與定義。請避免複雜情境或模稜兩可的選項。'; break;
+                case 'hard': difficultyInstruction = '題目設計必須具備高鑑別度。請創造複雜的應用情境，選項需設計成易混淆的觀念，問答題需引導學生進行批判性思辨與深入分析。'; break;
+                default: difficultyInstruction = '題目難易度適中，著重於觀念的理解與基本應用。'; break;
+            }
+
+            let styleInstruction = '';
+            if (styleReferenceText.trim()) {
+                styleInstruction = `
+**風格參考 (Style Reference):**
+你必須仔細分析以下提供的「風格參考資料」。你的核心任務是**嚴格模仿**這份資料中提問的語氣、風格、難易度、和問題結構來生成你的題目。
+- 如果範例是輕鬆幽默的，你的題目也要是。
+- 如果範例是高度學術和嚴謹的，你的題目也要是。
+- 模仿其選項的設計方式（例如，是否包含「以上皆是」或情境題）。
+
+[風格參考資料]
+${styleReferenceText}
+[風格參考資料結束]
+
+`;
+            }
+
+            const commonHeader = `⚠️【最高優先指令 — OUTPUT LANGUAGE】⚠️
+你必須「完全且僅」使用 ${targetLanguage} 撰寫本次所有輸出內容，包含每一道題目、每一個選項、每一個答案與每一句詳解，全文語言必須一致。
+即使「來源資料」、「風格參考」或本提示詞中出現其他語言的文字，也「絕對不可」讓輸出語言受其影響——一律以 ${targetLanguage} 產出。
+若 ${targetLanguage} 為「日本語」，就用自然流暢的日文；為「English」就全用英文；為「繁體中文」就全用繁體中文。禁止語言混雜。
+
+你是一位頂尖的測驗設計專家與學科內容顧問。你的核心任務是將枯燥的原始資料，轉化為能夠有效評估學習者理解、分析、應用能力的高品質測驗題。
+
+${styleInstruction}
+
+**總體原則:**
+- **輸出語言 (Output Language)**: 所有題目、選項、答案、詳解都必須嚴格且一致地使用 **${targetLanguage}** 撰寫。這是不可違背的最高原則。
+- **難易度**: ${difficultyInstruction} ${styleReferenceText.trim() ? '(請優先參考上述風格範例的難易度)' : ''}
+- **絕對禁令 (Absolutely Critical Rules)**:
+    1. **禁止直接引用提示詞**: **絕對不可以在題幹中出現「根據資料」、「根據本文」、「依據提供內容」等任何直接指向來源文本的字眼**。題目必須是能夠獨立存在的完整句子。
+    2. **忠於原文**: 所有題目與答案的邏輯都必須嚴格基於提供的資料內容，不可引入外部知識或進行過度推論。
+    3. **格式嚴謹**: 務必遵循下面指定的格式來輸出所有內容。
+    4. **答案詳解**: 答案必須附上詳盡的解析，說明為何該選項正確，並解釋其他選項的錯誤之處。
+    5. **禁止標籤**: 絕對不要在題目前面加上「情境：」、「案例：」之類的標籤詞。
+
+**題目撰寫規範 (Question Writing Standards) — 必須嚴格遵守:**
+1. **題幹長度（依輸出語言適用，硬性規定）**:
+   - 中文／日本語：是非題與選擇題題幹**至少 40 字**，問答題題幹**至少 60 字**。
+   - English/Français/Español/Deutsch: true-false and multiple-choice stems **at least 30 words**, essay stems **at least 45 words**.
+   - 無論任何語言，一律禁止產出一句話式的短題目（Never output one-line fragment questions in ANY language）。
+2. **情境化命題**: 每一題都必須嵌入具體情境、案例、數據或條件描述，測試「理解與應用」而非單純記憶。題幹應鋪陳背景後再提出問題。
+3. **選項品質**: 選擇題每個選項須為完整敘述（中日文**至少 12 字**；拼音語言 **at least 8 words**），四個選項長度相近，誘答選項必須是似是而非的常見迷思，不可出現明顯錯誤或搞笑選項。
+4. **專業用語**: 使用該學科領域的正式術語與嚴謹表述，避免口語化。
+
+**範例對照（僅示意風格，內容須依資料改寫）:**
+- ❌ 不合格（太短）: 「光合作用需要什麼？」
+- ✅ 合格: 「某研究團隊將同一品種的植株分別置於恆溫但光照強度不同的兩間溫室中培養兩週，並定期測量葉片的澱粉累積量。若欲解釋兩組植株澱粉累積量出現顯著差異的主要原因，下列敘述何者最為適當？」`;
+            
+            let modeSpecifics = ''; 
+
+            let questionRequests = [];
+            if (counts.trueFalse > 0) questionRequests.push(`是非題: ${counts.trueFalse}題`);
+            if (counts.multipleChoice > 0) questionRequests.push(`選擇題: ${counts.multipleChoice}題`);
+            if (counts.fillBlank > 0) questionRequests.push(`填空題: ${counts.fillBlank}題`);
+            if (counts.essay > 0) questionRequests.push(`問答題: ${counts.essay}題`);
+
+            let answerFormats = [];
+            if (counts.trueFalse > 0) answerFormats.push('是非題答案：\n1. (O) 詳解：...');
+            if (counts.multipleChoice > 0) answerFormats.push('選擇題答案：\n1. (B) 詳解：...');
+            if (counts.fillBlank > 0) answerFormats.push('填空題答案：\n1. ...');
+            if (counts.essay > 0) answerFormats.push('問答題答案：\n1. (提供參考答案與評分要點)...');
+
+            const commonFooter = `\n\n資料內容：\n${contentText}\n\n請根據以上原則與要求，產生以下題目：
+- ${questionRequests.join(', ')}
+請嚴格按照題型順序與數量出題，並將所有答案統一放在最後。
+=== 答案 ===
+${answerFormats.join('\n')}`;
+            return `${commonHeader}${modeSpecifics}${commonFooter}`;
+        }
+        
+
+        // ===== 題目長度自動檢核（跨語系）=====
+        function findShortQuestions(quizText) {
+            const questionsPart = quizText.split('=== 答案 ===')[0];
+            const items = questionsPart.split(/\n(?=\d+[\.、])/).map(t => t.trim()).filter(t => /^\d+[\.、]/.test(t));
+            const short = [];
+            items.forEach(item => {
+                const numMatch = item.match(/^(\d+)[\.、]/);
+                if (!numMatch) return;
+                // 題幹 = 選項行（(A)/A./（A））出現前的內容
+                const stem = item.split(/\n\s*[\(（]?[A-DＡ-Ｄ][\)）\.、]/)[0].replace(/^\d+[\.、]\s*/, '').trim();
+                const cjkCount = (stem.match(/[\u3000-\u9fff\uf900-\ufaff\u3040-\u30ff]/g) || []).length;
+                const isCjk = cjkCount > stem.length * 0.3;
+                const tooShort = isCjk ? cjkCount < 35 : stem.split(/\s+/).filter(Boolean).length < 25;
+                if (tooShort) short.push(numMatch[1]);
+            });
+            return short;
+        }
+
+        async function generateQuiz() {
+            if (!apiKey) return alert(translations[currentLang].alert_noApiKey);
+            const counts = { trueFalse: parseInt(document.getElementById('trueFalseCount').value) || 0, multipleChoice: parseInt(document.getElementById('multipleChoiceCount').value) || 0, fillBlank: parseInt(document.getElementById('fillBlankCount').value) || 0, essay: parseInt(document.getElementById('essayCount').value) || 0 };
+            if (Object.values(counts).reduce((a, b) => a + b) === 0) return alert(translations[currentLang].alert_noQuizContent);
+            
+            saveSettings();
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `<div class="loading"><div class="spinner"></div>${translations[currentLang].alert_generating}</div>`;
+            stopTts();
+            document.getElementById('audioPlayerContainer').classList.add('hidden');
+            document.getElementById('qaContainer').classList.add('hidden');
+
+            try {
+                // 1. Process Content
+                let contentText = document.getElementById('textInput').value.trim();
+                for (const file of contentFiles) {
+                    let fileContent = '';
+                    if (file.type.startsWith('image/')) fileContent = await extractTextFromImage(file);
+                    else if (file.type === 'application/pdf') fileContent = await extractPdfText(file);
+                    else if (file.type.startsWith('audio/')) fileContent = await transcribeAudioToText(file);
+                    else fileContent = await file.text();
+                    contentText += `\n\n[Content Source: ${file.name}]\n${fileContent}`;
+                }
+
+                if (!contentText.trim()) throw new Error(translations[currentLang].alert_noDataSource);
+                contentText = truncateToTokens(contentText, MAX_INPUT_TOKENS);
+                sourceContentText = contentText;
+
+                // 2. Process Style References
+                let styleReferenceText = '';
+                for (const file of styleFiles) {
+                    let fileContent = '';
+                    if (file.type === 'application/pdf') fileContent = await extractPdfText(file);
+                    else fileContent = await file.text();
+                    styleReferenceText += `\n\n[Style Example from: ${file.name}]\n${fileContent}`;
+                }
+                
+                // 3. Get Prompt
+                const targetLanguage = document.getElementById('quizLanguage').value;
+                const prompt = getPromptForMode(
+                    document.getElementById('quizMode').value, 
+                    document.getElementById('quizDifficulty').value, 
+                    contentText, 
+                    counts, 
+                    targetLanguage, 
+                    styleReferenceText
+                );
+                
+                // 4. Fetch API (Groq)
+                const systemPrompt = `The ENTIRE output MUST be written exclusively in ${targetLanguage}; every question, option, answer and explanation must be in ${targetLanguage} with no language mixing, regardless of the language of the source material. ` + 'You are a senior professional exam-question writer for formal assessments. Non-negotiable requirements: (1) Every question stem must be scenario-based and detailed: true/false and multiple-choice stems at least 40 characters (CJK) or 30 words, essay stems at least 60 characters or 45 words. Never output one-line fragment questions. (2) Each multiple-choice option must be a complete statement of at least 12 characters, with plausible distractors reflecting common misconceptions. (3) Generate the EXACT number of questions requested for each type. (4) Provide detailed answer explanations. (5) Use formal, discipline-appropriate terminology in the target language specified by the user. Longer, richer, more professional questions are always preferred over short ones.';
+                const resultText = await groqChat([
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: prompt }
+                ], {
+                    maxTokens: 8000,
+                    onRetry: (attempt, delay, max) => {
+                        const msg = (attempt === 0)
+                            ? translations[currentLang].switchingModel
+                            : translations[currentLang].statusRetry.replace('{delay}', delay / 1000).replace('{attempt}', attempt).replace('{max}', max);
+                        previewContent.innerHTML = `<div class="loading"><div class="spinner"></div>${msg}</div>`;
+                    }
+                });
+
+                // 長度檢核：偵測到過短題目時，自動帶回饋重生一次
+                let finalText = resultText;
+                const shortQs = findShortQuestions(finalText);
+                if (shortQs.length > 0) {
+                    previewContent.innerHTML = `<div class="loading"><div class="spinner"></div>偵測到 ${shortQs.length} 題題幹過短（第 ${shortQs.join('、')} 題），自動補強中...</div>`;
+                    try {
+                        const feedback = `\n\n[QUALITY FEEDBACK — MUST FIX] In your previous output, question(s) ${shortQs.join(', ')} had stems that were too short, violating the minimum-length rule. Regenerate ALL questions now: every stem must include a concrete scenario/case/conditions and meet the minimum length (CJK: stem >=40 chars, essay >=60; alphabetic languages: stem >=30 words, essay >=45). Longer is required. IMPORTANT: keep the entire output strictly in ${targetLanguage}.`;
+                        const retryText = await groqChat([
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: prompt + feedback }
+                        ], { maxTokens: 8000 });
+                        // 取兩次結果中過短題數較少者
+                        if (retryText && findShortQuestions(retryText).length < shortQs.length) finalText = retryText;
+                    } catch (e) {
+                        console.warn('補強重試失敗，沿用第一次結果:', e.message);
+                    }
+                }
+
+                if (finalText) {
+                    generatedQuizText = finalText;
+                    previewContent.textContent = generatedQuizText;
+                    previewContent.contentEditable = 'false';
+                    document.getElementById('audioPlayerContainer').classList.remove('hidden');
+                    document.getElementById('qaContainer').classList.remove('hidden');
+                } else {
+                    throw new Error(translations[currentLang].alert_apiError);
+                }
+            } catch (error) {
+                previewContent.innerHTML = `<div style="color: var(--danger);"><strong>${translations[currentLang].alert_generationFailed}</strong><p>${error.message}</p></div>`;
+            }
+        }
+
+        function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); }); }
+        async function extractTextFromImage(file) {
+            const base64Data = await fileToBase64(file);
+            const response = await fetchWithRetry(GROQ_CHAT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: GROQ_VISION_MODEL, max_tokens: 4096, messages: [{ role: 'user', content: [{ type: 'text', text: 'Extract all text from this image as plain text.' }, { type: 'image_url', image_url: { url: `data:${file.type};base64,${base64Data}` } }] }] }) });
+            const data = await response.json(); return data.choices?.[0]?.message?.content || 'Cannot recognize text from image.';
+        }
+        async function transcribeAudioToText(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', 'whisper-large-v3');
+            formData.append('response_format', 'json');
+            const response = await fetchWithRetry(GROQ_WHISPER_URL, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}` }, body: formData });
+            const data = await response.json(); return data.text || 'Cannot recognize content from audio.';
+        }
+        async function extractPdfText(file) {
+            const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise; let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += textContent.items.map(item => item.str).join(' '); }
+            return fullText;
+        }
+
+        function downloadFile(type) {
+            const currentText = document.getElementById('previewContent').isContentEditable ? document.getElementById('previewContent').innerText : generatedQuizText;
+            if (!currentText) return alert('No content to download');
+            const separator = '=== 答案 ===';
+            const hasAnswers = currentText.includes(separator);
+            const questions = hasAnswers ? currentText.split(separator)[0].trim() : currentText;
+            const answers = hasAnswers ? currentText.split(separator)[1].trim() : 'N/A';
+            if (type === 'questions_txt') downloadBlob(new Blob([questions], { type: 'text/plain;charset=utf-8' }), 'Questions.txt');
+            else if (type === 'answers_txt') downloadBlob(new Blob([separator + '\n' + answers], { type: 'text/plain;charset=utf-8' }), 'Answers.txt');
+        }
+
+        function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+
+        
+        // ===== 語音唸題：逐題播放器（瀏覽器 Web Speech API，免 API、支援中文）=====
+        let ttsQueue = [];        // 每題一段
+        let ttsIndex = 0;         // 目前題號索引
+        let ttsSession = 0;       // 世代計數，避免 cancel 後殘留的 onend 干擾
+        let ttsPausedFallback = false; // 部分行動瀏覽器不支援 pause，改用「取消+記住題號」
+
+        function buildTtsQueue() {
+            const currentText = document.getElementById('previewContent').isContentEditable ? document.getElementById('previewContent').innerText : generatedQuizText;
+            if (!currentText) return [];
+            let questions = currentText.split('=== 答案 ===')[0].trim();
+            if (!questions) return [];
+            let processed = questions.replace(/(True\/False|Multiple Choice|Fill-in-the-Blank|Essay|是非題|選擇題|填空題|問答題|正誤問題|選択問題|穴埋め問題|記述問題)\s*/gi, '');
+            const parts = processed.split(/\n(?=\d+[\.、])/).map(t => t.trim()).filter(Boolean);
+            return parts.length ? parts : [processed.trim()];
+        }
+
+        function updateTtsUi(speaking) {
+            const controls = document.getElementById('ttsControls');
+            const nowPlaying = document.getElementById('ttsNowPlaying');
+            const pauseBtn = document.getElementById('ttsPauseBtn');
+            const t = translations[currentLang];
+            if (speaking && ttsQueue.length) {
+                controls.classList.remove('hidden');
+                nowPlaying.textContent = t.ttsProgress.replace('{n}', ttsIndex + 1).replace('{total}', ttsQueue.length);
+                const paused = ttsPausedFallback || (window.speechSynthesis && speechSynthesis.paused);
+                pauseBtn.textContent = paused ? t.ttsResumeBtn : t.ttsPauseBtn;
+            } else {
+                controls.classList.add('hidden');
+                nowPlaying.textContent = '';
+            }
+        }
+
+        function speakIndex(i) {
+            if (!window.speechSynthesis) { alert('此瀏覽器不支援語音合成。'); return; }
+            if (i < 0) i = 0;
+            if (i >= ttsQueue.length) { stopTts(); return; }
+            ttsIndex = i;
+            ttsPausedFallback = false;
+            const session = ++ttsSession;
+            speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(ttsQueue[i]);
+            const voiceName = document.getElementById('voiceSelect').value;
+            const voice = speechSynthesis.getVoices().find(v => v.name === voiceName);
+            if (voice) { utter.voice = voice; utter.lang = voice.lang; }
+            utter.rate = 0.95;
+            utter.onend = () => {
+                if (session !== ttsSession) return; // 已被停止/切題，忽略
+                if (ttsIndex + 1 < ttsQueue.length) speakIndex(ttsIndex + 1);
+                else stopTts();
+            };
+            utter.onerror = (e) => {
+                if (session !== ttsSession || e.error === 'canceled' || e.error === 'interrupted') return;
+                console.error('Speech error:', e.error);
+                stopTts();
+            };
+            speechSynthesis.speak(utter);
+            updateTtsUi(true);
+        }
+
+        function togglePauseTts() {
+            if (!window.speechSynthesis) return;
+            if (ttsPausedFallback) {
+                // 行動裝置備援：從目前題目重新播放
+                speakIndex(ttsIndex);
+                return;
+            }
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+            } else if (speechSynthesis.speaking) {
+                speechSynthesis.pause();
+                // 部分 Android 瀏覽器 pause 無效：改為取消並記住題號
+                setTimeout(() => {
+                    if (!speechSynthesis.paused && speechSynthesis.speaking) {
+                        ttsSession++;
+                        speechSynthesis.cancel();
+                        ttsPausedFallback = true;
+                        updateTtsUi(true);
+                    }
+                }, 100);
+            }
+            updateTtsUi(true);
+        }
+
+        function stopTts() {
+            ttsSession++;
+            ttsPausedFallback = false;
+            if (window.speechSynthesis) speechSynthesis.cancel();
+            updateTtsUi(false);
+        }
+
+        function readQuestionsAloud() {
+            ttsQueue = buildTtsQueue();
+            if (!ttsQueue.length) { alert('Please generate a quiz first.'); return; }
+            speakIndex(0);
+        }
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+            if (!question) return;
+            if (!apiKey) { alert(translations[currentLang].alert_noApiKey); return; }
+            if (!sourceContentText && !generatedQuizText) { alert('Please generate a quiz first to start asking questions.'); return; }
+
+            appendChatMessage(question, 'user-message');
+            questionInput.value = '';
+
+            const chatBox = document.getElementById('chatBox');
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'bot-message chat-message';
+            loadingIndicator.innerHTML = `<div class="loading"><div class="spinner"></div>${translations[currentLang].thinking}</div>`;
+            chatBox.appendChild(loadingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            const useWebSearch = document.getElementById('webSearchCheckbox').checked;
+            let groundingInstruction = useWebSearch 
+                ? "You can combine real-time information from the web to provide a more comprehensive and in-depth answer." 
+                : "Your answer must be strictly based on the 'source material' and 'generated quiz' I provided. You are strictly forbidden from using any information outside of these two sources.";
+            const targetLanguage = supportedUiLanguages[currentLang] || '繁體中文';
+
+            const prompt = `You are a professional subject matter expert assistant. Your task is to answer follow-up questions from the user based on the provided source material and the already generated quiz.
+Please follow these rules:
+1. **Role**: You are a friendly, professional, and patient assistant.
+2. **Basis for Answers**: ${groundingInstruction}
+3. **Tone and Language**: Respond clearly, concisely, and in an easy-to-understand manner using **${targetLanguage}**.
+
+---
+[Source Material]
+${sourceContentText}
+---
+[Generated Quiz]
+${generatedQuizText}
+---
+
+[User's Question]
+${question}
+`;
+            try {
+                // 勾選網路查詢時改用 groq/compound（內建網路搜尋）
+                const answer = await groqChat([{ role: 'user', content: prompt }], {
+                    maxTokens: 2048,
+                    model: useWebSearch ? GROQ_COMPOUND_MODEL : null
+                });
+                chatBox.removeChild(loadingIndicator);
+
+                if (answer) {
+                    appendChatMessage(answer, 'bot-message');
+                } else {
+                    appendChatMessage('Sorry, I could not process your request. The API may not have returned a valid answer.', 'bot-message');
+                }
+            } catch (error) {
+                chatBox.removeChild(loadingIndicator);
+                appendChatMessage(`An error occurred: ${error.message}`, 'bot-message');
+            }
+        }
+
+        function appendChatMessage(message, className) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${className}`;
+            messageDiv.textContent = message;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+    </script>
+</body>
+</html>
+
+

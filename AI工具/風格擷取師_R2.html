@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>風格擷取師 R2 · 圖像風格紀錄生成器（完整配置盤點版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c111d; --bg2:#111827; --panel:rgba(23,32,50,.72); --panel-solid:#151d2e;
+  --line:rgba(212,175,55,.22); --line-strong:rgba(212,175,55,.45);
+  --gold:#d4af37; --gold-lt:#e0c074; --jade:#4fb89a; --jade-lt:#52d3b6;
+  --ink:#e8e4d8; --ink-dim:#9aa3b2; --red:#e05252;
+  --serif:'Noto Serif TC',serif; --sans:'Noto Sans TC',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(79,184,154,.07), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(212,175,55,.06), transparent 60%),
+    var(--bg);
+  color:var(--ink); font-family:var(--sans); min-height:100vh; line-height:1.7;
+}
+.wrap{max-width:1280px;margin:0 auto;padding:28px 22px 60px}
+header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
+h1{font-family:var(--serif);font-weight:900;font-size:1.7rem;letter-spacing:.06em;
+  background:linear-gradient(120deg,var(--gold-lt),var(--gold) 45%,var(--jade-lt));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--ink-dim);font-size:.85rem;letter-spacing:.12em}
+.grid{display:grid;grid-template-columns:400px 1fr;gap:20px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
+  backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.card h2{font-family:var(--serif);font-size:1.02rem;color:var(--gold-lt);letter-spacing:.1em;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:8px;height:8px;background:var(--jade);border-radius:2px;
+  transform:rotate(45deg);box-shadow:0 0 8px rgba(82,211,182,.6)}
+label{display:block;font-size:.78rem;color:var(--ink-dim);letter-spacing:.08em;margin:10px 0 5px}
+input[type=password],input[type=text],select{
+  width:100%;background:rgba(10,15,26,.8);border:1px solid var(--line);border-radius:8px;
+  color:var(--ink);padding:9px 12px;font-family:var(--mono);font-size:.85rem;outline:none;transition:.2s}
+input:focus,select:focus{border-color:var(--jade);box-shadow:0 0 0 2px rgba(79,184,154,.15)}
+.hint{font-size:.72rem;color:var(--ink-dim);margin-top:4px}
+.hint a{color:var(--jade-lt)}
+.drop{margin-top:14px;border:1.5px dashed var(--line-strong);border-radius:12px;min-height:180px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+  cursor:pointer;transition:.25s;text-align:center;padding:16px;position:relative;overflow:hidden}
+.drop:hover,.drop.over{border-color:var(--jade);background:rgba(79,184,154,.06)}
+.drop .ic{font-size:2rem;filter:drop-shadow(0 0 10px rgba(212,175,55,.4))}
+.drop p{font-size:.85rem;color:var(--ink-dim)}
+.drop strong{color:var(--gold-lt)}
+.drop img{max-width:100%;max-height:300px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.meta{font-family:var(--mono);font-size:.72rem;color:var(--ink-dim);margin-top:8px;text-align:center}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sw{width:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer;
+  transition:.2s;background:var(--panel-solid)}
+.sw:hover{transform:translateY(-2px);border-color:var(--gold)}
+.sw .c{height:38px}
+.sw .h{font-family:var(--mono);font-size:.6rem;text-align:center;padding:3px 0;color:var(--ink-dim)}
+.btn{width:100%;margin-top:16px;padding:13px;border:none;border-radius:10px;cursor:pointer;
+  font-family:var(--serif);font-weight:700;font-size:1rem;letter-spacing:.2em;color:#0c111d;
+  background:linear-gradient(120deg,var(--gold-lt),var(--gold) 55%,#b8963022);
+  background-color:var(--gold);
+  box-shadow:0 4px 18px rgba(212,175,55,.3);transition:.25s}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 26px rgba(212,175,55,.45)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--jade-lt);border:1px solid var(--jade);
+  box-shadow:none;margin-top:10px;font-size:.85rem;padding:9px}
+.status{margin-top:12px;font-family:var(--mono);font-size:.75rem;min-height:1.2em}
+.status.run{color:var(--jade-lt)}
+.status.err{color:var(--red)}
+.status.ok{color:var(--gold-lt)}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--jade);
+  border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;
+  vertical-align:-1px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* 右側輸出 */
+.out-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tab{padding:6px 16px;border-radius:20px;border:1px solid var(--line);background:transparent;
+  color:var(--ink-dim);cursor:pointer;font-family:var(--sans);font-size:.8rem;letter-spacing:.08em;transition:.2s}
+.tab.on{border-color:var(--jade);color:var(--jade-lt);background:rgba(79,184,154,.08)}
+.mini{margin-left:auto;display:flex;gap:8px}
+.mini button{padding:6px 14px;border-radius:8px;border:1px solid var(--line-strong);
+  background:transparent;color:var(--gold-lt);cursor:pointer;font-size:.78rem;transition:.2s}
+.mini button:hover{background:rgba(212,175,55,.1)}
+.output{min-height:420px;max-height:74vh;overflow:auto;border:1px solid var(--line);
+  border-radius:10px;background:rgba(8,12,22,.65);padding:22px 26px}
+.output::-webkit-scrollbar{width:8px}
+.output::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:4px}
+pre.raw{font-family:var(--mono);font-size:.78rem;white-space:pre-wrap;word-break:break-word;color:#c9d2e0}
+.empty{color:var(--ink-dim);text-align:center;padding:80px 20px;font-size:.9rem;letter-spacing:.1em}
+/* MD 渲染 */
+.md h1,.md h2,.md h3{font-family:var(--serif);letter-spacing:.05em;margin:1.4em 0 .5em}
+.md h1{font-size:1.5rem;color:var(--gold-lt);border-bottom:1px solid var(--line);padding-bottom:.3em}
+.md h2{font-size:1.15rem;color:var(--jade-lt)}
+.md h3{font-size:.98rem;color:var(--gold)}
+.md p,.md li{font-size:.87rem;color:var(--ink)}
+.md ul,.md ol{padding-left:1.5em;margin:.4em 0}
+.md hr{border:none;border-top:1px dashed var(--line-strong);margin:1.6em 0}
+.md table{border-collapse:collapse;width:100%;margin:.8em 0;font-size:.8rem}
+.md th,.md td{border:1px solid var(--line);padding:6px 10px;text-align:left}
+.md th{background:rgba(212,175,55,.1);color:var(--gold-lt);font-family:var(--serif)}
+.md code{font-family:var(--mono);font-size:.78rem;background:rgba(79,184,154,.12);
+  color:var(--jade-lt);padding:1px 6px;border-radius:4px}
+.md pre{background:rgba(5,8,15,.9);border:1px solid var(--line);border-radius:8px;
+  padding:14px;overflow:auto;margin:.6em 0}
+.md pre code{background:none;padding:0;color:#cfd8e6;white-space:pre-wrap}
+.md strong{color:var(--gold-lt)}
+.md .chip{display:inline-block;width:.85em;height:.85em;border-radius:3px;vertical-align:-2px;
+  margin-right:5px;border:1px solid rgba(255,255,255,.25)}
+footer{margin-top:36px;text-align:center;color:var(--ink-dim);font-size:.72rem;letter-spacing:.15em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>風格擷取師 R2</h1>
+    <span class="sub">上傳圖像 → Groq 視覺分析 → 完整版型 / 元素 / 配置盤點 → 風格紀錄 .md</span>
+  </header>
+
+  <div class="grid">
+    <!-- 左：設定 + 上傳 -->
+    <div>
+      <div class="card">
+        <h2>連線設定</h2>
+        <label>Groq API Key</label>
+        <input type="password" id="apiKey" placeholder="gsk_...">
+        <div class="hint">金鑰僅存於本機瀏覽器（localStorage）。<a href="https://console.groq.com/keys" target="_blank" rel="noopener">取得金鑰</a></div>
+        <label>視覺模型（自動降級備援）</label>
+        <select id="model">
+          <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick（品質優先）</option>
+          <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout（速度優先）</option>
+        </select>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>圖像來源</h2>
+        <div class="drop" id="drop">
+          <span class="ic">🖼️</span>
+          <p><strong>點擊、拖曳</strong> 或 <strong>Ctrl+V 貼上</strong> 圖片<br>支援 PNG / JPG / WebP</p>
+        </div>
+        <input type="file" id="file" accept="image/*" hidden>
+        <div class="meta" id="meta"></div>
+        <div class="swatches" id="swatches"></div>
+        <button class="btn" id="go" disabled>擷 取 風 格</button>
+        <button class="btn ghost" id="reset" style="display:none">重新選擇圖片</button>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+
+    <!-- 右：輸出 -->
+    <div class="card">
+      <div class="out-head">
+        <button class="tab on" data-v="md">預覽</button>
+        <button class="tab" data-v="raw">Markdown 原始碼</button>
+        <div class="mini">
+          <button id="copy" style="display:none">複製</button>
+          <button id="dl" style="display:none">下載 .md</button>
+        </div>
+      </div>
+      <div class="output">
+        <div class="md" id="mdView"><div class="empty">上傳圖片並擷取後，風格紀錄將顯示於此。</div></div>
+        <pre class="raw" id="rawView" style="display:none"></pre>
+      </div>
+    </div>
+  </div>
+
+  <footer>益師傅工具坊 · 單檔 HTML · Groq Vision</footer>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const state = { dataUrl:null, fileName:"", w:0, h:0, palette:[], md:"" };
+
+/* ── API Key 記憶 ── */
+try{ const k = localStorage.getItem("groq_key_style"); if(k) $("apiKey").value = k; }catch(e){}
+$("apiKey").addEventListener("change", ()=>{ try{ localStorage.setItem("groq_key_style", $("apiKey").value.trim()); }catch(e){} });
+
+/* ── 圖片載入（點擊 / 拖曳 / 貼上）── */
+const drop = $("drop");
+drop.addEventListener("click", ()=> $("file").click());
+$("file").addEventListener("change", e => { if(e.target.files[0]) loadImage(e.target.files[0]); });
+["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if(f && f.type.startsWith("image/")) loadImage(f); });
+window.addEventListener("paste", e => {
+  const item = [...(e.clipboardData?.items||[])].find(i => i.type.startsWith("image/"));
+  if(item) loadImage(item.getAsFile());
+});
+
+function loadImage(file){
+  state.fileName = file.name || "pasted-image.png";
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      state.w = img.naturalWidth; state.h = img.naturalHeight;
+      // 壓縮：最長邊 1024px，控制 base64 體積
+      const MAX = 1024;
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+      const cw = Math.round(img.naturalWidth * scale), ch = Math.round(img.naturalHeight * scale);
+      const cv = document.createElement("canvas");
+      cv.width = cw; cv.height = ch;
+      const ctx = cv.getContext("2d");
+      ctx.drawImage(img, 0, 0, cw, ch);
+      state.dataUrl = cv.toDataURL("image/jpeg", 0.85);
+      state.palette = extractPalette(ctx, cw, ch);
+      renderPreview();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPreview(){
+  drop.innerHTML = "";
+  const im = new Image(); im.src = state.dataUrl; drop.appendChild(im);
+  $("meta").textContent = `${state.fileName} · ${state.w} × ${state.h} px · 比例 ${(state.w/state.h).toFixed(2)}`;
+  const sw = $("swatches"); sw.innerHTML = "";
+  state.palette.forEach(hex => {
+    const d = document.createElement("div"); d.className = "sw"; d.title = "點擊複製 " + hex;
+    d.innerHTML = `<div class="c" style="background:${hex}"></div><div class="h">${hex}</div>`;
+    d.onclick = () => navigator.clipboard?.writeText(hex).then(()=> setStatus("已複製 " + hex, "ok"));
+    sw.appendChild(d);
+  });
+  $("go").disabled = false;
+  $("reset").style.display = "block";
+  setStatus("圖片就緒，已擷取 " + state.palette.length + " 個主色。", "ok");
+}
+
+$("reset").addEventListener("click", ()=>{
+  state.dataUrl = null; $("go").disabled = true; $("reset").style.display = "none";
+  $("meta").textContent = ""; $("swatches").innerHTML = "";
+  drop.innerHTML = `<span class="ic">🖼️</span><p><strong>點擊、拖曳</strong> 或 <strong>Ctrl+V 貼上</strong> 圖片<br>支援 PNG / JPG / WebP</p>`;
+  setStatus("");
+});
+
+/* ── 主色抽取（中位切分簡化版：量化 + 頻率排序 + 去相近色）── */
+function extractPalette(ctx, w, h){
+  const step = Math.max(1, Math.floor(Math.sqrt(w*h/8000)));
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const buckets = new Map();
+  for(let y=0; y<h; y+=step){
+    for(let x=0; x<w; x+=step){
+      const i = (y*w + x)*4;
+      if(data[i+3] < 128) continue;
+      const r = data[i]>>4, g = data[i+1]>>4, b = data[i+2]>>4;
+      const key = (r<<8)|(g<<4)|b;
+      const o = buckets.get(key) || {n:0,r:0,g:0,b:0};
+      o.n++; o.r += data[i]; o.g += data[i+1]; o.b += data[i+2];
+      buckets.set(key, o);
+    }
+  }
+  const sorted = [...buckets.values()].sort((a,b)=>b.n-a.n)
+    .map(o => [Math.round(o.r/o.n), Math.round(o.g/o.n), Math.round(o.b/o.n)]);
+  const picked = [];
+  for(const c of sorted){
+    if(picked.every(p => Math.abs(p[0]-c[0])+Math.abs(p[1]-c[1])+Math.abs(p[2]-c[2]) > 90)) picked.push(c);
+    if(picked.length >= 8) break;
+  }
+  return picked.map(([r,g,b]) => "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase());
+}
+
+/* ── Groq 呼叫：模型備援 + 429 指數退避 ── */
+async function callGroq(prompt){
+  const key = $("apiKey").value.trim();
+  if(!key) throw new Error("請先輸入 Groq API Key");
+  const primary = $("model").value;
+  const chain = [primary, ...["meta-llama/llama-4-maverick-17b-128e-instruct","meta-llama/llama-4-scout-17b-16e-instruct"].filter(m=>m!==primary)];
+  let lastErr = null;
+  for(const model of chain){
+    for(let attempt=0; attempt<3; attempt++){
+      try{
+        setStatus(`<span class="spin"></span>分析中 · ${model.split("/").pop()}${attempt? " · 重試 "+attempt : ""}`, "run", true);
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json", "Authorization":"Bearer " + key },
+          body: JSON.stringify({
+            model,
+            max_tokens: 8000,
+            temperature: 0.4,
+            messages:[{ role:"user", content:[
+              { type:"text", text: prompt },
+              { type:"image_url", image_url:{ url: state.dataUrl } }
+            ]}]
+          })
+        });
+        if(res.status === 429){
+          const wait = Math.min(2000 * Math.pow(2, attempt), 15000);
+          setStatus(`<span class="spin"></span>觸發流量限制（429），${wait/1000}s 後重試…`, "run", true);
+          await new Promise(r => setTimeout(r, wait));
+          continue;
+        }
+        if(!res.ok){
+          const body = await res.text();
+          throw new Error(`HTTP ${res.status}：${body.slice(0,160)}`);
+        }
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if(!text) throw new Error("模型回傳空內容");
+        return text;
+      }catch(err){
+        lastErr = err;
+        if(String(err).includes("401")) throw new Error("API Key 無效（401），請確認金鑰。");
+        break; // 非 429 錯誤 → 換下一個模型
+      }
+    }
+  }
+  throw lastErr || new Error("所有模型皆呼叫失敗");
+}
+
+/* ── 風格紀錄提示詞 ── */
+function buildPrompt(){
+  const today = new Date().toISOString().slice(0,10);
+  return `你是一位資深視覺風格分析師兼版面測繪師。請逐區掃描這張圖片（由上到下、由左到右），撰寫一份完整的「風格紀錄」Markdown 文件，供日後 1:1 復刻此圖的版型、元素與配置使用。
+
+前端已透過像素分析擷取出圖片主色（頻率排序）：${state.palette.join("、")}
+圖片資訊：檔名 ${state.fileName}，尺寸 ${state.w} x ${state.h} px，畫面比例 ${(state.w/state.h).toFixed(2)}，分析日期 ${today}。
+
+【最高原則：配置一致性】
+1. 盤點必須「窮盡」：畫面中出現的每一個元素（文字、標題、圖示、插圖、人物、照片、色塊、卡片、標籤、按鈕、分隔線、裝飾、邊框、浮水印、LOGO）都必須列入，不得遺漏或合併帶過。
+2. 位置必須「可量化」：一律使用百分比座標系（左上角為 0%,0%，右下角為 100%,100%），每個元素標註中心點座標與寬高佔比，並輔以九宮格方位（左上/中上/右上/左中/正中/右中/左下/中下/右下）。
+3. 文字必須「逐字抄錄」：圖中所有可辨識文字一字不漏照抄原文（含標點、換行、大小寫），無法辨識的字以 ▢ 標記，不可自行改寫或翻譯。
+4. 禁止臆造：只描述畫面實際存在的內容；推測性內容必須明確標註「推測」。
+
+嚴格依照以下章節結構輸出（使用繁體中文，直接輸出 Markdown，不要加任何開場白或結語，不要用程式碼區塊包裹整份文件）：
+
+# 風格紀錄：{為此圖取一個精準的風格名稱}
+
+## 來源資訊
+- 來源類型、檔案、圖片尺寸、畫面比例、分析日期、後續用途（推測 3-5 種）
+
+---
+
+## 整體風格摘要
+描述核心風格定位（條列）、情緒感受（條列）、適合用途（條列）、不適合用途（條列）。
+
+---
+
+## 元素完整盤點（必須窮盡，與原圖一致）
+用表格逐一列出畫面中所有元素，由上到下、由左到右編號：
+| # | 元素類型 | 內容描述 / 文字原文 | 中心座標 (x%, y%) | 尺寸 (寬% × 高%) | 九宮格方位 | 層級（背景/中景/前景） | 對齊與鄰接關係 |
+規則：文字元素的「內容描述」欄必須逐字照抄原文；圖像元素必須描述主體、姿態、朝向、風格；重複元素（如多張卡片）逐一列出，不可寫「多個」帶過。表格至少涵蓋畫面中 100% 可見元素。
+
+---
+
+## 版面配置座標圖
+用 text 程式碼區塊畫出 ASCII 線框圖（wireframe），以固定寬度呈現整體版面：外框代表畫布，內部用方框+編號對應上表元素，標註各區塊的大致座標範圍（如 y:0-15%）。線框圖的相對位置與比例必須與原圖一致。
+
+---
+
+## 文字內容逐字抄錄
+用表格列出圖中全部文字：
+| # | 文字原文（逐字） | 角色（主標/副標/內文/標籤/按鈕/註記） | 字體特徵 | 顏色 HEX | 大小（佔畫面高度%） |
+若圖中完全無文字，寫「本圖無文字」。
+
+---
+
+## 色彩系統
+### 主色
+用表格列出：| 色彩角色 | 觀察 | 復刻建議 |
+### 建議色票
+用表格列出：| 用途 | 色值參考 |（以前端擷取的主色為基準，可微調並補充語意命名）
+### 色彩使用規則
+條列 5-7 條具體規則。
+
+---
+
+## 字體與文字效果
+分「主標題」「副標題」「內容文字」「特效」描述觀察與復刻規則。若圖中無文字，改為描述適配的字體策略。
+
+### 大標題字效規格（重點章節，必須填寫）
+這是最容易復刻失敗的部分。請以「圖層堆疊」方式逐層拆解主標題文字效果，用表格列出：
+| 圖層（由下到上） | 效果 | 參數建議 |
+必須涵蓋：投影層（顏色、偏移方向、模糊半徑）、外光暈層（顏色、擴散半徑）、描邊層（顏色、粗細 px）、填色層（純色或漸層方向與色值）、字重（如 900/Black）、字級佔畫面高度比例（如 8%-12%）、字距與是否傾斜變形。
+並補充一段「文字效果 CSS 參考」，用 css 程式碼區塊給出可直接套用的 text-shadow / -webkit-text-stroke / background-clip 寫法。
+
+---
+
+## 版型與構圖
+### 整體構圖
+說明構圖型式（置中/對稱/三分法/Z型/滿版等）、欄數與網格結構、主視覺焦點座標。
+### 區塊切割
+用表格列出（座標範圍必須與原圖一致）：
+| 區塊 | 座標範圍 (x%, y%) | 佔畫面比例 | 內含元素編號（對應盤點表 #） | 功能 |
+### 元素間距與對齊
+條列：主要元素之間的間距（以畫面 % 表示）、對齊基準線（左對齊/置中/右對齊的具體 x%）、邊界留白（上下左右各 %）。
+### 視線動線
+編號列出原圖實際引導的視線順序，並標註每一步對應的元素編號。
+### 留白策略
+
+---
+
+## 圖像與素材語言
+分「背景風格」「圖示風格」「主視覺元素」描述觀察與復刻規則。
+
+---
+
+## UI / 視覺元件規則
+針對圖中出現的元件（卡片、標籤、按鈕、分隔線、貼紙、橫幅等）逐一列出規則。
+
+---
+
+## 資訊層級
+編號列出資訊優先順序。
+
+---
+
+## 可復刻規則
+### 必須保留
+### 可以調整
+### 不可省略
+### 常見錯誤
+
+---
+
+## 後續應用 Prompt
+### 圖片生成 Prompt
+用 text 程式碼區塊提供一段可直接使用的中文圖像生成提示詞。必須依「元素完整盤點」逐一寫入每個元素的位置（九宮格方位+座標%）、尺寸佔比與文字原文，確保生成結果的版型配置與原圖一致。
+字效描述必須具體到生成模型能執行，不可只寫「發光大標題」。範例寫法：「主標題文字極大，高度約佔畫面 12%，超粗黑體（Black 900 字重），白色填色，帶 3px 深藍描邊、20px 電光藍外光暈、右下 45 度深色投影；關鍵詞改用亮黃色填色搭配黑色描邊」。同時在 prompt 開頭加上「所有文字必須清晰銳利、筆畫完整、可正確閱讀，禁止扭曲變形的偽文字」。
+### 簡報設計 Prompt
+用 text 程式碼區塊提供。
+### 網頁設計 Prompt
+用 text 程式碼區塊提供。
+
+---
+
+## 復刻檢查清單
+用 - [ ] 格式列出 12-15 項檢查點，其中至少 5 項必須是「配置一致性」檢核（元素數量與盤點表相符、各元素座標誤差 <3%、文字內容與原文逐字一致、區塊比例一致、層級順序一致）。
+
+要求：描述必須具體到可執行（字級比例、圓角大小、光暈、對比策略等），避免空泛形容詞堆疊；色值必須引用實際擷取的 HEX。`;
+}
+
+/* ── 主流程 ── */
+$("go").addEventListener("click", async ()=>{
+  if(!state.dataUrl) return;
+  $("go").disabled = true;
+  try{
+    let md = await callGroq(buildPrompt());
+    // 若模型仍用 ``` 包裹整份文件，剝除外層
+    md = md.trim();
+    if(md.startsWith("```")){
+      md = md.replace(/^```[a-zA-Z]*\n?/, "").replace(/\n?```$/, "");
+    }
+    state.md = md;
+    $("rawView").textContent = md;
+    $("mdView").innerHTML = renderMD(md);
+    $("copy").style.display = "inline-block";
+    $("dl").style.display = "inline-block";
+    setStatus("風格紀錄生成完成。", "ok");
+  }catch(err){
+    setStatus("錯誤：" + err.message, "err");
+  }finally{
+    $("go").disabled = false;
+  }
+});
+
+function setStatus(msg, cls, html){
+  const s = $("status");
+  s.className = "status " + (cls||"");
+  if(html) s.innerHTML = msg; else s.textContent = msg;
+}
+
+/* ── 分頁 / 複製 / 下載 ── */
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", ()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on");
+  const raw = t.dataset.v === "raw";
+  $("rawView").style.display = raw ? "block" : "none";
+  $("mdView").style.display = raw ? "none" : "block";
+}));
+$("copy").addEventListener("click", ()=> navigator.clipboard.writeText(state.md).then(()=> setStatus("已複製 Markdown。","ok")));
+$("dl").addEventListener("click", ()=>{
+  const base = state.fileName.replace(/\.[^.]+$/, "") || "image";
+  const blob = new Blob([state.md], {type:"text/markdown;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = base + "_style_record.md";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ── 輕量 Markdown 渲染（標題/表格/清單/程式碼/分隔線/粗體/行內碼/HEX 色塊）── */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inline(s){
+  s = esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  // HEX 色值前加色塊
+  s = s.replace(/(#[0-9A-Fa-f]{6})\b/g, '<span class="chip" style="background:$1"></span>$1');
+  return s;
+}
+function renderMD(md){
+  const lines = md.split("\n");
+  let html = "", i = 0, listType = null;
+  const closeList = ()=>{ if(listType){ html += `</${listType}>`; listType = null; } };
+  while(i < lines.length){
+    const L = lines[i];
+    // 程式碼區塊
+    if(/^```/.test(L)){
+      closeList();
+      let code = ""; i++;
+      while(i < lines.length && !/^```/.test(lines[i])){ code += lines[i] + "\n"; i++; }
+      html += "<pre><code>" + esc(code) + "</code></pre>"; i++; continue;
+    }
+    // 表格
+    if(/^\|/.test(L) && i+1 < lines.length && /^\|[\s:\-|]+\|?\s*$/.test(lines[i+1])){
+      closeList();
+      const head = L.split("|").slice(1,-1).map(c=>c.trim());
+      html += "<table><thead><tr>" + head.map(c=>"<th>"+inline(c)+"</th>").join("") + "</tr></thead><tbody>";
+      i += 2;
+      while(i < lines.length && /^\|/.test(lines[i])){
+        const cells = lines[i].split("|").slice(1,-1).map(c=>c.trim());
+        html += "<tr>" + cells.map(c=>"<td>"+inline(c)+"</td>").join("") + "</tr>";
+        i++;
+      }
+      html += "</tbody></table>"; continue;
+    }
+    if(/^#{1,3}\s/.test(L)){
+      closeList();
+      const lv = L.match(/^#+/)[0].length;
+      html += `<h${lv}>` + inline(L.replace(/^#+\s*/,"")) + `</h${lv}>`;
+    }
+    else if(/^---+\s*$/.test(L)){ closeList(); html += "<hr>"; }
+    else if(/^\s*[-*]\s+\[( |x)\]\s/.test(L)){
+      if(listType !== "ul"){ closeList(); html += "<ul>"; listType = "ul"; }
+      const done = /\[x\]/i.test(L);
+      html += "<li>" + (done ? "☑ " : "☐ ") + inline(L.replace(/^\s*[-*]\s+\[( |x)\]\s*/i,"")) + "</li>";
+    }
+    else if(/^\s*[-*]\s+/.test(L)){
+      if(listType !== "ul"){ closeList(); html += "<ul>"; listType = "ul"; }
+      html += "<li>" + inline(L.replace(/^\s*[-*]\s+/,"")) + "</li>";
+    }
+    else if(/^\s*\d+[.)]\s+/.test(L)){
+      if(listType !== "ol"){ closeList(); html += "<ol>"; listType = "ol"; }
+      html += "<li>" + inline(L.replace(/^\s*\d+[.)]\s+/,"")) + "</li>";
+    }
+    else if(L.trim() === ""){ closeList(); }
+    else { closeList(); html += "<p>" + inline(L) + "</p>"; }
+    i++;
+  }
+  closeList();
+  return html;
+}
+</script>
+</body>
+</html>

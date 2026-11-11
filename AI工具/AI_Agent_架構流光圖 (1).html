@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agent 完整架構 · 流光互動圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+:root{
+  --bg:#0f1a36;--bg2:#15234a;--ink:#e8eefc;--mute:#97a6c8;--line:#2a3b6b;--panel:#121f42;
+  --goal:#5fd08a;--planner:#5b9dff;--reason:#f5b73b;--memory:#a98bff;--tool:#ff9a4d;--mcp:#7c8cff;
+  --reflect:#ff6b7a;--func:#46c6f0;--final:#5fd08a;--task:#35c7b4;--display:#f5b73b;--loop:#9fb3df;
+  --flow:1;
+}
+body.light{--bg:#f3f6fb;--bg2:#e8eef8;--ink:#1d2742;--mute:#5d6b8a;--line:#c9d4e8;--panel:#ffffff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+button,select,input,textarea{font-family:inherit}
+:focus-visible{outline:2px solid var(--func);outline-offset:2px}
+/* 同色系卷軸 */
+:root{--sb-track:var(--bg);--sb-thumb:color-mix(in srgb,var(--planner) 45%,var(--line));--sb-hover:var(--planner)}
+*{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) var(--sb-track)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--sb-track)}
+::-webkit-scrollbar-thumb{background:var(--sb-thumb);border-radius:10px;border:2px solid var(--sb-track)}
+::-webkit-scrollbar-thumb:hover{background:var(--sb-hover)}
+::-webkit-scrollbar-corner{background:var(--sb-track)}
+aside ::-webkit-scrollbar-track,aside{--sb-track:var(--bg2)}
+textarea::-webkit-scrollbar-track,pre::-webkit-scrollbar-track{background:transparent}
+pre{--sb-track:#0a1228}
+
+/* header */
+header{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--bg2);flex-wrap:wrap}
+header h1{margin:0;font-size:20px;font-weight:900;letter-spacing:.02em}
+header h1 span{font-weight:400;color:var(--mute);font-size:13px;margin-left:8px}
+.hgap{flex:1}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--func)}
+.btn.pri{background:var(--planner);border-color:var(--planner);color:#fff}
+.btn.on{background:var(--reflect);border-color:var(--reflect);color:#fff}
+.spd{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--reflect)}
+.dot.ok{background:var(--goal)}
+
+main{flex:1;display:flex;min-height:0}
+/* 圖上文字一律單行，超出時自動縮字 */
+.node .tt,.node .sb,.node.loopi .r{white-space:nowrap;overflow:hidden;text-overflow:clip}
+.node.chip .tt{flex:1;min-width:0}
+.node.box .txt,.node.sub,.node.cont{min-width:0}
+#stageWrap{flex:1;overflow:auto;position:relative;
+  background:radial-gradient(circle at 1px 1px,var(--line) 1px,transparent 0) 0 0/24px 24px}
+#stage{position:relative;width:1110px;height:1160px;transform-origin:0 0;margin:0 auto}
+#edges{position:absolute;inset:0;width:1110px;height:1160px;pointer-events:none;overflow:visible}
+.e-base{fill:none;stroke:var(--line);stroke-width:2}
+.e-flow{fill:none;stroke-width:2.5;stroke-dasharray:6 14;stroke-linecap:round;
+  animation:dash calc(1.2s / var(--flow)) linear infinite;opacity:.75;filter:drop-shadow(0 0 3px currentColor)}
+@keyframes dash{to{stroke-dashoffset:-20}}
+.e-lbl{font-size:11px;fill:var(--mute)}
+.edge.hot .e-flow{opacity:1;stroke-width:3.5}
+.edge.hot .e-lbl{fill:var(--ink);font-weight:700}
+.dim .edge:not(.hot){opacity:.18}
+.dim .node:not(.rel):not(.sel){opacity:.35}
+
+/* nodes */
+.node{position:absolute;border-radius:12px;cursor:pointer;color:var(--ink);
+  border:1.5px solid color-mix(in srgb,var(--c) 70%,transparent);
+  background:color-mix(in srgb,var(--c) 14%,var(--panel));transition:opacity .25s,transform .2s,box-shadow .25s}
+.node:hover{transform:translateY(-2px);box-shadow:0 6px 18px color-mix(in srgb,var(--c) 30%,transparent)}
+.node.box{display:flex;align-items:center;gap:12px;padding:8px 16px}
+.node .ic{font-size:24px;flex:none}
+.node .tt{font-weight:700;font-size:16px;color:var(--c)}
+.node .sb{font-size:12px;color:var(--mute);margin-top:2px;line-height:1.35}
+.node.box .txt{flex:1;text-align:center}
+.node.cont{background:color-mix(in srgb,var(--c) 7%,transparent);border-style:dashed;padding:10px;text-align:center}
+.node.cont .tt{font-size:15px}
+.node.chip{display:flex;align-items:center;gap:6px;padding:0 10px;font-size:13px;border-radius:8px;background:var(--panel)}
+.node.chip .tt{font-size:13px;font-weight:500;color:var(--ink)}
+.node.chip .ic{font-size:14px}
+.node.sub{display:flex;flex-direction:column;justify-content:center;padding:6px 12px;background:var(--panel)}
+.node.sub .tt{font-size:14px;color:var(--ink)}
+.node.loopi{display:grid;grid-template-columns:96px 1fr;align-items:stretch;padding:0;overflow:hidden;background:var(--panel)}
+.node.loopi .l{display:flex;flex-direction:column;justify-content:center;align-items:center;background:color-mix(in srgb,var(--c) 18%,transparent);font-weight:700;font-size:13px;color:var(--c)}
+.node.loopi .l small{font-weight:400;color:var(--mute)}
+.node.loopi .r{display:flex;align-items:center;justify-content:center;font-size:13px;padding:0 10px;text-align:center}
+.node.steps{padding:8px 12px;background:var(--panel)}
+.node.steps div{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+.node.steps div b{color:var(--c);font-weight:500}
+.node.steps div.act{background:color-mix(in srgb,var(--reason) 30%,transparent);border-radius:4px;padding:2px 4px}
+.node.sel{z-index:5;box-shadow:0 0 0 2px var(--c),0 0 28px color-mix(in srgb,var(--c) 60%,transparent)}
+.node.sel::before{content:"";position:absolute;inset:-4px;border-radius:15px;padding:2px;
+  background:conic-gradient(from var(--a),transparent 0 60%,var(--c) 80%,#fff 88%,transparent 92%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:spin 2.4s linear infinite;pointer-events:none}
+@keyframes spin{to{--a:360deg}}
+#narr{position:sticky;bottom:12px;margin:0 auto;width:min(680px,92%);background:var(--panel);border:1px solid var(--line);
+  border-left:4px solid var(--reason);padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.6;display:none;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#narr b{color:var(--reason)}
+
+/* right panel */
+.zoom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}
+.zoom .btn{padding:5px 10px}
+.zoom input{width:110px;accent-color:var(--planner)}
+#zVal{min-width:40px;text-align:right;color:var(--ink)}
+#split{width:6px;flex:none;cursor:col-resize;background:var(--line);transition:background .2s;position:relative}
+#split:hover,#split.drag,#split:focus-visible{background:var(--planner)}
+#split::after{content:"⋮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--mute);font-size:14px}
+body.resizing{cursor:col-resize;user-select:none}
+.ptool{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mute)}
+.ptool .btn{padding:3px 9px;font-size:12px}
+.pane{zoom:var(--pz,1)}
+aside{width:440px;flex:none;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:none;color:var(--mute);padding:12px 0;font-size:14px;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.act{color:var(--ink);border-bottom-color:var(--planner);font-weight:700}
+.pane{flex:1;overflow:auto;padding:18px 20px;display:none;min-height:0}
+.pane.act{display:flex;flex-direction:column}
+#info h2{margin:4px 0 4px;font-size:22px;line-height:1.3;color:var(--c,var(--ink))}
+#info .sub2{color:var(--mute);font-size:13px;margin-bottom:14px}
+#info p{line-height:1.8;font-size:14.5px;margin:0 0 14px}
+#info h3{font-size:14px;margin:18px 0 8px;color:var(--ink);border-left:3px solid var(--c,var(--planner));padding-left:8px}
+#info ul{margin:0;padding-left:20px;line-height:1.8;font-size:14px}
+.scene{background:color-mix(in srgb,var(--reason) 12%,transparent);border:1px solid color-mix(in srgb,var(--reason) 40%,transparent);border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.7}
+pre{background:#0a1228;color:#d6e2ff;padding:14px 16px;border-radius:8px;font-size:13.5px;overflow:auto;line-height:1.6;white-space:pre-wrap;flex:none;min-height:3em;max-height:none;margin:0}
+#info.act,#org.act{display:block}
+#info>*{flex-shrink:0}
+.rels{display:flex;flex-wrap:wrap;gap:6px}
+.rels button{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.rels button:hover{border-color:var(--func)}
+.askbar{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* 名詞 */
+.g{border-bottom:1.5px dotted var(--reason);cursor:help}
+.g:hover,.g:focus{background:color-mix(in srgb,var(--reason) 20%,transparent);outline:none}
+#gpop{position:fixed;display:none;z-index:80;background:var(--panel);color:var(--ink);border:1px solid var(--reason);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;box-shadow:0 10px 30px rgba(0,0,0,.35);pointer-events:none}
+#gpop b{font-size:15px;color:var(--reason)}
+.gc{float:right;font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:0 6px}
+.gf{display:block;color:var(--mute);font-size:12.5px;margin:2px 0 4px}
+.glist .gi,#glist .gi{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px;line-height:1.7}
+.gi b{color:var(--reason);font-size:14.5px;margin-right:6px}
+.ga{font-size:12px;color:var(--mute)}
+/* 匯出 */
+#expMenu{position:fixed;display:none;z-index:60;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px;width:270px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#expMenu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);padding:9px 12px;border-radius:6px;font-size:13.5px;cursor:pointer}
+#expMenu button:hover{background:color-mix(in srgb,var(--planner) 20%,transparent)}
+#expMenu .eh{font-size:12px;color:var(--mute);padding:6px 12px 2px}
+#recBar{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:90;display:none;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--reflect);border-radius:30px;padding:6px 8px 6px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#recBar .rdot{width:10px;height:10px;border-radius:50%;background:var(--reflect);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+/* chat */
+#chatLog{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.msg{padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.75;max-width:100%}
+.msg.u{background:color-mix(in srgb,var(--planner) 22%,transparent);align-self:flex-end;max-width:88%}
+.msg.a{background:var(--panel);border:1px solid var(--line)}
+.msg table{border-collapse:collapse;font-size:12.5px;margin:6px 0;width:100%}
+.msg td,.msg th{border:1px solid var(--line);padding:4px 6px;text-align:left}
+.msg h4{margin:10px 0 4px;font-size:15px}
+.msg code{background:color-mix(in srgb,var(--func) 15%,transparent);padding:1px 4px;border-radius:4px}
+.msg pre code{background:none;padding:0}
+.ctx{font-size:12px;color:var(--mute);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chips button{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
+.chips button:hover{border-color:var(--reason)}
+.inrow{display:flex;gap:8px}
+select option,select optgroup{color:#000;background:#fff}
+select option:checked{color:#000;background:#dbe6ff}
+textarea,input[type=text],input[type=password],select{width:100%;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px}
+textarea{resize:vertical}
+label.f{font-size:13px;color:var(--mute);display:block;margin:12px 0 6px}
+#orgOut{margin-top:12px}
+
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(5,10,25,.6);display:none;align-items:center;justify-content:center;z-index:50}
+#modal .box{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:22px;width:min(460px,92%)}
+#modal h3{margin:0 0 6px}
+.note{font-size:12px;color:var(--mute);line-height:1.6}
+
+@media (max-width:900px){#split{display:none}main{flex-direction:column}aside{width:100% !important;height:55%;border-left:none;border-top:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){.e-flow,.node.sel::before{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Agent 完整架構<span>點選任一元件，右側即時說明</span></h1>
+  <div class="hgap"></div>
+  <select id="caseSel" class="btn" title="切換產業案例或作業流程" style="width:auto;max-width:210px"></select>
+  <button class="btn" id="genCase" title="輸入任一產業，由 Groq 生成案例">＋ AI 生成案例</button>
+  <button class="btn pri" id="playBtn">▶ 流程演示</button>
+  <label class="spd">流光速度 <input type="range" id="spd" min="0.3" max="3" step="0.1" value="1"></label>
+  <div class="zoom" title="圖表比例（Ctrl + 滾輪也可縮放）">
+    <button class="btn" id="zOut" aria-label="縮小">−</button>
+    <input type="range" id="zRange" min="40" max="200" step="5" value="100" aria-label="圖表比例">
+    <button class="btn" id="zIn" aria-label="放大">＋</button>
+    <span id="zVal">100%</span>
+    <button class="btn" id="fitBtn" title="縮放至畫面寬度">⤢ 符合寬度</button>
+  </div>
+  <button class="btn" id="themeBtn">☀ 淺色</button>
+  <button class="btn" id="expBtn" title="輸出圖像或影片">⬇ 匯出</button>
+  <button class="btn" id="keyBtn"><span class="dot" id="keyDot"></span>Groq 設定</button>
+</header>
+<main>
+  <div id="stageWrap">
+    <div id="stage">
+      <svg id="edges" viewBox="0 0 1110 1160"></svg>
+    </div>
+    <div id="narr"></div>
+  </div>
+  <div id="split" title="拖曳調整左右比例（雙擊還原）" role="separator" aria-orientation="vertical" tabindex="0"></div>
+  <aside>
+    <div class="ptool"><span>說明字級</span><button class="btn" id="fOut">A−</button><span id="fVal">100%</span><button class="btn" id="fIn">A＋</button><span class="note" style="margin-left:auto">寬度 <b id="wVal">440</b>px</span></div>
+    <div class="tabs">
+      <button class="act" data-t="info">元件說明</button>
+      <button data-t="chat">AI 問答</button>
+      <button data-t="org">資料整理</button>
+      <button data-t="gloss">名詞庫</button>
+    </div>
+    <div class="pane act" id="info"></div>
+    <div class="pane" id="chat">
+      <div class="ctx" id="chatCtx"></div>
+      <div class="chips" id="chatChips"></div>
+      <div id="chatLog"></div>
+      <div class="inrow">
+        <textarea id="chatIn" rows="2" placeholder="針對 AI Agent 架構提問…（Enter 送出，Shift+Enter 換行）"></textarea>
+        <button class="btn pri" id="chatSend">送出</button>
+      </div>
+      <button class="btn" id="chatClear" style="margin-top:8px;align-self:flex-start">清除對話</button>
+    </div>
+    <div class="pane" id="gloss">
+      <div class="inrow"><input type="text" id="gq" placeholder="搜尋名詞，例如 ECO、slack、MCP"><select id="gcat" style="width:auto;max-width:60%"></select></div>
+      <div id="glist" style="margin-top:6px"></div>
+    </div>
+    <div class="pane" id="org">
+      <div class="note">貼上文字或上傳檔案（TXT／MD／PDF／DOCX），由 Groq 依 AI Agent 架構整理。</div>
+      <label class="f">整理方式</label>
+      <select id="orgMode">
+        <option value="map">對應到 Agent 七大元件（表格）</option>
+        <option value="design">設計成一個可執行的 Agent 方案</option>
+        <option value="sum">重點摘要（條列）</option>
+        <option value="lesson">轉成教學講義</option>
+        <option value="quiz">出 5 題選擇題（附解析）</option>
+      </select>
+      <label class="f">資料內容</label>
+      <textarea id="orgIn" rows="8" placeholder="例：我想做一個每天早上自動整理產業新聞，寄到 Email 的助理…"></textarea>
+      <div class="inrow" style="margin-top:8px">
+        <label class="btn" style="flex:none">📎 上傳檔案<input type="file" id="orgFile" accept=".txt,.md,.csv,.json,.pdf,.docx" hidden></label>
+        <button class="btn pri" id="orgRun" style="flex:1;justify-content:center">開始整理</button>
+      </div>
+      <div id="orgOut"></div>
+      <div class="inrow" id="orgAct" style="margin-top:8px;display:none">
+        <button class="btn" id="orgCopy">複製</button>
+        <button class="btn" id="orgDl">下載 .md</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="expMenu" role="menu">
+  <div class="eh">圖像</div>
+  <button data-exp="png">🖼️ PNG 架構圖（2 倍高解析）</button>
+  <button data-exp="jpg">🖼️ JPG 架構圖</button>
+  <button data-exp="frame">🧾 PNG 架構圖＋說明（1920×1080）</button>
+  <div class="eh">影片</div>
+  <button data-exp="play">🎬 MP4 流程演示（完整 20 步）</button>
+  <button data-exp="loop">🎞️ MP4 目前畫面流光（10 秒）</button>
+  <div class="note" style="padding:6px 12px 2px">影片含架構圖與右側說明，依目前產業、主題與流光速度錄製。</div>
+</div>
+<div id="modal">
+  <div class="box">
+    <h3>Groq API 設定</h3>
+    <div class="note">金鑰只存在這台電腦的瀏覽器（localStorage），直接送往 api.groq.com。到 console.groq.com 申請。</div>
+    <label class="f">API Key</label>
+    <input type="password" id="keyIn" placeholder="gsk_...">
+    <label class="f">模型</label>
+    <div class="inrow"><select id="modelIn">
+      <option value="openai/gpt-oss-120b">openai/gpt-oss-120b（推薦）</option>
+      <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b（預覽版）</option>
+      <option value="openai/gpt-oss-20b">openai/gpt-oss-20b（快速）</option>
+    </select><button class="btn" id="modelLoad" style="flex:none" title="用金鑰向 Groq 取得目前可用模型">↻ 載入可用模型</button></div>
+    <label class="f">或自訂模型名稱（選填）</label>
+    <input type="text" id="modelCustom" placeholder="留空則用上方選單">
+    <div class="inrow" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" id="keyTest">測試連線</button>
+      <button class="btn" id="keyCancel">取消</button>
+      <button class="btn pri" id="keySave">儲存</button>
+    </div>
+    <div class="note" id="keyMsg" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+/* ============ 元件資料 ============ */
+const SCENE_GOAL = '幫我做一份競爭對手分析並發到 Slack';
+const N = {
+goal:{x:300,y:20,w:400,h:70,k:'box',c:'goal',ic:'👤',t:'使用者目標（User Goal）',s:'例：'+SCENE_GOAL,
+ d:'使用者目標是整個 Agent 運作的起點。和一般聊天不同，Agent 接收的是「要完成的任務」，而不只是一個問題。目標越明確（產出形式、對象、期限），後面的規劃就越準確。',
+ p:['描述「要達成什麼」而不是「怎麼做」','最好帶限制條件：格式、期限、受眾、預算','目標模糊時，Planner 會先反問釐清','同一目標可能拆出數十個子任務'],
+ sc:'使用者輸入：「'+SCENE_GOAL+'」。Agent 理解到：產出物是一份分析報告，最後要送到 Slack 頻道。',
+ ex:'{\n  "goal": "競爭對手分析並發到 Slack",\n  "constraints": ["比較 3 家", "繁體中文", "附 PPT"],\n  "deliver_to": "slack://#market"\n}'},
+planner:{x:300,y:130,w:400,h:76,k:'box',c:'planner',ic:'🧠',t:'1. Planner（規劃）',s:'把目標拆解成可執行的任務步驟',
+ d:'Planner 負責把一個大目標拆成有順序、可檢核的子任務。常見做法有 Plan-and-Execute（先規劃全部再執行）與 ReAct（邊想邊做）。規劃時會參考 Memory 提供的上下文，例如使用者偏好或上次做到哪。',
+ p:['任務分解（Task Decomposition）','決定步驟順序與相依關係','每一步要有明確的完成條件','執行失敗時可由 Reflection 觸發重新規劃'],
+ sc:'拆成五步：① 蒐集資料 ② 整理資訊 ③ 分析比較 ④ 產生 PPT ⑤ 發送 Slack。',
+ ex:'plan = llm("把目標拆成步驟，輸出 JSON 陣列", goal)\n# → ["蒐集資料","整理資訊","分析比較","產生PPT","發送Slack"]'},
+steps:{x:728,y:118,w:170,h:128,k:'steps',c:'planner',ic:'📋',t:'任務步驟清單',s:'Planner 的產出',
+ d:'這是 Planner 拆解後的任務清單。Agent 會依序執行，每完成一步就記錄到工作記憶，並把結果作為下一步的輸入。演示模式下，清單會標示目前執行到第幾步。',
+ p:['Step 1 蒐集資料：上網搜尋、讀取資料庫','Step 2 整理資訊：清洗、去重、結構化','Step 3 分析比較：產品、價格、定位對照','Step 4 生成 PPT：把分析做成簡報','Step 5 發送 Slack：通知團隊並附上檔案'],
+ sc:'清單本身是「可被修改」的：如果 Step 1 搜不到資料，Reflection 會讓 Planner 補一步「改用其他關鍵字」。'},
+loop:{x:250,y:250,w:440,h:400,k:'cont',c:'reason',ic:'💡',t:'2. Reasoning 推理循環（ReAct）',s:'Thought → Action → Action Input → 執行 → Observation → 再思考',
+ d:'Reasoning 不是獨立在循環外的一步，而是循環本身：每一輪先推理（Thought），決定行動（Action）與參數（Action Input），交給工具執行，取得觀察結果（Observation）後再推理，直到這個步驟完成。這就是 ReAct（Reason + Act）模式，也是 Agent 和單次問答最大的差別。',
+ p:['推理與行動交錯進行','每輪都把 Observation 帶回下一輪推理','讀寫工作記憶追蹤進度','設定最大輪數，避免無限迴圈'],
+ sc:'推理：「Step 1 需要最新資料 → 用搜尋工具」。第 1 輪搜競品 A → 第 2 輪搜競品 B → 第 3 輪發現 C 的資料過舊，改搜財報 → …',
+ ex:'while not step_done and turn < MAX_TURNS:\n    thought = llm.think(plan, memory, history)\n    action, args = llm.choose_tool(thought)\n    if action == "finish": break\n    obs = run_tool(action, args)      # 原生工具或 MCP\n    memory.working.append(thought, action, obs)\n    history.append(obs)'},
+thinking:{x:268,y:300,w:340,h:60,k:'loopi',c:'reason',par:'loop',l:'Thought',ls:'思考／推理',r:'理解現況、決定下一步怎麼做',t:'Thought（思考／推理）',s:'理解現況、決定下一步',
+ d:'模型根據計畫、記憶與上一輪的觀察結果，用自然語言寫出推理過程。推理品質直接決定 Agent 成敗，常搭配 Chain-of-Thought 技巧。',
+ p:['參考計畫與工作記憶','回顧上一輪 Observation','判斷是否已可結束這個步驟'],
+ sc:'Thought：「我需要三家競品的產品與價格，先查官網和新聞。」'},
+action:{x:268,y:375,w:340,h:60,k:'loopi',c:'reason',par:'loop',l:'Action',ls:'行動',r:'選擇工具，或判斷步驟已完成',t:'Action（行動）',s:'選擇工具或結束',
+ d:'從可用工具清單中挑一個（Function Calling / Tool Use），也可能判斷「這一步已完成」而結束循環。',
+ p:['工具描述寫得好，模型才選得準','可一次並行呼叫多個工具','可選擇 finish 結束此步驟'],
+ sc:'Action：web_search'},
+actionInput:{x:268,y:450,w:340,h:60,k:'loopi',c:'reason',par:'loop',l:'Action Input',ls:'行動輸入',r:'依工具格式準備參數並呼叫',t:'Action Input（行動輸入）',s:'準備參數並呼叫工具',
+ d:'依工具的 JSON Schema 組好參數並送出呼叫。參數錯誤是最常見的失敗原因之一，所以要驗證與重試。',
+ p:['依 JSON Schema 產生參數','驗證型別與必填欄位','錯誤訊息回饋給模型修正'],
+ sc:'Action Input：{"query":"競品A 2026 新品 價格","top_k":5}',
+ ex:'{\n  "name": "web_search",\n  "arguments": {"query": "競品A 2026 新品 價格", "top_k": 5}\n}'},
+obs:{x:268,y:525,w:340,h:60,k:'loopi',c:'func',par:'loop',l:'Observation',ls:'執行結果',r:'工具回傳的結果，帶回下一輪推理',t:'Observation（工具執行結果）',s:'Function 呼叫的回傳值',
+ d:'工具執行後回傳的資料或錯誤訊息。它屬於循環的一部分：會寫入工作記憶，並作為下一輪 Thought 的輸入。原圖把「Function 執行結果」放在 Reflection 之後，順序是顛倒的——要先有執行結果，才有東西可以檢查。',
+ p:['成功時回傳資料，失敗時回傳錯誤訊息','寫入工作記憶','回到 Thought 進入下一輪'],
+ sc:'Observation：取回 12 篇報導，其中 3 篇提到競品 A 的新品定價。'},
+memory:{x:18,y:250,w:204,h:400,k:'cont',c:'memory',ic:'🗂️',t:'3. Memory（記憶）',s:'記住重要資訊',
+ d:'Memory 在整個流程中都會被讀寫：規劃前檢索長期記憶給 Planner；循環中每一輪讀取並寫入工作記憶；任務結束後由 Reflection 把值得保留的經驗與偏好寫回長期記憶。',
+ p:['長期記憶 → Planner（規劃前檢索）','工作記憶 ↔ 推理循環（每輪讀寫）','Reflection → 長期記憶（任務後更新）','控制長度，避免塞爆 context window'],
+ sc:'長期記憶知道「使用者偏好簡報用藍色系、報告要繁中」；工作記憶記錄「Step 1、2 已完成」。'},
+longMem:{x:32,y:310,w:176,h:70,k:'sub',c:'memory',par:'memory',t:'長期記憶',s:'使用者偏好、角色設定、過往經驗',
+ d:'跨對話保存的資訊。通常存在向量資料庫，規劃前用語意搜尋取回相關內容。',
+ p:['向量資料庫／知識庫','跨 session 持久保存','任務結束後由 Reflection 更新'],sc:'記得公司的三大競品名單與簡報版型。'},
+shortMem:{x:32,y:400,w:176,h:70,k:'sub',c:'memory',par:'memory',t:'短期記憶',s:'當前對話上下文',
+ d:'本次對話的上下文，也就是放在 prompt 裡的近期訊息。太長時會摘要壓縮。',
+ p:['對話歷史／滑動視窗','超過長度時摘要化','任務結束即可釋放'],sc:'記得使用者剛剛補充「只比較台灣市場」。'},
+workMem:{x:32,y:490,w:176,h:70,k:'sub',c:'memory',par:'memory',t:'工作記憶',s:'計畫進度、每輪 Observation',
+ d:'執行中的狀態板（scratchpad）：目前在第幾步、每輪做了什麼、拿到什麼結果。推理循環每一輪都會讀寫它。',
+ p:['步驟狀態與中間結果','每輪 Observation 寫入','可序列化以便中斷後續跑'],sc:'Step1 ✔ 取得 12 篇報導；Step2 ✔ 整理成表格；Step3 進行中。'},
+tool:{x:718,y:250,w:176,h:360,k:'cont',c:'tool',ic:'🛠️',t:'4. Tool（工具）',s:'執行各種能力完成任務',
+ d:'工具是 Agent 的手腳。模型本身只會產生文字，透過工具才能上網、跑程式、查資料庫、寄信。工具分兩類：程式內建的原生工具，以及透過 MCP 接入的外部系統工具；對模型來說兩者都是「可呼叫的工具」。',
+ p:['由 Action Input 呼叫','執行結果以 Observation 回到推理循環（不是直接送 Reflection）','寫入、寄送類工具要加權限控管與人工確認','工具描述 = 給模型看的說明書'],
+ sc:'這個任務會用到：瀏覽器搜尋、資料分析、PPT 生成、Slack 通知。'},
+mcp:{x:914,y:250,w:176,h:360,k:'cont',c:'mcp',ic:'🔌',t:'5. MCP',s:'外部工具的統一連接協議',
+ d:'MCP（Model Context Protocol）是讓 AI 連接外部工具與資料的開放標準。它不是 Tool 之後的另一層流程，而是「工具的來源之一」：Agent 端的 MCP Client 連到各系統的 MCP Server，把它們提供的工具加入工具清單，呼叫結果同樣回傳給推理循環。',
+ p:['MCP Client（Agent 端）↔ MCP Server（系統端）','自動取得工具清單（tools/list）','支援 Tools、Resources、Prompts','一次接入，多個 Agent 共用'],
+ sc:'透過 Slack MCP Server 發送訊息、透過 Google 搜尋 MCP 取資料。',
+ ex:'// 呼叫 MCP 工具\n{\n  "method": "tools/call",\n  "params": {"name": "slack_post",\n    "arguments": {"channel": "#market", "text": "報告完成"}}\n}'},
+human:{x:718,y:628,w:372,h:56,k:'box',c:'reflect',ic:'🙋',t:'人工確認',s:'寄信、下單、改資料等高風險動作先核准',
+ d:'Human-in-the-loop：會對外發送、花錢、修改正式資料的動作，執行前先暫停讓人核准。原圖沒有這個環節，但在企業導入時幾乎是必要的。',
+ p:['依風險分級決定是否需要核准','核准紀錄可供稽核','被拒絕時把原因回饋給推理循環'],sc:'發送到 Slack 前，先讓使用者確認訊息內容。'},
+reflection:{x:300,y:690,w:400,h:70,k:'box',c:'reflect',ic:'🔍',t:'6. Reflection（反思）',s:'檢查步驟結果：通過／重試／重新規劃',
+ d:'每完成一個步驟，Reflection 檢查結果是否正確、完整、符合目標，並決定下一步：通過就往下；小問題回推理循環修正重試；計畫本身不可行就回 Planner 重新規劃。任務結束時也會把經驗寫回長期記憶。',
+ p:['通過 → 完成判斷','小錯誤 → 回推理循環修正重試','計畫不可行 → 回 Planner 重新規劃','把經驗寫回長期記憶','可用另一個模型當評審（LLM-as-Judge）'],
+ sc:'檢查發現競品 C 的價格是 2024 年舊資料 → 回推理循環重新搜尋。'},
+stop:{x:300,y:800,w:400,h:66,k:'box',c:'func',ic:'🏁',t:'完成判斷與彙整',s:'全部步驟完成？達到上限？→ 彙整結果',
+ d:'終止條件是原圖缺少的關鍵環節。Agent 要能判斷何時停止：計畫步驟全部通過、達到最大輪數或預算上限，或需要使用者補充資訊。停止後才彙整所有步驟的結果，產出回答與成果。',
+ p:['未完成 → 執行下一個步驟','全部完成 → 彙整輸出','達到上限 → 回報目前進度與卡關原因','缺資訊 → 反問使用者'],
+ sc:'五個步驟都通過檢查 → 彙整分析摘要、PPT 檔與 Slack 訊息連結。'},
+final:{x:150,y:920,w:270,h:66,k:'box',c:'final',ic:'✅',t:'Final Answer',s:'最終回答（給使用者）',
+ d:'用自然語言回覆使用者任務完成狀況與重點結論。',p:['摘要重點，不重複細節','說明做了哪些事','提示下一步可做什麼'],sc:'「已完成三家競品分析，主要差異在定價策略，報告已發到 #market。」'},
+task:{x:580,y:920,w:270,h:66,k:'box',c:'task',ic:'📄',t:'Task 最終結果',s:'任務產物（檔案／連結等）',
+ d:'Agent 實際產出的東西：文件、簡報、程式碼、寄出的郵件、建立的工單。',p:['可下載或可點擊的成果','已通過 Reflection 檢查','附上產出路徑方便查閱'],sc:'competitor_analysis.pptx、Slack 訊息連結。'},
+display:{x:200,y:1030,w:600,h:110,k:'cont',c:'display',ic:'🖥️',t:'互動展示',s:'',
+ d:'最後一哩路：把結果用最好理解的形式呈現給使用者。可以是結構化的卡片，也可以是自然的對話。',p:['依內容選擇呈現方式','卡片適合表格、檔案、連結','對話適合解釋與追問'],sc:'聊天介面中顯示一張報告卡片，下方附一段文字說明。'},
+card:{x:225,y:1072,w:250,h:54,k:'sub',c:'display',par:'display',t:'💬 智慧卡片結果',s:'圖文／表格／連結／檔案',
+ d:'結構化呈現：表格、圖表、檔案下載、按鈕。',p:['資訊密度高','可直接操作（下載、開啟）'],sc:'一張含三家比較表與 PPT 下載鈕的卡片。'},
+nl:{x:525,y:1072,w:250,h:54,k:'sub',c:'display',par:'display',t:'🔊 自然語言結果',s:'直接對話式回覆',
+ d:'以對話方式回覆，適合需要解釋、或語音介面。',p:['親切易懂','方便使用者接著追問'],sc:'「我幫你比較完了，A 走高價路線…」'},
+};
+const TOOLS=[['web','🌐','瀏覽器搜尋','搜尋網頁、讀取網址內容，取得最新資訊。'],['code','💻','程式碼執行','在沙盒執行 Python 等程式，做計算或資料處理。'],
+ ['ana','📊','資料分析','對表格資料做統計、圖表、趨勢分析。'],['db','🗄️','資料庫查詢','以 SQL 或 API 查詢內部資料庫。'],
+ ['mail','✉️','郵件發送','撰寫並寄出 Email，通常需要確認權限。'],['slk','💬','Slack 通知','發送訊息或檔案到指定頻道。']];
+const MCPS=[['gg','G','Google 搜尋','以 MCP 標準封裝的搜尋服務。'],['gh','⌥','GitHub','讀取程式碼、開 Issue、建立 PR。'],['no','N','Notion','讀寫 Notion 頁面與資料庫。'],
+ ['mdb','🗄️','資料庫','以 MCP 連接企業資料庫。'],['ms','#','Slack','以 MCP 讀寫 Slack 訊息與頻道。'],['ot','⚙','其他系統','任何實作 MCP Server 的系統都能接入。']];
+TOOLS.forEach((a,i)=>N['t_'+a[0]]={x:730,y:302+i*50,w:152,h:40,k:'chip',c:'tool',par:'tool',ic:a[1],t:a[2],s:'4. Tool 的一種',d:a[3],p:['由核心循環的 Action 選中','參數由 Action Input 提供','結果以 Observation 回到推理循環']});
+MCPS.forEach((a,i)=>N['m_'+a[0]]={x:926,y:302+i*50,w:152,h:40,k:'chip',c:'mcp',par:'mcp',ic:a[1],t:a[2],s:'5. MCP 連接的外部系統',d:a[3],p:['透過 MCP 協議統一連接','工具清單由 MCP Server 自動提供','結果經工具層回傳推理循環']});
+
+
+/* ============ 產業案例 ============ */
+const PLAY_ORDER=['goal','memory','planner','steps','loop','thinking','action','actionInput','#0','#1','obs','workMem','reflection','#2','#3','human','stop','task','final','display'];
+const STEP_OF={goal:0,memory:0,planner:0,steps:0,loop:0,thinking:0,action:0,actionInput:0,obs:0,workMem:1,reflection:1,human:4,stop:4,task:4,final:4,display:4};
+const CASES={
+general:{name:'通用：競品分析',icon:'📊',goal:SCENE_GOAL,steps:['蒐集資料','整理資訊','分析比較','生成 PPT','發送 Slack'],
+ value:['從蒐集到交付一條龍完成','分析格式一致，可重複執行','團隊即時收到成果'],note:'對外發送前可設定人工確認。',
+ sc:null,chips:[['t_web','瀏覽器搜尋工具執行，取回 12 篇相關報導。',0],['m_gg','透過 MCP 連接 Google 搜尋，補足即時資料。',0],['t_ana','資料分析工具比較三家的定位與定價。',2],['t_slk','產生 PPT 後，用 Slack 通知工具送到 #market 頻道。',4]]},
+icd:{name:'台灣 IC 設計',icon:'🔬',goal:'分析這版 STA 報告的時序違例，整理 ECO 修正建議並開 Jira 給後段團隊',
+ steps:['擷取 STA 報告','歸類違例路徑','比對歷史修正','產出 ECO 建議','開 Jira 通知'],
+ value:['縮短 timing closure 反覆迭代的時間','資深工程師的修正經驗沉澱成可查詢的知識','新人能快速理解違例樣態與處理慣例'],
+ note:'設計資料屬高度機密，建議採地端模型或私有雲部署；工具權限只開放唯讀與開單。',
+ sc:{goal:'PD 工程師輸入：「分析這版 STA 報告的時序違例，整理 ECO 修正建議並開 Jira 給後段團隊」。',
+  memory:'從知識庫取出上一版 tape-out 的時序收斂紀錄，以及同一 block 常見的違例樣態。',
+  longMem:'記得公司製程節點的設計規範、各 block 負責人與過往 ECO 慣例。',
+  shortMem:'記得工程師剛補充「先處理 setup，hold 下一輪再看」。',
+  planner:'拆成五步：擷取 STA 報告 → 歸類違例路徑 → 比對歷史修正 → 產出 ECO 建議 → 開 Jira 通知。',
+  steps:'報告若有數萬條路徑，Planner 會加一步「先依 slack 排序取前 500 條」。',
+  reasoning:'報告是純文字格式 → 先用程式碼執行工具解析，再用資料分析找出違例集中在哪些 clock domain。',
+  loop:'第 1 輪解析報告 → 第 2 輪依 clock domain 分群 → 第 3 輪查歷史 ECO 資料庫比對類似路徑 → …',
+  thinking:'Thought：「違例集中在 DDR PHY 介面附近，可能是跨時脈域路徑或 buffer 不足。」',
+  action:'Action：code_exec（執行 Python 解析時序報告）',
+  actionInput:'Action Input：{"script":"parse_sta.py","file":"blk_cpu_setup.rpt","top_n":500}',
+  tool:'用到：程式碼執行（解析報告）、資料庫查詢（歷史 ECO）、資料分析（分群統計）、Email／Teams 通知。',
+  mcp:'透過 MCP 連接內部 Git／Perforce 取 SDC 約束檔、連接 Confluence 查設計規範、連接 Jira 開單。',
+  reflection:'檢查：放大 cell 是否造成功耗或面積超標？是否與 DRC 規則衝突？發現兩條建議超出功耗預算 → 改提 useful skew 方案。',
+  workMem:'已解析 512 條違例路徑，歸成 6 類，其中 3 類有歷史對應解法。',
+  func:'彙整出：違例分類表、ECO 建議清單（含預估改善 slack）、Jira 單號。',
+  final:'「共 512 條 setup 違例，85% 集中在 3 個路徑群組，已提出 ECO 建議並開單給 PD 團隊。」',
+  task:'eco_suggestion_blk_cpu.xlsx、時序違例分類報告、Jira 工單連結。',
+  display:'卡片呈現違例分佈圖與 ECO 清單，工程師可直接點開 Jira。'},
+ chips:[['t_code','程式碼執行：用 Python 解析數萬行 STA 報告，抽出違例路徑。',0],['m_gh','透過 MCP 連接內部 Git，取得對應版本的 SDC 時序約束檔。',0],['t_db','資料庫查詢：比對歷史 ECO 紀錄中相似路徑的修正方式。',2],['t_mail','Email／Teams 通知 PD 團隊，附上 ECO 建議與 Jira 單號。',4]]},
+fab:{name:'半導體製造',icon:'🏭',goal:'這批晶圓良率掉了 3%，找出可能根因並開立改善單',
+ steps:['擷取 MES／SPC 資料','比對機台與批次','根因分析','產出 8D 報告','開立改善單'],
+ value:['從異常到鎖定根因，由數天縮短到數小時','工程師不必手動撈資料、做圖','處置經驗持續累積到知識庫'],
+ note:'Agent 只提出根因假說與建議，停機、改 recipe 等動作須工程師核准。',
+ sc:{goal:'製程工程師輸入：「這批晶圓良率掉了 3%，找出可能根因並開立改善單」。',
+  memory:'取出過去三個月同一製程站點的異常紀錄與處置方式。',
+  longMem:'記得各機台歷史異常、製程配方（recipe）版本與 SPC 管制界限。',
+  shortMem:'工程師補充「異常集中在週二夜班的批次」。',
+  planner:'擷取 MES／SPC 資料 → 比對機台與批次 → 根因分析 → 產出 8D 報告 → 開立改善單。',
+  steps:'資料量大時，先限定異常批次前後各 20 批當對照組。',
+  reasoning:'要比較異常批次與正常批次經過的機台差異 → 先查 MES 生產履歷。',
+  loop:'第 1 輪撈批次履歷 → 第 2 輪找共同經過的機台 → 第 3 輪查該機台感測器數據 → …',
+  thinking:'Thought：「異常批次都經過蝕刻機 ETCH-07，需要確認腔體壓力趨勢。」',
+  action:'Action：db_query（查詢 MES 生產履歷）',
+  actionInput:'Action Input：{"lots":["A2341","A2342"],"fields":["tool_id","recipe","timestamp"]}',
+  tool:'資料庫查詢（MES／SPC）、資料分析（相關性與趨勢）、程式碼執行（統計檢定）、郵件通知。',
+  mcp:'透過 MCP 連接設備監控系統（FDC）取感測器數據，連接知識庫查 SOP。',
+  reflection:'檢查：相關不等於因果，壓力飄移與良率下降的時間點是否吻合？吻合才列為主要根因，其餘列為待驗證。',
+  workMem:'已比對 46 批次，鎖定 1 台機台、2 個可疑參數。',
+  func:'彙整根因假說、證據圖表與建議處置（安排 PM、recipe 微調）。',
+  final:'「主要疑似根因為 ETCH-07 腔體壓力飄移，建議先安排 PM，8D 報告已產出。」',
+  task:'8D 報告、SPC 趨勢圖、改善單號。',
+  display:'卡片顯示良率趨勢與機台比對圖，下方文字說明處置建議。'},
+ chips:[['t_db','資料庫查詢：從 MES 撈出異常與正常批次的生產履歷。',0],['m_mdb','透過 MCP 連接 FDC 設備監控資料庫，取得機台感測器數據。',0],['t_ana','資料分析：比對壓力、溫度與良率的相關性與時間點。',2],['t_mail','郵件通知設備與製程負責人，附上 8D 報告與改善單。',4]]},
+fin:{name:'金融銀行',icon:'🏦',goal:'整理本週可疑交易警示，產出洗錢防制（AML）初審報告',
+ steps:['撈取警示交易','補齊客戶 KYC','比對規則與態樣','撰寫初審報告','送法遵覆核'],
+ value:['初審時間大幅縮短，人力集中在高風險案件','每案結論格式一致、證據完整','審查紀錄可追溯，便於稽核'],
+ note:'金融場景必須保留人工覆核（human-in-the-loop），Agent 只做初審建議。',
+ sc:{goal:'法遵人員輸入：「整理本週可疑交易警示，產出 AML 初審報告」。',
+  memory:'取出過往同類態樣的審查結論，作為判斷參考。',
+  longMem:'記得洗錢態樣規則、內部審查準則與申報格式。',
+  shortMem:'「這次只看單筆超過 50 萬或短期密集轉帳的案件」。',
+  planner:'撈取警示交易 → 補齊客戶 KYC → 比對規則與態樣 → 撰寫初審報告 → 送法遵覆核。',
+  steps:'客戶資料不完整時，Planner 會插入「通知分行補件」步驟。',
+  reasoning:'先取得警示清單，再逐案補客戶背景，判斷是否符合疑似洗錢態樣。',
+  loop:'第 1 輪撈警示 → 第 2 輪逐案查 KYC → 第 3 輪比對態樣規則 → …',
+  thinking:'Thought：「此帳戶一週內 18 筆小額入帳後立即轉出，符合分散入帳態樣。」',
+  action:'Action：db_query（查詢交易明細與 KYC）',
+  actionInput:'Action Input：{"account":"****1234","period":"7d","include":["counterparty","channel"]}',
+  tool:'資料庫查詢、資料分析（交易網絡與頻率）、程式碼執行（規則比對）、郵件通知。',
+  mcp:'透過 MCP 連接核心系統唯讀介面、案件管理系統與內部法規知識庫。',
+  reflection:'檢查每案結論都有對應證據與規則條號；信心不足的案件標記「需人工深查」，不自動結案。',
+  workMem:'共 37 件警示，已完成 25 件初審，6 件建議深查。',
+  func:'彙整逐案初審意見、風險分數與佐證交易。',
+  final:'「37 件中建議 6 件進一步調查、31 件可結案，初審報告已送覆核。」',
+  task:'AML 初審報告、案件系統更新紀錄。',
+  display:'表格卡片列出案件風險分級，可點開逐案佐證。'},
+ chips:[['t_db','資料庫查詢：撈出警示交易與客戶 KYC 資料。',0],['m_mdb','透過 MCP 連接案件管理系統，讀取過往審查結論。',1],['t_ana','資料分析：繪出資金流向網絡，找出異常集中帳戶。',2],['t_mail','把初審報告寄給法遵主管覆核。',4]]},
+med:{name:'醫療院所',icon:'🏥',goal:'把這位病人的住院紀錄整理成出院摘要草稿，並安排回診提醒',
+ steps:['讀取住院紀錄','整理病程時序','核對用藥','產出摘要草稿','排程回診提醒'],
+ value:['減少醫護文書時間，把時間還給病人','摘要格式一致、不遺漏重點','衛教內容依病人背景調整'],
+ note:'病歷屬個資，需去識別化或院內部署；所有草稿須由醫師審閱。',
+ sc:{goal:'病房護理師輸入：「把這位病人的住院紀錄整理成出院摘要草稿，並安排回診提醒」。',
+  memory:'取出院內出院摘要範本與同類診斷的衛教內容。',
+  longMem:'記得院內摘要格式、常用衛教單張與回診科別規則。',
+  shortMem:'「家屬只看得懂中文，衛教要白話」。',
+  planner:'讀取住院紀錄 → 整理病程時序 → 核對用藥 → 產出摘要草稿 → 排程回診提醒。',
+  steps:'發現用藥疑慮時，Planner 插入「請藥師確認」。',
+  reasoning:'先依日期整理病程，再核對出院帶藥與住院用藥是否一致。',
+  loop:'讀紀錄 → 整理時序 → 查藥品資料庫 → 生成草稿 → …',
+  thinking:'Thought：「出院帶藥少了一項住院期間持續使用的藥，需確認是否刻意停用。」',
+  action:'Action：db_query（查詢藥品資料庫）',
+  actionInput:'Action Input：{"drugs":["藥品A","藥品B"],"check":"interaction"}',
+  tool:'資料庫查詢（藥品、病歷）、程式碼執行（整理時序）、行事曆排程、簡訊／Email 提醒。',
+  mcp:'透過 MCP 以唯讀方式連接醫院資訊系統、掛號系統與衛教知識庫。',
+  reflection:'檢查：摘要內容都能在原始紀錄找到出處；用藥差異標註待醫師確認；草稿不得直接送出。',
+  workMem:'病程整理完成，用藥核對發現 1 項差異，待確認。',
+  func:'彙整出院摘要草稿、用藥差異提醒、回診時段建議。',
+  final:'「出院摘要草稿完成，有 1 項用藥差異請醫師確認，回診已預排兩週後。」',
+  task:'出院摘要草稿、白話衛教單、回診預約紀錄。',
+  display:'卡片顯示摘要草稿與待確認事項，醫師一鍵審閱。'},
+ chips:[['m_mdb','透過 MCP 以唯讀方式讀取醫院資訊系統的住院紀錄。',0],['t_code','程式碼執行：把護理紀錄依日期整理成病程時序表。',1],['t_db','查詢藥品資料庫，核對交互作用與劑量。',2],['t_mail','以簡訊／Email 寄送回診提醒給病人家屬。',4]]},
+edu:{name:'教育現場',icon:'🎓',goal:'依這次段考作答結果，幫每位學生產生補救練習並寄給家長',
+ steps:['讀取成績與作答','分析錯誤概念','對應課綱單元','產生個人化練習','寄送家長'],
+ value:['每位學生都有專屬補救練習','老師省下出題與排版時間','學習弱點可長期追蹤'],
+ note:'學生成績屬個資，寄送前建議老師抽查內容。',
+ sc:{goal:'國中數學老師輸入：「依這次段考作答結果，幫每位學生產生補救練習並寄給家長」。',
+  memory:'取出每位學生前兩次評量的錯題概念。',
+  longMem:'記得課綱學習表現、學生歷次弱點與家長聯絡方式。',
+  shortMem:'「難度比段考低一級，每人 10 題」。',
+  planner:'讀取成績與作答 → 分析錯誤概念 → 對應課綱單元 → 產生個人化練習 → 寄送家長。',
+  steps:'某概念全班錯誤率超過 50% 時，Planner 加一步「產生全班複習講義」。',
+  reasoning:'先統計每題錯誤率，再把題目對應到概念，找出每位學生的弱點組合。',
+  loop:'統計錯誤率 → 對應概念 → 生成題目 → 檢查難度 → …',
+  thinking:'Thought：「12 號在一元一次方程式移項錯了 4 題，屬於正負號概念問題。」',
+  action:'Action：code_exec（統計作答資料）',
+  actionInput:'Action Input：{"file":"段考作答.xlsx","group_by":"concept"}',
+  tool:'資料分析、程式碼執行（排版 PDF）、題庫查詢、郵件寄送。',
+  mcp:'透過 MCP 連接校務系統成績、Google Drive 題庫與 Google Classroom。',
+  reflection:'檢查：題目答案是否正確、難度是否符合、是否對應該生弱點；發現 2 題答案錯誤 → 重新生成。',
+  workMem:'32 位學生已完成弱點分析，產出 28 份練習。',
+  func:'彙整個人化練習卷、全班弱點報告、家長通知信。',
+  final:'「全班主要弱點是移項與分配律，已產生 32 份個人練習並寄給家長。」',
+  task:'個人化練習 PDF ×32、全班弱點分析表。',
+  display:'卡片顯示全班概念熱力圖，點選學生看個人練習。'},
+ chips:[['t_ana','資料分析：統計每題錯誤率，對應到課綱概念。',1],['m_gg','透過 MCP 連接 Google Drive 題庫，挑選相似題型。',3],['t_code','程式碼執行：把練習排版成 PDF。',3],['t_mail','郵件寄送：寄給家長個人化練習與學習建議。',4]]},
+food:{name:'餐飲零售',icon:'🍱',goal:'分析上週銷售和這週天氣，預估每天備料量並向供應商下單',
+ steps:['讀取 POS 銷售','查天氣預報','預測各品項銷量','換算食材量','向供應商下單'],
+ value:['減少食材浪費與缺貨','不用每天手算備料','天氣、活動等因素自動納入'],
+ note:'可設定「訂單金額超過門檻需老闆確認」。',
+ sc:{goal:'便當店老闆輸入：「分析上週銷售和這週天氣，預估每天備料量並向供應商下單」。',
+  memory:'取出過去同季節的銷售紀錄與天氣對照。',
+  longMem:'記得各品項食材配比、供應商交期與最低訂購量。',
+  shortMem:'「週三附近公司有活動，可能多 50 個訂單」。',
+  planner:'讀取 POS 銷售 → 查天氣預報 → 預測各品項銷量 → 換算食材量 → 向供應商下單。',
+  steps:'預測量若趕不上供應商交期，Planner 會提早一天下單。',
+  reasoning:'雨天外送比例上升、內用下降，兩者要分開預測。',
+  loop:'撈銷售 → 查天氣 → 預測 → 換算食材 → 檢查庫存 → …',
+  thinking:'Thought：「週四預報豪雨，過去雨天雞腿便當外送量平均增加 30%。」',
+  action:'Action：web_search（查詢天氣預報）',
+  actionInput:'Action Input：{"query":"竹南 一週天氣預報"}',
+  tool:'資料分析（銷量預測）、瀏覽器搜尋（天氣）、資料庫查詢（庫存）、Email／LINE 下單。',
+  mcp:'透過 MCP 連接 POS 系統、雲端庫存表與供應商訂單系統。',
+  reflection:'檢查：預估量是否超過冰箱容量？保存期限內用得完嗎？發現排骨過量 → 調降並分兩次進貨。',
+  workMem:'已完成 7 天預測，換算出 12 項食材需求。',
+  func:'彙整每日備料表與供應商訂單。',
+  final:'「本週預估銷量比上週多 8%，集中在週三與週四，訂單已送出。」',
+  task:'本週備料表、供應商訂購單。',
+  display:'卡片顯示每日預估量長條圖與訂單明細。'},
+ chips:[['m_mdb','透過 MCP 連接 POS 系統，取得上週各品項銷售。',0],['t_web','瀏覽器搜尋：查詢未來一週天氣預報。',1],['t_ana','資料分析：依天氣與星期預測各品項銷量。',2],['t_mail','發送訂單給供應商並副本給店長。',4]]},
+gov:{name:'政府機關',icon:'🏛️',goal:'彙整本月民眾陳情案件，依業務分類並草擬回覆',
+ steps:['讀取陳情案件','分類與分派','查詢法規與進度','草擬回覆','送主管核稿'],
+ value:['回覆時效提升','分類一致、統計即時','承辦人專注在複雜案件'],
+ note:'回覆內容需經主管核稿後才能發出，並注意個資遮蔽。',
+ sc:{goal:'承辦人輸入：「彙整本月民眾陳情案件，依業務分類並草擬回覆」。',
+  memory:'取出過往同類陳情的回覆範本與處理結果。',
+  longMem:'記得各科室業務職掌、法規條文與公文用語規範。',
+  shortMem:'「道路坑洞類要附上養護排程」。',
+  planner:'讀取陳情案件 → 分類與分派 → 查詢法規與進度 → 草擬回覆 → 送主管核稿。',
+  steps:'案件涉及多科室時，Planner 加一步「會辦相關單位」。',
+  reasoning:'先依內容分類，再找對應法規與實際處理進度。',
+  loop:'讀案件 → 分類 → 查進度 → 擬稿 → 檢查用語 → …',
+  thinking:'Thought：「這件陳情同時提到路燈與排水，需要分給兩個單位。」',
+  action:'Action：db_query（查詢陳情系統）',
+  actionInput:'Action Input：{"month":"2026-09","status":"待回覆"}',
+  tool:'資料庫查詢、資料分析（分類統計）、文件生成、郵件通知。',
+  mcp:'透過 MCP 連接公文系統、陳情系統與法規資料庫。',
+  reflection:'檢查：引用法規是否正確、語氣是否符合公文規範、有無洩漏個資；發現 1 件誤引條文 → 修正。',
+  workMem:'128 件已分類完成，96 件已擬稿。',
+  func:'彙整分類統計、回覆草稿與會辦清單。',
+  final:'「本月 128 件陳情，道路類最多，已擬妥 96 件回覆待核稿。」',
+  task:'陳情分類統計表、回覆草稿、會辦單。',
+  display:'卡片顯示案件分類圖與草稿清單。'},
+ chips:[['t_db','資料庫查詢：取出本月待回覆陳情案件。',0],['t_ana','資料分析：依業務別與地區分類統計。',1],['m_mdb','透過 MCP 查詢法規資料庫，引用正確條文。',2],['t_mail','把回覆草稿送給主管核稿。',4]]},
+};
+CASES.general.sc=Object.fromEntries(Object.keys(N).filter(k=>N[k].sc).map(k=>[k,N[k].sc]));
+let C=CASES.general;
+function caseScene(id){const ch=C.chips.find(x=>x[0]===id);if(ch)return ch[1];const sc=C.sc||{};
+  if(id==='loop'&&C!==CASES.general)return [sc.reasoning,sc.loop].filter(Boolean).join('　');
+  if(id==='stop'&&C!==CASES.general)return sc.stop||sc.func||'';
+  if(id==='obs')return sc.obs||OBS[Object.keys(CASES).find(k=>CASES[k]===C)]||'';
+  if(id==='human'&&C!==CASES.general)return sc.human||HUMAN[Object.keys(CASES).find(k=>CASES[k]===C)]||C.note||'';
+  return sc[id]||''}
+const HUMAN={icd:'開 Jira、通知 PD 團隊前，由工程師確認 ECO 建議；任何改動設計檔的動作都不自動執行。',
+ fab:'安排停機 PM、修改 recipe 前，須設備與製程工程師核准。',fin:'結案或申報前，一律由法遵人員覆核簽核。',
+ med:'摘要草稿須醫師審閱簽核後才寫入病歷；回診簡訊發送前由護理師確認。',edu:'寄給家長前，老師抽查練習內容與用語。',
+ food:'訂單金額超過門檻時，先傳給老闆確認再送出。',gov:'回覆發出前須主管核稿。'};
+const OBS={general:'Observation：取回 12 篇報導，其中 3 篇提到競品 A 的新品定價。',
+ icd:'Observation：解析出 512 條 setup 違例，最差 slack -85ps，集中在 3 個 clock domain。',
+ fab:'Observation：異常批次 100% 經過 ETCH-07，正常批次只有 40%。',
+ fin:'Observation：該帳戶 7 天內 18 筆入帳、16 筆在 1 小時內轉出。',
+ med:'Observation：住院期間 6 種用藥，出院帶藥清單只有 5 種。',
+ edu:'Observation：全班移項題錯誤率 58%，分配律 41%。',
+ food:'Observation：週三晴、週四豪雨特報、週五陰。',
+ gov:'Observation：本月待回覆 128 件，道路類 47 件最多。'};
+function buildPlay(){
+  return PLAY_ORDER.map(k=>{
+    if(k[0]==='#'){const ch=C.chips[+k.slice(1)];return ch?[ch[0],ch[1],ch[2]]:null}
+    return [k,caseScene(k)||N[k].d,STEP_OF[k]];
+  }).filter(Boolean);
+}
+function renderSteps(active=0){
+  const s=document.getElementById('n_steps');
+  s.innerHTML=C.steps.map((t,i)=>`<div data-s="${i}" class="${i===active?'act':''}"><b>Step ${i+1}</b><span>${esc(t)}</span></div>`).join('');
+}
+function fillCaseSel(){
+  const sel=document.getElementById('caseSel');
+  const opt=([k,v])=>`<option value="${k}">${v.icon} ${esc(v.name)}</option>`,E2=Object.entries(CASES);
+  const grp=(label,f)=>{const a=E2.filter(f);return a.length?`<optgroup label="${label}">${a.map(opt).join('')}</optgroup>`:''};
+  sel.innerHTML=grp('產業案例',([k,v])=>!v.group&&!v.ai)+grp('企業作業流程',([k,v])=>v.group==='flow')
+   +Object.entries(APP_GROUPS).map(([g,l])=>grp('應用：'+l,([k,v])=>v.group===g)).join('')+grp('AI 生成',([k,v])=>v.ai);
+  sel.value=Object.keys(CASES).find(k=>CASES[k]===C);
+}
+
+function setCase(k){
+  stopPlay();C=CASES[k];
+  applyLabels();renderSteps();
+  document.getElementById('gcat').value='case';fillGcat();renderGlossary();
+  cur?select(cur):showIntro();
+}
+
+/* ============ 各產業的圖表標籤（工具、MCP、元件說明） ============ */
+const LABELS={
+icd:{tools:[['🌐','IP／規格查詢','查詢 IP 供應商文件與介面標準規格。'],['💻','Python／Tcl 腳本','解析 PrimeTime 時序報告、產生 ECO 腳本草稿。'],['📊','時序分群分析','依 clock domain、路徑類型與 slack 分群統計違例。'],['🗄️','歷史 ECO 資料庫','查詢過去相似路徑的修正方式與結果。'],['✉️','Email／Teams','通知 PD 與前段設計團隊。'],['📐','ECO 指令產生','產生 ECO 指令草稿，不自動套用到設計檔。']],
+ mcps:[['📚','Confluence 規範','查詢設計規範與 sign-off 準則。'],['⌥','Git／Perforce','取得對應版本的 SDC 約束檔與網表。'],['🎫','Jira','建立與追蹤 ECO 工單。'],['🗄️','設計資料庫','讀取 block 資訊與 floorplan 資料。'],['🖥️','運算叢集排程','送出重跑 STA 的運算工作。'],['⚙','其他內部系統','任何實作 MCP Server 的內部系統。']],
+ lab:{planner:'拆解 timing closure 任務',loop:'解析報告 → 分群 → 比對 → 提建議',thinking:'判斷違例集中的路徑與原因',action:'選解析腳本或 ECO 資料庫',actionInput:'指定報告檔、block、top N',obs:'違例路徑數、最差 slack',longMem:'製程規範、block 負責人、ECO 慣例',shortMem:'本輪只處理 setup',workMem:'已解析路徑數、分類進度',tool:'EDA 報告解析與 ECO 資料',mcp:'Git／Confluence／Jira',human:'開單、套用 ECO 前由工程師確認',reflection:'檢查功耗、面積、DRC 衝突',stop:'違例都有對策？→ 彙整',final:'違例摘要與修正建議',task:'ECO 建議表、Jira 工單',card:'違例分佈圖／ECO 清單',nl:'向 PD 工程師說明重點'}},
+fab:{tools:[['🌐','供應商技術公告','查詢設備商與材料商的技術公告。'],['💻','統計檢定腳本','執行 t 檢定、ANOVA 等統計分析。'],['📊','SPC／良率分析','繪製管制圖、比對良率與參數。'],['🗄️','MES 生產履歷','查詢批次經過的機台、recipe 與時間。'],['✉️','Email 通知','通知設備與製程負責人。'],['📝','8D 報告產生','依格式產出 8D 改善報告。']],
+ mcps:[['📚','SOP 知識庫','查詢標準作業程序與異常處理手冊。'],['🔧','設備維修系統','查詢機台保養與維修紀錄。'],['📋','改善單系統','開立與追蹤改善單。'],['📈','FDC 感測器資料','讀取機台壓力、溫度等即時數據。'],['💬','Teams 頻道','發布異常通報。'],['⚙','其他廠務系統','任何實作 MCP Server 的廠務系統。']],
+ lab:{planner:'拆解良率異常調查',loop:'撈履歷 → 比機台 → 查感測器',thinking:'找出異常批次的共同點',action:'選 MES 查詢或 FDC 資料',actionInput:'指定批號、站點、欄位',obs:'機台履歷、參數趨勢',longMem:'機台異常史、recipe、SPC 界限',shortMem:'異常集中在夜班',workMem:'已比對批次、可疑機台',tool:'MES／SPC 查詢與分析',mcp:'FDC／維修／改善單系統',human:'停機 PM、改 recipe 須核准',reflection:'驗證相關性與時間點吻合',stop:'根因證據足夠？→ 彙整',final:'根因假說與處置建議',task:'8D 報告、改善單',card:'良率趨勢／機台比對圖',nl:'向製程工程師說明'}},
+fin:{tools:[['🌐','制裁名單查詢','比對國際制裁與高風險名單。'],['💻','規則比對引擎','依洗錢態樣規則逐筆比對交易。'],['🕸️','資金流向分析','繪製帳戶間資金網絡，找出集中點。'],['🗄️','交易與 KYC 查詢','查詢交易明細與客戶身分資料。'],['✉️','內部郵件','寄送報告給法遵主管。'],['📝','初審報告產生','依格式產出逐案初審意見。']],
+ mcps:[['📚','法規知識庫','查詢洗錢防制法規與內規條文。'],['🏦','核心系統（唯讀）','以唯讀方式讀取帳戶與交易資料。'],['🗂️','客戶風險評級','讀取客戶風險等級與歷史評估。'],['📋','案件管理系統','讀取過往審查結論、更新案件狀態。'],['📤','申報系統','準備申報資料（送出須人工）。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解 AML 初審流程',loop:'撈警示 → 查 KYC → 比態樣',thinking:'判斷是否符合洗錢態樣',action:'選交易查詢或規則比對',actionInput:'指定帳戶、期間、欄位',obs:'交易明細、對手方、頻率',longMem:'態樣規則、審查準則',shortMem:'本次篩選門檻',workMem:'已審件數、待深查清單',tool:'交易查詢與規則比對',mcp:'核心／案件／法規系統',human:'結案與申報前人工覆核',reflection:'每案證據與條號齊全',stop:'全部初審完？→ 彙整',final:'風險分級摘要',task:'AML 初審報告',card:'案件風險分級表',nl:'向法遵主管說明'}},
+med:{tools:[['🌐','醫學文獻查詢','查詢臨床指引與藥品仿單。'],['💻','病程時序整理','把護理與醫囑紀錄依日期整理。'],['📊','檢驗趨勢分析','整理住院期間檢驗數值變化。'],['💊','藥品資料庫','查詢交互作用、劑量與禁忌。'],['📱','簡訊／Email 提醒','寄送回診提醒給病人或家屬。'],['📅','回診排程','建議並預排回診時段。']],
+ mcps:[['📚','衛教知識庫','取得院內衛教單張內容。'],['🗓️','掛號系統','查詢與預約門診時段。'],['📝','護理紀錄系統','讀取護理紀錄。'],['🏥','醫院資訊系統','以唯讀方式讀取住院紀錄。'],['🔬','檢驗系統','讀取檢驗報告。'],['⚙','其他院內系統','任何實作 MCP Server 的院內系統。']],
+ lab:{planner:'拆解出院摘要流程',loop:'讀紀錄 → 整理 → 核藥 → 擬稿',thinking:'比對住院與出院用藥',action:'選病歷或藥品資料庫',actionInput:'指定藥品與檢查項目',obs:'用藥清單、交互作用',longMem:'院內格式、衛教單張',shortMem:'家屬需白話衛教',workMem:'摘要進度、待確認事項',tool:'藥品查詢與病程整理',mcp:'HIS／掛號／衛教系統',human:'醫師審閱簽核',reflection:'內容有出處、差異已標註',stop:'摘要完整？→ 送審',final:'摘要草稿與待確認事項',task:'出院摘要、衛教單、預約',card:'摘要草稿／待確認清單',nl:'向醫護說明重點'}},
+edu:{tools:[['🌐','教學資源搜尋','搜尋教學影片與補充教材。'],['💻','PDF 排版','把練習題排版成可列印 PDF。'],['📊','錯誤率分析','統計每題錯誤率並對應概念。'],['🗄️','學生學習紀錄','查詢學生歷次評量表現。'],['✉️','家長郵件','寄送個人化練習與學習建議。'],['📢','班級公告','發布全班複習公告。']],
+ mcps:[['📁','Google Drive 題庫','挑選相似題型與難度的題目。'],['🏫','校務系統成績','讀取段考成績與作答。'],['📘','Google Classroom','發布作業與收回作答。'],['🗂️','課綱資料庫','查詢學習表現與學習內容。'],['💬','LINE 聯絡簿','通知家長。'],['⚙','其他教學平台','任何實作 MCP Server 的平台。']],
+ lab:{planner:'拆解補救教學流程',loop:'統計 → 對概念 → 出題 → 檢查',thinking:'找出每位學生的弱點概念',action:'選分析或題庫工具',actionInput:'指定作答檔與分組方式',obs:'每題錯誤率、弱點組合',longMem:'課綱、學生歷次弱點',shortMem:'難度低一級、每人 10 題',workMem:'已分析人數、產出份數',tool:'作答分析與出題排版',mcp:'題庫／校務／Classroom',human:'寄送前老師抽查',reflection:'答案正確、難度合適',stop:'每人都有練習？→ 寄送',final:'全班弱點摘要',task:'個人化練習 PDF',card:'概念熱力圖／個人練習',nl:'向老師說明重點'}},
+food:{tools:[['🌦️','天氣預報查詢','查詢未來一週天氣與降雨機率。'],['💻','食材換算','把預估份數換算成各項食材用量。'],['📈','銷量預測','依星期、天氣、活動預測各品項銷量。'],['📦','庫存查詢','查詢冰箱與倉庫現有庫存。'],['📨','LINE／Email 下單','傳送訂購單給供應商。'],['🧾','備料表產生','產出每日備料與分工表。']],
+ mcps:[['📊','雲端試算表','讀寫庫存與備料表。'],['🚚','供應商訂單系統','查詢交期、建立訂單。'],['📅','活動行事曆','查詢附近活動與節日。'],['🧮','POS 系統','取得各品項銷售紀錄。'],['💬','LINE 官方帳號','通知店員與熟客。'],['⚙','外送平台','讀取外送訂單量。']],
+ lab:{planner:'拆解備料下單流程',loop:'撈銷售 → 查天氣 → 預測 → 換算',thinking:'判斷天氣與活動的影響',action:'選天氣或銷售工具',actionInput:'指定地區、日期、品項',obs:'天氣、銷量、庫存數字',longMem:'食材配比、供應商交期',shortMem:'週三有活動加量',workMem:'已預測天數、食材需求',tool:'天氣、銷售、庫存工具',mcp:'POS／試算表／供應商',human:'大額訂單老闆確認',reflection:'冰箱容量與保存期限',stop:'七天都算完？→ 下單',final:'本週銷量預估摘要',task:'備料表、訂購單',card:'每日預估量長條圖',nl:'向老闆說明重點'}},
+gov:{tools:[['🌐','政府公開資料','查詢公開資料與施政計畫。'],['💻','公文格式產生','依公文格式排版回覆。'],['📊','分類統計','依業務別與行政區統計案件。'],['🗄️','陳情系統查詢','取出待回覆陳情案件。'],['✉️','核稿通知','把草稿送主管核稿。'],['📝','回覆草稿產生','依範本與法規草擬回覆。']],
+ mcps:[['📚','回覆範本庫','取得過往同類案件回覆範本。'],['📑','公文系統','建立會辦單與公文。'],['🏢','各科室職掌','查詢業務分工。'],['⚖️','法規資料庫','查詢並引用正確法規條文。'],['🗺️','GIS 圖資','定位陳情地點。'],['⚙','其他機關系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解陳情處理流程',loop:'讀案件 → 分類 → 查進度 → 擬稿',thinking:'判斷案件所屬業務',action:'選陳情查詢或法規',actionInput:'指定月份與狀態',obs:'案件數、分類、進度',longMem:'職掌、法規、用語規範',shortMem:'道路類附養護排程',workMem:'已分類、已擬稿數',tool:'案件查詢與分類統計',mcp:'公文／法規／GIS 系統',human:'主管核稿',reflection:'法規正確、無個資外洩',stop:'全部擬稿？→ 送核',final:'本月陳情摘要',task:'分類表、回覆草稿',card:'分類統計／草稿清單',nl:'向主管說明重點'}},
+};
+Object.entries(LABELS).forEach(([k,v])=>Object.assign(CASES[k],v));
+const TOOL_SLOTS=TOOLS.map(a=>'t_'+a[0]),MCP_SLOTS=MCPS.map(a=>'m_'+a[0]);
+let BASE=null;
+function fitTexts(){
+  document.querySelectorAll('#stage .node .tt,#stage .node .sb,#stage .node.loopi .r').forEach(el=>{
+    el.style.fontSize='';let fs=parseFloat(getComputedStyle(el).fontSize)||14;
+    while(el.scrollWidth>el.clientWidth+1&&fs>9){fs-=.5;el.style.fontSize=fs+'px'}
+    el.title=el.scrollWidth>el.clientWidth+1?el.textContent:'';
+  });
+}
+document.fonts&&document.fonts.ready.then(()=>fitTexts());
+function nodeHTML(n){
+  if(n.k==='box')return `<span class="ic">${n.ic}</span><div class="txt"><div class="tt">${esc(n.t)}</div><div class="sb">${esc(n.s)}</div></div>`;
+  if(n.k==='cont')return `<div class="tt">${n.ic} ${esc(n.t)}</div><div class="sb">${esc(n.s)}</div>`;
+  if(n.k==='chip')return `<span class="ic">${n.ic}</span><span class="tt">${esc(n.t)}</span>`;
+  if(n.k==='sub')return `<div class="tt">${esc(n.t)}</div><div class="sb">${esc(n.s)}</div>`;
+  if(n.k==='loopi')return `<div class="l">${n.l}<small>${n.ls}</small></div><div class="r">${esc(n.r)}</div>`;
+  return '';
+}
+function applyLabels(){
+  if(!BASE)BASE=Object.fromEntries(Object.entries(N).map(([k,n])=>[k,{t:n.t,s:n.s,ic:n.ic,d:n.d,r:n.r}]));
+  Object.entries(BASE).forEach(([k,b])=>Object.assign(N[k],b));
+  const lab=C.lab||{};
+  Object.entries(lab).forEach(([k,v])=>{if(!N[k]||!v)return;if(N[k].k==='loopi')N[k].r=v;else N[k].s=v});
+  (C.tools||[]).forEach((a,i)=>{const id=TOOL_SLOTS[i];if(id&&a)Object.assign(N[id],{ic:a[0]||N[id].ic,t:a[1]||N[id].t,d:a[2]||N[id].d})});
+  (C.mcps||[]).forEach((a,i)=>{const id=MCP_SLOTS[i];if(id&&a)Object.assign(N[id],{ic:a[0]||N[id].ic,t:a[1]||N[id].t,d:a[2]||N[id].d})});
+  N.goal.s='例：'+(C.goal.length>27?C.goal.slice(0,26)+'…':C.goal);N.goal.ic=C===CASES.general?'👤':C.icon;
+  Object.keys(N).forEach(k=>{const el=document.getElementById('n_'+k);if(el&&N[k].k!=='steps')el.innerHTML=nodeHTML(N[k])});
+  requestAnimationFrame(fitTexts);
+}
+function exFor(id){
+  const n=N[id];
+  if(C!==CASES.general&&id==='actionInput'){const s=(C.sc||{}).actionInput||'',i=s.indexOf('{');
+    if(i>=0){const j=s.slice(i);try{return JSON.stringify({name:(s.match(/Action：(\w+)/)||[])[1]||((C.sc||{}).action||'').replace(/^Action：\s*/,'').split(/[（(\s]/)[0]||'tool',arguments:JSON.parse(j)},null,2)}catch(e){return j}}}
+  if(C!==CASES.general&&id==='mcp'){const m=C.chips.find(c=>c[0].startsWith('m_'));if(m)return `// ${N[m[0]].t}\n{\n  "method": "tools/call",\n  "params": {"name": "${m[0].slice(2)}_query", "arguments": {...}}\n}`}
+  return n.ex||'';
+}
+
+/* ============ IC 設計：每個元件的完整說明 ============ */
+CASES.icd.desc={
+goal:'IC 設計在 tape-out 前最耗時的階段之一是 timing closure（時序收斂）。PD（Physical Design，後段實體設計）工程師每跑完一次 STA（Static Timing Analysis，靜態時序分析），就會得到數萬條路徑的報告，必須找出時序違例、判斷原因、提出 ECO（Engineering Change Order，設計變更）。這個目標交給 Agent：輸入是 STA 報告，產出是分類好的違例清單、修正建議與追蹤工單，讓工程師把時間花在判斷，而不是整理報告。',
+planner:'Planner 把「時序收斂」這個大目標拆成可檢核的步驟，並依 sign-off 條件決定範圍：要看哪些 PVT corner（製程、電壓、溫度組合）、哪些 MCMM 情境（多模式多角落）、先處理 setup 還是 hold。實務上通常先處理最差 corner 的 setup 違例，因為它影響晶片能跑的最高頻率；hold 違例則多半在後段修。',
+steps:'IC 設計的五個步驟：① 擷取 STA 報告：讀取 PrimeTime 等工具輸出的時序報告，取得 WNS（最差負 slack）、TNS（總負 slack）與違例路徑。② 歸類違例路徑：依 clock domain、startpoint／endpoint、路徑類型（reg-to-reg、input-to-reg、跨時脈域）分群。③ 比對歷史修正：查詢過去相似路徑用過的 ECO 手法與效果。④ 產出 ECO 建議：針對每一群提出修正方式並預估改善幅度。⑤ 開 Jira 通知：把建議與負責人綁成工單追蹤。',
+loop:'推理循環在 IC 設計中，就是工程師平常「看報告 → 猜原因 → 查資料 → 驗證」的過程自動化。每一輪 Agent 會判斷下一步要解析哪個報告、查哪段歷史紀錄或規範，拿到結果後再判斷原因是否成立。例如：第 1 輪解析 setup 報告 → 第 2 輪發現違例集中在某個 clock domain → 第 3 輪查該區的 floorplan 與歷史 ECO → 第 4 輪確認是跨區繞線過長造成。',
+thinking:'Thought 是 Agent 對違例原因的推理。IC 時序違例常見的原因包括：組合邏輯層數太多（logic depth）、驅動能力不足（cell 太小）、繞線過長或壅塞、時脈偏移（clock skew）過大、跨時脈域路徑未設定正確約束（應為 false path 或 multicycle path）。推理時會參考 slack 大小、路徑分布位置與歷史經驗，判斷屬於哪一類。',
+action:'Action 決定這一輪要用哪個工具：要解析新的報告就選 Python／Tcl 腳本；要找過去的解法就查歷史 ECO 資料庫；要確認規範就透過 MCP 查 Confluence；要取得約束檔就從 Git／Perforce 拉。如果判斷這一步已有足夠資訊，Action 會選「finish」結束這一步。',
+actionInput:'Action Input 是呼叫工具的參數。在 IC 設計中通常要明確指定：報告檔路徑、block 名稱、PVT corner、分析類型（setup／hold）、要取前幾條最差路徑（top N）、以及 slack 門檻。參數錯了（例如 corner 名稱拼錯）工具會回傳錯誤，Agent 要依錯誤訊息修正後重試。',
+obs:'Observation 是工具回傳的結果，例如：「解析出 512 條 setup 違例，WNS -85ps、TNS -12.4ns，前 3 個 clock domain 佔 85%」。這些數字會寫進工作記憶，成為下一輪推理的依據。若回傳的是錯誤（找不到檔案、license 不足），Agent 會據此改變做法。',
+memory:'IC 設計的記憶分三層。長期記憶保存公司累積的設計知識：製程設計規範、各 block 負責人、歷次 tape-out 的時序收斂紀錄與 ECO 慣例。短期記憶保存這次對話的指示，例如「先處理 setup」。工作記憶保存本次分析的進度與中間結果。設計資料屬高度機密，記憶庫應放在公司內部。',
+longMem:'長期記憶就是公司的「設計經驗庫」：製程節點的設計規則與 sign-off 準則、每個 block 的負責人與介面、上一版 tape-out 哪些路徑難收斂、當時用了什麼 ECO 手法。新進工程師最缺的就是這些經驗，Agent 把它變成可檢索的知識。',
+shortMem:'短期記憶記住本次對話中工程師給的限制與偏好，例如「先處理 setup，hold 下一輪再看」「這個 block 不准再加 buffer，面積已經滿了」「只看 SS corner」。這些指示會影響後續每一步的判斷。',
+workMem:'工作記憶是本次分析的進度板：已解析多少條路徑、分成幾類、哪幾類已找到歷史解法、哪幾類還需要人工判斷。長時間的分析中斷後，也能從工作記憶接續，不用重跑。',
+tool:'工具讓 Agent 能實際操作 IC 設計資料。原則是「讀取與分析可以自動，修改設計要人工」：解析報告、統計分群、查歷史資料都可自動執行；ECO 指令只產生草稿，不直接套用到設計資料庫。工具通常在公司內部的運算環境執行，資料不離開內網。',
+t_web:'查詢 IP 供應商的文件與介面規格，例如 DDR PHY、SerDes、PCIe 等 IP 的時序要求與約束建議。這類資料決定介面路徑的正確約束方式，是判斷違例是否「真的違例」的依據。',
+t_code:'用 Python 或 Tcl 解析 PrimeTime 等 STA 工具的文字報告，抽出每條路徑的 startpoint、endpoint、slack、clock、經過的 cell 與延遲。數萬行報告人工看不完，腳本可以在幾秒內整理成表格。',
+t_ana:'對違例路徑做統計分群：依 clock domain、block、路徑類型、slack 區間分類，找出違例集中在哪裡。通常 80% 的違例集中在少數幾個群組，先處理這些群組最有效率。',
+t_db:'查詢公司過去的 ECO 紀錄：相似路徑（同一 IP 介面、同類型 cell、同一區域）當時用了什麼修正手法、改善了多少 slack、有沒有副作用。這是把資深工程師經驗傳承下來的關鍵。',
+t_mail:'分析完成後，以 Email 或 Teams 通知 PD 與前段設計團隊，附上違例摘要、ECO 建議與 Jira 單號。前段團隊需要知道是否要修改 RTL 或約束。',
+t_slk:'依建議產生 ECO 指令草稿，例如 cell 放大（upsizing）、插入 buffer、Vt 置換（把 HVT 換成 LVT 以加速）。草稿只供工程師參考與審核，不會自動執行到設計資料庫。',
+mcp:'MCP 讓 Agent 用統一方式連接公司內部系統，不用為每個系統各寫一套整合。IC 設計常見的連接對象：版本控管（Git／Perforce）取得約束檔與網表、Confluence 查設計規範、Jira 開單追蹤、運算叢集排程送出重跑 STA 的工作。每個系統只要提供一個 MCP Server，所有 Agent 都能共用。',
+m_gg:'透過 MCP 查詢 Confluence 上的設計規範、sign-off checklist 與過往 tape-out 的檢討文件。',
+m_gh:'透過 MCP 從 Git 或 Perforce 取得對應版本的 SDC 時序約束檔、網表與設定檔，確保分析用的是正確版本，避免拿舊約束判斷新設計。',
+m_no:'透過 MCP 在 Jira 建立 ECO 工單，填入違例群組、建議手法、負責人與期限，並追蹤後續狀態。',
+m_mdb:'透過 MCP 讀取設計資料庫中的 block 資訊、floorplan 與 placement 位置，用來判斷違例是否與繞線距離或壅塞區域有關。',
+m_ms:'透過 MCP 把重跑 STA 或驗證 ECO 效果的運算工作送到公司運算叢集（如 LSF），完成後取回結果。這類工作通常需要數小時，Agent 會在等待期間處理其他步驟。',
+m_ot:'其他實作了 MCP Server 的內部系統，例如 EDA license 管理、IP 資料庫、設計審查系統，都能以同樣方式接入。',
+human:'ECO 會改動網表，可能影響功能正確性與其他路徑的時序，因此必須由工程師確認。Agent 的權限設計通常是：讀取報告與資料庫可自動；開 Jira 單前請工程師確認內容；任何修改設計資料庫的指令只產生草稿，由工程師在 EDA 工具中審核後執行。',
+reflection:'Reflection 檢查 ECO 建議有沒有副作用，這是 IC 設計最需要經驗的地方：cell 放大會增加功耗與面積；插入 buffer 可能造成 hold 違例或繞線壅塞；Vt 置換（換成低 Vt）會增加漏電流；任何修改都要符合 DRC（設計規則檢查）與 IR drop 限制。檢查不通過時，Agent 會改提其他手法，例如 useful skew（調整時脈到達時間）或請前段修改約束。',
+stop:'終止條件：所有違例群組都有對策，或標記為「需人工判斷」；達到最大分析輪數；或缺少必要資料（例如缺某個 corner 的報告）時反問工程師。結束後彙整違例分類表、ECO 建議清單（含預估改善的 slack）與 Jira 單號。',
+final:'給工程師的回答要直接講結論：違例總數、WNS／TNS、集中在哪幾個群組、各群組建議的修正方向、哪些需要人工判斷、工單已開給誰。例如：「共 512 條 setup 違例，85% 集中在 3 個群組，已提出 ECO 建議並開單給 PD 團隊，其中 DDR 介面那群建議先確認約束是否正確。」',
+task:'實際產出的檔案與連結：ECO 建議表（每條路徑的原因、建議手法、預估改善）、違例分類報告、ECO 指令草稿、Jira 工單連結。這些產出會留存在專案目錄，成為下一次 tape-out 的長期記憶。',
+display:'結果以兩種方式呈現：智慧卡片呈現違例分佈圖、ECO 清單與工單按鈕，工程師可直接點開；自然語言說明重點結論與需要注意的地方。',
+card:'卡片內容：各 clock domain 違例數長條圖、slack 分布圖、ECO 建議表（可排序、可下載）、Jira 工單按鈕。工程師一眼就能看出問題集中在哪。',
+nl:'以對話方式說明重點，工程師可以接著追問，例如「DDR 那群為什麼不建議加 buffer？」「如果改用 useful skew 預估能改善多少？」。',
+};
+
+/* ============ 專有名詞解釋 ============ */
+const GLOSS=[
+// IC 設計
+['ECO','Engineering Change Order，設計變更','IC 設計後期不重跑整個流程，只針對問題處做局部修改（換 cell、加 buffer、改繞線）的變更方式。分為功能 ECO（修邏輯錯誤）與時序 ECO（修時序違例）。','IC 設計'],
+['STA','Static Timing Analysis，靜態時序分析','不用跑模擬，直接計算電路中每條路徑的訊號延遲，檢查訊號是否能在時脈規定的時間內到達。是確認晶片能跑多快的主要方法。','IC 設計'],
+['PD','Physical Design，實體設計（後段）','把邏輯電路（網表）變成晶片實際佈局的工作，包括擺放元件、時脈樹、繞線，以及時序收斂。','IC 設計',['後段']],
+['前段','Front-end Design','IC 設計的前半段：寫 RTL、功能驗證、邏輯合成，產出網表交給後段。','IC 設計'],
+['RTL','Register Transfer Level，暫存器傳輸層級','用 Verilog／VHDL 等硬體描述語言寫的電路設計，描述資料如何在暫存器之間傳遞與運算。','IC 設計'],
+['tape-out','投片／下線','設計完成，把最終佈局資料交給晶圓廠開始製造。一旦 tape-out，修改的代價非常高（重做光罩動輒數千萬元以上）。','IC 設計'],
+['timing closure','時序收斂','反覆修改設計，直到所有路徑在所有條件下都沒有時序違例的過程，常是 tape-out 前最耗時的階段。','IC 設計',['時序收斂']],
+['sign-off','簽核','tape-out 前的最終檢查，時序、功耗、DRC 等全部通過才能投片。','IC 設計'],
+['slack','時序餘裕','訊號「規定到達時間」減去「實際到達時間」。正值代表有餘裕，負值代表違例（太慢或太快）。','IC 設計'],
+['WNS','Worst Negative Slack，最差負 slack','所有違例路徑中最嚴重的那條 slack 值，代表離達標還差多少。','IC 設計'],
+['TNS','Total Negative Slack，總負 slack','所有違例路徑負 slack 的總和，代表違例的整體規模。','IC 設計'],
+['setup','Setup time，建立時間','資料必須在時脈邊緣「之前」穩定的最短時間。setup 違例代表路徑太慢，限制晶片最高頻率。','IC 設計',['Setup']],
+['hold','Hold time，保持時間','資料必須在時脈邊緣「之後」維持不變的最短時間。hold 違例代表路徑太快，任何頻率下都會出錯。','IC 設計',['Hold']],
+['PVT corner','製程／電壓／溫度角落','Process、Voltage、Temperature 的極端組合，例如「慢製程、低電壓、高溫」。晶片必須在所有 corner 都符合時序。','IC 設計',['corner','PVT']],
+['SS corner','Slow-Slow corner','電晶體都偏慢的製程角落，通常是 setup 最難通過的條件。','IC 設計'],
+['MCMM','Multi-Corner Multi-Mode，多角落多模式','同時分析多種工作模式（正常、低功耗、測試）與多個 corner 的時序分析方法。','IC 設計'],
+['clock domain','時脈域','由同一個時脈驅動的一群電路。晶片內常有多個不同頻率的時脈域。','IC 設計',['時脈域']],
+['CDC','Clock Domain Crossing，跨時脈域','訊號從一個時脈域傳到另一個時脈域。需要同步電路與正確的時序約束，否則會出錯。','IC 設計',['跨時脈域']],
+['clock skew','時脈偏移','同一個時脈訊號到達不同暫存器的時間差。過大會造成時序違例。','IC 設計'],
+['useful skew','有益偏移','刻意調整時脈到達某些暫存器的時間，借用相鄰路徑的餘裕來修違例，不必改動資料路徑。','IC 設計'],
+['logic depth','邏輯深度','一條路徑上串接的邏輯閘層數。層數越多延遲越大，越容易 setup 違例。','IC 設計'],
+['startpoint','路徑起點','時序路徑的起點，通常是暫存器的時脈端或晶片輸入腳位。','IC 設計'],
+['endpoint','路徑終點','時序路徑的終點，通常是暫存器的資料輸入端或晶片輸出腳位。','IC 設計'],
+['reg-to-reg','暫存器到暫存器路徑','從一個暫存器出發、到另一個暫存器結束的時序路徑，是最常見的路徑類型。','IC 設計'],
+['false path','偽路徑','電路上存在、但實際運作時不會用到的路徑。需在約束中排除，否則會被誤判為違例。','IC 設計'],
+['multicycle path','多週期路徑','設計上允許花多個時脈週期完成的路徑。約束沒設定正確會被誤判為違例。','IC 設計'],
+['SDC','Synopsys Design Constraints，時序約束檔','描述時脈頻率、輸入輸出延遲、例外路徑等規則的檔案，STA 依此判斷是否違例。','IC 設計',['約束檔']],
+['netlist','網表','由邏輯閘與連線組成的電路清單，是前段交給後段的主要檔案。ECO 就是修改網表。','IC 設計',['網表']],
+['floorplan','平面規劃','決定晶片上各功能區塊、IP、電源網路擺放位置的規劃，影響繞線長度與時序。','IC 設計'],
+['placement','元件擺放','把每個標準元件放到晶片上的實際位置。','IC 設計'],
+['block','設計區塊','晶片切分成的子模組（例如 CPU、GPU、DDR 控制器），通常由不同團隊負責。','IC 設計'],
+['cell','標準元件','晶圓廠提供的基本邏輯單元（反閘、正反器等），同一功能有多種尺寸與速度。','IC 設計'],
+['upsizing','元件放大','把 cell 換成驅動能力更強的大尺寸版本以加快速度，代價是功耗與面積增加。','IC 設計',['放大 cell']],
+['buffer','緩衝器','插在長線上增強訊號的元件，可降低延遲，也可用來刻意延遲以修 hold 違例。','IC 設計'],
+['Vt','Threshold Voltage，臨界電壓','電晶體導通所需的電壓。LVT（低 Vt）速度快但漏電多；HVT（高 Vt）省電但較慢。','IC 設計',['Vt 置換','LVT','HVT','低 Vt']],
+['漏電流','Leakage current','電晶體關閉時仍流過的微小電流，造成待機功耗。','IC 設計'],
+['DRC','Design Rule Check，設計規則檢查','檢查佈局是否符合晶圓廠的製造規則（線寬、間距等），不通過就無法製造。','IC 設計'],
+['IR drop','電壓降','電流流過電源網路造成的電壓下降，會讓電路變慢甚至失效。','IC 設計'],
+['繞線壅塞','Routing congestion','某區域需要的連線超過可用的繞線資源，導致繞遠路、延遲增加。','IC 設計',['壅塞']],
+['PrimeTime','Synopsys 的 STA 工具','業界最常用的靜態時序分析 sign-off 工具，輸出的時序報告是本案例的主要資料。','IC 設計'],
+['EDA','Electronic Design Automation，電子設計自動化','IC 設計用的軟體工具總稱，主要廠商有 Synopsys、Cadence、Siemens。','IC 設計'],
+['Tcl','Tool Command Language','EDA 工具普遍使用的指令腳本語言，用來自動化操作工具。','IC 設計'],
+['IP','Intellectual Property，矽智財','可重複使用的現成電路設計模組，例如 CPU 核心、DDR PHY、USB 控制器，可向供應商授權取得。','IC 設計'],
+['DDR PHY','DDR 記憶體實體層介面','晶片與 DDR 記憶體之間的高速訊號介面電路，時序要求嚴格。','IC 設計'],
+['SerDes','序列器／解序列器','把平行資料轉成高速序列訊號傳輸的電路，用於 PCIe、乙太網路等。','IC 設計'],
+['PCIe','PCI Express','電腦內部的高速序列匯流排標準。','IC 設計'],
+['LSF','Load Sharing Facility','IBM 的運算叢集排程系統，IC 公司常用來分配大量 EDA 運算工作。','IC 設計'],
+['license','EDA 軟體授權','EDA 工具依授權數計費，同時能跑的工作數受限於授權數量。','IC 設計'],
+['ps','皮秒（picosecond）','10⁻¹² 秒。先進製程的時序違例常以數十 ps 計。','IC 設計'],
+['Perforce','版本控管系統','大型檔案常用的集中式版本控管，IC 設計公司常用來管理設計資料。','IC 設計'],
+// AI Agent
+['AI Agent','AI 代理','能自行規劃、使用工具、檢查結果，完成多步驟任務的 AI 系統，不只是一問一答。','AI Agent',['Agent']],
+['LLM','Large Language Model，大型語言模型','以大量文字訓練、能理解與產生語言的 AI 模型，是 Agent 的大腦。','AI Agent'],
+['ReAct','Reason + Act','讓模型「推理 → 行動 → 觀察」交錯進行的 Agent 模式，每輪根據觀察結果調整下一步。','AI Agent'],
+['Plan-and-Execute','先規劃後執行','先由模型產生完整計畫，再逐步執行的 Agent 模式，適合步驟明確的任務。','AI Agent'],
+['Chain-of-Thought','思維鏈','要求模型把推理過程逐步寫出來，提高複雜問題的正確率。','AI Agent'],
+['Tree-of-Thought','思維樹','讓模型同時探索多條推理路徑，比較後選最好的一條。','AI Agent'],
+['Function Calling','函式呼叫','模型輸出結構化的工具名稱與參數，由程式實際執行，是 Agent 使用工具的基礎。','AI Agent',['Tool Use']],
+['JSON Schema','JSON 結構定義','描述 JSON 資料欄位、型別、必填項目的規格，用來告訴模型工具需要哪些參數。','AI Agent'],
+['MCP','Model Context Protocol，模型上下文協定','Anthropic 提出的開放標準，讓 AI 以統一方式連接外部工具與資料來源。','AI Agent'],
+['MCP Server','MCP 伺服器','把某個系統（Jira、Git、資料庫）的功能包裝成 MCP 格式提供給 AI 使用的程式。','AI Agent'],
+['MCP Client','MCP 用戶端','Agent 端負責連接 MCP Server、取得工具清單並發出呼叫的元件。','AI Agent'],
+['Observation','觀察結果','工具執行後回傳給 Agent 的資料或錯誤訊息，是下一輪推理的依據。','AI Agent'],
+['RAG','Retrieval-Augmented Generation，檢索增強生成','先從知識庫找出相關資料，再交給模型回答，常用來實作長期記憶。','AI Agent'],
+['向量資料庫','Vector Database','把文字轉成數值向量儲存，能依「意思相近」搜尋，是 RAG 的核心元件。','AI Agent'],
+['context window','上下文視窗','模型一次能讀取的文字量上限，超過就要摘要或檢索。','AI Agent'],
+['scratchpad','草稿區','Agent 記錄中間步驟與結果的暫存區，也就是工作記憶。','AI Agent'],
+['LLM-as-Judge','以模型當評審','用另一個模型檢查輸出品質，常用於 Reflection。','AI Agent'],
+['Human-in-the-loop','人在迴路中','關鍵步驟保留人工確認的設計，避免 AI 自動執行高風險動作。','AI Agent'],
+['LangChain','Agent 開發框架','常用的 LLM 應用開發框架，提供工具、記憶、Agent 等元件。','AI Agent',['LangGraph']],
+// 其他產業
+['MES','Manufacturing Execution System，製造執行系統','記錄工廠每批產品經過哪些機台、何時、用什麼參數的生產管理系統。','製造'],
+['SPC','Statistical Process Control，統計製程管制','用管制圖監控製程參數，超出界限就發出警示。','製造'],
+['FDC','Fault Detection and Classification，故障偵測與分類','即時收集機台感測器數據，偵測異常的系統。','製造'],
+['recipe','製程配方','機台加工時的參數組合（溫度、壓力、時間、氣體流量等）。','製造'],
+['8D','8D 問題解決法','以八個步驟（組隊、描述問題、暫時對策、根因、永久對策等）處理品質問題的報告格式。','製造'],
+['PM','Preventive Maintenance，預防保養','定期停機保養機台，避免異常發生。','製造'],
+['AML','Anti-Money Laundering，洗錢防制','金融機構偵測與申報可疑交易，防止犯罪資金流動的法遵工作。','金融'],
+['KYC','Know Your Customer，認識客戶','確認客戶身分、資金來源與風險等級的程序。','金融'],
+['HIS','Hospital Information System，醫院資訊系統','管理病歷、醫囑、掛號、藥品的醫院核心系統。','醫療'],
+['POS','Point of Sale，銷售時點系統','收銀與記錄每筆銷售的系統。','餐飲零售'],
+['Jira','專案與工單管理系統','Atlassian 的工單追蹤工具，常用來指派與追蹤工作。','工具'],
+['Confluence','團隊知識庫','Atlassian 的文件協作平台，常用來存放規範與技術文件。','工具'],
+['Git','分散式版本控管','追蹤檔案修改歷史的版本控管系統。','工具',['GitHub']],
+];
+// ---- 擴充：IC 設計 ----
+GLOSS.push(
+['Synthesis','邏輯合成','用 EDA 工具把 RTL 轉成由標準元件組成的網表。','IC 設計',['邏輯合成']],
+['CTS','Clock Tree Synthesis，時脈樹合成','在晶片上建立時脈分配網路，讓時脈盡量同時到達各暫存器。','IC 設計',['時脈樹']],
+['OCV','On-Chip Variation，晶片內變異','同一顆晶片不同位置的元件速度也有差異，STA 需加上餘裕考慮。','IC 設計',['AOCV','POCV']],
+['crosstalk','串擾','相鄰導線互相干擾，造成額外延遲或雜訊。','IC 設計'],
+['LEC','Logic Equivalence Check，邏輯等效檢查','確認修改後的網表（如 ECO 後）與原設計功能完全一致。','IC 設計'],
+['GDSII','佈局資料格式','tape-out 時交給晶圓廠的晶片佈局檔案格式。','IC 設計',['GDS']],
+['光罩','Photomask','晶圓製造時用來轉印電路圖形的模板，先進製程一套成本極高。','IC 設計|半導體製造',['mask']],
+['製程節點','Process node','如 N3、N5，代表晶圓廠的製程世代，數字越小通常越先進。','IC 設計',['N3','N5']],
+['metal layer','金屬層','晶片上用來繞線的導線層，先進製程有十幾層。','IC 設計'],
+['Innovus','Cadence 的 PD 工具','常用的佈局繞線（Place & Route）工具。','IC 設計',['ICC2']],
+['WNS／TNS 收斂','時序指標改善','ECO 後重跑 STA，確認 WNS、TNS 往正值改善。','IC 設計'],
+['power budget','功耗預算','設計允許的功耗上限，ECO 不能讓功耗超過這個值。','IC 設計',['功耗預算']]);
+// ---- 半導體製造 ----
+GLOSS.push(
+['良率','Yield','合格晶粒占全部晶粒的比例，是晶圓廠最重要的指標之一。','半導體製造'],
+['晶圓','Wafer','做晶片用的圓形矽片，常見 12 吋（300mm）。','半導體製造'],
+['批次','Lot','一起加工、一起追蹤的一組晶圓，通常 25 片。','半導體製造',['批號']],
+['蝕刻','Etch','用化學或電漿把不要的材料去除，形成電路圖形的製程。','半導體製造',['蝕刻機']],
+['微影','Lithography，俗稱黃光','用光把光罩上的圖形轉印到晶圓上的製程。','半導體製造',['黃光']],
+['薄膜沉積','Deposition（CVD／PVD）','在晶圓表面長上一層薄膜材料的製程。','半導體製造'],
+['CMP','Chemical Mechanical Polishing，化學機械研磨','把晶圓表面磨平，讓下一層製程能順利進行。','半導體製造'],
+['離子植入','Ion Implantation','把雜質離子打進矽晶中，改變電性。','半導體製造'],
+['腔體','Chamber','機台內進行反應的密閉空間，壓力、溫度要精準控制。','半導體製造',['腔體壓力']],
+['WAT','Wafer Acceptance Test，晶圓允收測試','量測晶圓上測試結構的電性，確認製程是否正常。','半導體製造'],
+['CP','Chip Probing，晶圓針測','切割前逐顆測試晶粒好壞。','半導體製造'],
+['FT','Final Test，成品測試','封裝後的最終功能測試。','半導體製造'],
+['管制界限','Control Limits（UCL／LCL）','SPC 管制圖的上下界，超出代表製程可能異常。','半導體製造',['UCL','LCL']],
+['Cpk','製程能力指數','衡量製程是否穩定落在規格內，數值越高越好，常要求 ≥ 1.33。','半導體製造'],
+['OOC','Out of Control，失控','數據超出管制界限，需調查原因。','半導體製造'],
+['OOS','Out of Spec，超規','數據超出產品規格，產品可能不合格。','半導體製造'],
+['RCA','Root Cause Analysis，根因分析','找出問題真正源頭的分析方法，而不是只處理表面症狀。','半導體製造',['根因分析','根因']],
+['FMEA','失效模式與效應分析','事先列出可能的失效方式、影響與對策的風險分析工具。','半導體製造'],
+['APC','Advanced Process Control，先進製程控制','依量測結果自動微調下一批的製程參數。','半導體製造'],
+['製程站點','Process step','晶圓製造流程中的某一道工序，一顆晶片要經過數百個站點。','半導體製造',['站點']],
+['OEE','Overall Equipment Effectiveness，設備綜合效率','稼動率 × 效能 × 良率，衡量機台被有效利用的程度。','半導體製造'],
+['停機','Downtime','機台無法生產的時間，分計畫性（PM）與非計畫性（故障）。','半導體製造'],
+['SOP','Standard Operating Procedure，標準作業程序','規定作業步驟的文件，確保每個人做法一致。','半導體製造|政府機關'],
+['改善單','CAR，Corrective Action Request','要求相關單位提出並執行矯正措施的追蹤單。','半導體製造'],
+['相關性','Correlation','兩個變數一起變動的程度。相關不代表因果，需進一步驗證。','半導體製造|通用商業'],
+['對照組','Control group','用來比較的正常樣本，例如異常批次前後的正常批次。','半導體製造']);
+// ---- 金融 ----
+GLOSS.push(
+['可疑交易報告','STR，Suspicious Transaction Report','金融機構發現疑似洗錢交易時，依法向調查局申報的報告。','金融',['可疑交易','申報']],
+['洗錢態樣','Typology','常見的洗錢手法模式，例如分散入帳、快進快出。','金融',['態樣']],
+['CDD','Customer Due Diligence，客戶盡職審查','開戶與往來期間確認客戶身分與交易目的的程序。','金融'],
+['EDD','Enhanced Due Diligence，加強盡職審查','對高風險客戶進行更深入的審查。','金融'],
+['PEP','Politically Exposed Person，重要政治性職務人士','擔任重要公職的人及其家屬，需加強審查。','金融'],
+['制裁名單','Sanctions list','各國或國際組織公布禁止往來的對象名單。','金融'],
+['分散入帳','Structuring，拆單','把大額資金拆成多筆小額，規避申報門檻的手法。','金融'],
+['快進快出','Rapid movement of funds','資金入帳後短時間內立即轉出，常見於人頭帳戶。','金融'],
+['人頭帳戶','Money mule account','借用他人名義開立、供犯罪資金流動的帳戶。','金融'],
+['警示帳戶','Alert account','經檢警通報涉及詐騙等犯罪而被限制的帳戶。','金融'],
+['交易監控','Transaction Monitoring','以規則或模型持續掃描交易，產生可疑警示的系統。','金融',['警示交易']],
+['法遵','Compliance，法令遵循','確保金融機構業務符合法規的專責單位與工作。','金融',['法遵人員','法遵主管']],
+['風險評級','Risk rating','依客戶背景與交易行為評定的風險等級（高／中／低）。','金融',['風險分級','風險分數']],
+['核心系統','Core banking system','處理存款、放款、匯款等主要業務的銀行系統。','金融'],
+['FATF','防制洗錢金融行動工作組織','制定國際洗錢防制標準的跨政府組織，定期評鑑各國。','金融'],
+['實質受益人','UBO，Ultimate Beneficial Owner','實際擁有或控制法人的自然人。','金融'],
+['誤報','False positive','系統發出警示但實際並無問題的案件，比例過高會浪費人力。','金融'],
+['對手方','Counterparty','交易的另一方帳戶或對象。','金融'],
+['稽核','Audit','檢查作業是否符合規定、紀錄是否完整可追溯。','金融|政府機關'],
+['金管會','金融監督管理委員會','台灣金融業的主管機關。','金融']);
+// ---- 醫療 ----
+GLOSS.push(
+['出院摘要','Discharge summary','病人出院時整理住院經過、診斷、處置、用藥與後續計畫的文件。','醫療'],
+['電子病歷','EMR／EHR，Electronic Medical Record','以電子方式記錄與保存的病歷。','醫療',['病歷','住院紀錄']],
+['醫囑','Physician order','醫師開立的檢查、用藥、處置指示。','醫療'],
+['護理紀錄','Nursing record','護理人員記錄病人狀況與照護過程的文件。','醫療'],
+['藥物交互作用','Drug interaction','兩種以上藥物併用時，效果增強、減弱或產生副作用。','醫療',['交互作用']],
+['出院帶藥','Discharge medication','病人出院後要繼續服用的藥物清單。','醫療',['帶藥']],
+['用藥整合','Medication reconciliation','比對入院、住院、出院各階段用藥，避免遺漏或重複。','醫療',['核對用藥','用藥核對']],
+['衛教','Health education','教導病人與家屬疾病照護、用藥與注意事項。','醫療',['衛教單']],
+['回診','Follow-up visit','出院後回到門診追蹤病況。','醫療'],
+['去識別化','De-identification','移除或替換姓名、身分證號等可識別個人的資料。','醫療|政府機關'],
+['個資法','個人資料保護法','規範個人資料蒐集、處理、利用的台灣法律。','醫療|政府機關'],
+['病程','Clinical course','病人住院期間病況與治療的演變過程。','醫療'],
+['仿單','Package insert','藥品包裝內附的說明書，記載適應症、劑量、副作用。','醫療'],
+['臨床指引','Clinical guideline','專業學會依實證整理的診療建議。','醫療'],
+['LIS','Laboratory Information System，檢驗資訊系統','管理檢驗單與檢驗結果的系統。','醫療',['檢驗系統']],
+['ICD-10','國際疾病分類第十版','全球通用的疾病診斷代碼。','醫療'],
+['FHIR','Fast Healthcare Interoperability Resources','醫療資料交換的國際標準，台灣健保署也推動採用。','醫療'],
+['健保署','衛生福利部中央健康保險署','台灣全民健保的主管機關。','醫療']);
+// ---- 教育 ----
+GLOSS.push(
+['課綱','十二年國教課程綱要（108 課綱）','規定各學習階段要學什麼、學到什麼程度的國家課程文件。','教育',['108 課綱']],
+['學習表現','Learning performance','課綱中描述學生應展現的能力，例如「能解一元一次方程式」。','教育'],
+['學習內容','Learning content','課綱中規定要學的知識主題。','教育'],
+['補救教學','Remedial instruction','針對學習落後的學生，重新教導未精熟的概念。','教育',['補救練習']],
+['段考','定期評量','學期中定期舉行的考試。','教育'],
+['形成性評量','Formative assessment','教學過程中隨時了解學生學習狀況、調整教學的評量。','教育'],
+['總結性評量','Summative assessment','單元或學期結束時評定學習成果的評量。','教育'],
+['錯誤概念','Misconception','學生對概念的錯誤理解，例如移項時忘了變號。','教育',['錯誤概念分析']],
+['差異化教學','Differentiated instruction','依學生程度與需求調整教學內容與方式。','教育'],
+['個人化學習','Personalized learning','為每位學生量身安排學習內容與進度。','教育',['個人化練習']],
+['學習歷程檔案','Learning portfolio','記錄學生課程成果與多元表現，作為升學參考。','教育'],
+['素養導向','Competency-based','強調知識、能力、態度整合並能應用於生活情境的教學與評量。','教育'],
+['Google Classroom','Google 教學平台','發布作業、收作業、評分的線上教室。','教育'],
+['題庫','Item bank','分類整理好的考題集合，可依概念與難度挑題。','教育'],
+['鑑別度','Discrimination index','題目區分高分組與低分組學生的能力。','教育'],
+['雙向細目表','Test blueprint','出題前規劃各單元與能力層次題數分配的表格。','教育'],
+['學習分析','Learning analytics','分析學習數據以了解並改善學習。','教育'],
+['熱力圖','Heatmap','用顏色深淺表示數值大小的圖，常用來看全班各概念錯誤率。','教育|通用商業',['概念熱力圖']]);
+// ---- 餐飲零售 ----
+GLOSS.push(
+['備料','Prep','開店前依預估量準備食材的工作。','餐飲零售',['備料量','備料表']],
+['安全庫存','Safety stock','為應付需求波動或交期延誤而多備的庫存量。','餐飲零售'],
+['最低訂購量','MOQ，Minimum Order Quantity','供應商接受的單次最低訂購數量。','餐飲零售',['MOQ']],
+['交期','Lead time','從下單到貨到的時間。','餐飲零售'],
+['先進先出','FIFO，First In First Out','先進貨的食材先使用，避免過期。','餐飲零售',['FIFO']],
+['食材成本率','Food cost %','食材成本占營收的比例，餐飲業常見 30～40%。','餐飲零售'],
+['食材損耗','Food waste','過期、報廢、處理耗損的食材。','餐飲零售',['損耗','食材浪費']],
+['客單價','Average ticket','平均每位客人（每筆訂單）的消費金額。','餐飲零售'],
+['翻桌率','Table turnover','一段時間內每張桌子被使用的次數。','餐飲零售'],
+['銷量預測','Demand forecasting','依歷史銷售、天氣、活動等因素預估未來銷量。','餐飲零售'],
+['季節性','Seasonality','銷售隨季節或節日規律變化的現象。','餐飲零售'],
+['配方表','BOM，Bill of Materials','每份餐點所需的食材品項與用量。','餐飲零售',['食材配比','食材換算']],
+['庫存週轉率','Inventory turnover','一段時間內庫存被賣完補進的次數，越高代表越少積壓。','餐飲零售'],
+['毛利率','Gross margin','（營收 − 直接成本）÷ 營收。','餐飲零售|通用商業'],
+['保存期限','Shelf life','食材可安全使用的期限。','餐飲零售'],
+['ABC 分析','ABC analysis','依銷售額把品項分成 A（主力）、B、C 三級，集中管理主力品項。','餐飲零售'],
+['外送平台','Delivery platform','Uber Eats、foodpanda 等代為接單與配送的平台。','餐飲零售']);
+// ---- 政府機關 ----
+GLOSS.push(
+['人民陳情','Public petition','民眾對機關業務提出建議、檢舉或請求，機關須依規定期限處理。','政府機關',['陳情','陳情案件']],
+['1999 市民熱線','市民服務專線','地方政府受理市民反映與查詢的電話專線。','政府機關'],
+['公文','Official document','機關處理公務的正式文書，有固定格式與用語。','政府機關',['公文系統','電子公文']],
+['會辦','Joint review','案件涉及其他單位時，送請相關單位表示意見或協助處理。','政府機關',['會辦單']],
+['核稿','Draft review','主管審核承辦人擬好的文稿，確認內容與用語後才能發出。','政府機關'],
+['承辦人','Case officer','負責處理某件公務的人員。','政府機關'],
+['職掌','Responsibilities','機關或科室依法規定負責的業務範圍。','政府機關',['業務職掌']],
+['行政程序法','Administrative Procedure Act','規範行政機關作成決定的程序，包含陳情處理的原則。','政府機關'],
+['列管','Tracking','把案件納入追蹤管理，定期檢查處理進度。','政府機關'],
+['GIS','Geographic Information System，地理資訊系統','以地圖呈現與分析空間資料的系統。','政府機關',['GIS 圖資']],
+['政府資料開放','Open data（data.gov.tw）','政府把資料以開放格式公開，供民眾與企業使用。','政府機關'],
+['政府資訊公開法','Freedom of Government Information Act','規範政府資訊主動與申請公開的法律。','政府機關'],
+['道路養護','Road maintenance','道路坑洞修補、路面重鋪等維護工作。','政府機關',['養護排程']],
+['處理期限','Processing deadline','法規或內規要求案件必須回覆的時間。','政府機關']);
+// ---- 通用商業（競品分析）----
+GLOSS.push(
+['競品分析','Competitive analysis','比較競爭對手的產品、價格、通路、行銷與優劣勢。','通用商業',['競爭對手分析']],
+['市場定位','Positioning','品牌在目標客群心中想要佔據的位置。','通用商業',['定位']],
+['定價策略','Pricing strategy','決定產品價格的方法，例如高價策略、滲透定價。','通用商業'],
+['SWOT','優勢／劣勢／機會／威脅分析','從內部優劣勢與外部機會威脅評估競爭態勢。','通用商業'],
+['市占率','Market share','公司銷售額占整體市場的比例。','通用商業'],
+['價值主張','Value proposition','產品為顧客解決什麼問題、帶來什麼好處。','通用商業'],
+['差異化','Differentiation','讓產品與競品有明顯區別的特色。','通用商業'],
+['目標客群','Target audience','產品主要服務的顧客族群。','通用商業',['TA']],
+['產品線','Product line','同一品牌下相關產品的組合。','通用商業'],
+['Slack','團隊即時通訊工具','以頻道分組討論的工作通訊軟體，可接收自動通知。','通用商業|工具'],
+['TAM／SAM／SOM','市場規模三層','總潛在市場／可服務市場／可取得市場。','通用商業']);
+GLOSS.forEach(g=>{if(g[3]==='製造')g[3]='半導體製造'});
+const CASE_CAT={general:'通用商業',icd:'IC 設計',fab:'半導體製造',fin:'金融',med:'醫療',edu:'教育',food:'餐飲零售',gov:'政府機關'};
+const catsOf=g=>String(g[3]).split('|');
+
+let GL={},GL_RE=/$^/;
+function rebuildGL(){
+  GL={};GLOSS.forEach(g=>{GL[g[0]]=g;(g[4]||[]).forEach(a=>{if(!GL[a])GL[a]=g})});
+  const terms=Object.keys(GL).sort((a,b)=>b.length-a.length);
+  const reEsc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  GL_RE=new RegExp(terms.map(t=>/^[\x00-\x7F]+$/.test(t)?`(?<![A-Za-z0-9])${reEsc(t)}(?![A-Za-z0-9])`:reEsc(t)).join('|'),'g');
+}
+rebuildGL();
+
+/* ============ 一般企業作業流程案例 ============ */
+const FLOWS={
+order:{name:'電子下單',icon:'🧾',goal:'把今天客戶寄來的訂單 Email 與 PDF 轉成 ERP 銷售訂單，並回覆交期',
+ steps:['讀取訂單信件','擷取訂單內容','核對料號與價格','查庫存與交期','建單並回覆客戶'],
+ value:['人工打單從每張約 10 分鐘縮短到 1 分鐘內','減少料號、數量、單價打錯','客戶當天就收到交期回覆'],
+ note:'金額或數量異常、新客戶首次下單，建單前須業務確認。',
+ sc:{goal:'業務助理輸入：「把今天客戶寄來的訂單 Email 與 PDF 轉成 ERP 銷售訂單，並回覆交期」。',
+  memory:'取出各客戶的料號對照表（客戶料號 ↔ 公司料號）與合約價。',longMem:'記得客戶慣用的訂單格式、料號對照與付款條件。',shortMem:'「A 客戶的急單今天一定要回交期」。',
+  planner:'讀取訂單信件 → 擷取訂單內容 → 核對料號與價格 → 查庫存與交期 → 建單並回覆客戶。',steps:'若訂單中有停產料號，Planner 加一步「詢問業務替代料號」。',
+  reasoning:'附件是掃描 PDF → 先 OCR 擷取，再對照料號與報價。',loop:'讀信 → OCR 擷取 → 比對料號 → 查庫存 → 查交期 → …',
+  thinking:'Thought：「這張訂單單價比合約價低 8%，可能是客戶用了舊報價。」',action:'Action：ocr_extract（擷取 PDF 訂單內容）',
+  actionInput:'Action Input：{"file":"PO_20261004_A.pdf","fields":["item","qty","price","due_date"]}',obs:'Observation：擷取 12 個品項，其中 1 項料號在對照表找不到。',
+  tool:'信件讀取、OCR 擷取、庫存查詢、訂單確認書產生。',mcp:'透過 MCP 連接 ERP 建立銷售訂單、CRM 查信用額度、APS 查可承諾交期。',
+  human:'單價低於合約價、超過信用額度或新客戶首次下單，建單前請業務確認。',
+  reflection:'檢查：料號都對得上、單價符合合約、未超過信用額度；發現 1 張單價異常 → 標記待業務確認。',workMem:'15 張訂單已建 13 張，2 張待確認。',
+  func:'彙整已建訂單號、交期回覆與異常清單。',final:'「今日 15 張訂單已建 13 張，2 張因單價異常待確認，交期已回覆客戶。」',
+  task:'ERP 銷售訂單 13 張、訂單確認書 PDF、異常清單。',display:'卡片列出訂單狀態與異常原因，一鍵開啟 ERP。'},
+ chips:[['t_code','OCR 擷取 PDF 訂單的品項、數量、單價與交期。',1],['m_gh','透過 MCP 查詢 ERP 料號主檔，比對客戶料號。',2],['t_db','查詢可用庫存與在途數量，計算交期。',3],['t_mail','寄送訂單確認書與交期給客戶。',4]],
+ tools:[['📧','信件讀取','讀取客戶訂單信件與附件。'],['🔍','OCR 文件擷取','從 PDF、圖片訂單擷取品項、數量、價格。'],['📊','價格與信用檢查','比對報價單、合約價與客戶信用額度。'],['📦','庫存查詢','查詢可用庫存與在途數量。'],['✉️','回覆客戶','寄送訂單確認與交期。'],['🧾','確認書產生','產出訂單確認書 PDF。']],
+ mcps:[['📚','報價單資料庫','查詢客戶專屬報價與合約價。'],['🏭','ERP 系統','建立銷售訂單、查詢料號主檔。'],['👥','CRM 系統','查詢客戶資料、信用額度與聯絡人。'],['📈','生產排程 APS','查詢可承諾交期。'],['🔗','EDI 平台','接收大客戶的電子訂單。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解接單建單流程',loop:'讀信 → 擷取 → 核對 → 查庫存',thinking:'判斷訂單內容是否完整正確',action:'選擷取、ERP 或庫存工具',actionInput:'指定附件、料號、數量',obs:'品項、價格、庫存、交期',longMem:'客戶料號對照、合約價',shortMem:'今天先處理急單',workMem:'已建單數、待確認單',tool:'信件、OCR、庫存工具',mcp:'ERP／CRM／報價系統',human:'金額異常、新客戶需業務確認',reflection:'料號、價格、信用額度正確',stop:'訂單都處理完？→ 回覆',final:'今日接單摘要',task:'ERP 訂單、訂單確認書',card:'訂單清單／異常提醒',nl:'向業務說明重點'}},
+ship:{name:'出貨流程',icon:'🚚',goal:'把今天要出的訂單排好揀貨、包裝與物流，並通知客戶貨況',
+ steps:['彙整待出貨訂單','產生揀貨單','包裝與出貨檢查','安排物流與託運單','通知客戶追蹤碼'],
+ value:['揀貨路線最佳化，減少走動時間','出錯貨、漏出貨大幅減少','客戶即時收到貨況'],
+ note:'出貨數量與訂單不符、拆單出貨或貴重品出貨，須倉管確認。',
+ sc:{goal:'倉管主管輸入：「把今天要出的訂單排好揀貨、包裝與物流，並通知客戶貨況」。',
+  memory:'取出倉庫儲位配置、各物流商的收貨時間與合約運費。',longMem:'記得儲位配置、物流合約價與各客戶的出貨要求。',shortMem:'「物流下午三點收貨，急件優先」。',
+  planner:'彙整待出貨訂單 → 產生揀貨單 → 包裝與出貨檢查 → 安排物流與託運單 → 通知客戶追蹤碼。',steps:'若有品項庫存不足，Planner 加一步「拆單出貨並通知業務」。',
+  reasoning:'先從 ERP 撈出今天到期的訂單，依急件與物流收貨時間排序，再合併同儲位品項。',loop:'撈訂單 → 查儲位 → 排揀貨路線 → 檢查 → 叫物流 → …',
+  thinking:'Thought：「有 3 張訂單都包含 A 區同一品項，合併揀貨可省一趟。」',action:'Action：route_optimize（計算揀貨路線）',
+  actionInput:'Action Input：{"orders":["SO1021","SO1022","SO1025"],"warehouse":"WH-01"}',obs:'Observation：最佳路線 18 個儲位，預估揀貨 25 分鐘；SO1030 有 1 品項庫存不足。',
+  tool:'WMS 儲位查詢、揀貨路線最佳化、託運單列印、出貨通知。',mcp:'透過 MCP 連接 ERP 讀訂單、WMS 建揀貨任務、物流商系統建立託運。',
+  human:'出貨數量與訂單不符、拆單出貨或貴重品，須倉管確認。',
+  reflection:'檢查：掃描數量與訂單一致、地址完整、重量與運費合理；發現 1 件地址缺郵遞區號 → 補齊。',workMem:'42 張訂單：已揀貨 40、已包裝 38、待物流 4。',
+  func:'彙整出貨清單、追蹤碼與拆單紀錄。',final:'「今日 42 張訂單已出 41 張，1 張拆單出貨已通知業務，追蹤碼已寄給客戶。」',
+  task:'揀貨單、託運單、出貨紀錄、拆單通知。',display:'出貨進度看板卡片，可點開每張訂單的追蹤碼。'},
+ chips:[['m_gh','透過 MCP 從 ERP 撈出今天到期的待出貨訂單。',0],['t_code','計算最短揀貨路線，合併同儲位品項。',1],['m_gg','透過 MCP 在物流商系統建立託運並取得追蹤碼。',3],['t_mail','以簡訊／Email 通知客戶出貨與追蹤碼。',4]],
+ tools:[['🌐','物流報價查詢','比較各家物流的運費與時效。'],['💻','揀貨路線最佳化','依儲位計算最短揀貨路線。'],['📊','出貨量分析','統計各時段出貨量，安排人力。'],['📦','WMS 儲位查詢','查詢品項儲位與可出貨數量。'],['📱','簡訊／Email 通知','寄送出貨通知與追蹤碼。'],['🏷️','託運單列印','產生物流標籤與託運單。']],
+ mcps:[['🚚','物流商系統','建立託運、取得追蹤碼。'],['🏭','ERP 系統','讀取待出貨訂單、回寫出貨狀態。'],['📋','WMS 倉儲系統','產生揀貨任務、扣庫存。'],['📷','條碼掃描系統','掃描確認揀貨品項與數量。'],['💬','客服系統','同步出貨資訊給客服。'],['⚙','電商平台','讀取網購訂單。']],
+ lab:{planner:'拆解揀貨出貨流程',loop:'撈訂單 → 排揀貨 → 檢查 → 叫物流',thinking:'判斷出貨優先順序與物流',action:'選 WMS、物流或通知工具',actionInput:'指定訂單、儲位、物流商',obs:'儲位、庫存、運費、追蹤碼',longMem:'儲位配置、物流合約價',shortMem:'下午三點前交物流',workMem:'已揀貨、已包裝、已出貨數',tool:'WMS、路線、物流工具',mcp:'ERP／WMS／物流商',human:'數量不符、貴重品需確認',reflection:'品項、數量、地址正確',stop:'全部出貨？→ 通知',final:'今日出貨摘要',task:'揀貨單、託運單、出貨紀錄',card:'出貨進度看板',nl:'向倉管說明重點'}},
+ride:{name:'叫車下單（Uber）',icon:'🚕',goal:'明早 7 點從竹南火車站叫車到桃園機場第二航廈，我有兩件大行李',
+ steps:['確認行程需求','查詢車型與報價','比較方案','確認並預約','行程通知與追蹤'],
+ value:['一句話完成叫車，自動考慮行李與時間','比價並避開尖峰加價','航班延誤時自動調整提醒'],
+ note:'送出預約與付款前，一律請使用者確認車型、金額與上車地點。',
+ sc:{goal:'使用者輸入：「明早 7 點從竹南火車站叫車到桃園機場第二航廈，我有兩件大行李」。',
+  memory:'取出使用者常用付款方式、偏好車型，以及行事曆中明天的航班資訊。',longMem:'記得常用地點（家、公司）、偏好車型與付款方式。',shortMem:'「兩件大行李」→ 需要大車型。',
+  planner:'確認行程需求 → 查詢車型與報價 → 比較方案 → 確認並預約 → 行程通知與追蹤。',steps:'若航班延誤，Planner 加一步「調整預約時間並通知司機」。',
+  reasoning:'兩件大行李一般轎車放不下 → 只考慮休旅或大型車；再依車程回推 7 點出發是否來得及。',loop:'查路線 → 查各車型報價 → 比較 → 確認 → 預約 → …',
+  thinking:'Thought：「明早尖峰車程約 75 分鐘，航班 9:40 起飛，7 點出發時間剛好。」',action:'Action：ride_quote（查詢報價）',
+  actionInput:'Action Input：{"pickup":"竹南火車站","dropoff":"桃園機場第二航廈","time":"07:00","luggage":2}',obs:'Observation：休旅車約 NT$1,850、大型車約 NT$2,300，皆可預約。',
+  tool:'地圖與路況、時間推算、方案比較、推播通知。',mcp:'透過 MCP 連接叫車平台查報價與預約、航班資訊查延誤、行事曆寫入提醒。',
+  human:'送出預約與付款前，請使用者確認車型、金額與上車地點。',
+  reflection:'檢查：車型放得下兩件大行李、上車點是火車站哪個出口、時間與航班吻合；發現上車點不明確 → 反問使用者前站或後站。',workMem:'已比較 3 種車型，使用者選擇休旅車。',
+  func:'彙整預約單號、司機資訊與提醒時間。',final:'「已預約明早 7:00 休旅車，費用約 NT$1,850，前一晚 9 點會再提醒你。」',
+  task:'預約確認單、行事曆提醒。',display:'車型比價卡片＋一鍵確認按鈕。'},
+ chips:[['t_web','地圖查詢路線與尖峰車程。',1],['m_gg','透過 MCP 向叫車平台查詢各車型報價。',1],['t_ana','比較車型、價格與行李容量。',2],['t_mail','預約成功後推播司機資訊與上車提醒。',4]],
+ tools:[['🗺️','地圖與路況','查詢路線、距離與預估車程。'],['💻','時間推算','依航班時間回推出發時間。'],['📊','方案比較','比較車型、價格與到達時間。'],['📅','行事曆查詢','查詢使用者的航班與行程。'],['📱','推播通知','通知司機資訊與到達時間。'],['💳','付款確認','確認付款方式（需使用者同意）。']],
+ mcps:[['🚕','叫車平台 API','查詢報價、建立預約。'],['✈️','航班資訊','查詢航班時間與延誤。'],['📆','Google 行事曆','寫入行程與提醒。'],['👤','使用者偏好','常用地點、偏好車型。'],['💬','訊息通知','傳送行程資訊。'],['⚙','其他交通平台','計程車、租車平台。']],
+ lab:{planner:'拆解叫車預約流程',loop:'查路線 → 查報價 → 比較 → 預約',thinking:'判斷出發時間與車型',action:'選地圖、報價或預約工具',actionInput:'指定起訖點、時間、行李',obs:'車程、報價、可預約時段',longMem:'常用地點、偏好車型',shortMem:'兩件大行李',workMem:'已查方案、已選方案',tool:'地圖、比價、通知工具',mcp:'叫車平台／航班／行事曆',human:'付款與預約前使用者確認',reflection:'時間、上車點、車型容量正確',stop:'預約成功？→ 通知',final:'預約結果摘要',task:'預約單、行事曆提醒',card:'車型比價卡片',nl:'語音或文字回覆'}},
+purchase:{name:'請購採購',icon:'🛒',goal:'把本週各部門請購單整理比價，挑出最划算的供應商並產生採購單',
+ steps:['彙整請購單','確認預算與規格','向供應商詢價','比價與選商','產生採購單送簽'],
+ value:['比價時間大幅縮短','每筆採購都有完整比價紀錄','預算超支自動攔截'],
+ note:'採購單金額超過授權額度時，須主管簽核，Agent 不可代簽。',
+ sc:{goal:'採購人員輸入：「把本週各部門請購單整理比價，挑出最划算的供應商並產生採購單」。',
+  memory:'取出合格供應商名冊與各品項過去一年的採購單價。',longMem:'記得合格供應商、歷史單價與各供應商的交期表現。',shortMem:'「本月預算吃緊，能延後的先延後」。',
+  planner:'彙整請購單 → 確認預算與規格 → 向供應商詢價 → 比價與選商 → 產生採購單送簽。',steps:'若某品項只有一家供應商，Planner 加一步「填寫獨家採購說明」。',
+  reasoning:'先合併各部門相同品項以爭取批量價，再查預算是否足夠。',loop:'彙整請購 → 查預算 → 寄詢價 → 收報價 → 比價 → …',
+  thinking:'Thought：「三個部門都請購同款筆電，合併 15 台可以要求批量價。」',action:'Action：send_rfq（寄送詢價單）',
+  actionInput:'Action Input：{"item":"筆記型電腦 14 吋","qty":15,"vendors":["V01","V07","V12"],"due":"2026-10-08"}',obs:'Observation：三家回覆報價，最低 NT$32,500／台，交期 7 天。',
+  tool:'詢價信寄送、比價計算、供應商評分、採購單產生。',mcp:'透過 MCP 讀取 ERP 請購單、查預算系統餘額、送電子簽核。',
+  human:'採購金額超過授權額度，須依簽核層級送主管簽核。',
+  reflection:'檢查：至少三家比價、規格一致、含稅含運比較、預算足夠；發現 1 家報價未含運費 → 補算後重新排序。',workMem:'8 項請購已完成 6 項比價。',
+  func:'彙整比價表、選商理由與採購單草稿。',final:'「8 項請購已完成比價，合併採購節省約 9%，採購單已送主管簽核。」',
+  task:'比價表、採購單草稿、簽核單號。',display:'比價表卡片，標示推薦供應商與節省金額。'},
+ chips:[['m_gh','透過 MCP 從 ERP 讀取本週請購單。',0],['t_mail','寄送詢價單給三家合格供應商。',2],['t_code','計算含稅、含運、付款條件後的實際成本。',3],['m_mdb','透過 MCP 把採購單送電子簽核。',4]],
+ tools:[['🌐','市場行情查詢','查詢原物料與品項市場價。'],['💻','比價計算','計算含稅、含運、付款條件後的實際成本。'],['📊','供應商評分','依價格、交期、品質紀錄評分。'],['🗄️','歷史採購紀錄','查詢過去採購單價與供應商。'],['✉️','詢價信寄送','寄送詢價單給供應商。'],['📝','採購單產生','產生採購單草稿。']],
+ mcps:[['📚','合格供應商名冊','查詢核可的供應商。'],['🏭','ERP 系統','讀取請購單、建立採購單。'],['💰','預算系統','查詢部門剩餘預算。'],['✍️','電子簽核系統','送出採購單簽核。'],['📨','供應商入口網站','收取報價。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解請購到採購流程',loop:'彙整 → 詢價 → 比價 → 選商',thinking:'判斷規格與預算是否合理',action:'選詢價、比價或預算工具',actionInput:'指定品項、數量、供應商',obs:'報價、交期、剩餘預算',longMem:'合格供應商、歷史單價',shortMem:'本月預算吃緊',workMem:'已詢價、已回覆家數',tool:'詢價、比價、評分工具',mcp:'ERP／預算／簽核系統',human:'超過授權額度須主管簽核',reflection:'至少三家比價、預算足夠',stop:'全部選商？→ 送簽',final:'比價結果摘要',task:'比價表、採購單',card:'比價表卡片',nl:'向主管說明選商理由'}},
+expense:{name:'報帳請款',icon:'💼',goal:'把這週出差的發票與收據整理成報帳單送簽',
+ steps:['收集發票收據','辨識發票內容','比對報帳規定','產生報帳單','送主管簽核'],
+ value:['員工拍照即可報帳','規定自動檢查，退件率下降','會計核帳時間減少'],
+ note:'超過規定標準的費用需註明原因，並由主管與會計審核。',
+ sc:{goal:'員工輸入：「把這週出差的發票與收據整理成報帳單送簽」（附 9 張照片）。',
+  memory:'取出公司差旅報支規定與員工的出差申請單。',longMem:'記得報帳規定、費用科目對照與職級標準。',shortMem:'「這次是台北出差三天，住宿兩晚」。',
+  planner:'收集發票收據 → 辨識發票內容 → 比對報帳規定 → 產生報帳單 → 送主管簽核。',steps:'若有收據缺統編，Planner 加一步「提醒員工補開或說明」。',
+  reasoning:'先 OCR 辨識每張發票，再依日期比對出差期間，檢查是否超過規定上限。',loop:'OCR 辨識 → 驗證發票 → 分類 → 比對規定 → …',
+  thinking:'Thought：「住宿每晚 NT$3,200，超過職級上限 NT$2,800，需要註明原因。」',action:'Action：invoice_ocr（辨識發票）',
+  actionInput:'Action Input：{"images":9,"fields":["invoice_no","date","amount","tax_id"]}',obs:'Observation：辨識 9 張，其中 1 張收據沒有統編，1 張日期不在出差期間。',
+  tool:'發票 OCR、電子發票查詢、費用分類、報帳單產生。',mcp:'透過 MCP 查詢費用報支辦法、比對行事曆出差日期、建立 ERP 費用單並送簽核。',
+  human:'超過標準的費用需註明原因，由主管與會計審核。',
+  reflection:'檢查：發票有效、無重複報帳、日期在出差期間、金額未超標；發現 1 張是重複上傳 → 移除。',workMem:'9 張已辨識，7 張通過，2 張待員工說明。',
+  func:'彙整報帳金額、費用分類與待補件清單。',final:'「本次報帳 NT$12,460，住宿超標需填原因，另 1 張收據缺統編請補件。」',
+  task:'報帳單、費用明細表、簽核單號。',display:'費用明細卡片，標示需補件項目。'},
+ chips:[['t_code','發票 OCR 辨識號碼、日期、金額與統編。',1],['t_web','向財政部電子發票平台驗證發票。',1],['t_db','查詢差旅規定的住宿與餐費上限。',2],['m_mdb','透過 MCP 把報帳單送電子簽核。',4]],
+ tools:[['🌐','電子發票查詢','向財政部平台驗證發票真偽與內容。'],['🔍','發票 OCR','從照片辨識發票號碼、金額、統編。'],['📊','費用分類','依費用科目分類並加總。'],['🗄️','差旅規定資料庫','查詢住宿、交通、餐費上限。'],['✉️','補件通知','通知員工補件或簽核結果。'],['📝','報帳單產生','產生報帳單與明細。']],
+ mcps:[['📚','費用報支辦法','查詢公司報帳規定。'],['🏭','ERP 會計模組','建立費用單、入帳。'],['📆','行事曆','比對出差日期與行程。'],['✍️','電子簽核系統','送出報帳單簽核。'],['💬','Teams／LINE','通知員工。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解報帳請款流程',loop:'辨識 → 驗證 → 分類 → 比對',thinking:'判斷費用是否符合規定',action:'選 OCR、規定或發票查詢',actionInput:'指定發票圖片與欄位',obs:'發票號碼、金額、統編',longMem:'報帳規定、費用科目',shortMem:'台北出差三天',workMem:'已辨識張數、待補件',tool:'OCR、發票查詢、分類',mcp:'ERP／簽核／行事曆',human:'超標費用主管與會計審核',reflection:'發票有效、未重複、未超標',stop:'全部辨識？→ 送簽',final:'報帳金額摘要',task:'報帳單、明細表',card:'費用明細卡片',nl:'提醒補件事項'}},
+cs:{name:'客服退換貨',icon:'🎧',goal:'處理今天的退貨申請，判斷是否符合退貨規定並安排退款或換貨',
+ steps:['讀取退貨申請','查詢訂單與商品','判斷退貨資格','安排退款或換貨','回覆顧客'],
+ value:['回覆時間從一天縮短到數分鐘','規定判斷一致、不因人而異','客服專注在複雜客訴'],
+ note:'退款金額超過門檻、或疑似濫用退貨，須客服人員確認。',
+ sc:{goal:'客服主管輸入：「處理今天的退貨申請，判斷是否符合退貨規定並安排退款或換貨」。',
+  memory:'取出退換貨政策與每位顧客過去的退貨紀錄。',longMem:'記得退換貨政策、例外條款與顧客歷史紀錄。',shortMem:'「週年慶特價商品不接受無理由退貨」。',
+  planner:'讀取退貨申請 → 查詢訂單與商品 → 判斷退貨資格 → 安排退款或換貨 → 回覆顧客。',steps:'若顧客情緒激動或提到申訴，Planner 加一步「轉給資深客服」。',
+  reasoning:'先查購買日期是否在 7 天鑑賞期內，再看退貨原因與照片判斷是否為商品瑕疵。',loop:'讀申請 → 查訂單 → 看照片 → 對政策 → 安排退款 → …',
+  thinking:'Thought：「這件外套購買第 5 天，照片顯示拉鍊損壞，屬商品瑕疵，可換貨。」',action:'Action：order_lookup（查詢訂單）',
+  actionInput:'Action Input：{"order_id":"EC20260929-1182","fields":["date","items","payment"]}',obs:'Observation：購買日 9/29，信用卡付款，商品為週年慶特價品。',
+  tool:'訂單查詢、照片判讀、情緒分析、退款作業。',mcp:'透過 MCP 讀取電商平台退貨申請、更新客服工單、安排物流到府收件。',
+  human:'退款超過 NT$5,000 或同一顧客 30 天內退貨 3 次以上，須客服人員確認。',
+  reflection:'檢查：在鑑賞期內、照片足以判定瑕疵、符合特價品例外條款；發現 1 件照片模糊 → 請顧客重拍。',workMem:'23 件申請：可退 15、換貨 4、待補照片 2、轉人工 2。',
+  func:'彙整處理結果、退款單與收件單號。',final:'「今日 23 件退貨申請已處理 19 件，2 件待補照片、2 件轉人工。」',
+  task:'客服工單更新、退款單、物流收件單。',display:'退貨處理清單卡片，標示待人工案件。'},
+ chips:[['m_gh','透過 MCP 讀取電商平台的退貨申請與訂單。',0],['t_code','判讀顧客上傳的瑕疵照片。',2],['m_ms','透過 MCP 安排物流到府收件。',3],['t_mail','寄送處理結果與退款進度給顧客。',4]],
+ tools:[['🌐','物流追蹤','查詢退貨包裹狀態。'],['🖼️','商品照片判讀','判斷顧客上傳的瑕疵照片。'],['📊','顧客情緒分析','判斷顧客情緒與急迫程度。'],['🗄️','訂單查詢','查詢購買日期、品項與付款方式。'],['✉️','回覆顧客','寄送處理結果。'],['💰','退款作業','建立退款申請（需確認）。']],
+ mcps:[['📚','退換貨政策','查詢退貨規定與例外條款。'],['🛍️','電商平台','讀取訂單與退貨申請。'],['🎫','客服工單系統','建立與更新工單。'],['💳','金流系統','執行退款。'],['🚚','物流商系統','安排到府收件。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解退換貨處理流程',loop:'讀申請 → 查訂單 → 判資格',thinking:'判斷是否符合退貨規定',action:'選訂單、照片或政策工具',actionInput:'指定訂單號與退貨原因',obs:'購買日期、商品狀況',longMem:'退貨政策、顧客歷史',shortMem:'週年慶商品不退',workMem:'已處理件數、待人工件',tool:'訂單、照片、退款工具',mcp:'電商／工單／金流系統',human:'大額退款、疑似濫用需確認',reflection:'期限、商品狀況、政策符合',stop:'全部處理？→ 回覆',final:'今日退貨處理摘要',task:'工單、退款單、收件單',card:'退貨處理清單',nl:'親切回覆顧客'}},
+hr:{name:'新人到職',icon:'🧑‍💼',goal:'下週一有 5 位新人到職，幫我準備帳號、設備、教育訓練與到職通知',
+ steps:['讀取錄取名單','建立帳號與權限','申請設備與座位','排定教育訓練','寄送到職通知'],
+ value:['到職準備從兩天縮短到半天','不漏開帳號或權限','新人第一天就能上工'],
+ note:'系統權限依職務最小權限原則開設，高權限帳號須資安與主管核准。',
+ sc:{goal:'人資專員輸入：「下週一有 5 位新人到職，幫我準備帳號、設備、教育訓練與到職通知」。',
+  memory:'取出到職 SOP 與各職務的權限範本、必修課程。',longMem:'記得到職 SOP、各職務權限範本與必修課程。',shortMem:'「其中 1 位是遠端工作，筆電要寄到府」。',
+  planner:'讀取錄取名單 → 建立帳號與權限 → 申請設備與座位 → 排定教育訓練 → 寄送到職通知。',steps:'若職務需要財務系統權限，Planner 加一步「送資安與主管核准」。',
+  reasoning:'依每位新人的職務套用權限範本，再依部門安排座位與設備。',loop:'讀名單 → 套權限範本 → 建帳號 → 申請設備 → 排課 → …',
+  thinking:'Thought：「業務助理需要 CRM 與 ERP 銷售模組，但不需要財務模組。」',action:'Action：create_account（建立帳號）',
+  actionInput:'Action Input：{"name":"新人 A","dept":"業務部","role":"業務助理","template":"SALES_ASSIST"}',obs:'Observation：帳號與信箱已建立，CRM 權限開通，ERP 權限等待核准。',
+  tool:'帳號建立、課程配對、到職清單、通知信。',mcp:'透過 MCP 連接 AD 建帳號、HRM 建員工資料、IT 服務台申請設備、學習平台指派課程。',
+  human:'高權限帳號（財務、系統管理）須資安與主管核准後才開通。',
+  reflection:'檢查：權限符合最小權限原則，帳號、設備、課程、通知都沒有遺漏；發現遠端新人寄送地址未填 → 提醒人資。',workMem:'5 位新人：帳號 5／5、設備 4／5、課程 5／5。',
+  func:'彙整到職檢核清單與待辦事項。',final:'「5 位新人到職準備完成，1 位遠端新人的筆電寄送地址待補，ERP 權限待核准。」',
+  task:'帳號清單、設備申請單、訓練排程、到職通知信。',display:'到職檢核清單卡片，未完成項目以紅色標示。'},
+ chips:[['m_gh','透過 MCP 在 AD 建立網域帳號與信箱。',1],['m_ms','透過 MCP 向 IT 服務台申請筆電與座位。',2],['t_ana','依職務配對必修教育訓練課程。',3],['t_mail','寄送到職通知給新人與主管。',4]],
+ tools:[['🌐','勞健保加保資料','準備勞健保加保所需資料。'],['💻','帳號建立腳本','依職務範本建立帳號。'],['📊','訓練課程配對','依職務配對必修課程。'],['🗄️','員工主檔','讀寫員工基本資料。'],['✉️','到職通知信','寄送報到資訊給新人與主管。'],['📋','到職清單產生','產生到職檢核清單。']],
+ mcps:[['📚','職務權限範本','查詢各職務應開的系統權限。'],['🔐','AD 帳號系統','建立網域帳號與信箱。'],['🎓','學習平台','指派教育訓練課程。'],['🏢','人資系統 HRM','建立員工資料與部門。'],['🖥️','IT 服務台','申請筆電與座位。'],['⚙','其他系統','任何實作 MCP Server 的系統。']],
+ lab:{planner:'拆解新人到職流程',loop:'讀名單 → 開帳號 → 申請設備',thinking:'判斷各職務需要的權限',action:'選帳號、設備或課程工具',actionInput:'指定姓名、職務、部門',obs:'帳號、設備單、課程',longMem:'職務權限範本、到職 SOP',shortMem:'1 位遠端工作',workMem:'已完成人數與項目',tool:'帳號、課程、通知工具',mcp:'AD／HRM／IT 服務台',human:'高權限帳號需資安核准',reflection:'權限最小化、項目無遺漏',stop:'全部準備好？→ 通知',final:'到職準備摘要',task:'帳號、設備單、訓練排程',card:'到職檢核清單',nl:'向人資說明待辦'}},
+};
+Object.entries(FLOWS).forEach(([k,v])=>{v.group='flow';CASES[k]=v});
+Object.assign(CASE_CAT,{order:'電子下單',ship:'出貨物流',ride:'叫車平台',purchase:'採購',expense:'報帳請款',cs:'客服退換貨',hr:'人資到職'});
+function addGloss(cat,arr){arr.forEach(g=>{const ex=GLOSS.find(x=>x[0]===g[0]);
+  if(ex){if(!catsOf(ex).includes(cat))ex[3]+='|'+cat}else GLOSS.push([g[0],g[1],g[2],cat,g[3]])})}
+addGloss('電子下單',[
+ ['ERP','Enterprise Resource Planning，企業資源規劃','整合訂單、採購、庫存、生產、會計的企業核心系統。'],
+ ['銷售訂單','SO，Sales Order','公司接受客戶訂購後在 ERP 建立的單據，後續出貨、開票都依此進行。',['SO']],
+ ['採購單','PO，Purchase Order','買方向賣方正式下訂的單據；客戶寄來的訂單對賣方來說就是客戶 PO。',['PO']],
+ ['EDI','Electronic Data Interchange，電子資料交換','企業之間以標準格式自動交換訂單、出貨通知、發票等電子文件。',['EDI 平台']],
+ ['OCR','Optical Character Recognition，光學文字辨識','把圖片或掃描檔中的文字轉成可編輯文字。'],
+ ['料號','Part number','公司給每個品項的唯一編號；客戶料號與公司料號常需要對照。',['料號主檔','客戶料號']],
+ ['CRM','Customer Relationship Management，客戶關係管理','管理客戶資料、聯絡紀錄、商機與信用額度的系統。'],
+ ['信用額度','Credit limit','公司允許客戶賒帳的最高金額，超過需先收款或主管核准。'],
+ ['合約價','Contract price','與客戶議定的專屬價格，建單時以此核對單價。'],
+ ['APS','Advanced Planning and Scheduling，先進規劃排程','依產能與物料計算生產排程與可交貨日期的系統。'],
+ ['ATP','Available to Promise，可承諾量','在特定日期能答應客戶交貨的數量。',['可承諾交期']],
+ ['交期','Lead time','從下單到貨到的時間。'],
+ ['訂單確認書','Order confirmation','回覆客戶訂單已接受，並載明品項、數量、價格與交期的文件。']]);
+addGloss('出貨物流',[
+ ['WMS','Warehouse Management System，倉儲管理系統','管理入庫、儲位、揀貨、出貨與庫存的系統。'],
+ ['揀貨','Picking','依訂單從儲位取出商品的作業。',['揀貨單','揀貨路線']],
+ ['波次揀貨','Wave picking','把多張訂單合併成一批一起揀貨，減少走動。'],
+ ['儲位','Storage location','倉庫中存放商品的固定位置編號。'],
+ ['SKU','Stock Keeping Unit，庫存單位','每個商品規格（顏色、尺寸）的唯一編號。'],
+ ['託運單','Waybill','交給物流商的運送單據，記載收寄件資訊。'],
+ ['追蹤碼','Tracking number','物流商提供的貨件編號，可查詢配送進度。'],
+ ['拆單出貨','Split shipment','訂單品項無法一次出齊時，分批出貨。',['拆單']],
+ ['3PL','Third-Party Logistics，第三方物流','委外提供倉儲與配送服務的物流公司。'],
+ ['最後一哩','Last mile','從物流中心送到顧客手上的最後一段配送。'],
+ ['條碼掃描','Barcode scanning','掃描商品條碼確認品項與數量，防止揀錯貨。']]);
+addGloss('叫車平台',[
+ ['動態加價','Surge pricing','需求高峰時平台自動提高車資，以吸引更多司機上線。'],
+ ['預約叫車','Scheduled ride','事先指定時間與地點預約車輛。'],
+ ['ETA','Estimated Time of Arrival，預估到達時間','車輛預估抵達上車點或目的地的時間。'],
+ ['上車點','Pickup point','乘客上車的確切位置，大型車站常需指定出口。'],
+ ['API','Application Programming Interface，應用程式介面','讓程式之間互相呼叫功能與交換資料的規格。'],
+ ['地理編碼','Geocoding','把地址或地名轉成經緯度座標。'],
+ ['推播通知','Push notification','由 App 主動推送到手機的訊息。']]);
+addGloss('採購',[
+ ['請購單','PR，Purchase Requisition','部門提出需要購買物品的內部申請單。',['PR']],
+ ['採購單','PO，Purchase Order','買方向賣方正式下訂的單據。'],
+ ['RFQ','Request for Quotation，詢價單','向供應商索取報價的文件。',['詢價']],
+ ['比價','Price comparison','向多家供應商取得報價並比較，通常要求至少三家。'],
+ ['合格供應商','AVL，Approved Vendor List','經公司評鑑核可、可以下單的供應商名單。',['合格供應商名冊']],
+ ['簽核層級','Approval authority','依金額大小決定由誰核准的權限規定。',['授權額度']],
+ ['獨家採購','Sole source','只有一家供應商能提供時的採購，需另外說明理由。'],
+ ['批量價','Volume pricing','購買數量越多、單價越低的價格方案。'],
+ ['電子簽核','e-Approval','以系統取代紙本進行申請與核准。',['電子簽核系統']],
+ ['三方比對','3-way match','付款前比對採購單、驗收單、發票三者是否一致。']]);
+addGloss('報帳請款',[
+ ['報帳','Expense claim','員工申請公司歸還因公支出的費用。',['報帳單']],
+ ['統一編號','統編','公司在台灣的營利事業識別編號，報帳發票需打公司統編。',['統編']],
+ ['電子發票','e-Invoice','以電子方式開立、存證的發票，可在財政部平台查詢。'],
+ ['載具','Carrier','儲存電子發票的工具，例如手機條碼、會員卡。'],
+ ['費用科目','Expense account','會計上的費用分類，例如差旅費、交際費。'],
+ ['差旅規定','Travel policy','公司規定出差住宿、交通、餐費的標準與上限。',['差旅報支規定']],
+ ['核銷','Settlement','把預支款或費用依憑證完成報支結案。'],
+ ['重複報帳','Duplicate claim','同一張發票被報帳兩次，系統應自動檢出。']]);
+addGloss('客服退換貨',[
+ ['鑑賞期','7-day cooling-off period','網購商品依消保法享有 7 天猶豫期，可無理由退貨（有例外）。',['7 天鑑賞期']],
+ ['消保法','消費者保護法','保障消費者權益的台灣法律，規範退貨、定型化契約等。'],
+ ['客服工單','Support ticket','記錄每件客戶問題處理過程的單據。',['工單']],
+ ['金流','Payment flow','付款、收款、退款的資金流程與系統。',['金流系統']],
+ ['逆物流','Reverse logistics','退貨商品從顧客送回公司的物流流程。'],
+ ['SLA','Service Level Agreement，服務水準協議','約定回覆或處理時限等服務標準。'],
+ ['情緒分析','Sentiment analysis','判斷文字中的情緒是正面、負面或激動。'],
+ ['FCR','First Contact Resolution，一次解決率','第一次聯繫就解決問題的比例。']]);
+addGloss('人資到職',[
+ ['Onboarding','新人到職流程','從錄取到新人能上工的所有準備與引導。',['到職']],
+ ['HRM','Human Resource Management system，人資系統','管理員工資料、出勤、薪資的系統。'],
+ ['AD','Active Directory','微軟的帳號與權限管理服務，企業用來統一管理網域帳號。'],
+ ['最小權限原則','Principle of least privilege','只給工作需要的最少權限，降低資安風險。'],
+ ['SSO','Single Sign-On，單一登入','登入一次即可使用多個系統。'],
+ ['權限範本','Role template','依職務預先定義好的系統權限組合。'],
+ ['IT 服務台','IT Service Desk','受理設備申請、帳號問題等 IT 需求的窗口。'],
+ ['勞健保加保','Labor & health insurance enrollment','雇主須在員工到職當日辦理勞保、健保加保。'],
+ ['試用期','Probation period','新人到職後的觀察期間。']]);
+rebuildGL();
+
+/* ============ AI Agent 應用情境（24 項，六大類） ============ */
+const APP_GROUPS={research:'研究蒐集',docs:'文件知識',ops:'營運流程',cust:'客戶互動',tech:'技術 IT',edu2:'教育訓練'};
+const SLOT={t:['t_web','t_code','t_ana','t_db','t_mail','t_slk'],m:['m_gg','m_gh','m_no','m_mdb','m_ms','m_ot']};
+function mkApp(o){
+  const sc={goal:`使用者輸入：「${o.goal}」。`,memory:`取出${o.mem[0]}。`,longMem:`記得${o.mem[0]}。`,shortMem:`「${o.mem[1]}」。`,
+    planner:o.st.join(' → ')+'。',steps:o.ex,reasoning:o.rsn,loop:o.st.slice(0,4).join(' → ')+' → …',
+    thinking:`Thought：「${o.th}」`,action:`Action：${o.act[0]}（${o.act[1]}）`,actionInput:'Action Input：'+o.ai,obs:'Observation：'+o.obs,
+    tool:'用到：'+o.T.slice(0,4).map(t=>t[1]).join('、')+'。',mcp:'透過 MCP 連接 '+o.M.slice(0,3).map(m=>m[1]).join('、')+'。',
+    human:o.hu,reflection:o.rf,workMem:'工作進度：'+o.mem[2]+'。',func:'彙整'+o.ta,final:`「${o.fi}」`,task:o.ta,display:o.di};
+  const lab={planner:`拆解${o.n}流程`,loop:`${o.st[0]} → ${o.st[2]}`,thinking:o.lb[0],action:o.lb[1],actionInput:o.lb[2],obs:o.lb[3],
+    longMem:o.mem[0],shortMem:o.mem[1],workMem:o.mem[2],tool:o.T.slice(0,2).map(t=>t[1]).join('、'),mcp:o.M.slice(0,2).map(m=>m[1]).join('／'),
+    human:o.lb[5],reflection:o.lb[4],stop:`${o.st[4]}前檢查完成？`,final:o.n+'結果摘要',task:o.ta.split('、')[0],card:o.di.slice(0,14),nl:'說明重點與待辦'};
+  const chips=o.ch.map(c=>[SLOT[c[0]][c[1]],c[2],c[3]]);
+  CASES[o.k]={name:o.n,icon:o.ic,group:o.g,goal:o.goal,steps:o.st,value:o.v,note:o.note,sc,chips,tools:o.T,mcps:o.M,lab};
+  CASE_CAT[o.k]=o.n;addGloss(o.n,o.gl||[]);
+}
+const OTHER=['⚙','其他系統','任何實作 MCP Server 的系統。'];
+[
+{k:'mkt',n:'競品市場監測',ic:'📡',g:'research',goal:'每週一整理三家競品的新品、價格與評論變化，做成週報寄給主管',
+ st:['設定監測清單','搜尋新聞與官網','擷取價格與評論','比對上週差異','產出週報寄送'],v:['不再漏掉競品動態','每週省下半天整理時間','變化有歷史可追溯'],note:'價格與數據需附來源連結，推論與事實要分開標示。',
+ mem:['競品清單與上週數據','只看台灣市場','已完成 2／3 家'],ex:'若競品官網改版抓不到價格，Planner 加一步「改從電商平台查價」。',
+ rsn:'先查官網與新聞，再到電商平台抓價格與評論，最後與上週資料比對。',th:'競品 B 本週降價 12%，評論中「續航」負評增加，可能在清庫存。',act:['web_search','搜尋競品新聞'],
+ ai:'{"query":"競品B 新品 2026 10月","days":7}',obs:'找到 9 則新聞，其中 2 則提到競品 B 將推出新款。',hu:'週報寄給主管前，由行銷人員確認推論內容。',
+ rf:'檢查：每個數字都有來源連結、與上週比較的單位一致；發現 1 筆是含運價 → 改成未稅價重新比較。',fi:'本週競品 B 降價 12%、競品 C 推出新品，建議關注 B 的清庫存動作。',
+ ta:'競品週報、價格變化表、來源連結清單。',di:'卡片顯示三家價格走勢圖與重點變化。',
+ lb:['判斷競品動作的意圖','選搜尋或擷取工具','指定競品與期間','新聞、價格、評論數','來源與單位一致','寄送前行銷確認'],
+ T:[['🌐','新聞搜尋','搜尋競品新聞與公告。'],['🕷️','網頁擷取','擷取官網與電商價格。'],['📊','評論情緒分析','統計評論正負面與主題。'],['🗄️','歷史數據庫','查詢過去每週的監測資料。'],['✉️','週報寄送','寄送週報給主管。'],['📝','週報產生','依格式產出週報。']],
+ M:[['📚','產業資料庫','查詢市場報告與產業數據。'],['🛒','電商平台','查詢商品價格與評論。'],['💬','社群平台','監測品牌聲量。'],['📈','BI 系統','寫入監測數據做趨勢圖。'],['📆','行事曆','排程每週執行。'],OTHER],
+ ch:[['t',0,'搜尋三家競品近 7 天的新聞與公告。',1],['m',1,'透過 MCP 從電商平台抓取價格與評論。',2],['t',2,'分析評論情緒，找出負評主題。',3],['t',4,'寄送週報給主管。',4]],
+ gl:[['競品分析','Competitive analysis','比較競爭對手的產品、價格、通路、行銷與優劣勢。'],['聲量','Social listening volume','品牌或產品在社群被討論的次數。'],['價格監測','Price monitoring','定期追蹤競品價格變化。']]},
+{k:'law',n:'法規變動追蹤',ic:'⚖️',g:'research',goal:'追蹤本月勞動法規與個資法的修正公告，比對公司內規並標出需修改的條文',
+ st:['蒐集法規公告','擷取修正條文','比對公司內規','標出需修改處','通知法務確認'],v:['法規變動不再漏看','修正建議附條文出處','法務只需審核，不必逐篇閱讀'],note:'只提供比對與建議，是否修改內規由法務與主管決定。',
+ mem:['公司內規版本與適用法規清單','這次先看勞動與個資','已比對 3／5 則公告'],ex:'若公告只是草案預告，Planner 加一步「標記為觀察中，不列入修改」。',
+ rsn:'先從主管機關公告取得修正條文，再用條文關鍵字檢索公司內規中對應的章節。',th:'勞基法施行細則修正了加班費計算說明，內規第 5 章引用的是舊條文。',act:['regulation_search','查詢法規公告'],
+ ai:'{"agency":["勞動部","個資主管機關"],"month":"2026-09"}',obs:'本月 5 則公告：3 則已施行修正、2 則草案預告。',hu:'內規修改建議須經法務與主管確認。',
+ rf:'檢查：每項建議都附法規條號與內規章節，分清已施行與草案；發現 1 則是草案 → 改列觀察中。',fi:'本月 3 項法規修正影響內規第 5、8 章，已列出修改建議待法務確認。',
+ ta:'法規對照表、內規修改建議、條文出處。',di:'卡片以新舊條文對照呈現差異。',
+ lb:['判斷是否影響內規','選法規查詢或比對','指定主管機關與月份','公告數與修正條文','條號出處齊全','法務與主管確認'],
+ T:[['🌐','法規公告查詢','查詢主管機關公告。'],['💻','條文差異比對','比對新舊條文差異。'],['📊','影響範圍分析','統計受影響的內規章節。'],['🗄️','內規資料庫','檢索公司內規。'],['✉️','法務通知','通知法務確認。'],['📝','對照表產生','產出新舊條文對照表。']],
+ M:[['📚','全國法規資料庫','查詢最新法規條文。'],['📑','公文系統','發送內規修訂簽呈。'],['🗂️','文件管理系統','讀取內規文件版本。'],['📋','法遵追蹤表','記錄待處理法規事項。'],['💬','Teams','通知相關部門。'],OTHER],
+ ch:[['t',0,'查詢主管機關本月公告。',0],['m',0,'透過 MCP 從全國法規資料庫取得修正後條文。',1],['t',3,'檢索公司內規中引用該條文的章節。',2],['t',4,'通知法務確認修改建議。',4]],
+ gl:[['法規預告','Draft regulation notice','法規正式修正前公開徵求意見的草案，尚未生效。'],['施行細則','Enforcement rules','依法律授權訂定的細部執行規定。'],['內規','Internal policy','公司內部的規章制度。']]},
+{k:'patent',n:'專利論文調查',ic:'🔎',g:'research',goal:'調查近 5 年「固態電池電解質」相關專利與論文，整理技術分佈與主要申請人',
+ st:['確定檢索關鍵字','檢索專利與論文','篩選相關文獻','分類與摘要','產出調查報告'],v:['數百篇文獻幾小時內完成初篩','技術分佈一目了然','提早發現專利風險'],note:'專利侵權判斷須由專利工程師或律師確認，Agent 只做初篩。',
+ mem:['公司技術領域與既有專利','只看近 5 年','已篩選 120／380 件'],ex:'若檢索結果太多，Planner 加一步「加入 IPC 分類號縮小範圍」。',
+ rsn:'先用關鍵字與 IPC 分類號檢索，再依摘要判斷相關性，最後依技術路線分群。',th:'有 40 件集中在硫化物電解質，是目前申請最密集的技術路線。',act:['patent_search','檢索專利'],
+ ai:'{"keywords":["solid-state electrolyte"],"ipc":"H01M10","years":"2021-2026"}',obs:'檢索到 380 件專利，前 3 大申請人佔 35%。',hu:'專利風險判斷由專利工程師確認。',
+ rf:'檢查：每篇摘要都對應原文、分類一致；發現 12 件是同族專利 → 合併計算。',fi:'380 件專利分成 4 條技術路線，硫化物路線最密集，列出 5 件需注意的專利。',
+ ta:'專利地圖、文獻摘要表、風險專利清單。',di:'卡片顯示技術路線分佈圖與申請人排名。',
+ lb:['判斷技術路線分群','選專利或論文檢索','指定關鍵字與分類號','件數與申請人分佈','去除重複與誤判','專利工程師確認'],
+ T:[['🌐','學術搜尋','檢索論文。'],['💻','文獻去重','合併同族專利與重複論文。'],['📊','技術分群','依摘要分技術路線。'],['🗄️','公司專利庫','比對公司既有專利。'],['✉️','報告寄送','寄給研發主管。'],['🗺️','專利地圖產生','繪製技術分佈圖。']],
+ M:[['📚','專利資料庫','檢索全球專利。'],['🎓','論文資料庫','檢索學術論文。'],['🗂️','知識管理平台','存放調查報告。'],['📋','研發專案系統','連結研發專案。'],['💬','Teams','通知研發團隊。'],OTHER],
+ ch:[['m',0,'透過 MCP 檢索全球專利資料庫。',1],['m',1,'透過 MCP 檢索相關學術論文。',1],['t',1,'合併同族專利與重複文獻。',2],['t',2,'依摘要把文獻分成技術路線。',3]],
+ gl:[['IPC','International Patent Classification，國際專利分類','國際通用的專利技術分類代碼。'],['同族專利','Patent family','同一發明在不同國家申請的一組專利。'],['專利地圖','Patent map','以圖表呈現技術分佈、申請人與趨勢。']]},
+{k:'tender',n:'標案搜尋',ic:'📑',g:'research',goal:'每天掃描政府採購網，找出符合公司資格的資訊系統標案並整理需求重點',
+ st:['擷取今日公告','依條件篩選','下載招標文件','摘要需求與資格','通知業務'],v:['不漏掉適合的標案','每案需求重點 1 分鐘看完','投標決策更快'],note:'投標資格與截止時間以原始招標文件為準，送件前務必人工核對。',
+ mem:['公司資格、實績與可承接金額','預算 300 萬以上','今日已篩 18／64 案'],ex:'若標案要求特定證照，Planner 加一步「比對公司證照是否符合」。',
+ rsn:'先依標案類別與預算金額篩選，再讀招標文件確認投標資格與截止日。',th:'這案要求 ISO 27001 驗證，公司有，預算 450 萬也在可承接範圍。',act:['tender_search','查詢採購公告'],
+ ai:'{"category":"資訊服務","min_budget":3000000,"date":"today"}',obs:'今日 64 案，符合類別與金額的有 7 案。',hu:'是否投標由業務主管決定。',
+ rf:'檢查：截止日、資格、預算都取自原始文件；發現 1 案有更正公告 → 改用更正後內容。',fi:'今日 7 案符合條件，其中 2 案在 10 天內截止，建議優先評估。',
+ ta:'標案清單、需求摘要、截止日提醒。',di:'卡片依截止日排序列出標案。',
+ lb:['判斷是否符合資格','選採購網或文件解析','指定類別與預算','案數、資格、截止日','以原始文件為準','業務主管決定投標'],
+ T:[['🌐','採購網查詢','查詢政府電子採購網公告。'],['📄','招標文件解析','擷取資格、規格與期限。'],['📊','標案評分','依公司條件評估匹配度。'],['🗄️','公司實績庫','查詢過去得標實績。'],['✉️','業務通知','通知業務標案資訊。'],['📅','截止提醒','建立截止日提醒。']],
+ M:[['🏛️','政府採購網','查詢招標與決標公告。'],['🗂️','文件管理','存放招標文件。'],['👥','CRM 系統','建立商機。'],['📋','證照資料庫','查詢公司證照效期。'],['📆','行事曆','寫入截止日。'],OTHER],
+ ch:[['t',0,'查詢今日政府採購網公告。',0],['t',1,'解析招標文件中的資格與截止日。',2],['m',3,'透過 MCP 比對公司證照是否符合要求。',3],['t',4,'通知業務今日符合條件的標案。',4]],
+ gl:[['政府電子採購網','Government e-Procurement System','台灣政府機關公告招標與決標的官方網站。',['採購網']],['投標資格','Bidder qualifications','參加投標必須符合的條件。'],['更正公告','Amendment notice','招標內容修改時發布的公告。']]},
+{k:'contract',n:'合約審閱',ic:'📜',g:'docs',goal:'審閱這份供應商合約，比對公司範本，標出風險條款並提出修改建議',
+ st:['讀取合約','比對公司範本','標出差異條款','評估風險等級','產出修改建議'],v:['初審從半天縮短到 15 分鐘','風險條款不遺漏','法務專注在談判重點'],note:'只做初審建議，不可代表公司簽署或對外承諾；最終由法務判斷。',
+ mem:['公司合約範本與審閱準則','重點看付款與保密','已比對 18／26 條'],ex:'若合約為英文，Planner 加一步「條款中英對照」。',
+ rsn:'逐條比對範本，找出新增、刪除、修改的條款，再依審閱準則評估風險。',th:'第 12 條把賠償上限改成「無上限」，與範本的「以合約金額為限」差異很大，屬高風險。',act:['clause_compare','條款比對'],
+ ai:'{"contract":"供應商合約_v3.docx","template":"採購合約範本_2026"}',obs:'26 條中有 7 條與範本不同，其中 2 條屬高風險。',hu:'修改建議由法務確認後才回覆供應商。',
+ rf:'檢查：每個風險判斷都引用範本與準則條號；發現附件 B 未比對 → 補比對。',fi:'共 7 條差異，2 條高風險（賠償上限、智財歸屬），已附修改建議。',
+ ta:'風險條款清單、修改建議（追蹤修訂）、審閱紀錄。',di:'卡片以紅黃綠標示各條款風險。',
+ lb:['判斷條款風險等級','選比對或準則查詢','指定合約與範本版本','差異條數與風險','引用條號、無遺漏','法務確認後回覆'],
+ T:[['🌐','法規查詢','查詢相關法律規定。'],['💻','條款比對','逐條比對合約與範本。'],['📊','風險評分','依準則評估風險等級。'],['🗄️','過往合約庫','查詢類似合約的處理方式。'],['✉️','通知法務','寄送審閱結果。'],['📝','追蹤修訂產生','產出含修訂標記的文件。']],
+ M:[['📚','合約範本庫','取得最新範本。'],['🗂️','文件管理系統','讀取合約檔案。'],['✍️','電子簽核','送出審閱簽呈。'],['📋','審閱準則','查詢公司審閱規則。'],['👥','供應商資料','查詢供應商背景。'],OTHER],
+ ch:[['m',0,'透過 MCP 取得最新採購合約範本。',1],['t',1,'逐條比對合約與範本差異。',2],['t',2,'依審閱準則評估每條風險。',3],['t',5,'產出含追蹤修訂的修改建議。',4]],
+ gl:[['賠償上限','Limitation of liability','合約約定一方最多須賠償的金額。'],['追蹤修訂','Track changes','文件中標示新增與刪除內容的功能。'],['智財歸屬','IP ownership','合作產出的智慧財產權屬於誰。']]},
+{k:'meeting',n:'會議紀錄轉待辦',ic:'📋',g:'docs',goal:'把今天產品會議的逐字稿整理成摘要，並把待辦事項指派到專案系統',
+ st:['讀取逐字稿','整理討論重點','擷取決議與待辦','指派負責人與期限','寄送會議紀錄'],v:['會後 5 分鐘就有紀錄','待辦不會被遺忘','每項決議都有出處'],note:'負責人與期限若會議中未明確說出，標為「待確認」，不可自行指定。',
+ mem:['團隊成員與職責','只記決議不記閒聊','已擷取 6 項待辦'],ex:'若有待辦沒有說出負責人，Planner 加一步「列入待確認清單」。',
+ rsn:'先依議題切段，再找出含「決定」「由誰」「什麼時候」的句子作為決議與待辦。',th:'「下週三前小陳把報價更新」是待辦：負責人小陳、期限下週三。',act:['create_task','建立待辦'],
+ ai:'{"title":"更新報價單","assignee":"小陳","due":"2026-10-14"}',obs:'已建立 5 項待辦，1 項缺負責人。',hu:'會議紀錄寄出前由主持人確認。',
+ rf:'檢查：每項決議都能對應逐字稿時間點；發現 1 項只是提議不是決議 → 移除。',fi:'會議共 3 項決議、6 項待辦，其中 1 項負責人待確認。',
+ ta:'會議紀錄、待辦清單、專案系統任務。',di:'卡片列出決議與待辦，可點回逐字稿時間點。',
+ lb:['區分決議與意見','選待辦或寄信工具','指定標題、負責人、期限','已建立與待確認數','對應逐字稿時間點','主持人確認後寄出'],
+ T:[['🎙️','語音轉文字','把錄音轉成逐字稿。'],['💻','議題切段','依議題切分逐字稿。'],['📊','發言統計','統計各議題討論時間。'],['🗄️','過往會議紀錄','查詢先前決議。'],['✉️','寄送紀錄','寄給與會者。'],['📝','紀錄產生','依格式產出會議紀錄。']],
+ M:[['📚','會議錄影平台','取得錄音與逐字稿。'],['📋','專案管理系統','建立與指派任務。'],['📆','行事曆','建立追蹤會議。'],['👥','通訊錄','查詢成員信箱。'],['💬','Teams','發布會議摘要。'],OTHER],
+ ch:[['m',0,'透過 MCP 取得會議錄音與逐字稿。',0],['t',1,'依議題切分逐字稿。',1],['m',1,'透過 MCP 在專案系統建立並指派待辦。',3],['t',4,'寄送會議紀錄給與會者。',4]],
+ gl:[['逐字稿','Transcript','錄音轉成的完整文字紀錄。'],['決議','Resolution','會議中確定要執行的決定。'],['語音轉文字','Speech-to-text','把語音自動轉成文字的技術。',['STT']]]},
+{k:'proposal',n:'投標企劃書撰寫',ic:'✍️',g:'docs',goal:'依這份需求說明書撰寫投標企劃書初稿，並逐章檢查是否回應所有需求',
+ st:['解析需求說明書','建立章節大綱','取材過往文件','逐章撰寫','對照需求自評'],v:['初稿從兩週縮短到兩天','需求逐項對應不遺漏','保留公司過往最佳寫法'],note:'價格、承諾時程與人力配置須由業務與主管確認。',
+ mem:['公司實績與過往得標企劃','評分重點在技術架構','已完成 4／9 章'],ex:'若需求書有評分表，Planner 加一步「依配分調整各章篇幅」。',
+ rsn:'先把需求說明書拆成需求清單，每章撰寫時標註回應哪幾項需求。',th:'評分表中「資安規劃」佔 20 分，但目前大綱只有半頁，需要擴充。',act:['search_past_docs','查詢過往企劃'],
+ ai:'{"topic":"資安規劃","doc_type":"得標企劃書","top_k":3}',obs:'取回 3 份過往得標企劃的資安章節。',hu:'價格與時程章節由業務主管撰寫或確認。',
+ rf:'檢查：需求對照表每一項都有對應章節，沒有承諾公司做不到的事；發現 2 項需求未回應 → 補寫。',fi:'9 章初稿完成，48 項需求全部有對應，價格章節待業務確認。',
+ ta:'企劃書初稿、需求對照表、待確認事項清單。',di:'卡片顯示各章完成度與需求覆蓋率。',
+ lb:['判斷章節是否回應需求','選取材或撰寫工具','指定主題與文件類型','取回的範例章節','需求全覆蓋','價格時程主管確認'],
+ T:[['🌐','產業資料搜尋','補充市場與技術資料。'],['📄','需求書解析','擷取需求與評分項目。'],['📊','需求對照表','檢查需求覆蓋率。'],['🗄️','過往企劃庫','搜尋得標企劃寫法。'],['✉️','分章審閱','寄給負責人審閱。'],['📝','文件產生','組合成完整企劃書。']],
+ M:[['📚','知識管理平台','存放過往企劃。'],['🗂️','文件管理','讀寫企劃檔案。'],['👥','CRM 系統','查詢客戶背景。'],['📋','專案實績庫','查詢實績資料。'],['💬','Teams','協作討論。'],OTHER],
+ ch:[['t',1,'解析需求說明書與評分表。',0],['t',3,'搜尋過往得標企劃的相關章節。',2],['t',5,'組合各章成完整企劃書。',3],['t',2,'建立需求對照表，檢查覆蓋率。',4]],
+ gl:[['需求說明書','Request for Proposal，RFP','採購方說明需求與評分方式的文件。',['RFP']],['評分表','Scoring rubric','評審依項目配分的評分標準。'],['需求對照表','Compliance matrix','逐項列出需求與企劃書對應章節的表格。']]},
+{k:'kb',n:'內部知識問答',ic:'📚',g:'docs',goal:'員工詢問「出差住宿補助怎麼算」，從公司規章找出答案並附上出處',
+ st:['理解問題','檢索規章文件','確認權限','整理答案','附上出處'],v:['員工即時得到答案','人資與總務少接重複問題','答案都有出處可查'],note:'只能回答使用者有權限查看的文件；找不到依據時要明說，不可猜測。',
+ mem:['規章文件索引與版本','使用者是業務部','已找到 2 份相關文件'],ex:'若規章有新舊版本，Planner 加一步「確認採用最新生效版本」。',
+ rsn:'先語意檢索相關段落，再確認文件版本與使用者權限，最後整理成答案。',th:'找到兩個版本的差旅辦法，應採用今年 7 月生效的新版。',act:['kb_search','檢索知識庫'],
+ ai:'{"query":"出差 住宿 補助 標準","dept":"業務部","top_k":5}',obs:'找到差旅辦法第 4 條與附表一。',hu:'涉及個人薪資或懲處的問題轉人資處理。',
+ rf:'檢查：答案每一句都能在出處找到、版本為最新、沒有引用使用者無權限的文件。',fi:'依差旅辦法第 4 條，業務人員國內出差住宿每晚上限 2,800 元，超過需主管核准。',
+ ta:'回答內容、引用條文與文件連結。',di:'回答下方列出引用段落與連結。',
+ lb:['判斷採用哪個版本','選檢索或權限查詢','指定問題與部門','相關段落與版本','句句有出處','敏感問題轉人資'],
+ T:[['🌐','網路搜尋','查詢公開法規。'],['💻','段落擷取','擷取相關段落。'],['📊','問題統計','統計常見問題。'],['🗄️','向量知識庫','語意檢索規章。'],['✉️','轉人工','轉給承辦人。'],['📝','答案整理','整理答案與出處。']],
+ M:[['📚','規章文件庫','讀取最新規章。'],['🔐','權限系統','確認使用者可讀範圍。'],['🗂️','SharePoint','讀取部門文件。'],['🎫','服務單系統','建立人工服務單。'],['💬','Teams','在 Teams 回答員工。'],OTHER],
+ ch:[['t',3,'語意檢索規章文件中的相關段落。',1],['m',1,'透過 MCP 確認使用者的文件權限。',2],['t',1,'擷取條文與附表內容。',3],['t',5,'整理答案並附上出處連結。',4]],
+ gl:[['語意檢索','Semantic search','依意思而非字面比對來找資料。'],['文件權限','Access control','依身分決定可讀取哪些文件。'],['出處引用','Citation','回答時標示資料來源，方便查證。']]},
+{k:'ar',n:'應收帳款催收',ic:'💰',g:'ops',goal:'找出逾期 30 天以上的應收帳款，依客戶分級擬催收信並追蹤回覆',
+ st:['查詢逾期帳款','客戶分級','擬催收信','送出與追蹤','更新帳款狀態'],v:['逾期帳款即時掌握','催收語氣一致、不傷關係','回款速度提升'],note:'催收信寄出前需業務確認；涉及法律程序的催告由法務處理。',
+ mem:['客戶等級與付款習慣','大客戶語氣要委婉','已處理 12／20 筆'],ex:'若客戶有未結的客訴，Planner 加一步「先通知業務處理客訴」。',
+ rsn:'依逾期天數與客戶等級決定語氣：首次提醒、正式催收、主管出面。',th:'A 客戶逾期 35 天，但過去都準時付款，可能是請款單沒送到，先用提醒語氣。',act:['query_ar','查詢應收帳款'],
+ ai:'{"overdue_days":30,"status":"open"}',obs:'逾期 20 筆，共 NT$486 萬，其中 3 筆逾期超過 90 天。',hu:'寄出前業務確認；逾期 90 天以上轉主管與法務。',
+ rf:'檢查：金額與發票號碼正確、已扣除部分付款、語氣符合客戶等級；發現 1 筆已付款未入帳 → 移除。',fi:'逾期 20 筆共 486 萬，已擬 17 封催收信待業務確認，3 筆轉主管。',
+ ta:'催收信草稿、逾期帳款表、追蹤紀錄。',di:'卡片依逾期天數分色顯示帳款。',
+ lb:['判斷催收語氣','選帳款查詢或寄信','指定逾期天數','筆數、金額、天數','金額與付款狀態正確','業務確認、法務接手'],
+ T:[['🌐','企業資訊查詢','查詢客戶公司狀態。'],['💻','帳齡計算','計算逾期天數與帳齡。'],['📊','回款預測','預估回款時間。'],['🗄️','付款歷史','查詢客戶付款紀錄。'],['✉️','催收信寄送','寄送催收信。'],['📝','催收信產生','依等級產生信件。']],
+ M:[['🏭','ERP 應收模組','查詢帳款與發票。'],['👥','CRM 系統','查詢客戶等級與窗口。'],['🏦','銀行對帳','確認是否已入帳。'],['📋','催收紀錄','記錄每次聯繫。'],['💬','Teams','通知業務。'],OTHER],
+ ch:[['m',0,'透過 MCP 從 ERP 查詢逾期應收帳款。',0],['m',2,'透過 MCP 比對銀行入帳，排除已付款。',1],['t',5,'依客戶等級產生催收信。',2],['t',4,'業務確認後寄送催收信。',3]],
+ gl:[['應收帳款','Accounts Receivable，AR','已出貨或提供服務、但客戶尚未付款的金額。',['AR']],['帳齡','Aging','應收帳款從到期日起算的天數。'],['催收','Collection','向客戶追討逾期款項。']]},
+{k:'shift',n:'排班排程',ic:'🗓️',g:'ops',goal:'依下月預估來客數、員工可上班時段與休假，排出門市班表',
+ st:['讀取可上班時段','預估各時段人力','排出班表','檢查工時規定','公告班表'],v:['排班從半天縮短到 10 分鐘','人力配置貼近尖峰','工時規定自動檢查'],note:'班表須符合勞基法工時與休息規定，公告前由店長確認。',
+ mem:['員工技能與合約工時','週末需多 2 人','已排 18／30 天'],ex:'若某時段人力不足，Planner 加一步「詢問兼職人員加班意願」。',
+ rsn:'先依來客預估算出各時段需求人數，再依技能與可上班時段分配。',th:'週六中午尖峰需要 6 人，其中至少 1 位會操作咖啡機。',act:['schedule_solver','排班計算'],
+ ai:'{"month":"2026-11","min_staff":{"weekday":4,"weekend":6}}',obs:'初版班表完成，2 個時段人力不足，1 人連續上班 7 天。',hu:'班表公告前由店長確認。',
+ rf:'檢查：每人每週工時、連續工作天數、輪班間隔符合規定；發現 1 人連續 7 天 → 調整。',fi:'11 月班表已排定，2 個時段仍缺人，已列出可加班人選。',
+ ta:'班表、人力缺口清單、工時統計。',di:'卡片以月曆呈現班表，缺口以紅色標示。',
+ lb:['判斷人力需求與技能','選排班或規則檢查','指定月份與最低人力','缺人時段與違規','工時符合規定','店長確認後公告'],
+ T:[['🌦️','天氣與活動','查詢影響來客的因素。'],['💻','排班演算','依條件計算班表。'],['📊','來客預估','依歷史資料預估來客。'],['🗄️','員工資料','查詢技能與合約工時。'],['📱','班表通知','推播班表給員工。'],['📋','工時檢查','檢查工時規定。']],
+ M:[['🧮','POS 系統','取得歷史來客數。'],['🏢','人資系統','讀取休假與合約。'],['📆','行事曆','讀取員工可上班時段。'],['⏰','打卡系統','比對實際出勤。'],['💬','LINE 群組','公告班表。'],OTHER],
+ ch:[['m',1,'透過 MCP 讀取員工休假與合約工時。',0],['t',2,'依歷史資料預估下月各時段來客。',1],['t',1,'計算符合條件的班表。',2],['t',5,'檢查工時與連續上班天數。',3]],
+ gl:[['排班','Scheduling','依人力需求與規則安排員工上班時段。'],['變形工時','Flexible working hours','依勞基法調整正常工時分配的制度。'],['輪班間隔','Rest between shifts','兩個班次之間必須休息的時間，依法原則上至少 11 小時。']]},
+{k:'restock',n:'門市庫存補貨',ic:'📦',g:'ops',goal:'依各門市銷量與庫存，產生本週補貨建議並建立調撥或採購單',
+ st:['讀取各店庫存','預測本週銷量','計算補貨量','門市調撥優先','產生採購單'],v:['缺貨率下降','庫存積壓減少','補貨決策有數據依據'],note:'採購金額超過門檻需主管核准；促銷品預測需人工調整。',
+ mem:['安全庫存與供應商交期','本週有週年慶','已計算 120／300 個 SKU'],ex:'若某店庫存過多，Planner 加一步「先從該店調撥給缺貨門市」。',
+ rsn:'先算出每店每個 SKU 的預估需求與安全庫存，不足的先從其他門市調撥，仍不足才採購。',th:'竹南店洗衣精剩 8 瓶、預估本週賣 30 瓶；頭份店有 60 瓶過剩，可先調撥。',act:['inventory_query','查詢庫存'],
+ ai:'{"stores":["竹南","頭份"],"sku":"DET-001"}',obs:'竹南店 8 瓶、頭份店 60 瓶、倉庫 0 瓶。',hu:'採購金額超過 20 萬需主管核准。',
+ rf:'檢查：補貨後不超過門市容量、考慮交期與最低訂購量；發現 1 項低於 MOQ → 合併到下週採購。',fi:'本週建議調撥 42 項、採購 18 項，採購金額 16.8 萬。',
+ ta:'補貨建議表、調撥單、採購單草稿。',di:'卡片顯示缺貨風險 SKU 清單。',
+ lb:['判斷調撥或採購','選庫存或預測工具','指定門市與 SKU','各店與倉庫庫存','容量、交期、MOQ','超額採購主管核准'],
+ T:[['🌐','進貨價格查詢','比較進貨價格。'],['💻','補貨量計算','計算建議補貨數量。'],['📈','銷量預測','預測各店本週銷量。'],['📦','庫存查詢','查詢各店與倉庫庫存。'],['✉️','訂單寄送','寄送採購單給供應商。'],['🧾','單據產生','產生調撥與採購單。']],
+ M:[['🧮','POS 系統','取得各店銷售資料。'],['🏭','ERP 系統','建立採購與調撥單。'],['📋','WMS 倉儲系統','查詢倉庫庫存。'],['🚚','供應商系統','查詢交期。'],['📅','促銷行事曆','查詢促銷活動。'],OTHER],
+ ch:[['t',2,'預測各門市本週銷量。',1],['t',3,'查詢各店與倉庫庫存。',0],['t',1,'計算建議補貨與調撥數量。',2],['m',1,'透過 MCP 在 ERP 建立採購單草稿。',4]],
+ gl:[['調撥','Stock transfer','把庫存從一個據點移到另一個據點。'],['缺貨率','Stockout rate','商品缺貨的比例。'],['補貨點','Reorder point','庫存低於此數量就要補貨。'],['安全庫存','Safety stock','為應付需求波動或交期延誤而多備的庫存量。'],['SKU','Stock Keeping Unit，庫存單位','每個商品規格的唯一編號。']]},
+{k:'recon',n:'發票對帳',ic:'🧮',g:'ops',goal:'比對本月採購單、驗收單與供應商發票，標出金額或數量不符的項目',
+ st:['讀取三種單據','逐筆配對','比對金額數量','分類差異原因','產出對帳報告'],v:['對帳時間大幅縮短','差異不遺漏','付款前就發現錯誤'],note:'有差異的單據一律不自動付款，轉會計人工處理。',
+ mem:['供應商對帳慣例','本月有年度合約價調整','已比對 280／412 筆'],ex:'若發票是合併開立，Planner 加一步「拆分對應多張採購單」。',
+ rsn:'先用採購單號配對三種單據，再逐項比對數量、單價、稅額。',th:'這張發票單價 105 元，採購單是 100 元，可能是供應商用了新年度價格。',act:['three_way_match','三方比對'],
+ ai:'{"period":"2026-09","vendor":"all"}',obs:'412 筆中 389 筆一致、23 筆有差異。',hu:'有差異的項目由會計確認後才付款。',
+ rf:'檢查：每筆差異都標出原因類別、稅額計算正確；發現 3 筆是驗收單延遲建立 → 改列待驗收。',fi:'本月 412 筆中 23 筆差異：單價 12、數量 8、待驗收 3，已轉會計處理。',
+ ta:'對帳報告、差異明細、待處理清單。',di:'卡片依差異類型分組顯示。',
+ lb:['判斷差異原因','選比對或查詢工具','指定期間與供應商','一致與差異筆數','差異分類與稅額','差異項會計確認'],
+ T:[['🌐','電子發票查詢','驗證發票真偽。'],['🔍','發票 OCR','辨識紙本發票。'],['📊','差異分析','分類差異原因。'],['🗄️','採購紀錄','查詢採購單與合約價。'],['✉️','通知供應商','請供應商更正發票。'],['📝','對帳報告','產出對帳報告。']],
+ M:[['🏭','ERP 系統','讀取採購單與驗收單。'],['📨','供應商入口','收取電子發票。'],['🏦','付款系統','管控付款狀態。'],['📋','合約資料庫','查詢合約價格。'],['💬','Teams','通知會計。'],OTHER],
+ ch:[['m',0,'透過 MCP 從 ERP 讀取採購單與驗收單。',0],['t',1,'辨識紙本發票的金額與品項。',0],['t',2,'逐筆比對並分類差異原因。',3],['m',2,'透過 MCP 把差異項目設為暫停付款。',4]],
+ gl:[['驗收單','Goods receipt','確認貨品已收到且符合規格的單據。'],['暫停付款','Payment hold','發現問題時先停止付款。'],['三方比對','3-way match','付款前比對採購單、驗收單、發票三者是否一致。']]},
+{k:'support',n:'智慧客服',ic:'💬',g:'cust',goal:'顧客在官網詢問「訂單什麼時候到？我想改收件地址」，查詢訂單並處理改地址',
+ st:['理解問題','驗證身分','查詢訂單','處理改地址','回覆顧客'],v:['24 小時即時回應','常見問題自動處理','真人客服專注複雜問題'],note:'修改訂單前要驗證身分；已出貨的訂單改地址要轉物流處理。',
+ mem:['常見問題與服務政策','顧客已驗證手機','已完成查詢'],ex:'若訂單已出貨，Planner 改為「聯絡物流改派」。',
+ rsn:'先驗證身分，再查訂單狀態；未出貨可直接改地址，已出貨要轉物流。',th:'訂單狀態是「揀貨中」，還沒出貨，可以直接修改地址。',act:['update_address','修改收件地址'],
+ ai:'{"order_id":"EC1004-2281","new_address":"苗栗縣竹南鎮…"}',obs:'地址已更新，預計 10/6 送達。',hu:'情緒激動、要求賠償或連續兩次無法解決時轉真人客服。',
+ rf:'檢查：身分已驗證、地址格式完整、回覆的到貨日與系統一致。',fi:'收件地址已更新，預計 10/6 送達。',
+ ta:'訂單更新紀錄、對話紀錄。',di:'對話中顯示訂單卡片與新地址。',
+ lb:['判斷能否直接修改','選查詢或修改工具','指定訂單與新地址','修改結果與到貨日','身分、地址、日期正確','激動或求償轉真人'],
+ T:[['🌐','物流追蹤','查詢配送進度。'],['💻','身分驗證','簡訊驗證碼驗證身分。'],['📊','情緒偵測','偵測顧客情緒。'],['🗄️','訂單查詢','查詢訂單狀態。'],['✉️','確認通知','寄送更新確認。'],['🔁','轉真人','轉接真人客服。']],
+ M:[['📚','FAQ 知識庫','查詢常見問題。'],['🛍️','電商平台','查詢與修改訂單。'],['🎫','客服工單','建立工單。'],['🚚','物流系統','改派與追蹤。'],['💬','LINE 官方帳號','在 LINE 回覆。'],OTHER],
+ ch:[['t',1,'發送簡訊驗證碼確認身分。',1],['t',3,'查詢訂單狀態。',2],['m',1,'透過 MCP 修改電商平台的收件地址。',3],['t',4,'寄送地址更新確認。',4]],
+ gl:[['身分驗證','Authentication','確認使用者是本人。'],['轉真人','Human handoff','把對話轉給真人客服。'],['首次回應時間','First response time','顧客發問到第一次回覆的時間。']]},
+{k:'salesas',n:'業務助理',ic:'🤝',g:'cust',goal:'明天下午拜訪 A 公司，整理客戶背景、往來紀錄與建議話題，會後更新 CRM',
+ st:['讀取客戶資料','整理往來紀錄','查詢近期新聞','產出拜訪簡報','會後更新 CRM'],v:['拜訪準備從 1 小時縮短到 5 分鐘','不漏掉過往承諾','CRM 資料完整'],note:'寫入 CRM 前由業務確認內容；不可自行承諾價格或交期。',
+ mem:['客戶等級與過往成交紀錄','這次要談續約','已整理 3／5 項'],ex:'若客戶有未結案的客訴，Planner 加一步「先查客訴處理進度」。',
+ rsn:'先查 CRM 往來紀錄與未結事項，再搜尋客戶近期新聞，找出可切入的話題。',th:'上次拜訪承諾提供新版報價，至今還沒寄出，這次要先處理。',act:['crm_query','查詢 CRM'],
+ ai:'{"account":"A 公司","include":["activities","opportunities","tickets"]}',obs:'近半年 6 次往來、1 個商機、1 件未結客訴。',hu:'寫入 CRM 與寄出報價前由業務確認。',
+ rf:'檢查：往來紀錄日期正確、新聞來源可信、沒有遺漏未結承諾。',fi:'拜訪簡報已備妥，提醒先處理未寄的報價與未結客訴。',
+ ta:'拜訪簡報、建議話題、CRM 更新草稿。',di:'卡片列出客戶摘要、待辦承諾與建議話題。',
+ lb:['找出未結承諾','選 CRM 或新聞搜尋','指定客戶與資料範圍','往來、商機、客訴','日期與承諾正確','寫入 CRM 前確認'],
+ T:[['🌐','新聞搜尋','查詢客戶近期新聞。'],['💻','簡報產生','產出拜訪簡報。'],['📊','成交分析','分析成交機率。'],['🗄️','報價紀錄','查詢過往報價。'],['✉️','追蹤信','擬會後追蹤信。'],['🎙️','會後語音摘要','把業務口述轉成紀錄。']],
+ M:[['👥','CRM 系統','讀寫客戶與商機。'],['🏭','ERP 系統','查詢訂單與帳款。'],['🎫','客服系統','查詢客訴。'],['📆','行事曆','排定下次拜訪。'],['📧','信箱','查詢往來信件。'],OTHER],
+ ch:[['m',0,'透過 MCP 查詢 CRM 往來紀錄與商機。',0],['m',2,'透過 MCP 查詢未結客訴。',1],['t',0,'搜尋客戶近期新聞與動態。',2],['t',5,'把會後口述整理成 CRM 紀錄。',4]],
+ gl:[['商機','Opportunity','可能成交的銷售機會。'],['拜訪紀錄','Call report','業務拜訪後記錄的內容。'],['續約','Renewal','合約到期後繼續簽約。']]},
+{k:'booking',n:'預約訂位',ic:'📅',g:'cust',goal:'顧客在 LINE 說「週六晚上 7 點 6 位，有一位坐輪椅」，查詢空位並完成訂位',
+ st:['理解需求','查詢空位','確認特殊需求','建立訂位','發送確認與提醒'],v:['24 小時接受訂位','特殊需求不遺漏','減少 No-show'],note:'包場或 10 人以上訂位需店長確認；訂金收取依店家規定。',
+ mem:['桌位配置與無障礙座位','需要無障礙座位','已查詢空位'],ex:'若 7 點客滿，Planner 加一步「提供前後時段或候補」。',
+ rsn:'6 位且需要輪椅空間 → 只考慮無障礙區的 6 人桌，再查週六 7 點是否有空。',th:'無障礙區 6 人桌 7 點已被預約，7 點半有空，先詢問顧客能否接受。',act:['check_availability','查詢空位'],
+ ai:'{"date":"2026-10-10","time":"19:00","party":6,"accessible":true}',obs:'19:00 無符合桌位，19:30 有 1 桌。',hu:'10 人以上或包場由店長確認。',
+ rf:'檢查：時間、人數、特殊需求都寫入訂位，確認訊息與系統一致。',fi:'已為您保留週六 19:30 無障礙區 6 人座，前一天會再提醒您。',
+ ta:'訂位紀錄、確認訊息、提醒排程。',di:'對話中顯示訂位卡片與取消連結。',
+ lb:['判斷桌位與替代時段','選查詢或訂位工具','指定日期、人數、需求','可用桌位與時段','需求寫入、資訊一致','大型訂位店長確認'],
+ T:[['🗺️','地圖導航','提供交通資訊。'],['💻','桌位配對','依人數與需求配桌。'],['📊','No-show 預測','預估爽約風險。'],['🗄️','顧客紀錄','查詢過往訂位。'],['📱','提醒推播','前一天提醒。'],['💳','訂金收取','收取訂金（需同意）。']],
+ M:[['🍽️','訂位系統','查詢與建立訂位。'],['💬','LINE 官方帳號','與顧客對話。'],['📆','行事曆','查詢包場與公休。'],['👥','會員系統','查詢會員資料。'],['💳','金流','收取訂金。'],OTHER],
+ ch:[['m',0,'透過 MCP 查詢訂位系統空位。',1],['t',1,'依人數與無障礙需求配對桌位。',2],['m',1,'透過 MCP 在 LINE 發送訂位確認。',4],['t',2,'評估爽約風險，決定是否提醒或收訂金。',4]],
+ gl:[['No-show','爽約','訂位後未到也未取消。'],['無障礙座位','Accessible seating','方便輪椅使用者的座位。'],['候補','Waitlist','客滿時登記等待空位。']]},
+{k:'review',n:'評論回覆',ic:'⭐',g:'cust',goal:'分析本週 Google 評論，擬好回覆，並整理出要改善的問題',
+ st:['擷取新評論','情緒與主題分析','擬回覆','整理改善建議','送店長確認'],v:['每則評論都有回覆','負評即時處理','找出反覆出現的問題'],note:'負評回覆需店長確認，不可承諾補償或透露顧客個資。',
+ mem:['品牌語氣與過往回覆','本週有新菜單','已處理 15／22 則'],ex:'若負評涉及食安，Planner 加一步「立即通知店長並暫停自動回覆」。',
+ rsn:'先分正負評與主題，正評擬感謝回覆，負評找出具體問題再擬回覆。',th:'3 則負評都提到「午餐等太久」，是反覆出現的問題，要列入改善。',act:['fetch_reviews','擷取評論'],
+ ai:'{"place":"本店","since":"2026-09-27"}',obs:'本週 22 則：正評 16、中性 3、負評 3。',hu:'負評回覆由店長確認後發布。',
+ rf:'檢查：回覆沒有制式複製、有回應具體內容、沒有洩漏個資或承諾補償。',fi:'本週 22 則評論平均 4.3 星，3 則負評集中在午餐等候時間。',
+ ta:'回覆草稿、主題統計、改善建議。',di:'卡片顯示星等分佈與主題雲。',
+ lb:['找出反覆出現的問題','選擷取或分析工具','指定店家與期間','則數與正負評','回應具體、無個資','負評店長確認'],
+ T:[['🌐','評論擷取','擷取 Google 評論。'],['💻','主題分類','把評論分主題。'],['📊','情緒分析','判斷正負面。'],['🗄️','過往回覆','查詢品牌回覆範例。'],['✉️','通知店長','寄送負評提醒。'],['📝','回覆產生','擬回覆草稿。']],
+ M:[['🗺️','Google 商家','讀取與回覆評論。'],['🍽️','外送平台','讀取外送評論。'],['💬','社群平台','讀取粉專留言。'],['📈','BI 系統','記錄評分趨勢。'],['💬','LINE 群組','通知員工。'],OTHER],
+ ch:[['m',0,'透過 MCP 讀取本週 Google 評論。',0],['t',2,'判斷每則評論的情緒。',1],['t',1,'把評論歸類到主題。',1],['t',5,'依品牌語氣擬回覆草稿。',2]],
+ gl:[['主題分類','Topic classification','把文字依內容歸到不同主題。'],['品牌語氣','Brand voice','品牌對外溝通一致的說話風格。'],['情緒分析','Sentiment analysis','判斷文字中的情緒是正面、負面或激動。']]},
+{k:'coding',n:'程式開發修 Bug',ic:'🛠️',g:'tech',goal:'修好「登入頁在 Safari 偶發白屏」的問題，所有測試通過後開 PR',
+ st:['重現問題','定位原因','修改程式','執行測試','開 PR'],v:['修 Bug 時間縮短','每次修改都有測試保護','PR 說明完整'],note:'只能在分支上修改；合併到主分支與部署由工程師執行。',
+ mem:['專案架構與程式規範','先重現再修','已排除 2 個可能原因'],ex:'連續 3 次同一處測試失敗，Planner 改從其他方向調查。',
+ rsn:'先寫測試重現白屏，再讀相關元件程式碼找原因。',th:'Safari 私密瀏覽模式寫入 localStorage 會失敗，登入狀態初始化可能因此中斷。',act:['run_tests','執行測試'],
+ ai:'{"suite":"auth","browser":"safari"}',obs:'312 個測試中 2 個失敗：token 初始化逾時。',hu:'git push 與合併前由工程師確認。',
+ rf:'檢查：重現測試通過、原有測試全過、修改範圍最小；發現改到共用函式 → 縮小修改範圍。',fi:'原因是 Safari 私密模式下 localStorage 例外未處理，已修正並通過全部測試，PR 待審查。',
+ ta:'PR、測試報告、修改說明。',di:'卡片顯示 diff 摘要與測試結果。',
+ lb:['判斷錯誤根因','選讀檔、改檔或測試','指定測試組與瀏覽器','通過與失敗測試','測試全過、範圍最小','推送前工程師確認'],
+ T:[['🌐','文件搜尋','查詢瀏覽器相容性文件。'],['💻','程式執行','在沙盒執行程式。'],['🧪','測試執行','執行單元與 E2E 測試。'],['🗄️','程式碼檢索','搜尋相關程式碼。'],['✉️','通知審查者','通知審查者。'],['📝','PR 說明產生','撰寫修改說明。']],
+ M:[['⌥','GitHub','建立分支與 PR。'],['🎫','Jira','讀取 Bug 單。'],['📈','錯誤監控','讀取錯誤 log。'],['🖥️','CI 系統','執行自動測試。'],['💬','Slack','通知團隊。'],OTHER],
+ ch:[['m',1,'透過 MCP 讀取 Jira Bug 單與重現步驟。',0],['t',3,'搜尋登入相關程式碼。',1],['t',2,'執行 Safari 測試確認修正。',3],['m',0,'透過 MCP 在 GitHub 開 PR。',4]],
+ gl:[['E2E 測試','End-to-End test，端對端測試','模擬使用者實際操作，測試整個流程。'],['PR','Pull Request','請求把修改合併進主程式碼的申請，供他人審查。'],['CI','Continuous Integration，持續整合','每次修改自動執行建置與測試。']]},
+{k:'monitor',n:'系統監控排障',ic:'🖥️',g:'tech',goal:'收到「訂單 API 回應變慢」告警，查 log 找出原因並提出修復步驟',
+ st:['讀取告警','查詢 log 與指標','比對近期變更','判斷原因','提出修復步驟'],v:['平均排障時間縮短','夜間告警先有初判','處理經驗累積成手冊'],note:'重啟服務、回滾版本等動作須值班工程師核准。',
+ mem:['系統架構與過往事件','正值促銷高峰','已檢查 3／5 個服務'],ex:'若原因不明，Planner 加一步「通知值班工程師並附初步分析」。',
+ rsn:'先看回應時間何時開始變慢，再比對同時間的部署與資料庫指標。',th:'變慢從 14:05 開始，剛好是新版部署後 5 分鐘，資料庫查詢時間也同步上升。',act:['query_logs','查詢 log'],
+ ai:'{"service":"order-api","from":"14:00","level":"warn"}',obs:'14:05 後出現大量慢查詢，集中在新增的訂單篩選功能。',hu:'回滾或重啟前由值班工程師核准。',
+ rf:'檢查：時間序列對得上、原因有證據支持、修復步驟可回復。',fi:'原因是新版訂單篩選缺少資料庫索引，建議先回滾，再補索引後重新部署。',
+ ta:'事件分析報告、修復步驟、時間軸。',di:'卡片顯示回應時間圖與部署時間點。',
+ lb:['比對變慢與部署時間','選 log 或指標查詢','指定服務與時間','慢查詢與錯誤數','證據支持、可回復','回滾重啟需核准'],
+ T:[['🌐','狀態頁查詢','查詢雲端服務狀態。'],['💻','診斷指令','執行唯讀診斷指令。'],['📊','指標分析','分析回應時間與資源使用。'],['🗄️','事件知識庫','查詢過往事件處理方式。'],['📱','值班通知','通知值班工程師。'],['📝','事件報告','產出事件分析報告。']],
+ M:[['📈','監控平台','讀取指標與告警。'],['⌥','GitHub','查詢近期部署。'],['🗂️','Log 平台','查詢服務 log。'],['🗄️','資料庫監控','查詢慢查詢。'],['💬','Slack','發布事件進度。'],OTHER],
+ ch:[['m',0,'透過 MCP 讀取告警與回應時間指標。',0],['m',2,'透過 MCP 查詢 order-api 的 log。',1],['m',1,'透過 MCP 比對近期部署紀錄。',2],['t',4,'通知值班工程師並附分析。',4]],
+ gl:[['告警','Alert','監控系統偵測到異常時發出的通知。'],['回滾','Rollback','把系統退回上一個正常版本。'],['資料庫索引','Database index','加快資料庫查詢的資料結構。'],['值班','On-call','輪流負責處理系統事件的人員。']]},
+{k:'analytics',n:'資料分析',ic:'📈',g:'tech',goal:'「上季哪個產品線毛利下滑最多？原因是什麼？」自動查資料、畫圖並解讀',
+ st:['理解問題','撰寫查詢','執行並檢查資料','繪製圖表','解讀並回答'],v:['不會寫 SQL 也能分析資料','從提問到圖表幾分鐘完成','分析過程可重現'],note:'只能使用唯讀資料庫帳號；解讀結果需標示資料範圍與限制。',
+ mem:['資料表結構與欄位說明','上季指 7 到 9 月','已完成 2 個查詢'],ex:'若資料有缺漏，Planner 加一步「說明缺漏範圍並調整分析」。',
+ rsn:'先算各產品線毛利率的季變化，找出下滑最多者，再拆解是價格、成本還是產品組合造成。',th:'B 產品線毛利率從 32% 降到 24%，售價沒變，是原料成本上升 15%。',act:['run_sql','執行 SQL 查詢'],
+ ai:'{"sql":"SELECT line, SUM(revenue), SUM(cost) FROM sales WHERE quarter=\'2026Q3\' GROUP BY line"}',obs:'5 條產品線中，B 線毛利率下降 8 個百分點最多。',hu:'分析結論用於正式報告前，由分析師確認。',
+ rf:'檢查：SQL 邏輯正確、數字與報表對得上、結論沒有超出資料能支持的範圍。',fi:'上季 B 產品線毛利率下滑 8 個百分點最多，主因是原料成本上升 15%。',
+ ta:'圖表、SQL 查詢、分析摘要。',di:'卡片顯示毛利率變化圖與成本拆解。',
+ lb:['拆解下滑原因','選查詢或繪圖工具','撰寫 SQL 查詢','各產品線毛利率','SQL 與報表一致','正式報告前確認'],
+ T:[['🌐','原料行情','查詢原料價格行情。'],['💻','SQL 執行','執行查詢與分析。'],['📊','圖表繪製','繪製分析圖表。'],['🗄️','資料字典','查詢欄位說明。'],['✉️','報告寄送','寄送分析結果。'],['📝','分析摘要','撰寫解讀。']],
+ M:[['🗄️','資料倉儲','唯讀查詢銷售資料。'],['📈','BI 系統','建立儀表板。'],['🏭','ERP 系統','查詢成本資料。'],['📚','資料目錄','查詢資料表說明。'],['💬','Teams','分享結果。'],OTHER],
+ ch:[['t',3,'查詢資料表與欄位說明。',0],['m',0,'透過 MCP 以唯讀帳號查詢資料倉儲。',1],['t',1,'執行 SQL 與 Python 計算毛利率。',2],['t',2,'繪製毛利率變化圖。',3]],
+ gl:[['SQL','Structured Query Language','查詢資料庫的標準語言。'],['資料倉儲','Data warehouse','整合各系統資料、供分析用的資料庫。'],['唯讀帳號','Read-only account','只能查詢、不能修改資料的帳號。'],['毛利率','Gross margin','（營收 − 直接成本）÷ 營收。']]},
+{k:'secops',n:'資安事件初判',ic:'🛡️',g:'tech',goal:'收到「多次登入失敗」告警，彙整相關紀錄、比對威脅情資並分級回報',
+ st:['讀取告警','彙整登入紀錄','比對威脅情資','判斷風險等級','回報資安人員'],v:['告警初判從 30 分鐘縮短到 3 分鐘','先過濾誤報','處理過程完整留存'],note:'封鎖帳號或 IP 等動作須資安人員核准，不可自動封鎖正式系統。',
+ mem:['資產清單與過往事件','此帳號是財務主管','已查 3 個來源 IP'],ex:'若發現已登入成功，Planner 加一步「立即通知資安主管並列為高風險」。',
+ rsn:'先看失敗次數、來源 IP 與時間分布，再查 IP 是否在威脅情資黑名單。',th:'同一帳號 5 分鐘內 200 次失敗，來源 IP 分散在 3 個國家，像是撞庫攻擊。',act:['threat_intel_lookup','查詢威脅情資'],
+ ai:'{"ips":["203.0.113.5","198.51.100.7"]}',obs:'2 個 IP 在黑名單中，標記為已知惡意。',hu:'封鎖 IP、停用帳號由資安人員核准。',
+ rf:'檢查：時間軸完整、情資來源可信、沒有遺漏登入成功的紀錄。',fi:'判定為撞庫攻擊、未登入成功，風險等級中，建議封鎖 2 個惡意 IP 並要求該帳號啟用多因素驗證。',
+ ta:'事件初判報告、時間軸、建議處置。',di:'卡片顯示攻擊來源與時間軸。',
+ lb:['判斷攻擊類型','選紀錄或情資查詢','指定可疑 IP','黑名單比對結果','時間軸完整無遺漏','封鎖動作需核准'],
+ T:[['🌐','威脅情資查詢','查詢 IP 與網域信譽。'],['💻','紀錄解析','解析登入紀錄。'],['📊','異常偵測','找出異常登入模式。'],['🗄️','資產清單','查詢帳號與主機重要性。'],['📱','緊急通知','通知資安人員。'],['📝','事件報告','產出初判報告。']],
+ M:[['🛡️','SIEM','讀取告警與紀錄。'],['🔐','身分系統','查詢帳號狀態。'],['🧱','防火牆','封鎖 IP（需核准）。'],['🎫','事件管理','建立資安事件單。'],['💬','Teams','通知資安群組。'],OTHER],
+ ch:[['m',0,'透過 MCP 從 SIEM 讀取告警與登入紀錄。',1],['t',0,'查詢來源 IP 的威脅情資。',2],['t',2,'分析失敗登入的時間與來源分布。',3],['m',3,'透過 MCP 建立資安事件單。',4]],
+ gl:[['撞庫攻擊','Credential stuffing','用外洩的帳密組合大量嘗試登入。'],['SIEM','Security Information and Event Management，資安事件管理平台','集中收集與分析資安紀錄的系統。'],['威脅情資','Threat intelligence','已知惡意 IP、網域、手法等資訊。'],['多因素驗證','MFA，Multi-Factor Authentication','登入時需要兩種以上驗證方式。',['MFA']]]},
+{k:'tutor',n:'個人化家教',ic:'🧑‍🏫',g:'edu2',goal:'學生問「這題一元一次方程式我為什麼算錯？」引導他找出錯誤並出類似題練習',
+ st:['看懂學生作答','找出錯誤步驟','引導思考','出類似題','記錄學習狀況'],v:['隨時有人可以問','針對個人錯誤講解','老師掌握每位學生的卡點'],note:'以引導為主，不直接給答案；對話紀錄僅供老師與家長查看。',
+ mem:['學生程度與過往錯誤','學生偏好圖解','已練習 3 題'],ex:'若學生連錯 3 題，Planner 加一步「回到前一個先備概念」。',
+ rsn:'比對學生每一步與正確解法，找出第一個出錯的步驟，再用提問引導。',th:'學生移項時沒有變號，這是第 3 次出現同樣錯誤。',act:['generate_exercise','產生練習題'],
+ ai:'{"concept":"移項變號","difficulty":"easy","count":3}',obs:'產生 3 題移項練習，答案已驗算正確。',hu:'學生連續挫折或情緒低落時通知老師。',
+ rf:'檢查：沒有直接說出答案、練習題答案驗算正確、難度符合學生程度。',fi:'學生找出移項沒有變號的錯誤，3 題練習答對 2 題。',
+ ta:'學習紀錄、錯誤概念標記。',di:'對話中以步驟圖標示錯誤位置。',
+ lb:['找出第一個錯誤步驟','選講解或出題工具','指定概念與難度','題目與驗算結果','不直接給答案','挫折時通知老師'],
+ T:[['🌐','教學影片搜尋','找出相關教學影片。'],['💻','答案驗算','用程式驗算題目。'],['📊','錯誤分析','分析錯誤類型。'],['🗄️','學習紀錄','查詢過往錯誤。'],['✉️','通知老師','回報學習狀況。'],['📝','練習題產生','產生類似題。']],
+ M:[['📚','題庫','取得同概念題目。'],['🏫','校務系統','查詢成績。'],['📘','Google Classroom','派發練習。'],['🗂️','課綱資料庫','對應學習內容。'],['💬','LINE','通知家長。'],OTHER],
+ ch:[['t',2,'分析學生作答的錯誤步驟。',1],['t',3,'查詢學生過去的錯誤紀錄。',1],['t',5,'產生 3 題移項練習。',3],['t',1,'驗算練習題答案。',3]],
+ gl:[['先備概念','Prerequisite','學新概念前需要先會的知識。'],['鷹架','Scaffolding','逐步提供協助、再慢慢撤除的教學方式。'],['蘇格拉底式提問','Socratic questioning','用提問引導學生自己找答案。']]},
+{k:'coursemk',n:'課程製作',ic:'🎬',g:'edu2',goal:'把這份 40 頁的內部教材做成 3 小時課程，含大綱、投影片、測驗與講義',
+ st:['解析教材','設計課程大綱','製作投影片','出測驗題','產出講義'],v:['課程製作從兩週縮短到兩天','教材內容不遺漏','測驗對應學習目標'],note:'每個階段產出需講師確認後才進下一步。',
+ mem:['講師風格與過往課程','對象是新進業務','已完成大綱與 2 個單元'],ex:'若教材有過時內容，Planner 加一步「標出待講師更新的段落」。',
+ rsn:'先列出學習目標，再依目標安排單元與時間，每個單元搭配練習與測驗。',th:'教材第 12～18 頁是報價流程，新進業務最常出錯，要多安排一段實作。',act:['make_slides','產生投影片'],
+ ai:'{"unit":"報價流程","slides":12,"style":"公司版型"}',obs:'產生 12 頁投影片，含 1 個實作練習。',hu:'每個階段由講師確認。',
+ rf:'檢查：每個學習目標都有對應單元與測驗題、時間總和為 3 小時、內容與教材一致。',fi:'3 小時課程已完成：5 個單元、48 頁投影片、20 題測驗、講義 1 份。',
+ ta:'課程大綱、投影片、測驗、講義。',di:'卡片顯示課程時間軸與各單元產出。',
+ lb:['依學習目標安排單元','選投影片或出題工具','指定單元與頁數','頁數與練習','目標、時間、內容一致','每階段講師確認'],
+ T:[['🌐','補充資料搜尋','補充案例與數據。'],['📄','教材解析','擷取教材重點。'],['📊','時間配置','計算各單元時間。'],['🗄️','過往課程庫','參考過往課程。'],['✉️','送審','寄給講師確認。'],['📝','講義產生','產出講義文件。']],
+ M:[['📚','學習平台','上架課程。'],['🗂️','文件管理','讀取教材。'],['🎨','簡報工具','套用公司版型。'],['📋','題庫','存放測驗題。'],['💬','Teams','與講師協作。'],OTHER],
+ ch:[['t',1,'解析 40 頁教材，擷取重點。',0],['t',2,'依學習目標分配各單元時間。',1],['m',2,'透過 MCP 用公司版型產生投影片。',2],['m',0,'透過 MCP 上架課程到學習平台。',4]],
+ gl:[['學習目標','Learning objective','學員上完課後應該能做到的事。'],['ADDIE','分析、設計、發展、實施、評鑑','常見的教學設計流程模型。'],['講義','Handout','發給學員的課程重點文件。']]},
+{k:'roleplay',n:'企業培訓陪練',ic:'🎭',g:'edu2',goal:'讓新進業務和 AI 扮演的「難搞客戶」練習議價，結束後依評分表給回饋',
+ st:['設定情境與角色','開始對練','記錄對話','依評分表評分','給出改進建議'],v:['隨時可以練習','回饋客觀一致','主管省下陪練時間'],note:'評分僅供學習參考，不作為績效考核依據。',
+ mem:['評分表與公司議價規範','學員第一次練習','已對練 8 回合'],ex:'若學員卡住太久，Planner 加一步「給一個提示」。',
+ rsn:'先依情境卡設定客戶個性與底線，對練中依學員回應調整難度。',th:'學員第一次讓步就降價 10%，超過公司規範的 5%，評分時要指出。',act:['score_dialogue','評分對話'],
+ ai:'{"rubric":"議價評分表_v2","transcript_id":"RP-1004"}',obs:'總分 68：開場 4/5、需求探詢 3/5、讓步策略 2/5。',hu:'學員可申請主管複評。',
+ rf:'檢查：每個評分項目都引用對話中的具體句子、建議可操作。',fi:'總分 68，讓步太快是主要問題，建議先交換條件再讓價。',
+ ta:'評分表、對話紀錄、改進建議。',di:'卡片顯示各項分數雷達圖與關鍵對話片段。',
+ lb:['判斷學員表現','選對練或評分工具','指定評分表與對話','各項分數','評分有具體引用','學員可申請複評'],
+ T:[['🎙️','語音對練','以語音進行對話。'],['💻','情境設定','產生客戶角色設定。'],['📊','評分分析','依評分表評分。'],['🗄️','練習紀錄','查詢學員過往表現。'],['✉️','回饋寄送','寄送評分報告。'],['📝','改進建議','產生具體建議。']],
+ M:[['📚','學習平台','記錄訓練成績。'],['🗂️','情境卡庫','取得練習情境。'],['👥','人資系統','查詢學員職務。'],['📋','評分表庫','取得評分標準。'],['💬','Teams','通知主管。'],OTHER],
+ ch:[['m',1,'透過 MCP 取得議價練習情境卡。',0],['t',0,'用語音與學員進行對練。',1],['t',2,'依評分表逐項評分。',3],['t',5,'產生具體改進建議。',4]],
+ gl:[['角色扮演','Role-play','模擬實際情境的練習方式。'],['評分表','Scoring rubric','依項目與等級描述的評分標準。'],['讓步策略','Concession strategy','議價中何時、如何讓步的規劃。']]},
+{k:'learnstat',n:'學習成效追蹤',ic:'📊',g:'edu2',goal:'彙整全班本學期測驗與作業，找出班級弱點並建議補救教學',
+ st:['彙整成績','分析概念弱點','找出需關注學生','建議補救策略','產出報告'],v:['老師一眼看出班級弱點','及早發現需要協助的學生','補救教學有依據'],note:'學生資料需去識別化後才可分析；報告只給授課老師與輔導老師。',
+ mem:['課綱與單元對應','這學期 6 次測驗','已分析 4 個單元'],ex:'若某學生成績突然下滑，Planner 加一步「通知導師關心」。',
+ rsn:'先把每題對應到課綱概念，算出各概念的班級答對率，再找出持續落後的學生。',th:'「比例」概念答對率只有 45%，而且連續兩次測驗都偏低。',act:['analyze_scores','分析成績'],
+ ai:'{"class":"801","term":"115-1","group_by":"concept"}',obs:'12 個概念中 3 個答對率低於 60%，5 位學生持續落後。',hu:'學生個別名單只給導師與輔導老師。',
+ rf:'檢查：資料已去識別化、題目對應概念正確、結論有足夠題數支持。',fi:'班級弱點為比例、函數圖形、單位換算，5 位學生需要個別關注。',
+ ta:'班級弱點報告、補救教學建議、關注名單。',di:'卡片顯示概念熱力圖與趨勢。',
+ lb:['找出持續落後的概念','選彙整或分析工具','指定班級與學期','弱點概念與學生數','去識別化、題數足夠','名單限導師查看'],
+ T:[['🌐','教學資源搜尋','找補救教材。'],['💻','成績彙整','整合多次成績。'],['📊','概念分析','計算各概念答對率。'],['🗄️','學生紀錄','查詢歷次表現。'],['✉️','通知導師','寄送關注名單。'],['📝','報告產生','產出班級報告。']],
+ M:[['🏫','校務系統','讀取成績。'],['📘','Google Classroom','讀取作業成績。'],['🗂️','課綱資料庫','對應概念。'],['📋','輔導紀錄','記錄關注學生。'],['💬','LINE','通知家長。'],OTHER],
+ ch:[['m',0,'透過 MCP 從校務系統讀取成績。',0],['m',1,'透過 MCP 讀取 Classroom 作業成績。',0],['t',2,'計算各概念班級答對率。',1],['t',4,'通知導師需關注的學生。',4]],
+ gl:[['答對率','Correct rate','答對人數佔總人數的比例。'],['學習落後','Learning gap','學習進度落後於應有程度。'],['去識別化','De-identification','移除或替換可識別個人的資料。']]},
+].forEach(mkApp);
+rebuildGL();
+
+function glossify(root,addList){
+  const seen=new Map(),walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('pre,code,button,.g,.glist,h2,summary')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(tn=>{
+    const txt=tn.nodeValue;GL_RE.lastIndex=0;let m,last=0,frag=null;
+    while(m=GL_RE.exec(txt)){
+      const g=GL[m[0]];if(seen.has(g[0]))continue;seen.set(g[0],g);
+      frag=frag||document.createDocumentFragment();
+      frag.appendChild(document.createTextNode(txt.slice(last,m.index)));
+      const s=document.createElement('span');s.className='g';s.dataset.g=m[0];s.textContent=m[0];s.tabIndex=0;frag.appendChild(s);
+      last=m.index+m[0].length;
+    }
+    if(frag){frag.appendChild(document.createTextNode(txt.slice(last)));tn.parentNode.replaceChild(frag,tn)}
+  });
+  if(addList&&seen.size){
+    const box=document.createElement('div');box.className='glist';
+    box.innerHTML=`<h3>📖 本頁名詞解釋（${seen.size}）</h3>`+[...seen.values()].map(g=>`<div class="gi"><b>${esc(g[0])}</b><span class="gf">${esc(g[1])}</span><div>${esc(g[2])}</div></div>`).join('');
+    const ask=root.querySelector('.askbar');ask?root.insertBefore(box,ask):root.appendChild(box);
+  }
+}
+/* 名詞浮動說明 */
+const gpop=document.createElement('div');gpop.id='gpop';document.body.appendChild(gpop);
+function showG(el){
+  const g=GL[el.dataset.g];if(!g)return;
+  gpop.innerHTML=`<b>${esc(g[0])}</b><span class="gc">${esc(catsOf(g).join('、'))}</span><div class="gf">${esc(g[1])}</div><div>${esc(g[2])}</div>`;
+  gpop.style.display='block';const r=el.getBoundingClientRect(),w=Math.min(320,window.innerWidth-20);
+  gpop.style.width=w+'px';gpop.style.left=Math.max(10,Math.min(r.left,window.innerWidth-w-10))+'px';
+  const h=gpop.offsetHeight;gpop.style.top=(r.bottom+8+h>window.innerHeight?r.top-h-8:r.bottom+8)+'px';
+}
+document.addEventListener('mouseover',e=>{const el=e.target.closest&&e.target.closest('.g');if(el)showG(el)});
+document.addEventListener('mouseout',e=>{if(e.target.closest&&e.target.closest('.g'))gpop.style.display='none'});
+document.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('g'))showG(e.target)});
+document.addEventListener('focusout',()=>gpop.style.display='none');
+document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.g');if(el){e.stopPropagation();showG(el)}});
+/* 名詞庫分頁 */
+function curCat(){const k=Object.keys(CASES).find(k=>CASES[k]===C);return CASE_CAT[k]||C.glossCat||C.name}
+function fillGcat(){
+  const sel=document.getElementById('gcat'),v=sel.value||'case';
+  const cats=[...new Set(GLOSS.flatMap(catsOf))];
+  sel.innerHTML=`<option value="case">${C.icon} 目前產業：${esc(curCat())}＋AI Agent</option><option value="all">全部（${GLOSS.length}）</option>`+cats.map(c=>`<option value="${esc(c)}">${esc(c)}（${GLOSS.filter(g=>catsOf(g).includes(c)).length}）</option>`).join('');
+  sel.value=[...sel.options].some(o=>o.value===v)?v:'case';
+}
+function renderGlossary(){
+  const q=(document.getElementById('gq').value||'').trim().toLowerCase(),sv=document.getElementById('gcat').value||'case';
+  const want=sv==='case'?[curCat(),'AI Agent']:sv==='all'?null:[sv];
+  const list=GLOSS.filter(g=>(!want||catsOf(g).some(c=>want.includes(c)))&&(!q||(g[0]+g[1]+g[2]+(g[4]||[]).join('')).toLowerCase().includes(q)));
+  const order=want||[...new Set(GLOSS.flatMap(catsOf))];
+  const groups=order.map(c=>[c,list.filter(g=>catsOf(g).includes(c)&&(!want||catsOf(g).find(x=>want.includes(x))===c))]).filter(x=>x[1].length);
+  document.getElementById('glist').innerHTML=list.length?groups.map(([c,arr])=>`<h3>${esc(c)}（${arr.length}）</h3>`+arr.map(g=>`<div class="gi"><b>${esc(g[0])}</b>${g[4]?`<span class="ga">又稱：${esc(g[4].join('、'))}</span>`:''}<span class="gf">${esc(g[1])}</span><div>${esc(g[2])}</div></div>`).join('')).join(''):'<div class="note">找不到符合的名詞，換個關鍵字或切到「全部」試試。</div>';
+}
+
+/* ============ 連線 ============ */
+const E=[
+ {f:'goal',t:'planner',p:[[500,90],[500,130]]},
+ {f:'steps',t:'planner',p:[[728,168],[700,168]]},
+ {f:'planner',t:'loop',p:[[500,206],[500,250]],lb:'逐步執行',lx:508,ly:234},
+ {f:'memory',t:'planner',p:[[120,250],[120,160],[300,160]],lb:'長期記憶檢索',lx:140,ly:152},
+ {f:'memory',t:'thinking',p:[[222,330],[268,330]],lb:'讀取',lx:226,ly:322},
+ {f:'obs',t:'memory',p:[[268,555],[222,555]],lb:'寫入',lx:226,ly:547},
+ {f:'actionInput',t:'tool',p:[[608,480],[718,480]],lb:'呼叫工具',lx:640,ly:472},
+ {f:'tool',t:'mcp',p:[[894,440],[914,440]]},
+ {f:'mcp',t:'tool',p:[[914,540],[894,540]]},
+ {f:'tool',t:'obs',p:[[718,575],[608,575]],lb:'回傳結果',lx:640,ly:567},
+ {f:'human',t:'tool',p:[[785,628],[785,610]],lb:'核准後執行',lx:792,ly:622},
+ {f:'actionInput',t:'thinking',d:'M608,545 C676,510 676,365 608,335',lb:'循環迭代',lx:628,ly:425},
+ {f:'loop',t:'reflection',p:[[470,650],[470,690]],lb:'步驟結果',lx:404,ly:675},
+ {f:'reflection',t:'loop',p:[[530,690],[530,650]],lb:'修正重試',lx:538,ly:675},
+ {f:'reflection',t:'planner',p:[[300,712],[236,712],[236,190],[300,190]],lb:'重新規劃',lx:240,ly:206},
+ {f:'reflection',t:'memory',p:[[300,742],[120,742],[120,650]],lb:'寫回長期記憶',lx:140,ly:734},
+ {f:'reflection',t:'stop',p:[[500,760],[500,800]],lb:'通過',lx:508,ly:785},
+ {f:'stop',t:'loop',p:[[700,833],[706,833],[706,640],[690,640]],lb:'下一步',lx:712,ly:770},
+ {f:'stop',t:'final',p:[[500,866],[500,894],[285,894],[285,920]],lb:'全部完成',lx:508,ly:888},
+ {f:'stop',t:'task',p:[[500,894],[715,894],[715,920]]},
+ {f:'final',t:'display',p:[[285,986],[285,1010],[500,1010],[500,1030]]},
+ {f:'task',t:'display',p:[[715,986],[715,1010],[500,1010]]},
+];
+const catColor=c=>`var(--${c})`;
+
+/* ============ 繪製 ============ */
+const stage=document.getElementById('stage'),svg=document.getElementById('edges');
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent&&parent.appendChild(e);return e}
+svg.innerHTML='<defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#7c8cb8"/></marker></defs>';
+const motions=[];
+E.forEach((e,i)=>{
+  const d=e.d||('M'+e.p.map(q=>q.join(',')).join(' L'));
+  const col=getComputedStyle(document.documentElement).getPropertyValue('--'+N[e.f].c).trim();
+  const g=el('g',{class:'edge',id:'e'+i},svg);
+  el('path',{d,class:'e-base','marker-end':'url(#ar)'},g);
+  el('path',{d,class:'e-flow',stroke:col,style:'color:'+col},g);
+  const c=el('circle',{r:4.5,fill:'#fff',style:`filter:drop-shadow(0 0 6px ${col})`},g);
+  const am=el('animateMotion',{dur:(2.2+i%3*.4)+'s',repeatCount:'indefinite',path:d},c);
+  motions.push([am,2.2+i%3*.4]);
+  if(e.lb)el('text',{x:e.lx,y:e.ly,class:'e-lbl'},g).textContent=e.lb;
+  e.g=g;
+});
+const order=['loop','memory','tool','mcp','display'];
+const ids=[...order,...Object.keys(N).filter(k=>!order.includes(k))];
+ids.forEach(id=>{
+  const n=N[id],d=document.createElement('div');
+  d.className='node '+n.k;d.id='n_'+id;d.tabIndex=0;
+  d.style.cssText=`left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;--c:${catColor(n.c)}`;
+  d.innerHTML=nodeHTML(n);
+  d.addEventListener('click',ev=>{ev.stopPropagation();stopPlay();select(id)});
+  d.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(id)}});
+  stage.appendChild(d);
+});
+applyLabels();renderSteps();fillCaseSel();
+document.getElementById('caseSel').onchange=e=>setCase(e.target.value);
+
+/* ============ 選取與說明 ============ */
+let cur=null;
+const famOf=id=>[id,N[id].par].filter(Boolean);
+function related(id){
+  const fam=famOf(id),out=[];
+  E.forEach(e=>{if(fam.includes(e.f))out.push([e.t,'流向']);else if(fam.includes(e.t))out.push([e.f,'來自'])});
+  Object.keys(N).forEach(k=>{if(N[k].par===id)out.push([k,'包含'])});
+  if(N[id].par)out.push([N[id].par,'屬於']);
+  const seen=new Set();return out.filter(([k])=>!seen.has(k)&&seen.add(k)&&k!==id);
+}
+function select(id){
+  cur=id;const n=N[id];
+  document.querySelectorAll('.node').forEach(x=>x.classList.remove('sel','rel'));
+  const fam=famOf(id);
+  stage.classList.add('dim');
+  E.forEach(e=>e.g.classList.toggle('hot',fam.includes(e.f)||fam.includes(e.t)));
+  document.getElementById('n_'+id).classList.add('sel');
+  related(id).forEach(([k])=>document.getElementById('n_'+k).classList.add('rel'));
+  if(N[id].par)document.getElementById('n_'+N[id].par).classList.add('rel');
+  Object.keys(N).forEach(k=>{if(N[k].par===id)document.getElementById('n_'+k).classList.add('rel')});
+  const info=document.getElementById('info');
+  info.style.setProperty('--c',catColor(n.c));
+  const rel=related(id);
+  info.innerHTML=`<div style="font-size:34px">${n.ic||'◆'}</div><h2>${n.t}</h2><div class="sub2">${n.s||''}</div>
+   ${C.desc&&C.desc[id]?`<p>${esc(C.desc[id])}</p><details style="margin:0 0 14px"><summary style="cursor:pointer;color:var(--mute);font-size:13px">通用定義</summary><p style="margin-top:8px">${BASE&&BASE[id]?BASE[id].d:n.d}</p></details>`:`<p>${n.d}</p>`}
+   <h3>關鍵重點</h3><ul>${(id==='steps'?C.steps.map((t,i)=>`Step ${i+1} ${esc(t)}`):n.p).map(x=>`<li>${x}</li>`).join('')}</ul>
+   ${caseScene(id)?`<h3>${C.icon} 產業案例：${esc(C.name)}</h3><div class="scene">📌 任務「${esc(C.goal)}」<br>${esc(caseScene(id))}</div>`:''}
+   ${exFor(id)?`<h3>實作示意</h3><pre>${esc(exFor(id))}</pre>`:''}
+   ${rel.length?`<h3>與其他元件的關係</h3><div class="rels">${rel.map(([k,r])=>`<button data-go="${k}">${r}：${N[k].t}</button>`).join('')}</div>`:''}
+   <div class="askbar"><button class="btn pri" data-ask="explain">🤖 請 AI 深入解釋</button><button class="btn" data-ask="code">💻 給我實作程式碼</button></div>`;
+  glossify(info,true);
+  info.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{select(b.dataset.go);scrollToNode(b.dataset.go)});
+  info.querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{
+    tab('chat');ask(b.dataset.ask==='code'?`請用 Python 寫一段「${n.t}」的最小可運作範例程式，並逐段說明。`:`請深入解釋 AI Agent 中的「${n.t}」：它解決什麼問題、常見實作方式、常見錯誤與最佳實務。`)});
+  info.scrollTop=0;
+  updateChatCtx();
+  if(!playing)tab('info');
+}
+function showIntro(){
+  cur=null;stage.classList.remove('dim');
+  document.querySelectorAll('.node').forEach(x=>x.classList.remove('sel','rel'));E.forEach(e=>e.g.classList.remove('hot'));
+  const info=document.getElementById('info');info.style.removeProperty('--c');
+  info.innerHTML=`<div style="font-size:34px">🧭</div><h2>AI Agent 的完整架構</h2><div class="sub2">點選左側任一元件查看說明，或按「流程演示」看一次完整運作</div>
+  <p>AI Agent 不是單次問答，而是一個會<b>規劃、推理、使用工具、自我檢查</b>的系統。目前案例為 <b>${C.icon} ${esc(C.name)}</b>：「${esc(C.goal)}」，拆解從接到目標到交付成果的每一步。右上可切換其他產業。</p>
+  <h3>${C.icon} 這個產業能得到什麼</h3><ul>${C.value.map(v=>`<li>${esc(v)}</li>`).join('')}</ul>
+  <div class="scene" style="margin-top:10px">⚠ ${esc(C.note)}</div>
+  <h3>案例流程</h3><ul>${C.steps.map((t,i)=>`<li>Step ${i+1}　${esc(t)}</li>`).join('')}</ul>
+  <h3>本圖已修正原圖的流程問題</h3><ul>
+  <li>Reasoning 併入推理循環：原圖把 Reasoning 和 Thinking 分成兩層，實際上是同一件事</li>
+  <li>補上 Observation：工具結果先回到推理循環，原圖把「Function 執行結果」放在 Reflection 之後，順序顛倒</li>
+  <li>MCP 是工具的來源之一，結果經工具層回傳，不是直接送 Reflection</li>
+  <li>Memory 雙向讀寫：循環每輪讀寫工作記憶，不只是提供給 Planner</li>
+  <li>Reflection 三種結果：通過、修正重試、回 Planner 重新規劃</li>
+  <li>補上終止條件與人工確認：原圖沒有「何時停止」與高風險動作核准</li></ul>
+  <h3>六大核心角色</h3><ul>
+  <li><b>Planner</b> 負責規劃</li><li><b>Reasoning</b> 負責決策</li><li><b>Memory</b> 負責記憶</li>
+  <li><b>Tool</b> 負責執行</li><li><b>MCP</b> 負責連接</li><li><b>Reflection</b> 負責自我修正</li></ul>
+  <p style="margin-top:14px">六者共同完成使用者目標。</p>
+  <h3>操作方式</h3><ul><li>點元件：右側顯示說明，相關連線會亮起</li><li>AI 問答：設定 Groq 金鑰後，可針對目前元件提問</li><li>資料整理：貼上需求或文件，自動對應到 Agent 架構</li><li>點空白處可取消選取</li><li>文字下有虛線的是專有名詞，滑過或點一下看解釋；完整清單在「名詞庫」</li></ul>`;
+  glossify(info,false);
+  updateChatCtx();
+}
+document.getElementById('stageWrap').addEventListener('click',e=>{if(e.target.id==='stageWrap'||e.target.id==='stage'){stopPlay();showIntro()}});
+function scrollToNode(id){const n=N[id],w=document.getElementById('stageWrap');w.scrollTo({top:n.y*scale-120,left:(n.x+n.w/2)*scale-w.clientWidth/2,behavior:'smooth'})}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ============ 縮放 ============ */
+let scale=1,fitMode=true;
+const wrap=document.getElementById('stageWrap'),zRange=document.getElementById('zRange'),zVal=document.getElementById('zVal');
+function setScale(v,keepCenter=true){
+  v=Math.min(2,Math.max(.4,v));
+  const cx=(wrap.scrollLeft+wrap.clientWidth/2)/scale,cy=(wrap.scrollTop+wrap.clientHeight/2)/scale;
+  scale=v;const w=wrap.clientWidth;
+  stage.style.transform=`scale(${scale})`;
+  stage.style.marginBottom=(1160*scale-1160)+'px';stage.style.marginRight=(1110*scale-1110)+'px';
+  stage.style.marginLeft=Math.max(0,(w-1110*scale)/2)+'px';
+  zRange.value=Math.round(scale*100);zVal.textContent=Math.round(scale*100)+'%';
+  if(keepCenter){wrap.scrollLeft=cx*scale-wrap.clientWidth/2;wrap.scrollTop=cy*scale-wrap.clientHeight/2}
+}
+function fit(){fitMode=true;setScale((wrap.clientWidth-24)/1110,false)}
+function zoomTo(v){fitMode=false;setScale(v)}
+window.addEventListener('resize',()=>fitMode?fit():setScale(scale,false));
+document.getElementById('fitBtn').onclick=fit;
+document.getElementById('zIn').onclick=()=>zoomTo(scale+.1);
+document.getElementById('zOut').onclick=()=>zoomTo(scale-.1);
+zRange.oninput=e=>zoomTo(e.target.value/100);
+wrap.addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoomTo(scale*(e.deltaY<0?1.1:1/1.1))},{passive:false});
+
+/* 左右比例拖曳 */
+const aside=document.querySelector('aside'),split=document.getElementById('split'),wVal=document.getElementById('wVal');
+function setAside(w){w=Math.round(Math.min(Math.max(300,w),window.innerWidth-360));aside.style.width=w+'px';wVal.textContent=w;try{localStorage.setItem('agentArch.aside',w)}catch(e){}fitMode?fit():setScale(scale,false)}
+split.addEventListener('pointerdown',e=>{split.setPointerCapture(e.pointerId);split.classList.add('drag');document.body.classList.add('resizing')});
+split.addEventListener('pointermove',e=>{if(split.classList.contains('drag'))setAside(window.innerWidth-e.clientX)});
+split.addEventListener('pointerup',()=>{split.classList.remove('drag');document.body.classList.remove('resizing')});
+split.addEventListener('dblclick',()=>setAside(440));
+split.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')setAside(aside.offsetWidth+20);if(e.key==='ArrowRight')setAside(aside.offsetWidth-20)});
+
+/* 右側說明字級 */
+let pz=1;const fVal=document.getElementById('fVal');
+function setPz(v){pz=Math.min(1.6,Math.max(.8,Math.round(v*10)/10));aside.style.setProperty('--pz',pz);fVal.textContent=Math.round(pz*100)+'%';try{localStorage.setItem('agentArch.pz',pz)}catch(e){}}
+document.getElementById('fIn').onclick=()=>setPz(pz+.1);
+document.getElementById('fOut').onclick=()=>setPz(pz-.1);
+try{const w=+localStorage.getItem('agentArch.aside');if(w)aside.style.width=w+'px',wVal.textContent=w;const z=+localStorage.getItem('agentArch.pz');if(z)setPz(z)}catch(e){}
+
+/* ============ 流光速度 / 主題 ============ */
+document.getElementById('spd').oninput=e=>{const v=+e.target.value;document.documentElement.style.setProperty('--flow',v);
+  motions.forEach(([am,b])=>am.setAttribute('dur',(b/v).toFixed(2)+'s'))};
+document.getElementById('themeBtn').onclick=e=>{document.body.classList.toggle('light');e.target.textContent=document.body.classList.contains('light')?'🌙 深色':'☀ 淺色'};
+
+/* ============ 流程演示 ============ */
+let PLAY=buildPlay();
+let playing=false,pi=0,timer=null;
+const narr=document.getElementById('narr'),playBtn=document.getElementById('playBtn');
+function stepPlay(){
+  if(pi>=PLAY.length){stopPlay();return}
+  const [id,txt,st]=PLAY[pi];select(id);scrollToNode(id);
+  document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('act',+x.dataset.s===(st??0)));
+  narr.style.display='block';narr.innerHTML=`<b>${pi+1}/${PLAY.length}　${N[id].t}</b><br>${txt}`;
+  pi++;timer=setTimeout(stepPlay,2800/Math.max(.5,+document.getElementById('spd').value));
+}
+function stopPlay(){if(!playing)return;playing=false;clearTimeout(timer);playBtn.textContent='▶ 流程演示';playBtn.classList.remove('on');setTimeout(()=>narr.style.display='none',1500)}
+playBtn.onclick=()=>{if(playing){stopPlay();return}playing=true;pi=0;PLAY=buildPlay();tab('info');playBtn.textContent='⏸ 停止演示';playBtn.classList.add('on');stepPlay()};
+
+/* ============ 分頁 ============ */
+function tab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('act',b.dataset.t===t));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('act',p.id===t))}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+
+/* ============ Groq ============ */
+const LS={k:'agentArch.groqKey',m:'agentArch.groqModel'};
+function store(k,v){try{v===undefined?0:localStorage.setItem(k,v);return localStorage.getItem(k)||''}catch(e){return ''}}
+const RETIRED={'llama-3.3-70b-versatile':'openai/gpt-oss-120b','llama-3.1-8b-instant':'openai/gpt-oss-20b'};
+const cfg={key:store(LS.k),model:store(LS.m)||'openai/gpt-oss-120b'};
+if(RETIRED[cfg.model]){cfg.model=RETIRED[cfg.model];store(LS.m,cfg.model)}
+const keyDot=document.getElementById('keyDot'),modal=document.getElementById('modal');
+function refreshDot(){keyDot.classList.toggle('ok',!!cfg.key)}
+refreshDot();
+document.getElementById('keyBtn').onclick=()=>{document.getElementById('keyIn').value=cfg.key;
+  const sel=document.getElementById('modelIn');const has=[...sel.options].some(o=>o.value===cfg.model);
+  sel.value=has?cfg.model:sel.options[0].value;document.getElementById('modelCustom').value=has?'':cfg.model;
+  document.getElementById('keyMsg').textContent='';modal.style.display='flex'};
+document.getElementById('modelLoad').onclick=async()=>{
+  const m=document.getElementById('keyMsg'),key=document.getElementById('keyIn').value.trim(),sel=document.getElementById('modelIn');
+  if(!key){m.textContent='請先輸入 API Key。';return}
+  m.textContent='載入中…';
+  try{const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+key}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const ids=(await r.json()).data.filter(x=>x.active!==false).map(x=>x.id)
+      .filter(id=>!/whisper|tts|guard|playai|orpheus|distil|compound/i.test(id)).sort();
+    const keep=sel.value;sel.innerHTML=ids.map(id=>`<option value="${id}">${id}</option>`).join('');
+    sel.value=ids.includes(keep)?keep:(ids.includes('openai/gpt-oss-120b')?'openai/gpt-oss-120b':ids[0]);
+    m.textContent=`✅ 已載入 ${ids.length} 個可用模型`;
+  }catch(e){m.textContent='❌ 載入失敗：'+e.message}
+};
+document.getElementById('keyCancel').onclick=()=>modal.style.display='none';
+function readModal(){return{key:document.getElementById('keyIn').value.trim(),model:document.getElementById('modelCustom').value.trim()||document.getElementById('modelIn').value}}
+document.getElementById('keySave').onclick=()=>{Object.assign(cfg,readModal());store(LS.k,cfg.key);store(LS.m,cfg.model);refreshDot();modal.style.display='none'};
+document.getElementById('keyTest').onclick=async()=>{const m=document.getElementById('keyMsg'),c=readModal();m.textContent='測試中…';
+  try{const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+c.key}});
+    m.textContent=r.ok?'✅ 連線成功':'❌ 失敗（HTTP '+r.status+'），請檢查金鑰'}catch(e){m.textContent='❌ 無法連線：'+e.message}};
+
+const SYS='你是 AI Agent 架構的講師。一律使用繁體中文（台灣用語）回答，條理清楚，適度使用標題、條列與表格。本工具採修正後的架構：使用者目標 → 檢索長期記憶 → Planner 規劃步驟 → 每個步驟進入 Reasoning 推理循環（ReAct：Thought → Action → Action Input → 工具執行（原生工具或經 MCP）→ Observation → 再 Thought，每輪讀寫工作記憶；高風險動作需人工確認）→ Reflection 檢查（通過／修正重試／重新規劃）→ 完成判斷（全部完成、達上限或需補資訊）→ 彙整 Final Answer 與 Task 產物 → 互動展示；Reflection 並將經驗寫回長期記憶。';
+/* ---- Groq：依 TPM 上限自動控管長度、429 自動等待重試 ---- */
+const TPM_LIMIT=8000;
+const estTok=s=>{let n=0;for(const ch of String(s))n+=ch.charCodeAt(0)>255?1.05:0.3;return Math.ceil(n)+4};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function fitMessages(messages,max){
+  const budget=TPM_LIMIT-max-400,m=messages.map(x=>({...x}));
+  const tot=()=>m.reduce((a,x)=>a+estTok(x.content),0);
+  while(tot()>budget&&m.length>2){const i=m.findIndex((x,k)=>x.role!=='system'&&k<m.length-1);if(i<0)break;m.splice(i,1)}
+  if(tot()>budget){const last=m[m.length-1],over=tot()-budget;last.content=String(last.content).slice(0,Math.max(200,String(last.content).length-Math.ceil(over*1.1)))+'\n…（內容過長已截斷）'}
+  return m;
+}
+async function groq(messages,onTok,max=2500,onWait){
+  if(!cfg.key){modal.style.display='flex';throw new Error('請先設定 Groq API Key')}
+  const body={model:cfg.model,messages:fitMessages(messages,max),stream:true,temperature:.5,max_tokens:max};
+  if(/gpt-oss/.test(cfg.model))body.reasoning_effort='low';
+  let r;
+  for(let tries=0;;tries++){
+    r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfg.key},body:JSON.stringify(body)});
+    if(r.status!==429||tries>=4)break;
+    const t=await r.text(),m=t.match(/try again in ([\d.]+)\s*(ms|s|m)/i);
+    let wait=+(r.headers.get('retry-after')||0)*1000;
+    if(m)wait=Math.max(wait,+m[1]*(m[2]==='ms'?1:m[2]==='m'?60000:1000));
+    wait=Math.min(Math.max(wait,3000)+500,65000);
+    onWait&&onWait(Math.ceil(wait/1000));await sleep(wait);
+  }
+  if(!r.ok){const t=await r.text();
+    if(/decommissioned|does not exist|model_not_found/i.test(t))throw new Error(`模型 ${cfg.model} 已停用，請到 Groq 設定按「載入可用模型」重新選擇。`);
+    if(r.status===401)throw new Error('API Key 無效，請到 Groq 設定重新輸入。');
+    if(r.status===413||/Request too large|tokens per minute/i.test(t))throw new Error('內容超過 Groq 免費方案每分鐘 Token 上限，請縮短內容或稍候一分鐘再試。');
+    if(r.status===429)throw new Error('Groq 呼叫次數已達上限，請稍候一分鐘再試。');
+    throw new Error('HTTP '+r.status+'：'+t.slice(0,160))}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='',all='';
+  while(true){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const l of lines){if(!l.startsWith('data:'))continue;const s=l.slice(5).trim();if(s==='[DONE]')continue;try{const tk=JSON.parse(s).choices?.[0]?.delta?.content||'';if(tk){all+=tk;onTok(all)}}catch(e){}}}
+  return all;
+}
+/* 長文先分段摘要（map-reduce），避免超過每分鐘 Token 上限 */
+async function digestLong(src,status,limit=2600){
+  if(estTok(src)<=limit)return src;
+  const chunks=[];let cur='',n=0;
+  for(const para of String(src).split(/\n/)){const t=estTok(para);
+    if(n+t>2400&&cur){chunks.push(cur);cur='';n=0}
+    if(t>2400){for(let i=0;i<para.length;i+=2200)chunks.push(para.slice(i,i+2200));continue}
+    cur+=para+'\n';n+=t}
+  if(cur.trim())chunks.push(cur);
+  const parts=[];
+  for(let i=0;i<chunks.length;i++){
+    status(`長文分段摘要 ${i+1}/${chunks.length}…`);
+    const s=await groq([{role:'system',content:'你是資料整理助手，一律使用繁體中文（台灣用語）。'},{role:'user',content:'請把以下內容整理成重點條列，保留關鍵數據、專有名詞與結論，不超過 350 字：\n\n'+chunks[i]}],()=>{},900,w=>status(`已達每分鐘上限，等待 ${w} 秒後繼續（${i+1}/${chunks.length}）…`));
+    parts.push(`【第 ${i+1} 段】\n`+s.replace(/<think>[\s\S]*?<\/think>/g,''));
+  }
+  const joined=parts.join('\n\n');
+  return estTok(joined)>limit?digestLong(joined,status,limit):joined;
+}
+
+function md(src){
+  const blocks=[];src=src.replace(/<think>[\s\S]*?<\/think>/g,'');
+  let s=esc(src).replace(/```(\w*)\n?([\s\S]*?)```/g,(m,l,c)=>{blocks.push(`<pre><code>${c}</code></pre>`);return `\u0000${blocks.length-1}\u0000`});
+  const lines=s.split('\n'),out=[];let list=null,tbl=[];
+  const flushT=()=>{if(!tbl.length)return;const rows=tbl.filter(r=>!/^\s*\|?\s*:?-{2,}/.test(r));
+    out.push('<table>'+rows.map((r,i)=>'<tr>'+r.replace(/^\||\|$/g,'').split('|').map(c=>i?`<td>${c.trim()}</td>`:`<th>${c.trim()}</th>`).join('')+'</tr>').join('')+'</table>');tbl=[]};
+  const flushL=()=>{if(list){out.push(`</${list}>`);list=null}};
+  for(const l of lines){
+    if(/^\s*\|.*\|\s*$/.test(l)){flushL();tbl.push(l.trim());continue}else flushT();
+    let m;
+    if(m=l.match(/^#{1,6}\s+(.*)/)){flushL();out.push(`<h4>${m[1]}</h4>`)}
+    else if(m=l.match(/^\s*[-*•]\s+(.*)/)){if(list!=='ul'){flushL();out.push('<ul>');list='ul'}out.push(`<li>${m[1]}</li>`)}
+    else if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=='ol'){flushL();out.push('<ol>');list='ol'}out.push(`<li>${m[1]}</li>`)}
+    else if(!l.trim()){flushL()}
+    else{flushL();out.push(`<p style="margin:4px 0">${l}</p>`)}
+  }
+  flushL();flushT();
+  return out.join('').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\u0000(\d+)\u0000/g,(m,i)=>blocks[i]);
+}
+
+/* ---- 問答 ---- */
+const hist=[],log=document.getElementById('chatLog');
+function updateChatCtx(){
+  document.getElementById('chatCtx').textContent=cur?`目前聚焦：${N[cur].t}（提問時會帶入此元件資訊）`:'目前聚焦：整體架構';
+  document.getElementById('chatCtx').textContent+=`｜案例：${C.icon} ${C.name}`;
+  const t=cur?N[cur].t:'AI Agent 架構';
+  const qs=[`用白話解釋「${t}」`,`「${t}」常見錯誤有哪些？`,`在 LangChain / LangGraph 中怎麼實作「${t}」？`,`在「${C.name}」情境下，${t}要注意什麼？`,`「${t}」還能怎麼用在其他產業？`];
+  const box=document.getElementById('chatChips');box.innerHTML='';qs.forEach(q=>{const b=document.createElement('button');b.textContent=q;b.onclick=()=>ask(q);box.appendChild(b)});
+}
+function bubble(cls,html){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+async function ask(q){
+  q=q.trim();if(!q)return;tab('chat');bubble('u',esc(q));
+  const ctx=`\n\n【目前產業案例】${C.name}：${C.goal}（步驟：${C.steps.join('→')}）`+(cur?`\n【目前使用者點選的元件】${N[cur].t}：${N[cur].d}\n此元件在案例中的情境：${caseScene(cur)}`:'');
+  hist.push({role:'user',content:q});
+  const a=bubble('a','<span style="color:var(--mute)">思考中…</span>');
+  try{const ans=await groq([{role:'system',content:SYS+ctx},...hist.slice(-10)],t=>{a.innerHTML=md(t);log.scrollTop=log.scrollHeight},2500,w=>a.innerHTML=`<span style="color:var(--mute)">已達每分鐘上限，等待 ${w} 秒…</span>`);
+    hist.push({role:'assistant',content:ans});glossify(a,false)}
+  catch(e){a.innerHTML='⚠ '+esc(e.message);hist.pop()}
+}
+const chatIn=document.getElementById('chatIn');
+document.getElementById('chatSend').onclick=()=>{ask(chatIn.value);chatIn.value=''};
+chatIn.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ask(chatIn.value);chatIn.value=''}});
+document.getElementById('chatClear').onclick=()=>{hist.length=0;log.innerHTML=''};
+
+/* ---- 資料整理 ---- */
+const MODES={
+ map:'請把以下資料對應到 AI Agent 架構的各元件，用表格呈現（欄位：元件｜在此情境中的角色｜具體內容｜需要的工具或資料）。最後補充缺少或需要釐清的部分。',
+ design:'請依以下需求設計一個可執行的 AI Agent 方案：目標、Planner 步驟、需要的 Tools 與 MCP 連接、Memory 設計、Reflection 檢查點、最終產出形式，並附上風險與注意事項。',
+ sum:'請用條列方式整理以下資料的重點摘要，並標出與 AI Agent 相關的概念。',
+ lesson:'請把以下資料改寫成一份給學員的教學講義：學習目標、核心概念說明、圖解式步驟、實作練習、課後思考題。',
+ quiz:'請根據以下資料出 5 題四選一選擇題，每題附答案與解析，著重 AI Agent 架構概念的理解。'};
+let orgText='';
+document.getElementById('orgFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;const ta=document.getElementById('orgIn');ta.value='讀取中…';
+  try{
+    if(/\.pdf$/i.test(f.name)){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let t='';
+      for(let i=1;i<=pdf.numPages;i++){const c=await (await pdf.getPage(i)).getTextContent();t+=c.items.map(x=>x.str).join(' ')+'\n'}ta.value=t}
+    else if(/\.docx$/i.test(f.name)){ta.value=(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+    else ta.value=await f.text();
+  }catch(err){ta.value='';alert('檔案讀取失敗：'+err.message)}
+  e.target.value='';
+};
+document.getElementById('orgRun').onclick=async()=>{
+  const src=document.getElementById('orgIn').value.trim(),out=document.getElementById('orgOut');
+  if(!src){out.innerHTML='<div class="note">請先貼上文字或上傳檔案。</div>';return}
+  out.innerHTML='<div class="msg a"><span style="color:var(--mute)">整理中…</span></div>';const box=out.firstChild;
+  document.getElementById('orgAct').style.display='none';
+  const st=t=>box.innerHTML=`<span style="color:var(--mute)">${t}</span>`;
+  try{const body=await digestLong(src,st);st(body===src?'整理中…':'分段摘要完成，正在整理…');
+    orgText=await groq([{role:'system',content:SYS},{role:'user',content:MODES[document.getElementById('orgMode').value]+(body===src?'':'\n（原文較長，以下為分段摘要）')+'\n\n---\n'+body}],t=>{box.innerHTML=md(t)},3000,w=>st(`已達每分鐘上限，等待 ${w} 秒…`));
+    document.getElementById('orgAct').style.display='flex';glossify(box,false);highlightFrom(orgText)}
+  catch(e){box.innerHTML='⚠ '+esc(e.message)}
+};
+function highlightFrom(t){ // 依輸出內容點亮提及的元件
+  const map={planner:/Planner|規劃/,memory:/Memory|記憶/,tool:/Tool|工具/,mcp:/MCP/,reflection:/Reflection|反思/,loop:/核心循環|Thinking|Thought|Reasoning|推理/,obs:/Observation|觀察/};
+  document.querySelectorAll('.node').forEach(x=>x.classList.remove('sel','rel'));stage.classList.add('dim');E.forEach(e=>e.g.classList.remove('hot'));
+  Object.entries(map).forEach(([k,re])=>{if(re.test(t))document.getElementById('n_'+k).classList.add('rel')});
+}
+document.getElementById('orgCopy').onclick=()=>navigator.clipboard.writeText(orgText);
+document.getElementById('orgDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([orgText],{type:'text/markdown'}));a.download='AI_Agent_整理結果.md';a.click()};
+
+
+/* ---- AI 生成產業案例 ---- */
+const CHIP_IDS=[...TOOLS.map(a=>'t_'+a[0]),...MCPS.map(a=>'m_'+a[0])];
+const SC_KEYS=['goal','memory','longMem','shortMem','planner','steps','reasoning','loop','thinking','action','actionInput','obs','tool','mcp','reflection','workMem','func','final','task','display'];
+/* 穩健的 JSON 呼叫：低推理成本、失敗時修復 failed_generation、再退回純文字擷取 */
+function repairJSON(t){
+  if(!t)return null;t=String(t).replace(/<think>[\s\S]*?<\/think>/g,'').replace(/```json|```/g,'').trim();
+  const a=t.indexOf('{');if(a<0)return null;t=t.slice(a);
+  const b=t.lastIndexOf('}');
+  const tryP=x=>{try{return JSON.parse(x)}catch(e){return null}};
+  let j=b>0&&tryP(t.slice(0,b+1));if(j)return j;
+  let x=(b>0?t.slice(0,b+1):t).replace(/,\s*([}\]])/g,'$1');j=tryP(x);if(j)return j;
+  // 補齊被截斷的括號
+  x=t.replace(/,\s*$/,'');let st=[],inS=false,esc=false;
+  for(const ch of x){if(inS){if(esc)esc=false;else if(ch==='\\')esc=true;else if(ch==='"')inS=false;continue}
+    if(ch==='"')inS=true;else if(ch==='{'||ch==='[')st.push(ch==='{'?'}':']');else if(ch==='}'||ch===']')st.pop()}
+  if(inS)x+='"';x=x.replace(/,\s*$/,'').replace(/:\s*$/,':null');
+  return tryP((x+st.reverse().join('')).replace(/,\s*([}\]])/g,'$1'));
+}
+async function groqJSON(user,maxTokens=6000){
+  const isOss=/gpt-oss/.test(cfg.model);
+  const base={model:cfg.model,temperature:.4,max_tokens:maxTokens,
+    messages:[{role:'system',content:'你只輸出一個合法的 JSON 物件，不要任何說明文字。字串內不可出現未跳脫的雙引號，需要引號時用「」。內容使用繁體中文（台灣用語）。'},{role:'user',content:user}]};
+  if(isOss)base.reasoning_effort='low';
+  const call=async body=>{const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfg.key},body:JSON.stringify(body)});
+    const txt=await r.text();let data=null;try{data=JSON.parse(txt)}catch(e){}
+    return{ok:r.ok,status:r.status,txt,data}};
+  let res=await call({...base,response_format:{type:'json_object'}});
+  if(res.ok){const j=repairJSON(res.data?.choices?.[0]?.message?.content);if(j)return j}
+  else{const fg=res.data?.error?.failed_generation;const j=repairJSON(fg);if(j)return j;
+    if(/decommissioned|does not exist|not found/i.test(res.txt))throw new Error(`模型 ${cfg.model} 已停用，請到「Groq 設定」載入可用模型。`);
+    if(res.status===401)throw new Error('API Key 無效，請到「Groq 設定」重新輸入。');
+    if(res.status===429)throw new Error('Groq 呼叫次數已達上限，請稍候再試或改用其他模型。');}
+  res=await call(base); // 不強制 JSON 模式，再從文字擷取
+  if(!res.ok)throw new Error('HTTP '+res.status+'：'+(res.data?.error?.message||res.txt).slice(0,160));
+  const j=repairJSON(res.data?.choices?.[0]?.message?.content);
+  if(!j)throw new Error('模型回傳的內容不是有效 JSON，請再試一次或換一個模型。');
+  return j;
+}
+document.getElementById('genCase').onclick=async()=>{
+  const ind=prompt('輸入產業或作業流程（例：PCB 製造、保險理賠、飯店訂房、會議室預約、應收帳款催收）');
+  if(!ind||!ind.trim())return;
+  if(!cfg.key){modal.style.display='flex';return}
+  const topic=ind.trim(),btn=document.getElementById('genCase');btn.disabled=true;
+  const prog=t=>btn.textContent='⏳ '+t;
+  const COMP='元件意義：Planner 規劃步驟、reasoning 推理判斷、loop 推理循環的過程、thinking 思考、action 選工具、actionInput 工具參數、obs 工具回傳結果、Memory 記憶（longMem 長期／shortMem 短期／workMem 工作進度）、tool 工具、mcp 透過 MCP 連接的外部系統、human 需要人工確認的事、reflection 檢查結果、func 彙整結果、final 給使用者的回答、task 任務產物、display 呈現方式。';
+  try{
+    prog('生成中 1/3 情境…');
+    const a=await groqJSON(`為台灣「${topic}」設計一個 AI Agent 實際運用案例，輸出 JSON：
+{"name":"名稱（8 字內）","icon":"一個 emoji","goal":"使用者實際會下的一句任務指令","steps":["5 個步驟，各 10 字內"],"value":["3 個效益"],"note":"一句風險或注意事項",
+"sc":{${SC_KEYS.concat('human').map(k=>`"${k}":"一句話"`).join(',')}}}
+${COMP}
+sc 每個欄位寫一句此案例中該元件做的具體事情，可含數字或名稱；thinking 以「Thought：」開頭；action 以「Action：英文工具名（中文說明）」格式；actionInput 以「Action Input：」開頭，參數用單引號寫成 {'key':'value'}；obs 以「Observation：」開頭。`,6000);
+    if(!a.goal||!Array.isArray(a.steps)||!a.sc)throw new Error('第 1 步回傳格式不完整，請再試一次');
+    prog('生成中 2/3 工具與系統…');
+    const b=await groqJSON(`案例：台灣「${topic}」，任務「${a.goal}」，步驟：${a.steps.join('→')}。輸出 JSON：
+{"tools":[["emoji","工具名稱（8 字內）","用途一句"]],"mcps":[["emoji","系統名稱（8 字內）","用途一句"]],
+"chips":[["id","這一步用它做什麼",步驟索引 0-4]],
+"lab":{${['planner','loop','thinking','action','actionInput','obs','longMem','shortMem','workMem','tool','mcp','human','reflection','stop','final','task','card','nl'].map(k=>`"${k}":"15 字內副標"`).join(',')}}}
+tools 恰好 6 個，依序對應 id：${TOOL_SLOTS.join(',')}；mcps 恰好 6 個，依序對應 id：${MCP_SLOTS.join(',')}。名稱改成此案例實際會用的工具或系統。
+chips 恰好 4 個，id 只能用上面的 id，說明要和該位置的名稱一致。${COMP}`,3000).catch(e=>{console.warn(e);return{}});
+    prog('生成中 3/3 專有名詞…');
+    const c=await groqJSON(`案例：台灣「${topic}」，任務「${a.goal}」。列出此領域 15 個專有名詞，輸出 JSON：
+{"gloss":[["名詞","英文全名，中文名","一兩句白話說明"]]}`,3000).catch(e=>{console.warn(e);return{}});
+    const j=Object.assign({},a,b,c);
+    j.steps=j.steps.slice(0,5);while(j.steps.length<5)j.steps.push('—');
+    j.value=Array.isArray(j.value)?j.value:[];j.note=j.note||'請在正式導入前加入人工確認機制。';
+    if(j.sc.actionInput)j.sc.actionInput=j.sc.actionInput.replace(/'/g,'"');
+    j.chips=(Array.isArray(j.chips)?j.chips:[]).filter(c=>Array.isArray(c)&&CHIP_IDS.includes(c[0])).map(c=>[c[0],String(c[1]),Math.min(4,Math.max(0,+c[2]||0))]).slice(0,4);
+    j.name=String(j.name||topic).slice(0,14);j.icon=j.icon||'🧩';j.ai=true;
+    if(Array.isArray(j.gloss)){j.glossCat=j.name;
+      j.gloss.filter(g=>Array.isArray(g)&&g[0]&&!GLOSS.some(x=>x[0]===g[0])).slice(0,25).forEach(g=>GLOSS.push([String(g[0]),String(g[1]||''),String(g[2]||''),j.name]));rebuildGL()}
+    j.tools=Array.isArray(j.tools)?j.tools.slice(0,6):null;j.mcps=Array.isArray(j.mcps)?j.mcps.slice(0,6):null;j.lab=j.lab&&typeof j.lab==='object'?j.lab:null;
+    const key='ai_'+Date.now();CASES[key]=j;C=j;fillCaseSel();setCase(key);
+    const miss=[!j.tools&&'工具名稱',!j.gloss&&'專有名詞'].filter(Boolean);
+    if(miss.length)alert(`案例已生成，但「${miss.join('、')}」這部分沒有成功，圖上會先用通用名稱顯示。`);
+  }catch(e){alert('生成失敗：'+e.message)}
+  finally{btn.disabled=false;btn.textContent='＋ AI 生成案例'}
+};
+
+
+fillGcat();
+document.getElementById('gq').oninput=renderGlossary;document.getElementById('gcat').onchange=renderGlossary;renderGlossary();
+
+/* ============ 圖像與 MP4 輸出（Canvas 重繪） ============ */
+const SW=1110,SH=1160;
+const cv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+function hex(c){c=c.replace('#','');if(c.length===3)c=c.split('').map(x=>x+x).join('');const n=parseInt(c,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function mix(a,b,t){const A=hex(a),B=hex(b);return `rgb(${A.map((v,i)=>Math.round(v*t+B[i]*(1-t))).join(',')})`}
+function rgba(a,al){const A=hex(a);return `rgba(${A.join(',')},${al})`}
+const FONT='"Noto Sans TC",system-ui,sans-serif';
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function fitText(ctx,txt,maxW,size,weight='400',min=8){let s=size;ctx.font=`${weight} ${s}px ${FONT}`;while(ctx.measureText(txt).width>maxW&&s>min){s-=.5;ctx.font=`${weight} ${s}px ${FONT}`}return s}
+function wrapText(ctx,txt,maxW){const out=[];String(txt).split('\n').forEach(par=>{let line='';for(const ch of par){if(ctx.measureText(line+ch).width>maxW&&line){out.push(line);line=ch}else line+=ch}out.push(line)});return out}
+function edgeGeom(e){
+  if(e._g)return e._g;let pts;
+  if(e.d){const n=e.d.match(/-?\d+(\.\d+)?/g).map(Number),[x0,y0,x1,y1,x2,y2,x3,y3]=n;pts=[];
+    for(let i=0;i<=32;i++){const t=i/32,u=1-t;pts.push([u*u*u*x0+3*u*u*t*x1+3*u*t*t*x2+t*t*t*x3,u*u*u*y0+3*u*u*t*y1+3*u*t*t*y2+t*t*t*y3])}}
+  else pts=e.p;
+  const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+  return e._g={pts,cum,len:cum[cum.length-1]};
+}
+function pointAt(g,f){const d=f*g.len;let i=1;while(i<g.cum.length-1&&g.cum[i]<d)i++;const seg=g.cum[i]-g.cum[i-1]||1,t=(d-g.cum[i-1])/seg;
+  return[g.pts[i-1][0]+(g.pts[i][0]-g.pts[i-1][0])*t,g.pts[i-1][1]+(g.pts[i][1]-g.pts[i-1][1])*t]}
+function drawDiagram(ctx,time){
+  const bg=cv('--bg'),panel=cv('--panel'),ink=cv('--ink'),mute=cv('--mute'),line=cv('--line'),spd=+document.getElementById('spd').value||1;
+  const dim=stage.classList.contains('dim');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,SW,SH);
+  ctx.fillStyle=rgba(line,.9);for(let x=12;x<SW;x+=24)for(let y=12;y<SH;y+=24){ctx.fillRect(x,y,1.2,1.2)}
+  // 連線
+  E.forEach((e,i)=>{
+    const g=edgeGeom(e),col=cv('--'+N[e.f].c),hot=e.g.classList.contains('hot');
+    ctx.save();ctx.globalAlpha=dim&&!hot?.18:1;ctx.lineCap='round';ctx.lineJoin='round';
+    const path=()=>{ctx.beginPath();g.pts.forEach((p,k)=>k?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]))};
+    path();ctx.strokeStyle=line;ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();
+    path();ctx.strokeStyle=col;ctx.lineWidth=hot?3.5:2.5;ctx.setLineDash([6,14]);ctx.lineDashOffset=-(time/1000)*(20/1.2)*spd;
+    ctx.shadowColor=col;ctx.shadowBlur=hot?8:4;ctx.globalAlpha*=hot?1:.8;ctx.stroke();
+    ctx.setLineDash([]);ctx.shadowBlur=0;
+    const a=g.pts[g.pts.length-2],b=g.pts[g.pts.length-1],ang=Math.atan2(b[1]-a[1],b[0]-a[0]);
+    ctx.fillStyle='#7c8cb8';ctx.beginPath();ctx.moveTo(b[0],b[1]);ctx.lineTo(b[0]-9*Math.cos(ang-.45),b[1]-9*Math.sin(ang-.45));ctx.lineTo(b[0]-9*Math.cos(ang+.45),b[1]-9*Math.sin(ang+.45));ctx.fill();
+    const dur=(2.2+i%3*.4)/spd*1000,pt=pointAt(g,(time%dur)/dur);
+    ctx.fillStyle='#fff';ctx.shadowColor=col;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(pt[0],pt[1],4.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    if(e.lb){ctx.font=`${hot?700:400} 11px ${FONT}`;ctx.fillStyle=hot?ink:mute;ctx.textBaseline='alphabetic';ctx.fillText(e.lb,e.lx,e.ly)}
+    ctx.restore();
+  });
+  // 節點
+  ids.forEach(id=>{
+    const n=N[id],el=document.getElementById('n_'+id),c=cv('--'+n.c),sel=el.classList.contains('sel'),rel=el.classList.contains('rel');
+    ctx.save();ctx.globalAlpha=dim&&!sel&&!rel?.35:1;ctx.textBaseline='middle';
+    const {x,y,w,h}=n,r=n.k==='chip'?8:12;
+    if(sel){ctx.shadowColor=c;ctx.shadowBlur=28}
+    rr(ctx,x,y,w,h,r);
+    ctx.fillStyle=n.k==='cont'?rgba(c,.07):(n.k==='box'?mix(c,panel,.14):panel);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle=rgba(c,.75);ctx.lineWidth=sel?2.5:1.5;ctx.setLineDash(n.k==='cont'?[6,4]:[]);ctx.stroke();ctx.setLineDash([]);
+    if(sel){const per=2*(w+h);ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.setLineDash([per*.12,per]);ctx.lineDashOffset=-(time/2400)*per;rr(ctx,x-3,y-3,w+6,h+6,r+3);ctx.stroke();ctx.setLineDash([])}
+    ctx.textAlign='left';
+    if(n.k==='box'){
+      ctx.font=`24px ${FONT}`;ctx.fillText(n.ic,x+14,y+h/2);
+      const cx=x+52+(w-62)/2;ctx.textAlign='center';
+      fitText(ctx,n.t,w-70,16,'700');ctx.fillStyle=c;ctx.fillText(n.t,cx,y+h/2-9);
+      fitText(ctx,n.s||'',w-70,12);ctx.fillStyle=mute;ctx.fillText(n.s||'',cx,y+h/2+12);
+    }else if(n.k==='cont'){
+      ctx.textAlign='center';fitText(ctx,n.ic+' '+n.t,w-16,15,'700');ctx.fillStyle=c;ctx.fillText(n.ic+' '+n.t,x+w/2,y+20);
+      fitText(ctx,n.s||'',w-16,12);ctx.fillStyle=mute;ctx.fillText(n.s||'',x+w/2,y+40);
+    }else if(n.k==='chip'){
+      ctx.font=`14px ${FONT}`;ctx.fillStyle=ink;ctx.fillText(n.ic,x+10,y+h/2);
+      fitText(ctx,n.t,w-42,13,'500');ctx.fillText(n.t,x+32,y+h/2);
+    }else if(n.k==='sub'){
+      fitText(ctx,n.t,w-24,14,'700');ctx.fillStyle=ink;ctx.fillText(n.t,x+12,y+h/2-10);
+      fitText(ctx,n.s||'',w-24,12);ctx.fillStyle=mute;ctx.fillText(n.s||'',x+12,y+h/2+12);
+    }else if(n.k==='loopi'){
+      ctx.save();rr(ctx,x,y,w,h,r);ctx.clip();ctx.fillStyle=rgba(c,.18);ctx.fillRect(x,y,96,h);ctx.restore();
+      ctx.textAlign='center';fitText(ctx,n.l,88,13,'700');ctx.fillStyle=c;ctx.fillText(n.l,x+48,y+h/2-8);
+      fitText(ctx,n.ls,88,11);ctx.fillStyle=mute;ctx.fillText(n.ls,x+48,y+h/2+11);
+      fitText(ctx,n.r,w-116,13);ctx.fillStyle=ink;ctx.fillText(n.r,x+96+(w-96)/2,y+h/2);
+    }else if(n.k==='steps'){
+      C.steps.forEach((t,i)=>{const yy=y+12+i*22,act=document.querySelector(`[data-s="${i}"]`)?.classList.contains('act');
+        if(act){ctx.fillStyle=rgba(cv('--reason'),.3);rr(ctx,x+8,yy-1,w-16,20,4);ctx.fill()}
+        ctx.textAlign='left';ctx.font=`500 12px ${FONT}`;ctx.fillStyle=c;ctx.fillText('Step '+(i+1),x+12,yy+9);
+        ctx.textAlign='right';fitText(ctx,t,w-74,12);ctx.fillStyle=ink;ctx.fillText(t,x+w-12,yy+9)});
+    }
+    ctx.restore();
+  });
+}
+function panelInfo(){
+  if(playing&&pi>0){const [id,txt]=PLAY[pi-1];return{id,step:pi,total:PLAY.length,text:txt}}
+  if(cur)return{id:cur,text:caseScene(cur)||N[cur].d};
+  return{id:null,text:`以「${C.goal}」為例，拆解 AI Agent 從接到目標到交付成果的每一步。`};
+}
+function drawFrame(ctx,W,H,time){
+  const bg=cv('--bg'),bg2=cv('--bg2'),ink=cv('--ink'),mute=cv('--mute'),line=cv('--line');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const s=(H-40)/SH;ctx.save();ctx.translate(20,20);ctx.scale(s,s);rr(ctx,0,0,SW,SH,16);ctx.clip();drawDiagram(ctx,time);ctx.restore();
+  const px=40+SW*s,pw=W-px-30;
+  ctx.fillStyle=bg2;rr(ctx,px,20,pw,H-40,18);ctx.fill();ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();
+  const L=px+36,TW=pw-72;let y=70;ctx.textBaseline='alphabetic';ctx.textAlign='left';
+  ctx.font=`700 30px ${FONT}`;ctx.fillStyle=ink;ctx.fillText('AI Agent 完整架構',L,y);
+  y+=40;fitText(ctx,`${C.icon} ${C.name}`,TW,22,'500');ctx.fillStyle=mute;ctx.fillText(`${C.icon} ${C.name}`,L,y);
+  y+=18;ctx.font=`20px ${FONT}`;const gl=wrapText(ctx,'任務：'+C.goal,TW).slice(0,3);gl.forEach(l=>{y+=30;ctx.fillText(l,L,y)});
+  y+=26;ctx.fillStyle=line;ctx.fillRect(L,y,TW,1);
+  const info=panelInfo();
+  if(info.id){const n=N[info.id],c=cv('--'+n.c);
+    y+=70;ctx.font=`50px ${FONT}`;ctx.fillText(n.ic||'◆',L,y);
+    fitText(ctx,n.t,TW-80,38,'900');ctx.fillStyle=c;ctx.fillText(n.t,L+76,y-6);
+    y+=40;fitText(ctx,n.s||n.r||'',TW,22);ctx.fillStyle=mute;ctx.fillText(n.s||n.r||'',L,y);
+  }else{y+=60;ctx.font=`900 36px ${FONT}`;ctx.fillStyle=ink;ctx.fillText('🧭 架構總覽',L,y)}
+  y+=30;ctx.font=`26px ${FONT}`;const lines=wrapText(ctx,info.text,TW-40).slice(0,9);
+  const bh=lines.length*42+36;ctx.fillStyle=rgba(cv('--reason'),.12);rr(ctx,L,y,TW,bh,12);ctx.fill();ctx.strokeStyle=rgba(cv('--reason'),.45);ctx.stroke();
+  ctx.fillStyle=ink;lines.forEach((l,i)=>ctx.fillText(l,L+20,y+46+i*42));y+=bh;
+  if(info.id&&C.desc&&C.desc[info.id]&&y<H-200){ctx.font=`20px ${FONT}`;ctx.fillStyle=mute;wrapText(ctx,C.desc[info.id],TW).slice(0,Math.floor((H-150-y)/32)).forEach(l=>{y+=32;ctx.fillText(l,L,y)})}
+  if(info.total){const by=H-70;ctx.fillStyle=line;rr(ctx,L,by,TW,10,5);ctx.fill();ctx.fillStyle=cv('--planner');rr(ctx,L,by,TW*info.step/info.total,10,5);ctx.fill();
+    ctx.font=`18px ${FONT}`;ctx.fillStyle=mute;ctx.textAlign='right';ctx.fillText(`${info.step} / ${info.total}`,L+TW,by-12);ctx.textAlign='left'}
+}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+const fname=ext=>`AI_Agent_${C.name.replace(/[\\/:*?"<>|（）()\s]/g,'')}_${stamp()}.${ext}`;
+async function exportImage(kind){
+  await document.fonts.ready;const t=performance.now(),c=document.createElement('canvas'),ctx=c.getContext('2d');
+  if(kind==='frame'){c.width=1920;c.height=1080;drawFrame(ctx,1920,1080,t);c.toBlob(b=>dl(b,fname('png')),'image/png');return}
+  c.width=SW*2;c.height=SH*2;ctx.scale(2,2);drawDiagram(ctx,t);
+  if(kind==='jpg')c.toBlob(b=>dl(b,fname('jpg')),'image/jpeg',.93);else c.toBlob(b=>dl(b,fname('png')),'image/png');
+}
+/* MP4 錄影 */
+let rec=null;
+function pickMime(){return['video/mp4;codecs=avc1.640028','video/mp4;codecs=avc1.42E01E','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'].find(m=>window.MediaRecorder&&MediaRecorder.isTypeSupported(m))}
+async function startRecord(mode){
+  if(rec)return;const mime=pickMime();if(!mime){alert('此瀏覽器不支援錄影，請改用新版 Chrome 或 Edge。');return}
+  await document.fonts.ready;
+  const c=document.createElement('canvas');c.width=1920;c.height=1080;const ctx=c.getContext('2d');
+  const stream=c.captureStream(30),mr=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8e6}),chunks=[];
+  mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const isMp4=mime.startsWith('video/mp4');
+  mr.onstop=()=>{dl(new Blob(chunks,{type:mime.split(';')[0]}),fname(isMp4?'mp4':'webm'));recBar.style.display='none';rec=null;
+    if(!isMp4)alert('此瀏覽器無法直接錄成 MP4，已輸出 WebM 格式。新版 Chrome／Edge／Safari 可直接輸出 MP4。')};
+  const t0=performance.now();let endAt=mode==='loop'?t0+10000:0,started=false;
+  rec={mr,stop:()=>{if(mr.state!=='inactive')mr.stop();cancelAnimationFrame(rec.raf)}};
+  const loop=()=>{const now=performance.now();drawFrame(ctx,1920,1080,now);
+    recTime.textContent=((now-t0)/1000).toFixed(0)+' 秒';
+    if(mode==='play'){if(playing)started=true;if(started&&!playing&&!endAt)endAt=now+1500}
+    if(endAt&&now>=endAt){rec.stop();return}
+    rec.raf=requestAnimationFrame(loop)};
+  mr.start(500);recBar.style.display='flex';recFmt.textContent=isMp4?'MP4':'WebM';loop();
+  if(mode==='play'){tab('info');if(playing)stopPlay();setTimeout(()=>playBtn.click(),300)}
+}
+const recBar=document.createElement('div');recBar.id='recBar';recBar.innerHTML='<span class="rdot"></span>錄製中（<b id="recFmt"></b>）<span id="recTime">0 秒</span><button class="btn" id="recStop">■ 停止並下載</button>';
+document.body.appendChild(recBar);
+const recTime=document.getElementById('recTime'),recFmt=document.getElementById('recFmt');
+document.getElementById('recStop').onclick=()=>{if(playing)stopPlay();rec&&rec.stop()};
+/* 匯出選單 */
+const expBtn=document.getElementById('expBtn'),expMenu=document.getElementById('expMenu');
+expBtn.onclick=e=>{e.stopPropagation();const r=expBtn.getBoundingClientRect();expMenu.style.left=Math.min(r.left,window.innerWidth-280)+'px';expMenu.style.top=(r.bottom+6)+'px';expMenu.style.display=expMenu.style.display==='block'?'none':'block'};
+document.addEventListener('click',()=>expMenu.style.display='none');
+expMenu.addEventListener('click',e=>{const b=e.target.closest('[data-exp]');if(!b)return;expMenu.style.display='none';
+  const k=b.dataset.exp;if(k==='png'||k==='jpg'||k==='frame')exportImage(k);else startRecord(k)});
+
+/* ============ 啟動 ============ */
+showIntro();fit();
+</script>
+</body>
+</html>

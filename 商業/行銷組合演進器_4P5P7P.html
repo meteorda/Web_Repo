@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行銷組合演進器｜4P → 5P → 7P</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#dde5ef; --panel:#ffffff; --line:#b8c6d8; --ink:#1d2a3c; --ink2:#4b5a72; --ink3:#7b889c;
+  --cream:#fbf8ef;
+  --c4:#2a64ad; --c4s:#d3e3f6;
+  --c5:#17896a; --c5s:#cdeee1;
+  --c7:#d66a1c; --c7s:#fbe1c9;
+  --ai:#c98a2a;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",system-ui,sans-serif;font-size:15px;line-height:1.65}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #3f7fc2;outline-offset:2px}
+.wrap{max-width:1480px;margin:0 auto;padding:22px 22px 60px}
+
+/* header */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(26px,3.2vw,40px);margin:0;letter-spacing:.02em;line-height:1.2}
+h1 .evo{display:inline-flex;gap:6px;align-items:center;margin-left:10px;font-family:"Noto Sans TC";font-size:.62em;vertical-align:middle}
+h1 .evo b{padding:2px 12px;border-radius:20px;color:#fff}
+h1 .evo i{font-style:normal;color:var(--ink3)}
+.sub{color:var(--ink2);margin:4px 0 0}
+.hbtns{display:flex;gap:8px}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.btn:hover{border-color:#3f7fc2}
+.btn.primary{background:#2d5b8a;border-color:#2d5b8a;color:#fff;font-weight:700;padding:10px 22px}
+.btn.primary:hover{background:#244b73}
+.btn.ai{border-color:var(--ai);color:#8a5a12}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:4px 10px;font-size:13px}
+
+/* settings drawer */
+#settings{display:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:16px}
+#settings.open{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:16px}
+label.f{display:block;font-size:13px;color:var(--ink2);margin-bottom:4px;font-weight:500}
+.inp{width:100%;border:1px solid var(--line);background:var(--cream);border-radius:8px;padding:8px 10px}
+textarea.inp{resize:vertical}
+.krow{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.krow input{font-family:ui-monospace,Consolas,monospace;letter-spacing:.04em}
+.kst{grid-column:1/-1;font-size:12px;margin:-2px 0 2px 2px;min-height:0}
+.kst.ok{color:#2f8a52}.kst.bad{color:#c43c3c}.kst.run{color:var(--ink3)}
+.hint{font-size:12px;color:var(--ink3);margin-top:4px}
+
+/* input panel */
+.input{display:grid;grid-template-columns:1fr 320px;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:22px}
+#copy{min-height:170px;line-height:1.7}
+.side{display:flex;flex-direction:column;gap:12px}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--ink2);font-size:13px;cursor:pointer;background:var(--cream)}
+.drop.over{border-color:#3f7fc2;background:#eef5fd}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+#status{font-size:13px;color:var(--ink2);min-height:20px}
+#status.err{color:#c43c3c}
+
+/* summary */
+#summary{display:none;background:var(--panel);border:1px solid var(--line);border-left:6px solid #2d5b8a;border-radius:var(--r);padding:14px 18px;margin-bottom:18px}
+#summary h2{font-size:18px;margin:0 0 4px}
+#summary p{margin:0;color:var(--ink2)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:12.5px;padding:2px 10px;border-radius:20px;background:#e8eef6;border:1px solid var(--line);color:var(--ink)}
+
+/* three stages */
+.stages{display:grid;grid-template-columns:1fr 44px 1fr 44px 1fr;align-items:start}
+.arrow{align-self:start;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink2);font-weight:700;font-size:12.5px;writing-mode:vertical-rl;letter-spacing:.2em;padding-top:150px}
+.arrow::after{content:"";writing-mode:horizontal-tb;width:0;height:0;border-left:18px solid #6f86a3;border-top:14px solid transparent;border-bottom:14px solid transparent}
+.stage{border-radius:18px;padding:0 0 16px;background:var(--s);border:2px solid var(--c);overflow:hidden;--c:var(--c4);--s:var(--c4s)}
+.stage.s5{--c:var(--c5);--s:var(--c5s)}
+.stage.s7{--c:var(--c7);--s:var(--c7s)}
+.shead{background:var(--c);padding:16px 18px 14px;text-align:center;color:#fff}
+.badge{display:inline-block;background:#fff;color:var(--c);font-weight:900;font-size:24px;padding:3px 26px;border-radius:30px;letter-spacing:.06em}
+.shead h3{font-family:"Noto Serif TC",serif;font-size:19px;margin:8px 0 0;color:#fff}
+.shead .era{font-size:12.5px;color:rgba(255,255,255,.88)}
+.imgbox{position:relative;margin:14px 16px 0;aspect-ratio:16/9;border-radius:12px;background:#fff;border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:13px;text-align:center}
+.imgbox img{width:100%;height:100%;object-fit:cover;display:block}
+.imgbox .loading{display:flex;flex-direction:column;align-items:center;gap:10px}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(0,0,0,.08);border-top-color:var(--c);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.imgtools{display:flex;gap:6px;justify-content:flex-end;margin:6px 16px 0}
+.overview{margin:12px 16px 4px;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--c);background:#fff;border-radius:8px;font-size:14px;color:var(--ink);font-weight:500}
+.items{display:flex;flex-direction:column;gap:10px;margin:12px 16px 0}
+.item{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:10px;padding:12px 14px;background:#fff}
+.item h4{margin:0 0 6px;padding-bottom:6px;border-bottom:1px dashed var(--line);font-size:16.5px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;color:var(--c)}
+.item h4 small{font-weight:500;color:var(--ink3);font-size:12.5px}
+.item h4 .pill{font-size:11px;font-weight:700;color:#fff;background:var(--c);border-radius:20px;padding:0 8px}
+.item .lbl{display:inline-block;font-size:12px;font-weight:700;color:var(--c);background:var(--s);border-radius:6px;padding:0 8px;margin-top:8px}
+.item ul{margin:4px 0 0;padding-left:20px}
+.item li{margin:3px 0}
+.item li .why{display:block;font-size:12.5px;color:var(--ink3)}
+.item li .why::before{content:"依據：";color:var(--c);font-weight:700}
+.item .kpi{font-size:13px;color:var(--ink2);margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.empty{margin:14px 16px 0;padding:24px 12px;text-align:center;color:var(--ink2);font-size:13.5px;border:1px dashed var(--c);border-radius:12px;background:#fff}
+
+footer.exp{display:none;justify-content:center;gap:10px;margin-top:22px;flex-wrap:wrap}
+
+@media (max-width:1100px){
+  .stages{grid-template-columns:1fr;gap:14px}
+  .arrow{writing-mode:horizontal-tb;padding:0;flex-direction:row}
+  .arrow::after{border-left:13px solid transparent;border-right:13px solid transparent;border-top:16px solid #6f86a3;border-bottom:0}
+  .input{grid-template-columns:1fr}
+  #settings.open{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+@media print{
+  header .hbtns,.input,#settings,footer.exp,.imgtools{display:none!important}
+  body{background:#fff}.stages{grid-template-columns:1fr 1fr 1fr}.arrow{display:none}
+}
+
+/* ===== 行銷圖表 ===== */
+#chartsSec{display:none;margin-top:26px}
+.csec-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.csec-hd h2{font-family:"Noto Serif TC",serif;font-size:24px;margin:0}
+.csec-hd p{margin:2px 0 0;color:var(--ink2);font-size:13.5px}
+#chartStatus{font-size:13px;color:var(--ink2);margin-left:8px}
+#chartStatus.err{color:#c43c3c}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ccard{background:#fff;border:1px solid var(--line);border-top:5px solid var(--cc,#2d5b8a);border-radius:14px;padding:14px 16px;min-width:0}
+.ccard.wide{grid-column:1/-1}
+.chd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.chd h3{margin:0;font-size:17px;color:var(--cc,#2d5b8a)}
+.chd p{margin:2px 0 0;font-size:12.5px;color:var(--ink3)}
+.chd .acts{display:flex;gap:6px;flex-shrink:0}
+.cv{position:relative;height:360px}
+.cempty{padding:30px 10px;text-align:center;color:var(--ink3);font-size:13.5px;border:1px dashed var(--line);border-radius:10px}
+.notes{margin:10px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:12.5px;color:var(--ink2)}
+.notes li b{color:var(--ink)}
+.twb{display:block;font-size:11.5px;color:var(--ink3)}
+.pchip{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:20px;padding:0 8px;margin:1px 3px 1px 0;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0}
+/* 優先級清單 */
+.qlist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.qbox{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.qbox h4{margin:0 0 4px;font-size:13px}
+.qbox ol{margin:0;padding-left:0;list-style:none}
+.qbox li{margin:3px 0;display:flex;gap:6px;align-items:flex-start}
+.qbox .no{flex-shrink:0;width:20px;height:20px;border-radius:50%;color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+/* 顧客旅程 */
+.jwrap{overflow-x:auto}
+.jgrid{display:grid;min-width:760px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.jgrid>div{padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12.5px;background:#fff}
+.jgrid .rh{background:#eef2f8;font-weight:700;color:var(--ink2);font-size:12px}
+.jgrid .sh{background:#2d5b8a;color:#fff;font-weight:700;text-align:center;font-size:14px}
+.jgrid .emo{padding:0;background:#fbfcfe}
+.jgrid .pain{background:#fdf1f0}
+.jgrid .opp{background:#eef8f3}
+.jgrid ul{margin:0;padding-left:16px}
+/* 甘特 */
+.gwrap{overflow-x:auto}
+.ggrid{display:grid;min-width:820px;font-size:12.5px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ggrid .gh{background:#eef2f8;text-align:center;font-weight:700;color:var(--ink2);padding:4px 0;border-right:1px solid var(--line)}
+.ggrid .ph{background:#2d5b8a;color:#fff;text-align:center;font-weight:700;padding:4px 0;border-right:1px solid rgba(255,255,255,.4)}
+.ggrid .gl{padding:6px 8px;border-top:1px solid var(--line);background:#fff;display:flex;align-items:center;gap:4px;min-width:0}
+.ggrid .gl span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ggrid .gc{border-top:1px solid var(--line);border-right:1px dashed #e0e6ef;background:#fff}
+.ggrid .bar{border-top:1px solid var(--line);padding:5px 2px;position:relative;z-index:1}
+.ggrid .bar i{display:block;height:100%;min-height:20px;border-radius:6px;color:#fff;font-style:normal;font-size:11px;font-weight:700;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 4C */
+.c4row{display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;align-items:stretch;margin-bottom:10px}
+.c4box{border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.c4box h4{margin:0 0 4px;font-size:14px}
+.c4p{border-left:5px solid var(--c4);background:#f3f7fd}
+.c4c{border-left:5px solid var(--c5);background:#f1faf6}
+.c4arrow{display:flex;align-items:center;justify-content:center;color:#6f86a3;font-size:22px;font-weight:900}
+.c4gap{grid-column:1/-1;font-size:12.5px;color:#8a5a12;background:#fff7e8;border:1px dashed #e3c58a;border-radius:8px;padding:5px 10px;margin-top:-4px}
+/* 人物誌 */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.persona{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfcfe;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.ptop{display:flex;gap:12px;align-items:center}
+.avatar{width:78px;height:78px;border-radius:50%;background:#dbe5f2;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#2d5b8a;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.persona h4{margin:0;font-size:16px}
+.persona .meta{font-size:12px;color:var(--ink3)}
+.persona .quote{font-style:italic;color:var(--ink2);border-left:3px solid #c3cfe0;padding-left:8px}
+.persona dl{margin:0;display:grid;grid-template-columns:62px 1fr;gap:3px 6px}
+.persona dt{font-weight:700;color:var(--ink2);font-size:12px}
+.persona dd{margin:0}
+@media (max-width:1000px){.cgrid{grid-template-columns:1fr}.qlist{grid-template-columns:1fr 1fr}.notes{grid-template-columns:1fr}}
+@media print{#chartsSec .acts,#btnCharts{display:none!important}.cgrid{grid-template-columns:1fr 1fr}}
+
+/* ===== 分頁 ===== */
+#status{margin:-10px 0 14px;padding:0 4px}
+.ibar{display:none;grid-column:1/-1;align-items:center;justify-content:space-between;gap:10px;color:var(--ink2);font-size:13.5px}
+.input.collapsed{padding:10px 16px}
+.input.collapsed>:not(.ibar){display:none}
+.input.collapsed .ibar{display:flex}
+.result{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tabs{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 14px;background:#f4f7fb;border-bottom:1px solid var(--line)}
+.tgrp{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.tgl{font-size:11.5px;font-weight:700;color:var(--ink3);letter-spacing:.15em;margin-right:4px}
+.tab{border:1px solid transparent;background:transparent;border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink2);font-weight:500}
+.tab:hover:not(:disabled){background:#e6edf6}
+.tab.on,.tab.on:hover{background:#2d5b8a;color:#fff;font-weight:700}
+.tab.t4.on,.tab.t4.on:hover{background:var(--c4)}.tab.t5.on,.tab.t5.on:hover{background:var(--c5)}.tab.t7.on,.tab.t7.on:hover{background:var(--c7)}
+.tab:disabled{opacity:.4;cursor:not-allowed}
+.tab.loading::after{content:"";display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:var(--ai);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.tact{margin-left:auto;display:flex;align-items:center;gap:8px}
+#chartStatus{max-width:360px}
+.tp{display:none;padding:18px}
+.tp.on{display:block}
+/* 總覽 */
+#summary{margin-bottom:14px}
+.ovgrid{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr;align-items:stretch}
+.ovc{border:2px solid var(--c);border-radius:16px;overflow:hidden;background:var(--s);display:flex;flex-direction:column;--c:var(--c4);--s:var(--c4s)}
+.ovc.s5{--c:var(--c5);--s:var(--c5s)}.ovc.s7{--c:var(--c7);--s:var(--c7s)}
+.ovc .oh{background:var(--c);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ovc .oh b{font-size:19px;letter-spacing:.05em}.ovc .oh span{font-size:12.5px;opacity:.9}
+.ovc .othumb{margin:12px 12px 0;aspect-ratio:16/9;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12.5px}
+.ovc .othumb img{width:100%;height:100%;object-fit:cover}
+.ovc .oov{margin:10px 12px 0;font-size:13.5px;font-weight:500}
+.ovc .ops{margin:8px 12px 0;display:flex;flex-direction:column;gap:5px;flex:1}
+.ovc .op{background:#fff;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:8px;padding:5px 10px;font-size:12.5px;line-height:1.45}
+.ovc .op b{color:var(--c);margin-right:6px;font-size:13.5px}
+.ovc .op.new{box-shadow:inset 0 0 0 1px var(--c)}
+.ovc .ogo{margin:10px 12px 12px;align-self:flex-end}
+.ovarrow{display:flex;align-items:center;justify-content:center}
+.ovarrow::after{content:"";border-left:16px solid #6f86a3;border-top:13px solid transparent;border-bottom:13px solid transparent}
+/* 4P / 5P / 7P 分頁：左圖右條列 */
+.tp .stage{display:grid;grid-template-columns:minmax(300px,36%) 1fr;column-gap:20px;align-items:start}
+.tp .stage .shead{grid-column:1/-1;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 18px}
+.tp .stage .shead h3{margin:0}.tp .stage .shead .era{margin-left:auto}
+.tp .stage .imgbox{grid-column:1;grid-row:2;margin:16px 0 0 16px}
+.tp .stage .imgtools{grid-column:1;grid-row:3;margin:6px 0 0 16px;justify-content:flex-start}
+.tp .stage>[id^=body]{grid-column:2;grid-row:2/span 3;margin:0 16px 0 0;min-width:0}
+.tp .stage .overview{margin:16px 0 0}
+.tp .stage .items{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin:12px 0 0}
+.tp .stage .empty{margin:16px 0 0}
+/* 圖表分頁：圖左說明右 */
+.tpc{padding:14px}
+.tpc .ccard{border-radius:12px}
+.tpc .cv{height:440px}
+#cb-radar,#cb-matrix,#cb-position,#cb-compete{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+#cb-radar .notes,#cb-position .notes,#cb-compete .notes{grid-template-columns:1fr;margin:0;gap:8px;font-size:13px}
+#cb-matrix .qlist{grid-template-columns:1fr 1fr;margin-top:0}
+.tpc .cempty{grid-column:1/-1}
+@media (max-width:1000px){
+  .ovgrid{grid-template-columns:1fr;gap:10px}.ovarrow{transform:rotate(90deg);height:30px}
+  .tp .stage{grid-template-columns:1fr}.tp .stage .imgbox,.tp .stage .imgtools{margin-right:16px}
+  .tp .stage>[id^=body]{grid-column:1;grid-row:auto;margin:0 16px}
+  #cb-radar,#cb-matrix,#cb-position,#cb-compete{grid-template-columns:1fr}
+  .tact{margin-left:0}
+}
+@media print{.tabs,.ibar{display:none!important}.tp{display:block!important;break-inside:avoid;page-break-after:always}.result{border:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>行銷組合演進器<span class="evo"><b style="background:var(--c4)">4P</b><i>›</i><b style="background:var(--c5)">5P</b><i>›</i><b style="background:var(--c7)">7P</b></span></h1>
+    <p class="sub">貼上產品文案，找出既有的 4P，並規劃第 5P 與 7P 的執行方式，附三張示意圖。</p>
+  </div>
+  <div class="hbtns">
+    <button class="btn" id="btnSettings">API 設定</button>
+  </div>
+</header>
+
+<section id="settings">
+  <div>
+    <label class="f">Groq API Key（可多組，自動輪替）</label>
+    <div id="keyList"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sm" id="btnAddKey">新增金鑰</button>
+      <button class="btn sm ai" id="btnTestAll">測試全部連線</button>
+    </div>
+    <div class="hint">金鑰只存在本機瀏覽器。</div>
+  </div>
+  <div>
+    <label class="f" for="model">文字模型</label>
+    <select class="inp" id="model">
+      <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+      <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
+    </select>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="btnModels">讀取可用模型</button></div>
+    <div class="hint">失敗時自動改用清單中其他模型。</div>
+  </div>
+  <div>
+    <label class="f" for="gemKey">Gemini API Key（繪圖用）</label>
+    <div class="krow" id="gemRow">
+      <input class="inp" id="gemKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza..." aria-label="Gemini API Key">
+      <button class="btn sm" id="gemEye">顯示</button>
+      <button class="btn sm ai" id="gemTest">測試</button>
+      <span></span>
+      <div class="kst" id="gemSt"></div>
+    </div>
+    <label class="f" for="imgModel" style="margin-top:4px">繪圖模型</label>
+    <select class="inp" id="imgModel">
+      <option value="gemini-3.1-flash-lite-image">Gemini 3.1 Flash-Lite Image（Nano Banana 2 Lite）</option>
+      <option value="gemini-3.1-flash-image">Gemini 3.1 Flash Image（Nano Banana 2）</option>
+      <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
+    </select>
+    <label class="f" for="imgText" style="margin-top:8px">圖中文字</label>
+    <select class="inp" id="imgText">
+      <option value="none">不放文字</option>
+      <option value="zh">加繁體中文標籤</option>
+    </select>
+    <label class="f" for="depth" style="margin-top:8px">長文件處理</label>
+    <select class="inp" id="depth">
+      <option value="2">快速：精選 2 段（約 1–2 分鐘）</option>
+      <option value="4" selected>標準：精選 4 段（約 3–4 分鐘）</option>
+      <option value="8">詳細：精選 8 段（約 7–8 分鐘）</option>
+    </select>
+  </div>
+</section>
+
+<section class="input" id="inputSec">
+  <div class="ibar"><span id="ibarTxt"></span><button class="btn sm" id="btnExpand">展開輸入區</button></div>
+  <div>
+    <label class="f" for="copy">產品／服務文案</label>
+    <textarea class="inp" id="copy" placeholder="貼上產品介紹、DM、官網文案、菜單說明……"></textarea>
+  </div>
+  <div class="side">
+    <div class="drop" id="drop" tabindex="0" role="button">拖放或點選上傳 PDF / DOCX / TXT / MD</div>
+    <input type="file" id="file" accept=".pdf,.docx,.txt,.md" hidden>
+    <div>
+      <label class="f" for="industry">產業類型（選填）</label>
+      <input class="inp" id="industry" placeholder="例：餐飲、教育訓練、零售">
+    </div>
+    <div>
+      <label class="f" for="competitors">競品（選填，台灣品牌，逗號分隔）</label>
+      <input class="inp" id="competitors" placeholder="限台灣品牌；留空由 AI 挑選">
+    </div>
+    <div>
+      <label class="f" for="style">示意圖風格</label>
+      <select class="inp" id="style">
+        <option value="clean flat vector infographic illustration, soft pastel light background, rounded icons">扁平資訊圖</option>
+        <option value="cute 3D clay render, soft studio light, pastel colors, isometric">3D 黏土</option>
+        <option value="hand-drawn watercolor illustration, warm and friendly, white paper background">手繪水彩</option>
+        <option value="professional commercial photography, bright natural light, shallow depth of field">商業攝影</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="btnRun">分析並繪圖</button>
+      <button class="btn" id="btnSample">範例文案</button>
+      <button class="btn" id="btnImport" title="匯入先前下載或 ChatGPT／Codex 產生的 analysis.json">匯入 JSON</button>
+      <input type="file" id="jsonFile" accept=".json,application/json" hidden>
+    </div>
+  </div>
+</section>
+<div id="status" aria-live="polite"></div>
+
+<section class="result">
+<nav class="tabs" id="tabs" role="tablist" aria-label="分析結果">
+  <div class="tgrp"><span class="tgl">分析</span>
+    <button class="tab on" data-tab="ov" role="tab">總覽</button>
+    <button class="tab t4" data-tab="p4" role="tab">行銷 4P</button>
+    <button class="tab t5" data-tab="p5" role="tab">行銷 5P</button>
+    <button class="tab t7" data-tab="p7" role="tab">行銷 7P</button>
+  </div>
+  <div class="tgrp"><span class="tgl">圖表</span>
+    <button class="tab tc" data-tab="radar" role="tab" disabled>雷達圖</button><button class="tab tc" data-tab="matrix" role="tab" disabled>優先級</button><button class="tab tc" data-tab="journey" role="tab" disabled>顧客旅程</button><button class="tab tc" data-tab="gantt" role="tab" disabled>甘特圖</button><button class="tab tc" data-tab="position" role="tab" disabled>定位圖</button><button class="tab tc" data-tab="compete" role="tab" disabled>競品比較</button><button class="tab tc" data-tab="c4" role="tab" disabled>4P↔4C</button><button class="tab tc" data-tab="persona" role="tab" disabled>人物誌</button>
+  </div>
+  <div class="tact"><button class="btn sm ai" id="btnCharts">產生／更新圖表</button><span id="chartStatus" aria-live="polite"></span></div>
+</nav>
+<div class="tp on" id="tp-ov" role="tabpanel">
+  <section id="summary"></section>
+  <div class="ovgrid" id="ovGrid"><div class="empty" style="grid-column:1/-1">貼上文案後按「分析並繪圖」，這裡會顯示 4P → 5P → 7P 總覽</div></div>
+</div>
+<div class="tp" id="tp-p4" role="tabpanel">
+  <article class="stage s4" id="st4">
+    <div class="shead"><span class="badge">行銷 4P</span><h3>文案中的傳統行銷策略</h3><div class="era">產品・價格・通路・促銷</div></div>
+    <div class="imgbox" id="img4">示意圖將顯示於此</div>
+    <div class="imgtools" id="tools4" hidden><button class="btn sm" data-re="4">重繪</button><button class="btn sm" data-dl="4">下載</button></div>
+    <div id="body4"><div class="empty">分析後列出文案已提及的 4P 與補強建議</div></div>
+  </article>
+</div>
+<div class="tp" id="tp-p5" role="tabpanel">
+  <article class="stage s5" id="st5">
+    <div class="shead"><span class="badge">行銷 5P</span><h3>第 5P：人員</h3><div class="era">以人創造差異</div></div>
+    <div class="imgbox" id="img5">示意圖將顯示於此</div>
+    <div class="imgtools" id="tools5" hidden><button class="btn sm" data-re="5">重繪</button><button class="btn sm" data-dl="5">下載</button></div>
+    <div id="body5"><div class="empty">分析後提供 People 的執行步驟</div></div>
+  </article>
+</div>
+<div class="tp" id="tp-p7" role="tabpanel">
+  <article class="stage s7" id="st7">
+    <div class="shead"><span class="badge">行銷 7P</span><h3>完整服務行銷組合</h3><div class="era">流程・實體佐證・整合</div></div>
+    <div class="imgbox" id="img7">示意圖將顯示於此</div>
+    <div class="imgtools" id="tools7" hidden><button class="btn sm" data-re="7">重繪</button><button class="btn sm" data-dl="7">下載</button></div>
+    <div id="body7"><div class="empty">分析後提供 Process 與 Physical Evidence 的做法</div></div>
+  </article>
+</div>
+<div class="tp tpc" id="tp-radar" role="tabpanel"></div><div class="tp tpc" id="tp-matrix" role="tabpanel"></div><div class="tp tpc" id="tp-journey" role="tabpanel"></div><div class="tp tpc" id="tp-gantt" role="tabpanel"></div><div class="tp tpc" id="tp-position" role="tabpanel"></div><div class="tp tpc" id="tp-compete" role="tabpanel"></div><div class="tp tpc" id="tp-c4" role="tabpanel"></div><div class="tp tpc" id="tp-persona" role="tabpanel"></div>
+</section>
+
+<footer class="exp" id="exp">
+  <button class="btn" id="btnMd">下載 Markdown</button>
+  <button class="btn" id="btnCopyTxt">複製條列</button>
+  <button class="btn" id="btnJson">下載 JSON</button>
+  <button class="btn" id="btnPrint">列印／存 PDF</button>
+</footer>
+
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const LS = {
+  get(k, d=''){ try{ return localStorage.getItem('mix7p_'+k) ?? d }catch{ return d } },
+  set(k, v){ try{ localStorage.setItem('mix7p_'+k, v) }catch{} }
+};
+let RESULT = null;
+const IMG = {4:{seed:0,url:''},5:{seed:0,url:''},7:{seed:0,url:''}};
+
+/* ---------- settings ---------- */
+/* ---------- 金鑰列（遮罩 + 測試） ---------- */
+function saveKeys(){ LS.set('keys', getKeys().join('\n')); }
+function addKeyRow(val=''){
+  const row=document.createElement('div'); row.className='krow';
+  row.innerHTML=`<input class="inp" type="password" autocomplete="off" spellcheck="false" placeholder="gsk_..." aria-label="Groq API Key">
+    <button class="btn sm" data-act="eye" title="顯示／隱藏">顯示</button>
+    <button class="btn sm" data-act="test">測試</button>
+    <button class="btn sm" data-act="del" title="刪除" aria-label="刪除">✕</button>
+    <div class="kst"></div>`;
+  const inp=row.querySelector('input'); inp.value=val;
+  inp.addEventListener('input',()=>{ saveKeys(); row.querySelector('.kst').textContent=''; });
+  inp.addEventListener('paste',e=>{
+    const t=(e.clipboardData||window.clipboardData).getData('text');
+    const parts=t.split(/[\n,\s]+/).filter(Boolean);
+    if(parts.length>1){ e.preventDefault(); inp.value=parts[0]; parts.slice(1).forEach(p=>addKeyRow(p)); saveKeys(); }
+  });
+  row.addEventListener('click',e=>{
+    const act=e.target.dataset.act; if(!act) return;
+    if(act==='eye'){ const show=inp.type==='password'; inp.type=show?'text':'password'; e.target.textContent=show?'隱藏':'顯示'; }
+    if(act==='del'){ row.remove(); if(!$('#keyList').children.length) addKeyRow(); saveKeys(); }
+    if(act==='test') testKey(row);
+  });
+  $('#keyList').appendChild(row);
+  return row;
+}
+function maskKey(k){ return k.length>10 ? k.slice(0,4)+'••••'+k.slice(-4) : '••••'; }
+async function testKey(row){
+  const inp=row.querySelector('input'), st=row.querySelector('.kst'), k=inp.value.trim();
+  if(!k){ st.className='kst bad'; st.textContent='未填入金鑰'; return false; }
+  inp.type='password'; row.querySelector('[data-act=eye]').textContent='顯示';
+  st.className='kst run'; st.textContent=`測試 ${maskKey(k)} 中…`;
+  const t0=performance.now();
+  try{
+    const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+k}});
+    const ms=Math.round(performance.now()-t0);
+    if(r.ok){
+      const ids=(await r.json()).data.map(m=>m.id);
+      const cur=$('#model').value, has=ids.includes(cur);
+      st.className='kst '+(has?'ok':'bad');
+      st.textContent = has ? `✓ 連線成功（${ms} ms），可用模型 ${ids.length} 個，含 ${cur}`
+                           : `✓ 金鑰有效，但目前選的 ${cur} 不在可用清單，請按「讀取可用模型」`;
+      return true;
+    }
+    const msg={401:'金鑰無效或已撤銷',403:'無權限',429:'額度用盡或請求過快'}[r.status]||('HTTP '+r.status);
+    st.className='kst bad'; st.textContent='✗ '+msg; return false;
+  }catch(e){ st.className='kst bad'; st.textContent='✗ 網路錯誤：'+e.message; return false; }
+}
+$('#btnAddKey').onclick=()=>addKeyRow().querySelector('input').focus();
+$('#btnTestAll').onclick=async()=>{
+  const rows=[...$('#keyList').children].filter(r=>r.querySelector('input').value.trim());
+  if(!rows.length) return status('請先填入 Groq API Key',true);
+  const res=await Promise.all(rows.map(testKey));
+  const ok=res.filter(Boolean).length;
+  status(`連線測試：${ok}/${rows.length} 組金鑰可用`, ok===0);
+};
+(LS.get('keys').split('\n').filter(Boolean).length ? LS.get('keys').split('\n').filter(Boolean) : ['']).forEach(k=>addKeyRow(k));
+
+if(/^(flux|turbo)$/.test(LS.get('imgModel'))) LS.set('imgModel','gemini-3.1-flash-lite-image');
+['gemKey','industry','competitors'].forEach(id=>{ $('#'+id).value = LS.get(id); $('#'+id).addEventListener('input',e=>LS.set(id,e.target.value)); });
+['model','imgModel','style','imgText','depth'].forEach(id=>{ const v=LS.get(id); if(v){ ensureOpt($('#'+id),v); $('#'+id).value=v; } $('#'+id).addEventListener('change',e=>LS.set(id,e.target.value)); });
+function ensureOpt(sel,v){ if(![...sel.options].some(o=>o.value===v)){ const o=new Option(v,v); sel.add(o);} }
+$('#btnSettings').onclick = ()=> $('#settings').classList.toggle('open');
+if(!LS.get('keys')) $('#settings').classList.add('open');
+
+function getKeys(){ return [...document.querySelectorAll('#keyList input')].map(i=>i.value.trim()).filter(Boolean); }
+function status(msg, err=false){ const s=$('#status'); s.textContent=msg; s.classList.toggle('err',err); }
+
+$('#btnModels').onclick = async ()=>{
+  const keys=getKeys(); if(!keys.length) return status('請先填入 Groq API Key',true);
+  status('讀取模型清單…');
+  try{
+    const r = await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+keys[0]}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j = await r.json();
+    const ids = j.data.map(m=>m.id).filter(id=>!/whisper|guard|tts|orpheus|playai|prompt-guard|distil/i.test(id)).sort();
+    const sel=$('#model'), cur=sel.value; sel.innerHTML='';
+    ids.forEach(id=>sel.add(new Option(id,id)));
+    if(ids.includes(cur)) sel.value=cur; else if(ids.includes('openai/gpt-oss-120b')) sel.value='openai/gpt-oss-120b';
+    LS.set('model',sel.value); status(`已載入 ${ids.length} 個模型`);
+  }catch(e){ status('讀取模型失敗：'+e.message,true); }
+};
+
+/* ---------- file input ---------- */
+const drop=$('#drop'), file=$('#file');
+drop.onclick=()=>file.click();
+drop.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click();} };
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over'); if(e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);};
+file.onchange=()=>{ if(file.files[0]) readFile(file.files[0]); file.value=''; };
+function normText(t){
+  const CJK='\\u2E80-\\u9FFF\\uF900-\\uFAFF\\uFF00-\\uFFEF\\u3000-\\u303F';
+  return String(t)
+    .replace(new RegExp(`([${CJK}])[ \\t\\u00A0]+(?=[${CJK}])`,'g'),'$1')
+    .replace(/[ \t]{2,}/g,' ')
+    .replace(/\n{3,}/g,'\n\n').trim();
+}
+async function readPdf(f){
+  if(!window.pdfjsLib) throw new Error('PDF 解析器未載入，請確認網路連線');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+  const max=Math.min(pdf.numPages,60), out=[];
+  for(let i=1;i<=max;i++){
+    status(`讀取 PDF 第 ${i}/${max} 頁…`);
+    const c=await (await pdf.getPage(i)).getTextContent();
+    let line='', lastY=null, txt='';
+    for(const it of c.items){
+      const y=it.transform[5];
+      if(lastY!==null && Math.abs(y-lastY)>2){ txt+=line.trim()+'\n'; line=''; }
+      line+=it.str; lastY=y;
+    }
+    txt+=line.trim();
+    out.push(txt.trim());
+  }
+  if(pdf.numPages>max) out.push(`（僅讀取前 ${max} 頁，共 ${pdf.numPages} 頁）`);
+  return out.filter(Boolean).join('\n\n');
+}
+async function readFile(f){
+  try{
+    let t='';
+    if(/\.pdf$/i.test(f.name) || f.type==='application/pdf'){
+      t = await readPdf(f);
+      if(t.replace(/\s/g,'').length<20) throw new Error('此 PDF 可能是掃描影像，抓不到文字；請改用可選取文字的 PDF 或直接貼上文案');
+    } else if(/\.docx$/i.test(f.name)){
+      if(!window.mammoth) throw new Error('DOCX 解析器未載入');
+      t = (await mammoth.extractRawText({arrayBuffer: await f.arrayBuffer()})).value;
+    } else t = await f.text();
+    t=normText(t); $('#copy').value = t; status(`已讀入 ${f.name}（${t.length} 字）`);
+  }catch(e){ status('讀檔失敗：'+e.message,true); }
+}
+
+$('#btnSample').onclick=()=>{
+  $('#copy').value = `益師傅雙拼肉多多｜自助式便當
+主打「雙拼」：一次選兩種主菜，滷排骨、蔥爆牛、蒜泥白肉、照燒雞腿任你配，肉量足、飯可免費加。
+單拼 95 元、雙拼 120 元，平日 11:00–13:30 上班族限定加 10 元升級滷蛋＋例湯。
+店面位在竹南火車站前，另可 LINE 預訂、外送平台 Uber Eats／foodpanda 皆有上架。
+開幕月集點卡：買 10 送 1，打卡分享再送小菜一份。`;
+  $('#industry').value='餐飲'; LS.set('industry','餐飲');
+};
+
+/* ---------- Groq ---------- */
+let keyIdx = 0;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+/* 每分鐘 Token 上限（TPM）：從 413 錯誤自動學習，預設 8000 */
+let TPM = +LS.get('tpm') || 8000;
+function estTok(s){ s=String(s||''); const cjk=(s.match(/[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/g)||[]).length; return Math.ceil(cjk*1.15 + (s.length-cjk)/3.5); }
+class TooLarge extends Error{ constructor(limit,requested,msg){ super(msg); this.limit=limit; this.requested=requested; } }
+
+/* ---- 本機 TPM 節流：每把金鑰記錄近 60 秒用量，送出前先等配額 ---- */
+const USAGE={};            // key -> [{t,tok}]
+const KEY_DEAD={};         // key|model -> 當日額度用盡的時間戳
+let ABORT=false;
+let LAST=null;
+let PROGRESS='';
+class Aborted extends Error{ constructor(){ super('已停止'); } }
+async function waitSec(sec,label){
+  const end=Date.now()+sec*1000;
+  while(Date.now()<end){
+    if(ABORT) throw new Aborted();
+    status(`${PROGRESS?PROGRESS+'｜':''}${label}，約 ${Math.ceil((end-Date.now())/1000)} 秒後繼續…（可按「停止」）`);
+    await sleep(Math.min(1000,end-Date.now()));
+  }
+}
+function used(key){ const now=Date.now(); USAGE[key]=(USAGE[key]||[]).filter(u=>now-u.t<60000); return USAGE[key].reduce((a,u)=>a+u.tok,0); }
+function freeAt(key,need){ // 還要等幾秒才有 need 的配額
+  need=Math.min(need,TPM);
+  const list=USAGE[key]||[]; let total=used(key); if(total+need<=TPM) return 0;
+  for(const u of list){ total-=u.tok; if(total+need<=TPM) return Math.max(1,(u.t+60000-Date.now())/1000); }
+  return 60;
+}
+function parseWait(txt,res){
+  let sec=0;
+  const m=String(txt).match(/try again in\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*([\d.]+)\s*(ms|s)/i);
+  if(m){ sec=(+m[1]||0)*3600+(+m[2]||0)*60+(m[4]==='ms'?(+m[3])/1000:+m[3]); }
+  const ra=parseFloat(res?.headers?.get('retry-after')); if(ra>sec) sec=ra;
+  return sec;
+}
+
+async function groqChat(messages,{json=true,maxTokens=4000}={}){
+  const keys=getKeys(); if(!keys.length) throw new Error('請先在「API 設定」填入 Groq API Key');
+  const first=$('#model').value;
+  const chain=[first, ...['openai/gpt-oss-120b','openai/gpt-oss-20b'].filter(m=>m!==first)];
+  const need=estTok(messages.map(m=>m.content).join('\n'))+maxTokens;
+  let lastErr='', tooLarge=null, tpdHit=false;
+  for(const model of chain){
+    let tries=0, useJson=json, noEffort=false;
+    while(tries<6){
+      if(ABORT) throw new Aborted();
+      const alive=keys.filter(k=>!(KEY_DEAD[k+'|'+model] && Date.now()-KEY_DEAD[k+'|'+model]<3600e3));
+      if(!alive.length){ tpdHit=true; break; }       // 此模型所有金鑰當日額度用盡 → 換模型
+      // 挑最快有配額的金鑰
+      let best=alive[0], bw=Infinity;
+      for(const k of alive){ const w=freeAt(k,need); if(w<bw){ bw=w; best=k; } }
+      if(bw>0) await waitSec(bw,`Token 配額暫滿（每分鐘上限 ${TPM}）`);
+      const key=best, ki=keys.indexOf(key)+1;
+      status(`${PROGRESS?PROGRESS+'｜':''}呼叫 Groq（${model}${keys.length>1?`，金鑰 ${ki}/${keys.length}`:''}）…`);
+      const body={model,messages,temperature:0.5,max_completion_tokens:maxTokens};
+      if(useJson) body.response_format={type:'json_object'};
+      if(/gpt-oss/.test(model) && !noEffort) body.reasoning_effort='low';
+      let r;
+      try{
+        r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+          method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+key}, body:JSON.stringify(body)
+        });
+      }catch(e){ lastErr='網路錯誤：'+e.message; tries++; await waitSec(2,'網路錯誤'); continue; }
+      if(r.ok){
+        const j=await r.json();
+        (USAGE[key]=USAGE[key]||[]).push({t:Date.now(),tok:(j.usage?.total_tokens||need)});
+        const ch=j.choices?.[0]||{};
+        LAST={model, finish:ch.finish_reason, usage:j.usage, content:ch.message?.content||'', reasoning:(ch.message?.reasoning||'').slice(-4000)};
+        let content=ch.message?.content||'';
+        if(!content.includes('{') && /\{[\s\S]*"p[457]"/.test(LAST.reasoning)) content=LAST.reasoning.slice(LAST.reasoning.indexOf('{'));
+        return content;
+      }
+      const txt=await r.text(); lastErr=`${model} HTTP ${r.status} ${txt.slice(0,200)}`;
+      if(r.status===413 || /Request too large/i.test(txt)){
+        const lim=+(txt.match(/Limit\s+(\d+)/i)||[])[1]||0, req=+(txt.match(/Requested\s+(\d+)/i)||[])[1]||0;
+        tooLarge=new TooLarge(lim,req,`單次請求超過每分鐘 Token 上限（上限 ${lim||'?'}，請求 ${req||'?'}）`);
+        break;
+      }
+      if(r.status===429){
+        tries++;
+        const wait=parseWait(txt,r);
+        if(/per day|TPD|RPD/i.test(txt)){
+          KEY_DEAD[key+'|'+model]=Date.now();
+          lastErr=`${model} 今日額度已用完（金鑰 ${ki}）${wait?`，約 ${Math.ceil(wait/60)} 分鐘後恢復`:''}`;
+          continue;                                   // 換下一把金鑰；都用完就換模型
+        }
+        const lim=+(txt.match(/Limit\s+(\d+)/i)||[])[1];
+        if(/per minute|TPM/i.test(txt) && lim && lim<TPM){ TPM=lim; LS.set('tpm',TPM); }
+        // 讓本機紀錄知道這把金鑰目前是滿的
+        (USAGE[key]=USAGE[key]||[]).push({t:Date.now()-60000+Math.max(wait,3)*1000,tok:TPM});
+        continue;
+      }
+      if(r.status===401){ KEY_DEAD[key+'|'+model]=Date.now(); lastErr=`金鑰 ${ki} 無效`; continue; }
+      if(r.status===400){
+        tries++;
+        if(/json_validate_failed|Failed to validate JSON/i.test(txt) && useJson){
+          useJson=false; status('JSON 模式驗證失敗，改以一般模式重試…'); continue;
+        }
+        if(/reasoning_effort/i.test(txt) && !noEffort){ noEffort=true; continue; }
+      }
+      break; // 400 / 404 / 其他 → 換模型
+    }
+  }
+  if(tooLarge) throw tooLarge;
+  if(tpdHit && /額度已用完/.test(lastErr)) throw new Error('所有金鑰與模型的今日額度都已用完，請新增其他金鑰或明天再試');
+  throw new Error(lastErr || 'Groq 呼叫失敗');
+}
+
+/* 長文件壓縮：分段擷取行銷相關重點，直到符合預算 */
+const EXTRACT_SYS='你是行銷分析助理。以下是一份文件的片段（可能是產品文案、企劃書、計畫書或簡介）。請找出「可被行銷的對象」（產品、服務、品牌、地方、活動、課程等）並擷取所有可用於行銷規劃的事實，依類別條列：【對象與特色】【價格/費用/方案】【地點/通路/據點】【推廣/活動/合作】【人員/團隊/組織】【服務流程/運作方式】【場域/設施/環境/品牌形象】【目標對象/客群】【資源/成果/數據】。只寫文件中出現的內容，可保留專有名詞與數字，繁體中文，每條不超過 35 字，總共不超過 450 字；沒有內容的類別省略。';
+/* 本機精選：依行銷關鍵字為句子評分，保留開頭與高分句，維持原順序 */
+const MKT_WORDS=['產品','服務','商品','品牌','特色','價格','售價','費用','元','方案','優惠','折扣','通路','據點','門市','店','地點','線上','網路','平台','電商','外送','推廣','行銷','活動','宣傳','社群','媒體','合作','聯名','團隊','人員','員工','居民','青年','志工','導覽','講師','培訓','流程','預約','報名','體驗','場域','空間','設施','環境','園區','包裝','形象','客群','遊客','顧客','消費者','學員','對象','在地','地方','特產','資源','成果','目標','策略','市場'];
+function prefilter(text,maxChars){
+  if(text.length<=maxChars) return text;
+  const head=text.slice(0,Math.min(1200,Math.floor(maxChars*0.2)));
+  const rest=text.slice(head.length);
+  const sents=rest.split(/(?<=[。！？!?；;])|\n+/).map(s=>s.trim()).filter(s=>s.length>=8);
+  const scored=sents.map((s,i)=>{
+    let sc=0; for(const w of MKT_WORDS) if(s.includes(w)) sc+=1;
+    if(/\d/.test(s)) sc+=0.5;
+    return {i,s,sc:sc/Math.sqrt(s.length/40+1)};
+  });
+  const seen=new Set(), pick=[]; let len=head.length;
+  for(const x of [...scored].sort((a,b)=>b.sc-a.sc)){
+    if(x.sc<=0) break;
+    const k=x.s.slice(0,30); if(seen.has(k)) continue; seen.add(k);
+    if(len+x.s.length+1>maxChars) continue;
+    pick.push(x); len+=x.s.length+1;
+  }
+  pick.sort((a,b)=>a.i-b.i);
+  return head+'\n'+pick.map(x=>x.s).join('\n');
+}
+
+async function condense(text,targetTok,round=1){
+  if(estTok(text)<=targetTok) return text;
+  const chunkTok=Math.max(1000, Math.min(Math.floor(TPM*0.4), 3000));
+  const chunkChars=Math.floor(chunkTok/1.15);
+  const maxParts=+($('#depth')?.value||4);
+  let src=text;
+  if(round===1 && text.length>chunkChars*maxParts){
+    src=prefilter(text,chunkChars*maxParts);
+    status(`文件 ${text.length.toLocaleString()} 字，已在本機精選行銷相關內容 ${src.length.toLocaleString()} 字`);
+    await sleep(600);
+  }
+  const parts=[];
+  for(let i=0;i<src.length;i+=chunkChars) parts.push(src.slice(i,i+chunkChars));
+  const out=[];
+  for(let i=0;i<parts.length;i++){
+    PROGRESS=`重點擷取 ${i+1}/${parts.length} 段`;
+    let r;
+    try{ r=await groqChat([{role:'system',content:EXTRACT_SYS},{role:'user',content:parts[i]}],{json:false,maxTokens:600}); }
+    catch(e){
+      PROGRESS='';
+      if(e instanceof TooLarge && e.limit){ TPM=e.limit; LS.set('tpm',TPM); return condense(text,targetTok,round); }
+      throw e;
+    }
+    r=(r||'').trim(); if(r && r.replace(/[無\s。]/g,'').length>4) out.push(r);
+  }
+  PROGRESS='';
+  const merged=out.join('\n');
+  if(!merged.trim()) return src.slice(0,Math.floor(targetTok/1.15));
+  if(estTok(merged)<=targetTok || round>=2) return merged.slice(0,Math.floor(targetTok/1.15));
+  return condense(merged,targetTok,round+1);
+}
+
+function parseJSON(t){
+  t=String(t||'').replace(/```json|```/g,'').trim();
+  const a=t.indexOf('{'); if(a<0) throw new Error('AI 未回傳 JSON，請再試一次');
+  t=t.slice(a);
+  const tryP=s=>{ try{ return JSON.parse(s) }catch{ return undefined } };
+  let r=tryP(t); if(r!==undefined) return r;
+  const b=t.lastIndexOf('}'); if(b>0){ r=tryP(t.slice(0,b+1)); if(r!==undefined) return r; }
+  let s=t.replace(/,\s*([}\]])/g,'$1');
+  r=tryP(s); if(r!==undefined) return r;
+  // 截斷修復：退到最後一個完整元素，再補齊括號
+  let inStr=false, esc=false, lastSafe=0;
+  for(let i=0;i<s.length;i++){
+    const c=s[i];
+    if(inStr){ if(esc) esc=false; else if(c==='\\') esc=true; else if(c==='"') inStr=false; continue; }
+    if(c==='"') inStr=true;
+    else if(c==='}'||c===']') lastSafe=i+1;
+    else if(c===',') lastSafe=i;
+  }
+  const cut=s.slice(0,lastSafe).replace(/,\s*$/,'');
+  const st=[]; let q=false,e2=false;
+  for(const c of cut){
+    if(q){ if(e2)e2=false; else if(c==='\\')e2=true; else if(c==='"')q=false; continue; }
+    if(c==='"')q=true; else if(c==='{')st.push('}'); else if(c==='[')st.push(']'); else if(c==='}'||c===']')st.pop();
+  }
+  r=tryP(cut+st.reverse().join('')); if(r!==undefined) return r;
+  throw new Error('AI 回傳內容不完整，請再按一次「分析並繪圖」');
+}
+
+const SYS_A = `你是資深行銷顧問。使用者提供一份文件（可能是產品文案、企劃書、計畫書或擷取後的重點）。
+先判斷文件中「要被行銷的對象」（產品、服務、地方品牌、活動、課程…），寫入 brand 與 summary；即使文件不是典型廣告文案，也要推定行銷對象，不可回答「未提供」。
+接著找出 4P：Product、Price、Place、Promotion。evidence 必須引用文件中的具體事實（名稱、地點、數字、做法），真的沒有才寫「文案未提及」；actions 為補強建議，每項 2 條；evidence 每項最多 3 條。
+另外列出 facts：文件中其他可供後續規劃人員、流程、實體環境的事實（團隊、組織、合作單位、場域、設施、資源、成果、運作方式、品牌元素），6–10 條，每條不超過 30 字。
+每條 action 為物件 {"do":"做法（≤40 字）","why":"依據的文件資料（≤30 字）"}；actions、evidence、facts 都是陣列，一個元素一條。
+image_prompt 為英文 40–70 詞，描述結合文件具體內容的 4P 示意畫面，不要求畫面出現文字。
+繁體中文。只輸出 JSON：
+{"brand":"","summary":"","audience":[""],"facts":[""],
+ "p4":{"overview":"一句總評","image_prompt":"","items":[
+  {"key":"Product","zh":"產品","evidence":[""],"actions":[{"do":"","why":""}],"kpi":""},
+  {"key":"Price","zh":"價格",...},{"key":"Place","zh":"通路",...},{"key":"Promotion","zh":"促銷",...}]}}`;
+
+const SYS_B = `你是資深服務行銷顧問。使用者會提供：行銷對象、已找出的 4P、文件中的其他事實，以及文件重點。
+請據此規劃第 5P 人員與 7P 的流程、實體佐證，所有建議都必須以這些資料為依據，不可寫放諸四海皆準的通用句（如「招募熱情客服」「定期回饋改進」）。
+- People：evidence 列出可運用的文件資料（最多 4 條）；actions 4–5 條。
+- Process：evidence 最多 3 條；actions 3–4 條。
+- Physical Evidence：evidence 最多 3 條；actions 3–4 條。
+- Integration：依顧客旅程（認識→體驗→參與/購買→分享回訪）串起文件中的具體元素，evidence 可為空陣列，actions 3 條。
+每條 action 為物件 {"do":"做法（≤40 字）","why":"依據的文件資料（≤30 字）"}；陣列一個元素一條，不可合併成「1. … 2. …」。
+p5、p7 各寫英文 image_prompt 40–70 詞，描述結合文件具體內容的示意畫面，不要求畫面出現文字。
+繁體中文。只輸出 JSON：
+{"p5":{"overview":"依文件內容，人員為何是關鍵","image_prompt":"","items":[
+  {"key":"People","zh":"人員","evidence":[""],"actions":[{"do":"","why":""}],"kpi":""}]},
+ "p7":{"overview":"一句總評","image_prompt":"","items":[
+  {"key":"Process","zh":"流程",...},{"key":"Physical Evidence","zh":"實體佐證",...},{"key":"Integration","zh":"7P 整合旅程",...}]}}`;
+const SYS = SYS_A;
+
+
+/* ---- 共用：呼叫 Groq 取得 JSON（截斷自動精簡重試） ---- */
+const SHORT=['','\n\n【注意】上次輸出過長被截斷。這次請精簡：每個陣列最多 2 條，每條不超過 25 字，overview 不超過 20 字。',
+                '\n\n【注意】請極度精簡：每個陣列最多 2 條，每條不超過 18 字，image_prompt 不超過 35 詞。直接輸出 JSON，不要任何說明。'];
+async function callJSON(sys,user,out,label,need){
+  let lastE=null;
+  for(let tries=0; tries<3; tries++){
+    const inTok=estTok(sys+user)+120;
+    const maxT=Math.max(1500, Math.min(Math.round(out*[1,1.25,1][tries]), TPM-inTok-150));
+    try{
+      PROGRESS=label+(tries?`（第 ${tries+1} 次）`:'');
+      const raw=await groqChat([{role:'system',content:sys+SHORT[tries]},{role:'user',content:user}],{json:tries<2,maxTokens:maxT});
+      const j=parseJSON(raw);
+      if(need.some(k=>!j[k])) throw new Error('AI 回傳內容不完整（缺少 '+need.filter(k=>!j[k]).join('、')+'）');
+      return j;
+    }catch(e){
+      if(e instanceof TooLarge){
+        TPM = e.limit ? Math.min(e.limit, TPM) : Math.floor(TPM*0.7);
+        if(e.limit && e.requested && e.requested<=e.limit) TPM=Math.floor(TPM*0.8);
+        LS.set('tpm',TPM); throw e;
+      }
+      if(/回傳內容不完整|未回傳 JSON/.test(e.message)){
+        lastE=e;
+        const why=LAST?.finish==='length'?'輸出被截斷':'格式不完整';
+        status(`${label}：${why}，改用精簡模式重試…`); continue;
+      }
+      throw e;
+    }
+  }
+  const err=new Error(`${label} 失敗：AI 連續 3 次回傳不完整${LAST?.finish?`（結束原因：${LAST.finish}，模型：${LAST.model}）`:''}。可改用「快速」模式、換另一個模型，或下載原始回傳檢查。`);
+  err.raw=true; throw err;
+}
+
+
+/* ---------- 分頁 ---------- */
+const CHART_KEY={radar:'scores',matrix:'priority',journey:'journey',gantt:'gantt',position:'positioning',compete:'competitors',c4:'c4',persona:'personas'};
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.tab===id; t.classList.toggle('on',on); t.setAttribute('aria-selected',on); });
+  document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('on',p.id==='tp-'+id));
+  if(CHARTS[id]) requestAnimationFrame(()=>CHARTS[id].resize());
+  const tabs=$('#tabs'); if(tabs.getBoundingClientRect().top<0) tabs.scrollIntoView({block:'start'});
+}
+document.addEventListener('click',e=>{ const t=e.target.closest('[data-tab]'); if(t && !t.disabled) showTab(t.dataset.tab); });
+function updateChartTabs(loading=[]){
+  const C=RESULT?.charts||{};
+  document.querySelectorAll('.tab.tc').forEach(t=>{
+    const k=CHART_KEY[t.dataset.tab], has=!!(C[k] && (!Array.isArray(C[k])||C[k].length));
+    t.disabled=!has; t.classList.toggle('loading',loading.includes(t.dataset.tab));
+  });
+}
+function resetChartTabs(){
+  Object.values(CHARTS).forEach(c=>c.destroy()); for(const k in CHARTS) delete CHARTS[k];
+  document.querySelectorAll('.tpc').forEach(p=>p.innerHTML='');
+  document.querySelectorAll('.tab.tc').forEach(t=>{ t.disabled=true; t.classList.remove('loading'); });
+}
+function collapseInput(on){
+  $('#inputSec').classList.toggle('collapsed',on);
+  if(on){ const c=$('#copy').value.trim(); $('#ibarTxt').textContent=`文案 ${c.length.toLocaleString()} 字${$('#industry').value.trim()?'｜'+$('#industry').value.trim():''}${RESULT?.brand?'｜'+RESULT.brand:''}`; }
+}
+$('#btnExpand').onclick=()=>collapseInput(false);
+
+function renderOverview(){
+  const R=RESULT; if(!R?.p4) return;
+  const meta={4:['行銷 4P','傳統行銷策略'],5:['行銷 5P','人員創造差異'],7:['行銷 7P','完整服務組合']};
+  const newKeys=['People','Process','Physical Evidence','Integration'];
+  const card=n=>{
+    const S=R['p'+n];
+    const ps=S?arr(S.items).map(it=>{
+      const ev=evs(it.evidence).find(x=>!/未提及/.test(x)); const a=acts(it.actions)[0];
+      const line=n===4?(ev||'文案未提及'):(a?.do||ev||'');
+      return `<div class="op${newKeys.includes(it.key)?' new':''}"><b>${esc(it.zh)}</b>${esc(line)}</div>`;
+    }).join(''):'<div class="op"><div class="spin" style="width:18px;height:18px"></div> 規劃中…</div>';
+    const thumb=IMG[n]?.url?`<img src="${IMG[n].url}" alt="${meta[n][0]} 示意圖">`:'示意圖繪製中…';
+    return `<div class="ovc s${n}"><div class="oh"><b>${meta[n][0]}</b><span>${meta[n][1]}</span></div>
+      <div class="othumb">${thumb}</div>${S?.overview?`<div class="oov">${esc(S.overview)}</div>`:''}
+      <div class="ops">${ps}</div><button class="btn sm ogo" data-tab="p${n}">查看完整 ${meta[n][0]} →</button></div>`;
+  };
+  $('#ovGrid').innerHTML=card(4)+'<div class="ovarrow"></div>'+card(5)+'<div class="ovarrow"></div>'+card(7);
+}
+
+$('#btnRun').onclick = run;
+async function run(){
+  const copy=normText($('#copy').value);
+  if(copy.length<10) return status('請先貼上或上傳文案',true);
+  const btn=$('#btnRun'); if(btn.dataset.busy){ ABORT=true; btn.textContent='停止中…'; return; }
+  ABORT=false; btn.dataset.busy='1'; btn.textContent='停止';
+  if(RESULT?.charts){ RESULT.charts=null; } resetChartTabs(); chartStatus(''); showTab('ov');
+  if(getKeys().length) $('#settings').classList.remove('open');
+  try{
+    const ind=$('#industry').value.trim();
+    const OUT_A=3400, OUT_B=3400;
+    const head=(ind?`產業：${ind}\n`:'');
+    const call=callJSON;
+    let A=null, B=null;
+    for(let round=0; round<3 && !B; round++){
+      try{
+        const budget=Math.max(800, TPM - estTok(SYS_B) - OUT_B - 1400);
+        const brief=await condense(copy,budget);
+        const doc=(brief!==copy?'（以下為長文件擷取的重點）\n':'')+`文件：\n${brief}`;
+        if(!A){ A=await call(SYS_A, head+doc, OUT_A, '第 1 步：找出 4P', ['p4']); RESULT={...A}; render(); }
+        status('4P 完成，規劃 5P／7P 中…');
+        const ctx={brand:A.brand,summary:A.summary,audience:A.audience,facts:A.facts,
+          p4:arr(A.p4?.items).map(it=>({p:it.zh,evidence:it.evidence}))};
+        B=await call(SYS_B, head+`已知資料：\n${JSON.stringify(ctx)}\n\n${doc}`, OUT_B, '第 2 步：規劃 5P／7P', ['p5','p7']);
+      }catch(e){
+        if(e instanceof TooLarge){ status(`請求過大，改以 ${TPM} TPM 預算重新壓縮…`); continue; }
+        throw e;
+      }
+    }
+    PROGRESS='';
+    if(!A||!B) throw new Error('文件過長，壓縮後仍超過模型上限；請改用「快速」模式或刪減內容');
+    RESULT={...A, p5:B.p5, p7:B.p7};
+    render(); status('分析完成，示意圖繪製中…');
+    (async()=>{ for(const n of [4,5,7]) await drawImg(n); })();
+    collapseInput(true); setTimeout(genCharts,300);
+  }catch(e){
+    status(e.message,true);
+    if(e.raw && LAST){
+      const b=document.createElement('button'); b.className='btn sm'; b.style.marginLeft='8px'; b.textContent='下載原始回傳';
+      b.onclick=()=>save(new Blob([JSON.stringify(LAST,null,2)],{type:'application/json'}),'groq_原始回傳.json');
+      $('#status').appendChild(b);
+    }
+  }
+  finally{ PROGRESS=''; delete btn.dataset.busy; btn.textContent='分析並繪圖'; ABORT=false; }
+}
+
+/* ---------- render ---------- */
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const arr = a => Array.isArray(a)?a:(a?[a]:[]);
+function splitNum(s){ // 「1. xx 2. yy」→ 多條
+  const parts=String(s).split(/\s*(?:^|\s)(?:\d{1,2}[.、)）]|[①-⑩])\s*/).map(x=>x.trim()).filter(Boolean);
+  return parts.length>1?parts:[String(s).trim()];
+}
+function acts(list){
+  const out=[];
+  arr(list).forEach(a=>{
+    if(a && typeof a==='object'){ out.push({do:a.do||a.action||a.text||'',why:a.why||a.basis||''}); }
+    else splitNum(a).forEach(x=>out.push({do:x,why:''}));
+  });
+  return out.filter(a=>a.do);
+}
+function evs(list){ return arr(list).flatMap(x=>splitNum(x)).filter(Boolean); }
+function render(){
+  const R=RESULT;
+  const sm=$('#summary');
+  sm.style.display='block';
+  sm.innerHTML=`<h2>${esc(R.brand||'分析對象')}</h2><p>${esc(R.summary||'')}</p>
+    <div class="tags">${arr(R.audience).map(a=>`<span class="tag">${esc(a)}</span>`).join('')}</div>`;
+  const newKeys={5:['People'],7:['Process','Physical Evidence','Integration']};
+  [4,5,7].forEach(n=>{
+    const S=R['p'+n];
+    if(!S){ $('#body'+n).innerHTML='<div class="empty"><div class="spin" style="margin:0 auto 8px"></div>依 4P 與文件資料規劃中…</div>'; return; }
+    $('#body'+n).innerHTML = `${S.overview?`<div class="overview">${esc(S.overview)}</div>`:''}
+    <div class="items">${arr(S.items).map(it=>{
+      const isNew=(newKeys[n]||[]).includes(it.key);
+      const ev=evs(it.evidence);
+      return `<div class="item${isNew?' new':''}">
+        <h4>${esc(it.zh)} <small>${esc(it.key)}</small>${isNew?'<span class="pill">新增</span>':''}</h4>
+        ${ev.length?`<div class="lbl">${n===4?'文案依據':'可運用的文件資料'}</div><ul>${ev.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+        <div class="lbl">${n===4?'補強建議':'執行做法'}</div><ul>${acts(it.actions).map(x=>`<li>${esc(x.do)}${x.why?`<span class="why">${esc(x.why)}</span>`:''}</li>`).join('')}</ul>
+        ${it.kpi?`<div class="kpi">衡量指標：${esc(it.kpi)}</div>`:''}
+      </div>`}).join('')}</div>`;
+  });
+  $('#exp').style.display='flex';
+  renderOverview();
+}
+
+/* ---------- Gemini 繪圖 ---------- */
+const GEM='https://generativelanguage.googleapis.com/v1beta';
+$('#gemEye').onclick=e=>{ const i=$('#gemKey'), show=i.type==='password'; i.type=show?'text':'password'; e.target.textContent=show?'隱藏':'顯示'; };
+$('#gemKey').addEventListener('input',()=>{ $('#gemSt').textContent=''; });
+$('#gemTest').onclick=testGemini;
+async function testGemini(){
+  const k=$('#gemKey').value.trim(), st=$('#gemSt');
+  if(!k){ st.className='kst bad'; st.textContent='未填入金鑰'; return false; }
+  $('#gemKey').type='password'; $('#gemEye').textContent='顯示';
+  st.className='kst run'; st.textContent=`測試 ${maskKey(k)} 中…`;
+  const t0=performance.now();
+  try{
+    const r=await fetch(`${GEM}/models?pageSize=1000`,{headers:{'x-goog-api-key':k}});
+    const ms=Math.round(performance.now()-t0);
+    if(!r.ok){
+      const msg={400:'金鑰格式錯誤或無效',403:'金鑰無權限或 API 未啟用',429:'額度用盡或請求過快'}[r.status]||('HTTP '+r.status);
+      st.className='kst bad'; st.textContent='✗ '+msg; return false;
+    }
+    const ids=(await r.json()).models.map(m=>m.name.replace('models/',''));
+    const imgs=ids.filter(id=>/image/.test(id)&&/gemini/.test(id));
+    const sel=$('#imgModel'); imgs.forEach(id=>ensureOpt(sel,id));
+    const cur=sel.value, has=ids.includes(cur);
+    st.className='kst '+(has?'ok':'bad');
+    st.textContent= has ? `✓ 連線成功（${ms} ms），可用 ${cur}`
+                        : `✓ 金鑰有效，但帳戶看不到 ${cur}；可用繪圖模型：${imgs.join('、')||'無'}`;
+    return true;
+  }catch(e){ st.className='kst bad'; st.textContent='✗ 網路錯誤：'+e.message; return false; }
+}
+
+function imgPrompt(n){
+  const S=RESULT?.['p'+n]||{};
+  const theme={4:'marketing mix 4P concept: product, price, place, promotion shown as four illustrated groups, blue accent color',
+               5:'people-centered service: trained friendly staff serving happy customers, green accent color',
+               7:'complete service experience: smooth service process flow and a welcoming physical store environment, orange accent color'}[n];
+  const labels={4:'產品、價格、通路、促銷',5:'人員',7:'流程、實體佐證'}[n];
+  const textRule = $('#imgText').value==='zh'
+    ? `Include only short, correctly written Traditional Chinese labels: ${labels}. No other text.`
+    : 'Absolutely no text, letters, numbers, or logos in the image.';
+  return `Create a 16:9 marketing illustration. ${S.image_prompt||''} Theme: ${theme}. Style: ${$('#style').value}. Brand context: ${RESULT?.brand||''}. ${textRule}`;
+}
+
+async function geminiImage(prompt,aspect='16:9'){
+  const k=$('#gemKey').value.trim();
+  if(!k) throw new Error('請在「API 設定」填入 Gemini API Key');
+  const first=$('#imgModel').value;
+  const chain=[first, ...['gemini-3.1-flash-lite-image','gemini-3.1-flash-image','gemini-2.5-flash-image'].filter(m=>m!==first)];
+  let lastErr='';
+  for(const model of chain){
+    for(let attempt=0; attempt<3; attempt++){
+      let r;
+      try{
+        r=await fetch(`${GEM}/models/${model}:generateContent`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-goog-api-key':k},
+          body:JSON.stringify({
+            contents:[{role:'user',parts:[{text:prompt}]}],
+            generationConfig:{responseModalities:['IMAGE'], imageConfig:{aspectRatio:aspect}}
+          })
+        });
+      }catch(e){ lastErr='網路錯誤：'+e.message; await sleep(1500); continue; }
+      const txt=await r.text();
+      if(r.ok){
+        const j=JSON.parse(txt);
+        const parts=j.candidates?.[0]?.content?.parts||[];
+        const im=parts.find(p=>p.inlineData||p.inline_data);
+        if(im){ const d=im.inlineData||im.inline_data; return {src:`data:${d.mimeType||d.mime_type||'image/png'};base64,${d.data}`, model}; }
+        const reason=j.candidates?.[0]?.finishReason||j.promptFeedback?.blockReason||'未回傳圖像';
+        lastErr=`${model}：${reason}`; break;
+      }
+      lastErr=`${model} HTTP ${r.status} ${txt.slice(0,140)}`;
+      if(r.status===429||r.status===503||r.status===500){ await sleep(2500*(attempt+1)); continue; }
+      if(r.status===400||r.status===403){
+        if(/API key|API_KEY|permission/i.test(txt)) throw new Error('Gemini 金鑰無效或無權限');
+      }
+      break; // 404 等 → 換模型
+    }
+  }
+  throw new Error(lastErr||'Gemini 繪圖失敗');
+}
+
+async function drawImg(n){
+  const box=$('#img'+n);
+  box.innerHTML='<div class="loading"><div class="spin"></div>Gemini 繪製中…</div>';
+  $('#tools'+n).hidden=true;
+  try{
+    const {src,model}=await geminiImage(imgPrompt(n));
+    IMG[n].url=src; IMG[n].model=model;
+    const img=new Image(); img.alt=`行銷 ${n}P 示意圖`; img.src=src;
+    box.innerHTML=''; box.appendChild(img); $('#tools'+n).hidden=false;
+    renderOverview(); checkAllImgs();
+  }catch(e){
+    box.innerHTML=`<div style="padding:0 14px">${esc(e.message)}<br><button class="btn sm" style="margin-top:8px" data-re="${n}">重試</button></div>`;
+  }
+}
+function checkAllImgs(){ if([4,5,7].every(n=>$('#img'+n+' img'))) status('完成：條列與三張示意圖已產生'); }
+document.addEventListener('click',async e=>{
+  const re=e.target.closest('[data-re]'); if(re){ if(RESULT) drawImg(+re.dataset.re); return; }
+  const dl=e.target.closest('[data-dl]');
+  if(dl){
+    const n=dl.dataset.dl; if(!IMG[n].url) return;
+    const ext=(IMG[n].url.match(/^data:image\/(\w+)/)||[])[1]||'png';
+    const a=document.createElement('a'); a.href=IMG[n].url; a.download=`行銷${n}P_示意圖.${ext==='jpeg'?'jpg':ext}`; a.click();
+  }
+});
+
+/* ---------- export ---------- */
+function save(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+function toMd(){
+  const R=RESULT; if(!R) return '';
+  const title={4:'行銷 4P｜文案中的傳統行銷策略',5:'行銷 5P｜第 5P 人員',7:'行銷 7P｜完整服務行銷組合'};
+  let s=`# ${R.brand||''} 行銷組合分析\n\n${R.summary||''}\n\n目標客群：${arr(R.audience).join('、')}\n`;
+  [4,5,7].forEach(n=>{
+    const S=R['p'+n]||{};
+    s+=`\n## ${title[n]}\n\n${S.overview||''}\n`;
+    arr(S.items).forEach(it=>{
+      s+=`\n### ${it.zh}（${it.key}）\n`;
+      const ev=evs(it.evidence);
+      if(ev.length) s+=`\n${n===4?'文案依據':'可運用的文件資料'}：\n`+ev.map(x=>`- ${x}`).join('\n')+'\n';
+      s+=`\n${n===4?'補強建議':'執行做法'}：\n`+acts(it.actions).map(x=>`- ${x.do}${x.why?`（依據：${x.why}）`:''}`).join('\n')+'\n';
+      if(it.kpi) s+=`\n衡量指標：${it.kpi}\n`;
+    });
+    if(IMG[n].url) s+=`\n（示意圖：行銷${n}P_示意圖，請於頁面按「下載」另存）\n`;
+  });
+  const C=R.charts;
+  if(C){
+    s+=`\n## 行銷圖表資料\n`;
+    if(C.scores) s+=`\n### 7P 成熟度\n\n| P | 現況 | 目標 | 說明 |\n|---|---|---|---|\n`+P7.map(k=>{const v=C.scores[k]||{};return `| ${PZH[k]} | ${v.now??''} | ${v.target??''} | ${v.reason||''} |`;}).join('\n')+'\n';
+    if(C.priority){ const A=Object.fromEntries((C.actions||[]).map(a=>[a.id,a]));
+      s+=`\n### 建議優先級\n\n| 建議 | P | 影響力 | 難度 |\n|---|---|---|---|\n`+arr(C.priority).filter(p=>A[p.id]).sort((a,b)=>(b.impact-b.effort)-(a.impact-a.effort)).map(p=>`| ${A[p.id].do} | ${PZH[A[p.id].p]||A[p.id].p} | ${p.impact} | ${p.effort} |`).join('\n')+'\n'; }
+    if(C.journey) s+=`\n### 顧客旅程\n\n| 階段 | 顧客行為 | 接觸點 | 痛點 | 機會 |\n|---|---|---|---|---|\n`+arr(C.journey).map(j=>`| ${j.stage} | ${j.action||''} | ${arr(j.touchpoints).join('、')} | ${j.pain||''} | ${j.opportunity||''} |`).join('\n')+'\n';
+    if(C.gantt) s+=`\n### 90 天甘特\n\n| 任務 | P | 週次 |\n|---|---|---|\n`+arr(C.gantt).map(g=>`| ${g.task} | ${PZH[pKey(g.p)]||g.p} | W${g.start}–W${g.end} |`).join('\n')+'\n';
+    if(C.positioning){ const P=C.positioning; s+=`\n### 定位知覺圖（${P.x?.label||''} × ${P.y?.label||''}）\n\n`+[{...P.self,note:'本品牌'},...arr(P.competitors)].map(c=>`- ${c.name}：(${c.x}, ${c.y}) ${c.note||''}`).join('\n')+'\n'; }
+    if(C.competitors) s+=`\n### 競品 7P（台灣品牌）\n\n| 競品 | 台灣品牌依據 | `+P7.map(k=>PZH[k]).join(' | ')+` | 強項 |\n|---|---|`+P7.map(()=>'---').join('|')+`|---|\n`+arr(C.competitors).map(c=>`| ${c.name} | ${c.tw||''} | `+P7.map(k=>(c.scores||{})[k]??'').join(' | ')+` | ${c.note||''} |`).join('\n')+'\n';
+    if(C.c4) s+=`\n### 4P ↔ 4C\n\n| 4P | 4C | 賣方觀點 | 顧客觀點 | 落差與做法 |\n|---|---|---|---|---|\n`+arr(C.c4).map(r=>`| ${PZH[pKey(r.p)]||r.p} | ${r.c||''} | ${r.seller||''} | ${r.buyer||''} | ${r.gap||''} |`).join('\n')+'\n';
+    if(C.personas) s+=`\n### 人物誌\n`+arr(C.personas).map(p=>`\n**${p.name}**（${[p.age,p.job].filter(Boolean).join('・')}）「${p.quote||''}」\n- 目標：${p.goal||''}\n- 痛點：${p.pain||''}\n- 管道：${arr(p.channels).join('、')}\n- 觸發：${p.trigger||''}\n`).join('');
+  }
+  return s;
+}
+$('#btnMd').onclick=()=>save(new Blob([toMd()],{type:'text/markdown'}),`${RESULT?.brand||'行銷'}_4P5P7P.md`);
+$('#btnJson').onclick=()=>save(new Blob([JSON.stringify(RESULT,(k,v)=>k==='avatar'?undefined:v,2)],{type:'application/json'}),`${RESULT?.brand||'行銷'}_4P5P7P.json`);
+$('#btnCopyTxt').onclick=async()=>{ try{ await navigator.clipboard.writeText(toMd()); status('已複製條列'); }catch{ status('複製失敗，請改用下載',true); } };
+$('#btnPrint').onclick=()=>window.print();
+/* ======================= 行銷圖表 ======================= */
+const P7=['Product','Price','Place','Promotion','People','Process','Physical Evidence'];
+const PZH={Product:'產品',Price:'價格',Place:'通路',Promotion:'促銷',People:'人員',Process:'流程','Physical Evidence':'實體佐證',Integration:'整合'};
+const PCOL={Product:'#2a64ad',Price:'#5b8fd0',Place:'#163f73',Promotion:'#7c9fd0',People:'#17896a',Process:'#d66a1c','Physical Evidence':'#e49b55',Integration:'#8a4b1c'};
+const COMP_COL=['#8a5cc4','#c4437a','#6b7a8f','#b08a1e','#3b9bb5'];
+const CHARTS={};
+const pKey=k=>{ k=String(k||'').trim(); const hit=Object.keys(PZH).find(x=>x.toLowerCase()===k.toLowerCase()||PZH[x]===k); return hit||k; };
+const chip=k=>{ k=pKey(k); return `<span class="pchip" style="background:${PCOL[k]||'#6b7a8f'}">${esc(PZH[k]||k)}</span>`; };
+const clamp=(v,a,b,d)=>{ v=parseFloat(v); return isNaN(v)?d:Math.max(a,Math.min(b,v)); };
+
+const SYS_C1=`你是行銷顧問。使用者提供一份行銷組合分析與建議清單（每條建議有 id）。請產生圖表資料，繁體中文，只輸出 JSON：
+{"scores":{"Product":{"now":1到5,"target":1到5,"reason":"≤25字，依據文件現況"},"Price":{...},"Place":{...},"Promotion":{...},"People":{...},"Process":{...},"Physical Evidence":{...}},
+ "priority":[{"id":"建議 id","impact":1到5,"effort":1到5}],
+ "journey":[{"stage":"階段名","action":"顧客行為≤20字","touchpoints":["接觸點≤8字"],"ps":["相關 P 英文 key"],"pain":"痛點≤25字","opportunity":"機會≤25字","emotion":-2到2整數}],
+ "gantt":[{"task":"任務≤18字","p":"P 英文 key","start":1到13,"end":1到13}]}
+規則：
+- scores：now 依文件現況，文件未提及的 P 給 1–2 分；target 為執行建議 90 天後可達分數，必須 ≥ now。
+- priority：清單中每條建議都要評分；impact＝對營收或顧客體驗的影響，effort＝所需人力、時間、成本。
+- journey：4–5 個階段，依序為 認識、考慮、購買／參與、體驗、分享回訪，內容取自文件與建議。
+- gantt：8–12 項，週次 1–13 代表 90 天；速贏建議（高影響低難度）排前面；start ≤ end。
+P 英文 key 只能用：Product, Price, Place, Promotion, People, Process, Physical Evidence。`;
+
+const SYS_C2=`你是行銷顧問。使用者提供一份行銷組合分析。請產生定位、競品、4C 與人物誌資料，繁體中文，只輸出 JSON：
+{"positioning":{"x":{"label":"軸名","low":"左端","high":"右端"},"y":{"label":"軸名","low":"下端","high":"上端"},"self":{"name":"本品牌","x":0到10,"y":0到10},"competitors":[{"name":"台灣品牌名","x":0到10,"y":0到10,"note":"≤20字"}]},
+ "competitors":[{"name":"與 positioning 相同名稱","tw":"台灣品牌依據≤20字，如「1997 年台中創立」","type":"直接／間接／替代","scores":{"Product":1到5,"Price":1到5,"Place":1到5,"Promotion":1到5,"People":1到5,"Process":1到5,"Physical Evidence":1到5},"note":"對方強項≤25字"}],
+ "c4":[{"p":"Product","c":"顧客價值 Customer Value","seller":"文件中的賣方說法≤30字","buyer":"顧客真正在意的≤30字","gap":"落差與做法≤30字"},
+       {"p":"Price","c":"顧客成本 Cost",...},{"p":"Place","c":"便利性 Convenience",...},{"p":"Promotion","c":"溝通 Communication",...}],
+ "personas":[{"name":"化名","age":"年齡層","job":"職業","segment":"對應客群","goal":"≤25字","pain":"≤25字","channels":["≤6字"],"trigger":"購買觸發≤20字","quote":"一句話≤25字","ps":["最能打動他的 P 英文 key"],"image_prompt":"英文 25–40 詞，描述此人的半身肖像"}]}
+規則：
+- positioning：選最能凸顯差異的兩個軸；競品 3–5 個。
+- competitors：3–4 個，名稱與 positioning 完全一致。
+- 【競品一律必須是台灣品牌】：在台灣創立、由台灣企業擁有的真實品牌，寫出具體品牌名稱（例如「梁社漢排骨」「悟饕池上飯包」「八方雲集」）。
+  - 不可使用外國品牌或其在台授權／分公司（例如 7-ELEVEN、全家、麥當勞、肯德基、摩斯漢堡、星巴克、吉野家、Subway、好市多、家樂福）。
+  - 不可使用類型名稱（如「超商鮮食」「連鎖便當」），也不可杜撰品牌；只用你確定存在的台灣品牌。
+  - tw 欄位寫出它是台灣品牌的依據（創立地、年份或母公司）。
+  - 使用者提供的競品若是台灣品牌就直接使用；若不是，改用最相近的台灣品牌，並在 tw 註明「取代：原名稱」。
+  - 競品依產業與所在地區挑選，優先選與本品牌同區域或同客群的台灣品牌。
+- personas：2–3 位，必須對應 audience，具體到生活情境。
+P 英文 key 只能用：Product, Price, Place, Promotion, People, Process, Physical Evidence。`;
+
+/* 非台灣品牌防呆（常見外國品牌或在台授權品牌） */
+const FOREIGN_RE=/7[\s-]?(eleven|11)|統一超商|小七|全家|familymart|ok\s*(超商|便利|mart)|circle\s*k|麥當勞|mcdonald|肯德基|kfc|摩斯|mos\s*burger|星巴克|starbucks|吉野家|yoshinoya|subway|賽百味|必勝客|pizza\s*hut|達美樂|domino|漢堡王|burger\s*king|好市多|costco|家樂福|carrefour|ikea|宜家|uniqlo|優衣庫|zara|h&m|無印良品|muji|大創|daiso|松屋|すき家|sukiya|壽司郎|sushiro|藏壽司|くら寿司|元氣壽司|丸亀|marugame|一蘭|ichiran|uber\s*eats|foodpanda|nike|adidas|愛迪達|耐吉/i;
+function foreignNames(c){
+  const names=new Set([...arr(c?.competitors).map(x=>x.name),...arr(c?.positioning?.competitors).map(x=>x.name)].filter(Boolean));
+  return [...names].filter(n=>FOREIGN_RE.test(n)||/超商鮮食|連鎖便當|自助餐店?$|^(超商|便利商店|連鎖|一般)/.test(n));
+}
+function stripForeign(c,bad){
+  const ok=x=>!bad.includes(x.name);
+  if(c.competitors) c.competitors=arr(c.competitors).filter(ok);
+  if(c.positioning?.competitors) c.positioning.competitors=arr(c.positioning.competitors).filter(ok);
+  chartStatus(`已移除非台灣品牌：${bad.join('、')}`,true);
+}
+function actionList(){
+  const list=[]; let n=0;
+  [4,5,7].forEach(s=>arr(RESULT?.['p'+s]?.items).forEach(it=>acts(it.actions).forEach(a=>list.push({id:'a'+(++n),p:pKey(it.key),do:a.do}))));
+  return list;
+}
+
+let CHART_BUSY=false;
+async function genCharts(){
+  if(!RESULT?.p4) return chartStatus('請先完成 4P／5P／7P 分析',true);
+  if(CHART_BUSY) return;
+  CHART_BUSY=true; const btn=$('#btnCharts'); btn.disabled=true;
+  updateChartTabs(['radar','matrix','journey','gantt','position','compete','c4','persona']);
+  try{
+    const ACTS=actionList();
+    const comp=$('#competitors').value.trim();
+    const ctx={brand:RESULT.brand,summary:RESULT.summary,audience:RESULT.audience,facts:RESULT.facts,industry:$('#industry').value.trim()||undefined,
+      items:[4,5,7].flatMap(s=>arr(RESULT['p'+s]?.items).map(it=>({p:it.key,evidence:evs(it.evidence).slice(0,3)})))};
+    chartStatus('第 1 組：雷達圖、優先級、旅程、甘特…');
+    const c1=await callJSON(SYS_C1,`分析：\n${JSON.stringify(ctx)}\n\n建議清單：\n${JSON.stringify(ACTS.map(a=>({id:a.id,p:a.p,do:a.do})))}`,2800,'圖表資料 1/2',['scores']);
+    RESULT.charts={...(RESULT.charts||{}),...c1,actions:ACTS}; renderCharts(); updateChartTabs(['position','compete','c4','persona']);
+    chartStatus('第 2 組：定位圖、競品、4C、人物誌…');
+    const u2=(comp?`使用者提供的競品：${comp}\n`:'')+`本品牌所在產業：${ctx.industry||'依分析判斷'}\n分析：\n${JSON.stringify(ctx)}`;
+    let c2=await callJSON(SYS_C2,u2,2800,'圖表資料 2/2',['positioning']);
+    let bad=foreignNames(c2);
+    if(bad.length){
+      chartStatus(`偵測到非台灣品牌（${bad.join('、')}），要求替換中…`);
+      c2=await callJSON(SYS_C2,u2+`\n\n【注意】上次結果中的「${bad.join('」「')}」不是台灣品牌，請全部換成台灣本土品牌後重新輸出完整 JSON。`,2800,'圖表資料 2/2（替換競品）',['positioning']);
+      bad=foreignNames(c2);
+      if(bad.length) stripForeign(c2,bad);
+    }
+    RESULT.charts={...RESULT.charts,...c2}; renderCharts(); updateChartTabs();
+    chartStatus('圖表完成'); status('分析、示意圖與圖表皆已完成，可切換上方分頁檢視');
+  }catch(e){ chartStatus(e.message,true); }
+  finally{ CHART_BUSY=false; btn.disabled=false; PROGRESS=''; updateChartTabs(); }
+}
+function chartStatus(m,err=false){ const s=$('#chartStatus'); s.textContent=m; s.classList.toggle('err',err); }
+
+const CARDS=[
+  {id:'radar',  title:'7P 成熟度雷達圖', sub:'文件現況 vs 執行建議 90 天後', cc:'#2d5b8a', draw:drawRadar},
+  {id:'matrix', title:'建議優先級矩陣', sub:'影響力 × 執行難度，左上為速贏項目', cc:'#17896a', draw:drawMatrix},
+  {id:'journey',title:'顧客旅程地圖', sub:'各階段的接觸點、相關 P、痛點與機會', cc:'#d66a1c', draw:drawJourney, wide:true},
+  {id:'gantt',  title:'90 天執行甘特圖', sub:'依 P 著色，週次 1–13', cc:'#2d5b8a', draw:drawGantt, wide:true},
+  {id:'position',title:'定位知覺圖', sub:'本品牌與競品的相對位置', cc:'#8a5cc4', draw:drawPosition},
+  {id:'compete', title:'競品 7P 比較', sub:'本品牌現況 vs 台灣同業品牌', cc:'#c4437a', draw:drawCompete},
+  {id:'c4',     title:'4P ↔ 4C 對照', sub:'賣方觀點與顧客觀點的落差', cc:'#17896a', draw:drawC4},
+  {id:'persona',title:'目標客群人物誌', sub:'可按「生成頭像」用 Gemini 繪製', cc:'#d66a1c', draw:drawPersona, extra:'<button class="btn sm ai" id="btnAvatars">生成頭像</button>'}
+];
+function renderCharts(){
+  const C=RESULT?.charts; if(!C) return;
+  Object.values(CHARTS).forEach(c=>c.destroy()); for(const k in CHARTS) delete CHARTS[k];
+  CARDS.forEach(c=>{
+    $('#tp-'+c.id).innerHTML=`<article class="ccard" id="cc-${c.id}" style="--cc:${c.cc}">
+      <div class="chd"><div><h3>${c.title}</h3><p>${c.sub}</p></div><div class="acts">${c.extra||''}<button class="btn sm" data-png="${c.id}">下載 PNG</button></div></div>
+      <div id="cb-${c.id}"></div></article>`;
+    const box=$('#cb-'+c.id);
+    if(!window.Chart && ['radar','matrix','position','compete'].includes(c.id)){ box.innerHTML='<div class="cempty">Chart.js 未載入，請確認網路連線後重新整理</div>'; return; }
+    try{ if(!c.draw(C,box)) box.innerHTML='<div class="cempty">等待資料…</div>'; }
+    catch(err){ console.error(err); box.innerHTML=`<div class="cempty">此圖資料格式有誤：${esc(err.message)}</div>`; }
+  });
+  const av=$('#btnAvatars'); if(av) av.onclick=genAvatars;
+  const cur=document.querySelector('.tab.on')?.dataset.tab; if(CHARTS[cur]) requestAnimationFrame(()=>CHARTS[cur].resize());
+}
+
+/* --- 1 雷達 --- */
+function drawRadar(C,box){
+  const s=C.scores; if(!s||!window.Chart) return false;
+  const g=k=>s[k]||s[PZH[k]]||{};
+  box.innerHTML='<div class="cv"><canvas></canvas></div><ul class="notes">'+P7.map(k=>`<li>${chip(k)}<b>${clamp(g(k).now,0,5,0)} → ${clamp(g(k).target,0,5,0)}</b>　${esc(g(k).reason||'')}</li>`).join('')+'</ul>';
+  CHARTS.radar=new Chart(box.querySelector('canvas'),{type:'radar',
+    data:{labels:P7.map(k=>PZH[k]),datasets:[
+      {label:'文件現況',data:P7.map(k=>clamp(g(k).now,0,5,0)),borderColor:'#d24a4a',backgroundColor:'rgba(210,74,74,.16)',pointBackgroundColor:'#d24a4a'},
+      {label:'執行後目標',data:P7.map(k=>clamp(g(k).target,0,5,0)),borderColor:'#17896a',backgroundColor:'rgba(23,137,106,.14)',borderDash:[6,4],pointBackgroundColor:'#17896a'}]},
+    options:{maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,backdropColor:'transparent'},pointLabels:{font:{size:13,weight:'bold'}}}},plugins:{legend:{position:'bottom'}}}});
+  return true;
+}
+
+/* --- 2 優先級矩陣 --- */
+const quadPlugin={id:'quad',beforeDatasetsDraw(ch){
+  const {ctx,chartArea:a,scales:{x,y}}=ch; if(!a) return;
+  const mx=x.getPixelForValue(3), my=y.getPixelForValue(3);
+  const Q=[[a.left,a.top,mx,my,'rgba(23,137,106,.11)','速贏：優先做'],[mx,a.top,a.right,my,'rgba(42,100,173,.08)','重點投資'],
+           [a.left,my,mx,a.bottom,'rgba(140,150,165,.07)','順手做'],[mx,my,a.right,a.bottom,'rgba(210,74,74,.07)','暫緩']];
+  ctx.save(); Q.forEach(([x1,y1,x2,y2,c,t])=>{ ctx.fillStyle=c; ctx.fillRect(x1,y1,x2-x1,y2-y1); ctx.fillStyle='rgba(29,42,60,.55)'; ctx.font='bold 13px "Noto Sans TC",sans-serif'; ctx.fillText(t,x1+8,y1+18); }); ctx.restore();
+}};
+const numPlugin={id:'nums',afterDatasetsDraw(ch){
+  const ctx=ch.ctx; ctx.save(); ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+  ch.data.datasets.forEach((ds,i)=>{ const m=ch.getDatasetMeta(i); if(m.hidden) return; m.data.forEach((pt,j)=>{ const d=ds.data[j]; if(d&&d.n!=null) ctx.fillText(d.n,pt.x,pt.y); }); });
+  ctx.restore();
+}};
+function drawMatrix(C,box){
+  if(!C.priority||!window.Chart) return false;
+  const A=Object.fromEntries((C.actions||[]).map(a=>[a.id,a]));
+  const pts=arr(C.priority).map((p,i)=>({...A[p.id],...(p.do?{do:p.do,p:pKey(p.p)}:{}),id:p.id,impact:clamp(p.impact,1,5,3),effort:clamp(p.effort,1,5,3)})).filter(p=>p.do);
+  pts.forEach((p,i)=>p.n=i+1);
+  const seen={};  // 重疊點微調
+  pts.forEach(p=>{ const k=p.impact+'_'+p.effort; const c=seen[k]=(seen[k]||0)+1; const ang=c*2.1; p.x=p.effort+(c>1?Math.cos(ang)*0.18*Math.ceil(c/3):0); p.y=p.impact+(c>1?Math.sin(ang)*0.18*Math.ceil(c/3):0); });
+  const groups=[...new Set(pts.map(p=>p.p))];
+  const quad=p=>p.impact>=3&&p.effort<3?0:p.impact>=3?1:p.effort<3?2:3;
+  const QN=['速贏：優先做','重點投資','順手做','暫緩'], QC=['#17896a','#2a64ad','#6b7a8f','#d24a4a'];
+  box.innerHTML='<div class="cv"><canvas></canvas></div><div class="qlist">'+QN.map((n,qi)=>{
+      const L=pts.filter(p=>quad(p)===qi).sort((a,b)=>(b.impact-b.effort)-(a.impact-a.effort));
+      return `<div class="qbox" style="border-top:3px solid ${QC[qi]}"><h4 style="color:${QC[qi]}">${n}（${L.length}）</h4><ol>${L.map(p=>`<li><span class="no" style="background:${PCOL[p.p]||'#6b7a8f'}">${p.n}</span><span>${esc(p.do)}</span></li>`).join('')||'<li>—</li>'}</ol></div>`;
+    }).join('')+'</div>';
+  CHARTS.matrix=new Chart(box.querySelector('canvas'),{type:'scatter',
+    data:{datasets:groups.map(g=>({label:PZH[g]||g,data:pts.filter(p=>p.p===g).map(p=>({x:p.x,y:p.y,n:p.n,t:p.do})),backgroundColor:PCOL[g]||'#6b7a8f',pointRadius:11,pointHoverRadius:13}))},
+    options:{maintainAspectRatio:false,
+      scales:{x:{min:0.4,max:5.6,title:{display:true,text:'執行難度 →（人力、時間、成本）'},ticks:{stepSize:0.2,callback:v=>Math.abs(v-Math.round(v))<1e-6?Math.round(v):''},grid:{display:false}},y:{min:0.4,max:5.6,title:{display:true,text:'影響力 →'},ticks:{stepSize:0.2,callback:v=>Math.abs(v-Math.round(v))<1e-6?Math.round(v):''},grid:{display:false}}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.raw.n}. ${c.raw.t}`}}}},
+    plugins:[quadPlugin,numPlugin]});
+  return true;
+}
+
+/* --- 3 顧客旅程 --- */
+function drawJourney(C,box){
+  const J=arr(C.journey); if(!J.length) return false;
+  const n=J.length, W=1000, H=110, xs=J.map((_,i)=>(i+.5)*W/n), ys=J.map(s=>55-clamp(s.emotion,-2,2,0)*22);
+  let path=`M ${xs[0]} ${ys[0]}`; for(let i=1;i<n;i++){ const cx=(xs[i-1]+xs[i])/2; path+=` C ${cx} ${ys[i-1]}, ${cx} ${ys[i]}, ${xs[i]} ${ys[i]}`; }
+  const face=e=>['😟','🙁','😐','🙂','😀'][clamp(e,-2,2,0)+2];
+  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:110px;display:block">
+    <line x1="0" y1="55" x2="${W}" y2="55" stroke="#c3cfe0" stroke-dasharray="6 6"/>
+    <path d="${path}" fill="none" stroke="#d66a1c" stroke-width="3"/>
+    ${xs.map((x,i)=>`<circle cx="${x}" cy="${ys[i]}" r="7" fill="#fff" stroke="#d66a1c" stroke-width="3"/>`).join('')}</svg>
+    <div style="display:grid;grid-template-columns:repeat(${n},1fr);margin-top:-6px;text-align:center;font-size:18px">${J.map(s=>`<span>${face(s.emotion)}</span>`).join('')}</div>`;
+  const cols=`110px repeat(${n},minmax(150px,1fr))`;
+  const row=(h,cls,f)=>`<div class="rh">${h}</div>`+J.map(s=>`<div class="${cls}">${f(s)}</div>`).join('');
+  box.innerHTML=`<div class="jwrap"><div class="jgrid" style="grid-template-columns:${cols}">
+    <div class="rh"></div>${J.map(s=>`<div class="sh">${esc(s.stage)}</div>`).join('')}
+    <div class="rh">情緒曲線</div><div class="emo" style="grid-column:span ${n}">${svg}</div>
+    ${row('顧客行為','',s=>esc(s.action||''))}
+    ${row('接觸點','',s=>`<ul>${arr(s.touchpoints).map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`)}
+    ${row('相關 P','',s=>arr(s.ps).map(chip).join(''))}
+    ${row('痛點','pain',s=>esc(s.pain||''))}
+    ${row('機會','opp',s=>esc(s.opportunity||''))}
+  </div></div>`;
+  return true;
+}
+
+/* --- 4 甘特 --- */
+function drawGantt(C,box){
+  const G=arr(C.gantt).map(g=>{ const s=clamp(g.start,1,13,1), e=clamp(g.end,1,13,s); return {...g,p:pKey(g.p),s:Math.round(Math.min(s,e)),e:Math.round(Math.max(s,e))}; }).sort((a,b)=>a.s-b.s||a.e-b.e);
+  if(!G.length) return false;
+  const cols='220px repeat(13,1fr)';
+  let h=`<div class="gwrap"><div class="ggrid" style="grid-template-columns:${cols}">
+    <div class="ph" style="background:#4b5a72">階段</div><div class="ph" style="grid-column:span 4">第 1–30 天</div><div class="ph" style="grid-column:span 5;background:#264f79">第 31–60 天</div><div class="ph" style="grid-column:span 4">第 61–90 天</div>
+    <div class="gh">任務</div>${Array.from({length:13},(_,i)=>`<div class="gh">W${i+1}</div>`).join('')}`;
+  G.forEach((g,ri)=>{
+    const r=ri+3;
+    h+=`<div class="gl" style="grid-row:${r};grid-column:1">${chip(g.p)}<span class="t" title="${esc(g.task)}">${esc(g.task)}</span></div>`;
+    for(let w=1;w<=13;w++) h+=`<div class="gc" style="grid-row:${r};grid-column:${w+1}"></div>`;
+    h+=`<div class="bar" style="grid-row:${r};grid-column:${g.s+1} / ${g.e+2}"><i style="background:${PCOL[g.p]||'#6b7a8f'}" title="${esc(g.task)}">${esc(g.task)}</i></div>`;
+  });
+  box.innerHTML=h+'</div></div><div class="legend">'+[...new Set(G.map(g=>g.p))].map(chip).join('')+'</div>';
+  return true;
+}
+
+/* --- 5 定位圖 --- */
+const labelPlugin={id:'lbl',afterDatasetsDraw(ch){
+  const ctx=ch.ctx; ctx.save(); ctx.font='bold 12px "Noto Sans TC",sans-serif'; ctx.textBaseline='bottom';
+  ch.data.datasets.forEach((ds,i)=>{ const m=ch.getDatasetMeta(i); m.data.forEach((pt,j)=>{ const d=ds.data[j]; if(!d?.name) return; ctx.fillStyle=ds.self?'#c0392b':'#374151'; ctx.fillText(d.name,pt.x+10,pt.y-6); }); });
+  ctx.restore();
+}};
+const crossPlugin={id:'cross',beforeDatasetsDraw(ch){
+  const {ctx,chartArea:a,scales:{x,y}}=ch; const mx=x.getPixelForValue(5), my=y.getPixelForValue(5);
+  ctx.save(); ctx.strokeStyle='#9fb0c6'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(mx,a.top); ctx.lineTo(mx,a.bottom); ctx.moveTo(a.left,my); ctx.lineTo(a.right,my); ctx.stroke(); ctx.restore();
+}};
+function drawPosition(C,box){
+  const P=C.positioning; if(!P?.self||!window.Chart) return false;
+  const ax=P.x||{}, ay=P.y||{};
+  box.innerHTML='<div class="cv"><canvas></canvas></div><ul class="notes">'+arr(P.competitors).map(c=>`<li><b>${esc(c.name)}</b>　${esc(c.note||'')}</li>`).join('')+'</ul>';
+  CHARTS.position=new Chart(box.querySelector('canvas'),{type:'scatter',
+    data:{datasets:[
+      {label:'競品',data:arr(P.competitors).map(c=>({x:clamp(c.x,0,10,5),y:clamp(c.y,0,10,5),name:c.name})),backgroundColor:'#8a96a8',pointRadius:9},
+      {label:P.self.name||RESULT.brand||'本品牌',self:true,data:[{x:clamp(P.self.x,0,10,5),y:clamp(P.self.y,0,10,5),name:P.self.name||RESULT.brand}],backgroundColor:'#d24a4a',pointRadius:13,pointStyle:'star',borderColor:'#d24a4a',borderWidth:3}]},
+    options:{maintainAspectRatio:false,
+      scales:{x:{min:0,max:10,ticks:{display:false},grid:{display:false},title:{display:true,text:`← ${ax.low||'低'}　　${ax.label||'X'}　　${ax.high||'高'} →`,font:{weight:'bold'}}},
+              y:{min:0,max:10,ticks:{display:false},grid:{display:false},title:{display:true,text:`← ${ay.low||'低'}　　${ay.label||'Y'}　　${ay.high||'高'} →`,font:{weight:'bold'}}}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.raw.name}}}},
+    plugins:[crossPlugin,labelPlugin]});
+  return true;
+}
+
+/* --- 6 競品比較 --- */
+function drawCompete(C,box){
+  const CP=arr(C.competitors); if(!CP.length||!C.scores||!window.Chart) return false;
+  const g=(o,k)=>clamp((o||{})[k]??(o||{})[PZH[k]],0,5,0);
+  const self={label:RESULT.brand||'本品牌',data:P7.map(k=>clamp((C.scores[k]||{}).now,0,5,0)),borderColor:'#d24a4a',backgroundColor:'rgba(210,74,74,.18)',borderWidth:3,pointBackgroundColor:'#d24a4a'};
+  const ds=CP.map((c,i)=>({label:c.name,data:P7.map(k=>g(c.scores,k)),borderColor:COMP_COL[i%COMP_COL.length],backgroundColor:'transparent',borderWidth:2,borderDash:[5,3],pointBackgroundColor:COMP_COL[i%COMP_COL.length]}));
+  box.innerHTML='<div class="cv"><canvas></canvas></div><ul class="notes">'+CP.map((c,i)=>`<li><b style="color:${COMP_COL[i%COMP_COL.length]}">${esc(c.name)}</b>（${esc(c.type||'')}）${esc(c.note||'')}${c.tw?`<span class="twb">🇹🇼 ${esc(c.tw)}</span>`:''}</li>`).join('')+'</ul>';
+  CHARTS.compete=new Chart(box.querySelector('canvas'),{type:'radar',data:{labels:P7.map(k=>PZH[k]),datasets:[self,...ds]},
+    options:{maintainAspectRatio:false,scales:{r:{min:0,max:5,ticks:{stepSize:1,backdropColor:'transparent'},pointLabels:{font:{size:13,weight:'bold'}}}},plugins:{legend:{position:'bottom'}}}});
+  return true;
+}
+
+/* --- 7 4C --- */
+function drawC4(C,box){
+  const L=arr(C.c4); if(!L.length) return false;
+  box.innerHTML=L.map(r=>{ const k=pKey(r.p); return `<div class="c4row">
+    <div class="c4box c4p"><h4>${chip(k)} ${esc(PZH[k]||r.p)}｜賣方觀點</h4>${esc(r.seller||'')}</div>
+    <div class="c4arrow">⇄</div>
+    <div class="c4box c4c"><h4>${esc(r.c||'')}｜顧客觀點</h4>${esc(r.buyer||'')}</div>
+    ${r.gap?`<div class="c4gap"><b>落差與做法：</b>${esc(r.gap)}</div>`:''}</div>`; }).join('');
+  return true;
+}
+
+/* --- 8 人物誌 --- */
+function drawPersona(C,box){
+  const L=arr(C.personas); if(!L.length) return false;
+  box.innerHTML='<div class="pgrid">'+L.map((p,i)=>`<div class="persona">
+    <div class="ptop"><div class="avatar" id="av-${i}">${p.avatar?`<img src="${p.avatar}" alt="${esc(p.name)}">`:esc((p.name||'?').slice(0,1))}</div>
+      <div><h4>${esc(p.name||'')}</h4><div class="meta">${esc([p.age,p.job].filter(Boolean).join('・'))}</div><div class="meta">${esc(p.segment||'')}</div></div></div>
+    ${p.quote?`<div class="quote">「${esc(p.quote)}」</div>`:''}
+    <dl><dt>目標</dt><dd>${esc(p.goal||'')}</dd><dt>痛點</dt><dd>${esc(p.pain||'')}</dd>
+      <dt>常用管道</dt><dd>${arr(p.channels).map(esc).join('、')}</dd><dt>購買觸發</dt><dd>${esc(p.trigger||'')}</dd>
+      <dt>打動他的 P</dt><dd>${arr(p.ps).map(chip).join('')}</dd></dl></div>`).join('')+'</div>';
+  return true;
+}
+async function genAvatars(){
+  const L=arr(RESULT?.charts?.personas); if(!L.length) return;
+  const b=$('#btnAvatars'); b.disabled=true;
+  for(let i=0;i<L.length;i++){
+    const p=L[i], el=$('#av-'+i); if(el) el.innerHTML='<div class="spin"></div>';
+    chartStatus(`繪製人物頭像 ${i+1}/${L.length}…`);
+    try{
+      const {src}=await geminiImage(`Friendly flat illustration portrait, head and shoulders, of a Taiwanese ${p.age||''} ${p.job||''}. ${p.image_prompt||''} Soft pastel background, warm expression. No text, no letters.`,'1:1');
+      p.avatar=src; if(el) el.innerHTML=`<img src="${src}" alt="${esc(p.name)}">`;
+    }catch(e){ if(el) el.textContent=(p.name||'?').slice(0,1); chartStatus('頭像失敗：'+e.message,true); }
+  }
+  b.disabled=false; if(!$('#chartStatus').classList.contains('err')) chartStatus('人物頭像完成');
+}
+
+/* --- 下載 PNG --- */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-png]'); if(!b) return;
+  const id=b.dataset.png, card=$('#cc-'+id); if(!card) return;
+  if(!window.html2canvas){
+    const cv=card.querySelector('canvas'); if(cv){ const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download=`${RESULT?.brand||'行銷'}_${id}.png`; a.click(); }
+    return;
+  }
+  const acts=card.querySelector('.acts'); acts.style.visibility='hidden';
+  try{
+    const c=await html2canvas(card,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+    c.toBlob(bl=>save(bl,`${RESULT?.brand||'行銷'}_${CARDS.find(x=>x.id===id).title}.png`));
+  }finally{ acts.style.visibility=''; }
+});
+$('#btnCharts').onclick=genCharts;
+$('#btnImport').onclick=()=>$('#jsonFile').click();
+$('#jsonFile').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{
+    const j=JSON.parse(await f.text());
+    if(!j.p4) throw new Error('檔案缺少 p4，不是本工具的分析格式');
+    RESULT=j; render();
+    resetChartTabs(); showTab('ov');
+    if(RESULT.charts){ if(!RESULT.charts.actions) RESULT.charts.actions=actionList(); renderCharts(); updateChartTabs(); chartStatus('已匯入圖表資料'); }
+    else { chartStatus('此檔沒有圖表資料，可按「產生／更新圖表」'); }
+    collapseInput(true);
+    status(`已匯入 ${f.name}`);
+    if($('#gemKey').value.trim()) (async()=>{ for(const n of [4,5,7]) await drawImg(n); })();
+  }catch(err){ status('匯入失敗：'+err.message,true); }
+};
+
+</script>
+</body>
+</html>

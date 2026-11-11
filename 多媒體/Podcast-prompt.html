@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAST PROMPT — 語音摘要提示詞工具</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN TOKENS — DUAL THEME
+══════════════════════════════════════════ */
+:root{
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --f-display:'Playfair Display',serif;
+  --f-body:'DM Sans','Noto Sans TC',sans-serif;
+  --f-mono:'JetBrains Mono',monospace;
+}
+
+/* DARK THEME */
+[data-theme="dark"]{
+  --bg:       #0d1a12;
+  --bg-1:     #111f16;
+  --bg-2:     #172a1c;
+  --bg-3:     #223d2a;
+  --surface:  rgba(242,236,224,.05);
+  --surface-h:rgba(242,236,224,.08);
+  --bdr:      rgba(184,115,51,.14);
+  --bdr-s:    rgba(242,236,224,.07);
+  --bdr-a:    rgba(184,115,51,.38);
+  --t1:       #f2ece0;
+  --t2:       rgba(242,236,224,.7);
+  --t3:       rgba(242,236,224,.42);
+  --t4:       rgba(242,236,224,.22);
+  --ac:       #b87333;
+  --ac-lt:    #d4956a;
+  --ac-dk:    #8a5520;
+  --ac-10:    rgba(184,115,51,.1);
+  --ac-20:    rgba(184,115,51,.2);
+  --ac-05:    rgba(184,115,51,.05);
+  --jade:     #6a9e78;
+  --jade-lt:  #8abf96;
+  --jade-10:  rgba(106,158,120,.1);
+  --rose:     #9e6060;
+  --rose-lt:  #c08080;
+  --rose-10:  rgba(158,96,96,.1);
+  --lav:      #7a6898;
+  --lav-lt:   #9a88b8;
+  --lav-10:   rgba(122,104,152,.1);
+  --header-bg:rgba(13,26,18,.92);
+  --card-bg:  rgba(17,31,22,.8);
+  --input-bg: rgba(242,236,224,.05);
+  --shadow:   0 4px 24px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 48px rgba(0,0,0,.5);
+  --output-bg:#0a1510;
+  --output-bdr:rgba(184,115,51,.18);
+  --thumb-bg: rgba(184,115,51,.25);
+}
+
+/* LIGHT THEME */
+[data-theme="light"]{
+  --bg:       #f5f0e8;
+  --bg-1:     #faf7f2;
+  --bg-2:     #ffffff;
+  --bg-3:     #efe8db;
+  --surface:  rgba(184,115,51,.05);
+  --surface-h:rgba(184,115,51,.09);
+  --bdr:      rgba(150,100,45,.16);
+  --bdr-s:    rgba(150,100,45,.12);
+  --bdr-a:    rgba(150,100,45,.4);
+  --t1:       #2a1f0f;
+  --t2:       #5a3e20;
+  --t3:       #8a6840;
+  --t4:       #b8966a;
+  --ac:       #9a5a1a;
+  --ac-lt:    #c07830;
+  --ac-dk:    #7a4010;
+  --ac-10:    rgba(154,90,26,.1);
+  --ac-20:    rgba(154,90,26,.18);
+  --ac-05:    rgba(154,90,26,.05);
+  --jade:     #3a7a50;
+  --jade-lt:  #5a9a6a;
+  --jade-10:  rgba(58,122,80,.1);
+  --rose:     #8a4040;
+  --rose-lt:  #b06060;
+  --rose-10:  rgba(138,64,64,.1);
+  --lav:      #604878;
+  --lav-lt:   #8068a0;
+  --lav-10:   rgba(96,72,120,.1);
+  --header-bg:rgba(245,240,232,.95);
+  --card-bg:  rgba(255,255,255,.85);
+  --input-bg: rgba(255,255,255,.9);
+  --shadow:   0 2px 16px rgba(150,100,40,.1);
+  --shadow-lg:0 8px 40px rgba(150,100,40,.14);
+  --output-bg:#fff8f0;
+  --output-bdr:rgba(154,90,26,.18);
+  --thumb-bg: rgba(154,90,26,.2);
+}
+
+/* ══════════════════════════════════════════
+   GLOBAL
+══════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--f-body);
+  background:var(--bg);
+  color:var(--t1);
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  transition:background .4s var(--ease),color .4s var(--ease);
+}
+
+[data-theme="dark"] body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 55% at 0% 0%,rgba(106,158,120,.07) 0%,transparent 55%),
+    radial-gradient(ellipse 55% 45% at 100% 100%,rgba(184,115,51,.05) 0%,transparent 55%);
+}
+[data-theme="light"] body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 55% at 10% 5%,rgba(184,115,51,.06) 0%,transparent 55%),
+    radial-gradient(ellipse 55% 45% at 90% 95%,rgba(106,158,120,.05) 0%,transparent 55%);
+}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--thumb-bg);border-radius:2px}
+
+/* ══════════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:var(--header-bg);
+  backdrop-filter:blur(28px);
+  border-bottom:1px solid var(--bdr-s);
+  padding:0 28px;height:60px;
+  display:flex;align-items:center;gap:0;
+  transition:background .4s var(--ease),border-color .4s;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:13px}
+.brand-mark{
+  width:36px;height:36px;border-radius:3px;
+  background:linear-gradient(135deg,var(--bg-2),var(--bg-3));
+  border:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;position:relative;overflow:hidden;
+  transition:all .4s;
+}
+.brand-mark::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--ac-10),transparent);
+}
+.brand-name{
+  font-family:var(--f-display);font-size:18px;font-weight:500;
+  color:var(--t1);letter-spacing:.1em;
+  transition:color .4s;
+}
+.brand-sep{width:1px;height:22px;background:var(--bdr-s);margin:0 14px;transition:background .4s}
+.brand-desc{font-size:9.5px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;transition:color .4s}
+.topbar-gap{flex:1}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+
+/* THEME TOGGLE */
+.theme-toggle{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--bdr-s);
+  cursor:pointer;transition:all .25s;
+  font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.06em;
+}
+.theme-toggle:hover{border-color:var(--bdr-a);color:var(--t2);background:var(--surface-h)}
+.theme-icon{font-size:13px;transition:transform .4s var(--ease)}
+[data-theme="light"] .theme-icon{transform:rotate(180deg)}
+
+/* PILL TAGS */
+.tpill{
+  padding:4px 11px;border-radius:14px;border:1px solid var(--bdr-s);
+  font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--t4);transition:all .4s;
+}
+.tpill-ac{border-color:var(--ac-20);color:var(--ac)}
+
+/* ══════════════════════════════════════════
+   MAIN
+══════════════════════════════════════════ */
+.main{
+  position:relative;z-index:1;
+  max-width:1180px;margin:0 auto;
+  padding:40px 28px 100px;
+}
+
+/* PAGE HERO */
+.hero{
+  display:grid;grid-template-columns:1fr auto;
+  align-items:end;gap:24px;
+  padding:0 0 36px;
+  border-bottom:1px solid var(--bdr-s);
+  margin-bottom:36px;
+}
+.hero-eyebrow{
+  font-size:9px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ac);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::before{content:'';display:inline-block;width:28px;height:1px;background:var(--ac-20)}
+.hero-h1{
+  font-family:var(--f-display);
+  font-size:clamp(32px,4.5vw,54px);font-weight:400;
+  color:var(--t1);line-height:1.12;letter-spacing:-.01em;
+  transition:color .4s;
+}
+.hero-h1 em{font-style:italic;color:var(--ac)}
+.hero-desc{font-size:13px;font-weight:300;color:var(--t3);margin-top:12px;max-width:540px;line-height:1.75;transition:color .4s}
+.hero-aside{text-align:right}
+.hero-step-count{
+  font-family:var(--f-display);font-size:88px;font-weight:300;
+  line-height:1;color:var(--ac-10);letter-spacing:-.03em;
+  transition:color .4s;user-select:none;
+}
+
+/* ══════════════════════════════════════════
+   TWO-COL LAYOUT
+══════════════════════════════════════════ */
+.layout{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start}
+@media(max-width:980px){.layout{grid-template-columns:1fr}}
+
+/* ══════════════════════════════════════════
+   STEP CARDS
+══════════════════════════════════════════ */
+.steps{display:flex;flex-direction:column;gap:0}
+
+.step-card{
+  display:grid;grid-template-columns:52px 1fr;
+  gap:0 20px;
+  padding:24px 0;
+  border-bottom:1px solid var(--bdr-s);
+  animation:riseIn .5s var(--ease) both;
+  transition:border-color .4s;
+}
+.step-card:first-child{border-top:1px solid var(--bdr-s)}
+.step-card:nth-child(1){animation-delay:.04s}
+.step-card:nth-child(2){animation-delay:.08s}
+.step-card:nth-child(3){animation-delay:.12s}
+.step-card:nth-child(4){animation-delay:.16s}
+.step-card:nth-child(5){animation-delay:.20s}
+.step-card:nth-child(6){animation-delay:.24s}
+.step-card:nth-child(7){animation-delay:.28s}
+.step-card:nth-child(8){animation-delay:.32s}
+
+@keyframes riseIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.step-num-wrap{
+  display:flex;flex-direction:column;align-items:center;padding-top:3px;
+}
+.step-num{
+  font-family:var(--f-display);font-size:11px;font-weight:400;
+  color:var(--ac);letter-spacing:.08em;opacity:.65;
+}
+.step-vline{
+  flex:1;width:1px;margin-top:10px;min-height:20px;
+  background:linear-gradient(180deg,var(--bdr-a),transparent);
+}
+.step-card:last-child .step-vline{display:none}
+
+.step-content{}
+.step-eyebrow{
+  font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--t4);margin-bottom:6px;
+  transition:color .4s;
+}
+.step-title{
+  font-family:var(--f-display);font-size:20px;font-weight:400;
+  color:var(--t1);margin-bottom:16px;letter-spacing:.01em;line-height:1.3;
+  transition:color .4s;
+}
+
+/* ══════════════════════════════════════════
+   FORM CONTROLS
+══════════════════════════════════════════ */
+.fg{margin-bottom:13px}
+.fl{
+  display:block;font-size:9.5px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:6px;
+  transition:color .4s;
+}
+.fi,.fs,.ft{
+  width:100%;padding:10px 13px;
+  background:var(--input-bg);
+  border:1px solid var(--bdr-s);border-radius:3px;
+  color:var(--t1);font-family:var(--f-body);font-size:12.5px;font-weight:400;
+  transition:all .22s;
+}
+.fi::placeholder,.ft::placeholder{color:var(--t4)}
+.fi:hover,.ft:hover{border-color:var(--bdr)}
+.fi:focus,.fs:focus,.ft:focus{
+  outline:none;border-color:var(--ac);
+  background:var(--ac-05);
+  box-shadow:0 0 0 1px var(--ac-10);
+}
+.fs{
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a6840' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;
+}
+[data-theme="dark"] .fs{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(242,236,224,0.3)' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+}
+.ft{resize:vertical;min-height:62px;line-height:1.65}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+@media(max-width:600px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+
+/* ══════════════════════════════════════════
+   CHIPS
+══════════════════════════════════════════ */
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{
+  padding:4px 11px;border-radius:18px;
+  background:var(--surface);border:1px solid var(--bdr-s);
+  font-size:9.5px;font-weight:400;color:var(--t3);
+  cursor:pointer;transition:all .18s;font-family:var(--f-body);
+}
+.chip:hover{border-color:var(--bdr-a);color:var(--ac);background:var(--ac-05)}
+
+/* SEGMENT SELECTOR */
+.seg{display:flex;background:var(--surface);border:1px solid var(--bdr-s);border-radius:4px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg-btn{
+  flex:1;padding:7px 10px;border:none;border-radius:3px;
+  background:transparent;color:var(--t3);
+  font-family:var(--f-body);font-size:10px;font-weight:500;
+  cursor:pointer;transition:all .2s;text-align:center;white-space:nowrap;min-width:70px;
+}
+.seg-btn:hover{color:var(--t2)}
+.seg-btn.sel{
+  background:var(--bg-2);color:var(--ac);
+  box-shadow:var(--shadow);
+}
+[data-theme="dark"] .seg-btn.sel{background:var(--bg-3)}
+
+/* EMOTION GRID */
+.emo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+@media(max-width:600px){.emo-grid{grid-template-columns:1fr 1fr}}
+.emo-btn{
+  padding:12px 6px;background:var(--surface);border:1px solid var(--bdr-s);border-radius:5px;
+  text-align:center;cursor:pointer;transition:all .22s;
+  font-family:var(--f-body);position:relative;overflow:hidden;
+}
+.emo-btn:hover{border-color:var(--bdr)}
+.emo-btn.sel{
+  border-color:var(--ac);
+  background:var(--ac-05);
+  box-shadow:0 0 0 1px var(--ac-10);
+}
+.emo-icon{font-size:14px;display:block;margin-bottom:5px}
+.emo-name{font-size:9.5px;font-weight:600;color:var(--t1);letter-spacing:.03em}
+.emo-desc{font-size:8px;color:var(--t3);line-height:1.4;margin-top:2px}
+
+/* HOST GRID */
+.host-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.host-grid{grid-template-columns:1fr}}
+.host-panel{
+  background:var(--surface);border:1px solid var(--bdr-s);
+  border-radius:5px;padding:14px;position:relative;overflow:hidden;
+  transition:border-color .4s,background .4s;
+}
+.host-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.host-a::before{background:linear-gradient(90deg,transparent,var(--ac-20),transparent)}
+.host-b::before{background:linear-gradient(90deg,transparent,var(--lav-10),transparent)}
+.host-label{
+  font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  margin-bottom:11px;display:flex;align-items:center;gap:7px;
+}
+.host-a .host-label{color:var(--ac)}
+.host-b .host-label{color:var(--lav)}
+.host-badge{
+  display:inline-flex;padding:1px 7px;border-radius:8px;font-size:8px;
+  letter-spacing:.08em;margin-left:auto;
+}
+.host-a .host-badge{background:var(--ac-10);color:var(--ac-lt);border:1px solid var(--ac-20)}
+.host-b .host-badge{background:var(--lav-10);color:var(--lav-lt);border:1px solid rgba(122,104,152,.2)}
+
+/* KEYWORDS */
+.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;min-height:22px;margin-bottom:8px}
+.ktag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:3px;
+  font-size:10px;font-weight:400;letter-spacing:.02em;
+  animation:tagPop .2s var(--ease);
+}
+@keyframes tagPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.ktag-kw{background:var(--jade-10);border:1px solid rgba(106,158,120,.2);color:var(--jade-lt)}
+.ktag-fbd{background:var(--rose-10);border:1px solid rgba(158,96,96,.2);color:var(--rose-lt)}
+.ktag-del{cursor:pointer;opacity:.45;font-size:10px;transition:opacity .15s;line-height:1}
+.ktag-del:hover{opacity:1}
+.tag-row{display:flex;gap:7px}
+.tag-row .fi{flex:1}
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border:none;border-radius:3px;
+  font-family:var(--f-body);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .2s;letter-spacing:.05em;white-space:nowrap;
+}
+.btn-ghost{
+  background:transparent;color:var(--t3);border:1px solid var(--bdr-s);
+}
+.btn-ghost:hover{border-color:var(--bdr-a);color:var(--t2);background:var(--surface-h)}
+.btn-ac{
+  background:linear-gradient(135deg,var(--ac-dk),var(--ac));
+  color:#fff;font-weight:600;
+  box-shadow:0 3px 14px var(--ac-10);
+}
+.btn-ac:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--ac-20)}
+.btn-danger{background:var(--rose-10);color:var(--rose-lt);border:1px solid rgba(158,96,96,.15)}
+.btn-danger:hover{background:rgba(158,96,96,.16)}
+.btn-amber{background:var(--ac-10);color:var(--ac-lt);border:1px solid var(--ac-20)}
+.btn-amber:hover{background:var(--ac-20)}
+.btn-primary{
+  padding:13px 36px;font-size:13px;font-weight:600;letter-spacing:.06em;
+  background:var(--t1);color:var(--bg);border-radius:3px;
+  box-shadow:var(--shadow-lg);
+  transition:all .22s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.35),0 0 0 1px var(--bdr-a)}
+.btn-sm{padding:5px 12px;font-size:10px}
+.btn-xs{padding:3px 9px;font-size:9px;border-radius:2px}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+
+/* ══════════════════════════════════════════
+   RIGHT PANEL
+══════════════════════════════════════════ */
+.right-panel{
+  position:sticky;top:72px;
+  display:flex;flex-direction:column;gap:16px;
+  max-height:calc(100vh - 90px);overflow-y:auto;padding-right:2px;
+}
+.right-panel::-webkit-scrollbar{width:0}
+@media(max-width:980px){.right-panel{position:static;max-height:none}}
+
+/* PANEL SECTION HEADING */
+.pnl-heading{
+  font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--t4);display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  transition:color .4s;
+}
+.pnl-heading::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bdr-s),transparent)}
+
+/* OUTPUT */
+.output-card{
+  background:var(--output-bg);border:1px solid var(--output-bdr);
+  border-radius:6px;overflow:hidden;
+  transition:all .3s;box-shadow:var(--shadow);
+}
+.output-card.active{border-color:var(--bdr-a)}
+.output-card.warn{border-color:rgba(200,165,30,.4)}
+.output-card.danger{border-color:var(--rose);border-color:rgba(158,96,96,.5)}
+
+.output-header{
+  padding:10px 14px;border-bottom:1px solid var(--bdr-s);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);
+}
+.output-title{font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
+.output-badge{
+  font-family:var(--f-mono);font-size:9px;
+  padding:2px 8px;border-radius:10px;
+  transition:all .3s;
+}
+.ob-ok{background:var(--jade-10);color:var(--jade-lt)}
+.ob-warn{background:rgba(200,165,30,.1);color:#c8a51e;animation:blink 2s infinite}
+.ob-danger{background:var(--rose-10);color:var(--rose-lt);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+
+.output-ta{
+  width:100%;min-height:280px;
+  background:transparent;border:none;
+  padding:16px;
+  color:var(--t1);font-family:var(--f-mono);font-size:11px;
+  line-height:1.9;resize:vertical;white-space:pre-wrap;word-break:break-all;
+  transition:color .4s;
+}
+.output-ta:focus{outline:none}
+
+.output-empty{
+  min-height:220px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  padding:32px 20px;
+}
+.empty-glyph{
+  font-family:var(--f-display);font-size:52px;font-weight:300;
+  color:var(--ac-10);line-height:1;letter-spacing:-.02em;
+  transition:color .4s;
+}
+.empty-text{font-size:11px;font-weight:300;color:var(--t4);letter-spacing:.06em;text-align:center;transition:color .4s}
+
+/* METER */
+.meter-wrap{padding:10px 14px;border-top:1px solid var(--bdr-s);background:var(--surface)}
+.meter-track{height:2px;background:var(--bdr-s);border-radius:1px;overflow:hidden;margin-bottom:7px}
+.meter-fill{height:100%;border-radius:1px;transition:width .4s var(--ease),background .3s;width:0%}
+.mf-ok{background:linear-gradient(90deg,var(--jade),var(--jade-lt))}
+.mf-warn{background:linear-gradient(90deg,#c8a51e,#e8c53e)}
+.mf-danger{background:linear-gradient(90deg,var(--rose),var(--rose-lt))}
+.meter-info{display:flex;justify-content:space-between;align-items:center}
+.meter-count{font-family:var(--f-mono);font-size:10px;transition:color .3s}
+.mc-ok{color:var(--jade-lt)}.mc-warn{color:#c8a51e}.mc-danger{color:var(--rose-lt)}
+.meter-lim{font-size:9px;color:var(--t4);letter-spacing:.06em}
+
+/* OUTPUT ACTIONS */
+.output-actions{
+  display:flex;gap:6px;padding:10px 14px;border-top:1px solid var(--bdr-s);
+  background:var(--surface);flex-wrap:wrap;justify-content:flex-end;
+}
+
+/* COMPRESS */
+.compress-card{
+  background:var(--surface);border:1px solid var(--bdr);
+  border-radius:6px;padding:14px;
+  animation:riseIn .3s var(--ease);
+}
+.compress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.compress-label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ac);opacity:.8}
+.compress-badge{
+  font-family:var(--f-mono);font-size:10px;
+  padding:2px 8px;background:var(--ac-10);border-radius:3px;color:var(--ac-lt);
+}
+.compress-ta{
+  width:100%;min-height:160px;
+  background:var(--input-bg);border:1px solid var(--bdr-s);
+  border-radius:3px;padding:12px;
+  color:var(--t1);font-family:var(--f-mono);font-size:11px;
+  line-height:1.85;resize:vertical;white-space:pre-wrap;word-break:break-all;
+}
+.compress-ta:focus{outline:none}
+
+/* TEMPLATE LIST */
+.tpl-list{display:flex;flex-direction:column;gap:2px}
+.tpl-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:3px;cursor:pointer;
+  transition:all .18s;border:1px solid transparent;
+  position:relative;
+}
+.tpl-item:hover{background:var(--surface-h);border-color:var(--bdr-s)}
+.tpl-item::after{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:2px;height:0;background:var(--ac);border-radius:1px;transition:height .2s;
+}
+.tpl-item:hover::after{height:55%}
+.tpl-item.special::after{background:var(--ac-lt)}
+.tpl-icon{font-size:16px;flex-shrink:0;width:22px;text-align:center}
+.tpl-name{font-size:11.5px;font-weight:400;color:var(--t2);letter-spacing:.01em;transition:color .2s}
+.tpl-item:hover .tpl-name{color:var(--t1)}
+.tpl-desc{font-size:9px;color:var(--t4);margin-top:1px}
+.tpl-arr{font-size:10px;color:var(--t4);margin-left:auto;transition:transform .18s,color .18s}
+.tpl-item:hover .tpl-arr{transform:translateX(3px);color:var(--t3)}
+.tpl-sep{
+  font-size:8.5px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--t4);padding:12px 2px 5px;border-top:1px solid var(--bdr-s);margin-top:6px;
+}
+.tpl-sep.sp{color:var(--ac);opacity:.65}
+
+/* INFO */
+.info-card{
+  background:var(--surface);border:1px solid var(--bdr-s);
+  border-radius:6px;padding:16px;
+  font-size:11px;color:var(--t3);line-height:1.9;font-weight:300;
+  transition:all .4s;
+}
+.info-card ol{list-style:none;counter-reset:s}
+.info-card ol li{counter-increment:s;display:flex;gap:10px;padding:1px 0}
+.info-card ol li::before{
+  content:counter(s);font-family:var(--f-mono);font-size:9px;
+  color:var(--ac);opacity:.55;flex-shrink:0;width:12px;padding-top:2px;
+}
+.info-tip{margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr-s);font-size:10px;color:var(--t4);display:flex;gap:7px;align-items:flex-start}
+.tip-dot{width:4px;height:4px;border-radius:50%;background:var(--ac);opacity:.4;flex-shrink:0;margin-top:4px}
+
+/* ══════════════════════════════════════════
+   ACTION BAR
+══════════════════════════════════════════ */
+.action-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--header-bg);backdrop-filter:blur(28px);
+  border-top:1px solid var(--bdr-s);
+  padding:12px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:0 -4px 24px rgba(0,0,0,.2);
+  transition:background .4s var(--ease),border-color .4s;
+}
+.status-row{display:flex;align-items:center;gap:9px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--jade);animation:glow 2.5s infinite}
+@keyframes glow{0%,100%{opacity:.6;box-shadow:0 0 0 0 rgba(106,158,120,0)}50%{opacity:1;box-shadow:0 0 8px 3px rgba(106,158,120,.2)}}
+.status-text{font-size:10px;color:var(--t4);letter-spacing:.07em}
+.action-right{display:flex;gap:8px;align-items:center}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:var(--bg-2);border:1px solid var(--bdr);border-radius:3px;
+  padding:10px 20px;color:var(--t2);
+  font-size:11px;font-weight:400;letter-spacing:.04em;
+  z-index:500;opacity:0;transition:all .25s var(--ease);
+  pointer-events:none;white-space:nowrap;
+  box-shadow:var(--shadow-lg);backdrop-filter:blur(20px);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══════════════════════════════════════════
+   MISC
+══════════════════════════════════════════ */
+.dv{height:1px;background:linear-gradient(90deg,transparent,var(--bdr-s),transparent);margin:14px 0}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🎙</div>
+    <span class="brand-name">CAST</span>
+    <span class="brand-sep"></span>
+    <span class="brand-desc">語音摘要提示詞產生器</span>
+  </div>
+  <div class="topbar-gap"></div>
+  <div class="topbar-actions">
+    <span class="tpill tpill-ac">500字元壓縮</span>
+    <span class="tpill">八字·姓名·股市</span>
+    <button class="theme-toggle" onclick="toggleTheme()" title="切換主題">
+      <span class="theme-icon" id="themeIcon">☀️</span>
+      <span id="themeLabel">淺色</span>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">Audio Overview Prompt Builder</div>
+      <h1 class="hero-h1">填入設定，產生<br><em>語音摘要</em>提示詞</h1>
+      <p class="hero-desc">設定主題與受眾、設計主持人性格、選擇情緒曲線，一鍵產生可直接貼入 NotebookLM、Claude 或 ChatGPT 的完整提示詞。</p>
+    </div>
+    <div class="hero-aside">
+      <div class="hero-step-count">08</div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT STEPS -->
+    <div class="steps">
+
+      <!-- 01 主題 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">01</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Topic</div>
+          <div class="step-title">分析主題</div>
+          <div class="fg">
+            <label class="fl">主題名稱</label>
+            <input type="text" class="fi" id="audTopic" placeholder="例：2026 台灣 AI 產業就業機會分析">
+          </div>
+          <div class="chips">
+            <button class="chip" onclick="set('audTopic','AI 產業趨勢與就業機會分析')">🤖 AI 趨勢</button>
+            <button class="chip" onclick="set('audTopic','2026 數位轉型企業策略分析')">🔄 數位轉型</button>
+            <button class="chip" onclick="set('audTopic','創業 vs 就業：職涯選擇分析')">🚀 創業</button>
+            <button class="chip" onclick="set('audTopic','ESG 永續發展與企業競爭力')">🌱 ESG</button>
+            <button class="chip" onclick="set('audTopic','個人品牌經營與自媒體變現策略')">📱 自媒體</button>
+            <button class="chip" onclick="set('audTopic','台股籌碼面分析與操作策略')">📊 股市解盤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 聽眾 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">02</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Audience</div>
+          <div class="step-title">目標聽眾</div>
+          <label class="fl">聽眾類型（影響術語密度與解釋深度）</label>
+          <div class="seg" id="audSeg">
+            <button class="seg-btn sel" data-val="學生/初學者" onclick="selSeg(this,'audSeg','audienceVal')">🎓 初學者</button>
+            <button class="seg-btn" data-val="一般大眾" onclick="selSeg(this,'audSeg','audienceVal')">👤 一般大眾</button>
+            <button class="seg-btn" data-val="專業人士" onclick="selSeg(this,'audSeg','audienceVal')">💼 專業人士</button>
+            <button class="seg-btn" data-val="中高階主管" onclick="selSeg(this,'audSeg','audienceVal')">🏢 主管</button>
+            <button class="seg-btn" data-val="投資人/決策者" onclick="selSeg(this,'audSeg','audienceVal')">📊 投資人</button>
+          </div>
+          <input type="hidden" id="audienceVal" value="學生/初學者">
+        </div>
+      </div>
+
+      <!-- 03 情緒曲線 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">03</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Rhythm</div>
+          <div class="step-title">情緒節奏曲線</div>
+          <label class="fl">設定全集節目的情感走向</label>
+          <div class="emo-grid">
+            <button class="emo-btn sel" data-desc="開場高亢 → 中段沉澱 → 結尾振奮" onclick="selEmo(this)">
+              <span class="emo-icon">📈📉📈</span>
+              <div class="emo-name">W 型起伏</div>
+              <div class="emo-desc">標準，最受歡迎</div>
+            </button>
+            <button class="emo-btn" data-desc="平靜開場 → 逐漸升溫 → 高潮結尾" onclick="selEmo(this)">
+              <span class="emo-icon">📈📈🔝</span>
+              <div class="emo-name">漸強式</div>
+              <div class="emo-desc">越聽越興奮</div>
+            </button>
+            <button class="emo-btn" data-desc="強勢開場 → 深度討論 → 平靜收尾" onclick="selEmo(this)">
+              <span class="emo-icon">🔝📉🌙</span>
+              <div class="emo-name">先高後穩</div>
+              <div class="emo-desc">嚴肅知識型</div>
+            </button>
+            <button class="emo-btn" data-desc="多次高低起伏，保持聽眾注意力" onclick="selEmo(this)">
+              <span class="emo-icon">🎢🎢🎢</span>
+              <div class="emo-name">雲霄飛車</div>
+              <div class="emo-desc">辯論激烈型</div>
+            </button>
+          </div>
+          <input type="hidden" id="emoCurveDesc" value="開場高亢 → 中段沉澱 → 結尾振奮">
+        </div>
+      </div>
+
+      <!-- 04 主持人 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">04</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Hosts</div>
+          <div class="step-title">主持人設定</div>
+          <div class="host-grid">
+            <div class="host-panel host-a">
+              <div class="host-label">主持人 A <span class="host-badge">正方 · 樂觀</span></div>
+              <div class="fg"><label class="fl">姓名</label><input type="text" class="fi" id="hostAName" value="小安"></div>
+              <div class="g2">
+                <div class="fg" style="margin-bottom:0"><label class="fl">性別</label><select class="fs" id="hostAGender"><option value="男">男</option><option value="女">女</option></select></div>
+              </div>
+              <div class="fg" style="margin-top:10px"><label class="fl">語氣風格</label><input type="text" class="fi" id="hostATone" value="聲音磁性、穩重，有點神祕感"></div>
+              <div class="fg" style="margin-bottom:0"><label class="fl">人設 / 專長</label><textarea class="ft" id="hostASkill" rows="2">擅長從產業趨勢、案例分析與樂觀視角解讀議題，善於用比喻讓複雜概念變得易懂</textarea></div>
+            </div>
+            <div class="host-panel host-b">
+              <div class="host-label">主持人 B <span class="host-badge">反方 · 質疑</span></div>
+              <div class="fg"><label class="fl">姓名</label><input type="text" class="fi" id="hostBName" value="小北"></div>
+              <div class="g2">
+                <div class="fg" style="margin-bottom:0"><label class="fl">性別</label><select class="fs" id="hostBGender"><option value="男">男</option><option value="女" selected>女</option></select></div>
+              </div>
+              <div class="fg" style="margin-top:10px"><label class="fl">語氣風格</label><input type="text" class="fi" id="hostBTone" value="活潑好奇，常追問「真的嗎？」「有數據嗎？」"></div>
+              <div class="fg" style="margin-bottom:0"><label class="fl">人設 / 專長</label><textarea class="ft" id="hostBSkill" rows="2">擅長引用產業報告、實際企業案例，從 KPI、ROI 等指標提出反思與質疑</textarea></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 節目設定 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">05</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Settings</div>
+          <div class="step-title">節目設定</div>
+          <div class="g3">
+            <div class="fg" style="margin-bottom:0"><label class="fl">自我介紹</label>
+              <select class="fs" id="audIntro"><option value="full">完整自介</option><option value="brief">簡短自介</option><option value="none">不需要</option></select></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">節目長度</label>
+              <select class="fs" id="audLength"><option value="短">短 3-5 分</option><option value="中" selected>中 8-12 分</option><option value="長">長 15-20 分</option></select></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">互動風格</label>
+              <select class="fs" id="audStyle">
+                <option value="輕鬆對談" selected>輕鬆對談</option>
+                <option value="辯論交鋒">辯論交鋒</option>
+                <option value="訪談式">訪談式</option>
+                <option value="說書式">說書式</option>
+              </select></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 焦點關鍵字 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">06</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Keywords</div>
+          <div class="step-title">焦點關鍵字</div>
+          <label class="fl" style="margin-bottom:8px">節目中必須提及的詞彙或數據</label>
+          <div class="tag-cloud" id="kwTags"></div>
+          <div class="tag-row">
+            <input type="text" class="fi" id="kwIn" placeholder="輸入後按 Enter" onkeydown="if(event.key==='Enter'){addTag(this.value,'kw');this.value=''}">
+            <button class="btn btn-ac btn-sm" onclick="addTag($('kwIn').value,'kw');$('kwIn').value=''">＋</button>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <button class="chip" onclick="addTag('ChatGPT','kw')">ChatGPT</button>
+            <button class="chip" onclick="addTag('ROI','kw')">ROI</button>
+            <button class="chip" onclick="addTag('2026年','kw')">2026年</button>
+            <button class="chip" onclick="addTag('AI應用','kw')">AI 應用</button>
+            <button class="chip" onclick="addTag('八字五行','kw')">八字五行</button>
+            <button class="chip" onclick="addTag('籌碼面','kw')">籌碼面</button>
+            <button class="chip" onclick="addTag('三才五格','kw')">三才五格</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 禁止提及 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">07</span><div class="step-vline"></div></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Restrictions</div>
+          <div class="step-title">禁止提及</div>
+          <label class="fl" style="margin-bottom:8px">節目中不得出現的主題或詞彙</label>
+          <div class="tag-cloud" id="fbdTags"></div>
+          <div class="tag-row">
+            <input type="text" class="fi" id="fbdIn" placeholder="例：競品名稱、政治立場" onkeydown="if(event.key==='Enter'){addTag(this.value,'fbd');this.value=''}">
+            <button class="btn btn-danger btn-sm" onclick="addTag($('fbdIn').value,'fbd');$('fbdIn').value=''">＋</button>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <button class="chip" onclick="addTag('不提競品名稱','fbd')">🚫 競品</button>
+            <button class="chip" onclick="addTag('不討論政治立場','fbd')">🚫 政治</button>
+            <button class="chip" onclick="addTag('不提具體股票代號','fbd')">🚫 股票代號</button>
+            <button class="chip" onclick="addTag('不做絕對吉凶預言','fbd')">🚫 吉凶預言</button>
+            <button class="chip" onclick="addTag('不建議更名','fbd')">🚫 建議更名</button>
+            <button class="chip" onclick="addTag('不做投資建議','fbd')">🚫 投資建議</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 額外要求 -->
+      <div class="step-card">
+        <div class="step-num-wrap"><span class="step-num">08</span></div>
+        <div class="step-content">
+          <div class="step-eyebrow">Extra</div>
+          <div class="step-title">額外要求</div>
+          <div class="fg"><textarea class="ft" id="audExtra" rows="2" placeholder="例：請用繁體中文、語氣口語化、加入幽默元素"></textarea></div>
+          <div class="chips">
+            <button class="chip" onclick="append('請全程使用繁體中文')">🇹🇼 繁中</button>
+            <button class="chip" onclick="append('語氣口語化、自然，像真人在聊天')">💬 口語化</button>
+            <button class="chip" onclick="append('適時加入幽默、吐槽、笑點')">😄 幽默</button>
+            <button class="chip" onclick="append('每段結尾要有一句金句或重點摘要')">💎 金句</button>
+            <button class="chip" onclick="append('引用具體數據、報告名稱、年份')">📊 引用數據</button>
+            <button class="chip" onclick="append('節目結尾預告下一集主題')">📢 預告下集</button>
+            <button class="chip" onclick="append('開場前 30 秒要有強力 Hook')">🎣 Hook</button>
+            <button class="chip" onclick="append('每 2-3 個來回要有停頓提問')">🤔 互動提問</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end steps -->
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- OUTPUT -->
+      <div>
+        <div class="pnl-heading">提示詞輸出</div>
+        <div class="output-card" id="outputCard">
+          <div class="output-header">
+            <span class="output-title">Generated Prompt</span>
+            <span class="output-badge ob-ok" id="outputBadge" style="display:none">安全</span>
+          </div>
+          <div class="output-empty" id="outputEmpty">
+            <div class="empty-glyph">✦</div>
+            <div class="empty-text">點擊 Generate<br>產生完整提示詞</div>
+          </div>
+          <textarea class="output-ta" id="outputTa" readonly style="display:none"></textarea>
+          <div class="meter-wrap" id="meterWrap" style="display:none">
+            <div class="meter-track"><div class="meter-fill mf-ok" id="meterFill"></div></div>
+            <div class="meter-info">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="meter-count mc-ok" id="meterCount">0 字元</span>
+              </div>
+              <span class="meter-lim">NotebookLM 上限 500</span>
+            </div>
+          </div>
+          <div class="output-actions" id="outputActions" style="display:none">
+            <button class="btn btn-ghost btn-sm" onclick="clearOut()">清除</button>
+            <button class="btn btn-amber btn-sm" id="compressBtn" onclick="compress()" style="display:none">⚡ 壓縮至 500 字</button>
+            <button class="btn btn-ac btn-sm" onclick="copyOut()">📋 複製</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPRESS -->
+      <div class="compress-card" id="compressCard" style="display:none">
+        <div class="compress-header">
+          <span class="compress-label">精簡版 ≤500字元</span>
+          <span class="compress-badge" id="compressBadge">—</span>
+        </div>
+        <textarea class="compress-ta" id="compressTa" readonly></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;align-items:center">
+          <span id="compressCount" style="font-size:9px;color:var(--t4);font-family:var(--f-mono)">0</span>
+          <button class="btn btn-amber btn-sm" onclick="copyCompress()">📋 複製精簡版</button>
+        </div>
+      </div>
+
+      <!-- TEMPLATES -->
+      <div>
+        <div class="pnl-heading">快速模板</div>
+        <div class="tpl-list">
+          <div class="tpl-sep">General</div>
+          <div class="tpl-item" onclick="loadTpl('industry')"><span class="tpl-icon">📈</span><div><div class="tpl-name">產業分析</div><div class="tpl-desc">產業趨勢深度分析 + 數據交鋒</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item" onclick="loadTpl('career')"><span class="tpl-icon">💼</span><div><div class="tpl-name">職涯諮詢</div><div class="tpl-desc">職涯轉型與發展策略討論</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item" onclick="loadTpl('tech')"><span class="tpl-icon">🔬</span><div><div class="tpl-name">技術解讀</div><div class="tpl-desc">新技術白話解析 + 落地應用</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item" onclick="loadTpl('debate')"><span class="tpl-icon">⚔️</span><div><div class="tpl-name">正反辯論</div><div class="tpl-desc">立場鮮明的觀點激烈交鋒</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item" onclick="loadTpl('story')"><span class="tpl-icon">📖</span><div><div class="tpl-name">故事說書</div><div class="tpl-desc">敘事說書 + 評論者互動</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-sep sp">Special Domains</div>
+          <div class="tpl-item special" onclick="loadTpl('bazi')"><span class="tpl-icon">🔯</span><div><div class="tpl-name" style="color:var(--ac-lt)">八字命理解析</div><div class="tpl-desc">命理師 vs 理性懷疑派</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item special" onclick="loadTpl('nameology')"><span class="tpl-icon">📛</span><div><div class="tpl-name" style="color:var(--lav-lt)">姓名學分析</div><div class="tpl-desc">姓名能量 vs 科學驗證</div></div><span class="tpl-arr">›</span></div>
+          <div class="tpl-item special" onclick="loadTpl('stock')"><span class="tpl-icon">📊</span><div><div class="tpl-name" style="color:var(--jade-lt)">股市解盤分析</div><div class="tpl-desc">多方分析師 vs 空方風控</div></div><span class="tpl-arr">›</span></div>
+        </div>
+      </div>
+
+      <!-- USAGE -->
+      <div>
+        <div class="pnl-heading">使用說明</div>
+        <div class="info-card">
+          <ol>
+            <li>填寫左側 8 個步驟的設定</li>
+            <li>點擊「Generate」產生完整提示詞</li>
+            <li>若超過 500 字 → 點「⚡ 壓縮至 500 字」</li>
+            <li>複製提示詞，並上傳你的資料文件</li>
+            <li>將兩者一起貼入 NotebookLM / Claude / ChatGPT</li>
+            <li>AI 將根據你的文件與設定生成語音腳本</li>
+          </ol>
+          <div class="info-tip">
+            <div class="tip-dot"></div>
+            <span>字元計量：<span style="color:var(--jade-lt)">綠 ≤380</span> · <span style="color:#c8a51e">黃 381-500</span> · <span style="color:var(--rose-lt)">紅 &gt;500</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end right-panel -->
+
+  </div><!-- end layout -->
+</div><!-- end main -->
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <div class="status-row">
+    <div class="status-dot"></div>
+    <span class="status-text">Ready — 填寫完成後點擊 Generate</span>
+  </div>
+  <div class="action-right">
+    <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+    <button class="btn btn-primary" onclick="genPrompt()">🎙 Generate</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── UTILS ── */
+const $=id=>document.getElementById(id);
+function toast(msg,dur=2800){
+  const el=$('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+/* ── THEME ── */
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.dataset.theme==='dark';
+  html.dataset.theme=isDark?'light':'dark';
+  $('themeIcon').textContent=isDark?'🌙':'☀️';
+  $('themeLabel').textContent=isDark?'深色':'淺色';
+  // update select arrow color
+  document.querySelectorAll('.fs').forEach(el=>el.style.backgroundImage='');
+  localStorage.setItem('cast-theme',html.dataset.theme);
+  toast(isDark?'已切換淺色模式 ☀️':'已切換深色模式 🌙');
+}
+
+// restore saved theme
+(()=>{
+  const saved=localStorage.getItem('cast-theme');
+  if(saved&&saved!=='dark'){
+    document.documentElement.dataset.theme=saved;
+    $('themeIcon').textContent='🌙';
+    $('themeLabel').textContent='深色';
+  }
+})();
+
+/* ── SEGMENT SELECTOR ── */
+function selSeg(btn,groupId,hiddenId){
+  document.querySelectorAll(`#${groupId} .seg-btn`).forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  $(hiddenId).value=btn.dataset.val;
+}
+
+/* ── EMO ── */
+function selEmo(btn){
+  document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  $('emoCurveDesc').value=btn.dataset.desc;
+}
+
+/* ── SET / APPEND ── */
+function set(id,val){$(id).value=val;toast('已設定：'+val.slice(0,18)+'…')}
+function append(txt){
+  const ta=$('audExtra');let v=ta.value.trim();
+  if(v.includes(txt)){toast('已包含此選項');return;}
+  ta.value=v?(v+'，'+txt):txt;toast('已加入');
+}
+
+/* ── TAGS ── */
+function addTag(v,type){
+  v=(v||'').trim();if(!v)return;
+  const box=$(type==='fbd'?'fbdTags':'kwTags');
+  if([...box.querySelectorAll('.ktag')].some(t=>t.dataset.val===v)){toast('已存在');return;}
+  const span=document.createElement('span');
+  span.className='ktag '+(type==='fbd'?'ktag-fbd':'ktag-kw');
+  span.dataset.val=v;
+  span.innerHTML=`${v} <span class="ktag-del" onclick="this.parentElement.remove()">✕</span>`;
+  box.appendChild(span);
+}
+
+/* ── METER ── */
+function updateMeter(len){
+  const fill=$('meterFill'),count=$('meterCount'),badge=$('outputBadge');
+  const card=$('outputCard'),cBtn=$('compressBtn');
+  fill.style.width=Math.min((len/500)*100,100)+'%';
+  count.textContent=len+' 字元';
+  badge.style.display='inline-flex';
+  if(len<=380){
+    fill.className='meter-fill mf-ok';count.className='meter-count mc-ok';
+    badge.className='output-badge ob-ok';badge.textContent='安全';
+    card.className='output-card active';cBtn.style.display='none';
+  }else if(len<=500){
+    fill.className='meter-fill mf-warn';count.className='meter-count mc-warn';
+    badge.className='output-badge ob-warn';badge.textContent='接近上限';
+    card.className='output-card active warn';cBtn.style.display='flex';
+  }else{
+    fill.className='meter-fill mf-danger';count.className='meter-count mc-danger';
+    badge.className='output-badge ob-danger';badge.textContent='超出限制';
+    card.className='output-card active danger';cBtn.style.display='flex';
+  }
+}
+
+/* ── COMPRESS ── */
+function compress(){
+  const full=$('outputTa').value;if(!full.trim()){toast('請先產生提示詞');return;}
+  let c=full.replace(/\n{3,}/g,'\n\n').replace(/[ \t]+$/gm,'').trim();
+  if(c.length>500)c=c.replace(/人設.{0,4}：[^\n]+\n?/g,'');
+  if(c.length>500)c=c.replace(/對應調整規則：[\s\S]*?(?=\n━)/,'');
+  if(c.length>500)c=c.replace(/對應執行方式[\s\S]*?(?=\n━)/g,'');
+  if(c.length>500)c=c.replace(/\n{2,}/g,'\n').trim();
+  if(c.length>500)c=c.slice(0,497)+'...';
+  c=c.trim();
+  const ratio=Math.round((1-c.length/full.length)*100);
+  $('compressTa').value=c;
+  $('compressCard').style.display='block';
+  $('compressBadge').textContent='↓ '+ratio+'% · '+c.length+' chars';
+  $('compressCount').textContent=c.length+' / 500';
+  toast('已壓縮：'+full.length+' → '+c.length+' 字元（節省 '+ratio+'%）');
+  $('compressCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function copyCompress(){
+  const ta=$('compressTa');ta.select();
+  try{document.execCommand('copy')}catch(e){navigator.clipboard.writeText(ta.value)}
+  toast('精簡版已複製！');
+}
+
+/* ── GENERATE ── */
+function genPrompt(){
+  const topic=$('audTopic').value.trim()||'主題待定';
+  const audience=$('audienceVal').value;
+  const emo=$('emoCurveDesc').value;
+  const nameA=$('hostAName').value.trim()||'主持人A';
+  const nameB=$('hostBName').value.trim()||'主持人B';
+  const gA=$('hostAGender').value, gB=$('hostBGender').value;
+  const toneA=$('hostATone').value.trim(), toneB=$('hostBTone').value.trim();
+  const skillA=$('hostASkill').value.trim(), skillB=$('hostBSkill').value.trim();
+  const intro=$('audIntro').value, length=$('audLength').value, style=$('audStyle').value;
+  const extra=$('audExtra').value.trim();
+  const kw=[...document.querySelectorAll('#kwTags .ktag')].map(t=>t.dataset.val);
+  const fbd=[...document.querySelectorAll('#fbdTags .ktag')].map(t=>t.dataset.val);
+
+  // 聽眾規則對應
+  const audRules={
+    '學生/初學者':'所有專業術語必須用白話文解釋，多舉生活化比喻，避免縮寫',
+    '一般大眾':'輕量術語，重視故事性與情感連結，用案例勝過數據',
+    '專業人士':'可直接使用專業術語，深入技術細節與數據分析',
+    '中高階主管':'聚焦策略決策、ROI 與風險管理，省去基礎說明',
+    '投資人/決策者':'強調市場規模、競爭格局、財務指標、風險與回報'
+  };
+  // 情緒對應
+  const emoRules={
+    '開場高亢 → 中段沉澱 → 結尾振奮':'開場用衝擊性觀點/數據破題 → 中段沉澱深入分析 → 結尾再度振奮激勵收尾',
+    '平靜開場 → 逐漸升溫 → 高潮結尾':'平靜客觀開場 → 話題逐漸加溫升溫 → 高潮爭辯或強結論引爆',
+    '強勢開場 → 深度討論 → 平靜收尾':'強勢開場拋出衝擊觀點 → 進入深度嚴肅分析 → 平靜智慧收尾',
+    '多次高低起伏，保持聽眾注意力':'全程多次反轉，每個段落都有高低起伏，適合辯論型節目'
+  };
+  // 互動風格對應
+  const styleRules={
+    '輕鬆對談':'兩人有默契、語氣自然，觀點不同但不對立，像朋友在聊天',
+    '辯論交鋒':'立場鮮明對立，互相挑戰論點，但不人身攻擊，理性交鋒',
+    '訪談式':`${nameA} 主導提問引導，${nameB} 深入回答與分享，偶爾角色互換`,
+    '說書式':`${nameA} 負責敘事推進故事，${nameB} 在關鍵處插入評論、補充背景或反思`
+  };
+
+  let p='';
+  p+=`你是一位專業的 Podcast 腳本編劇，擅長將資料文件轉化為生動的雙人對談語音摘要。\n`;
+  p+=`請根據以下設定，閱讀我上傳的資料，並生成一份完整的語音摘要對話腳本。\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【一、分析主題】\n${topic}\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【二、目標聽眾】\n`;
+  p+=`聽眾類型：${audience}\n`;
+  p+=`對應調整：${audRules[audience]||'依聽眾類型自行調整'}\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【三、情緒節奏曲線】\n`;
+  p+=`節奏模式：${emo}\n`;
+  p+=`對應執行：${emoRules[emo]||emo}\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【四、主持人設定】\n\n`;
+  p+=`▌主持人 A（正方）\n`;
+  p+=`姓名：${nameA}（${gA}性）\n`;
+  p+=`立場：對「${topic}」持正向、樂觀態度\n`;
+  if(toneA)p+=`語氣風格：${toneA}\n`;
+  if(skillA)p+=`人設專長：${skillA}\n`;
+  p+=`發言習慣：開場時引入主題，遇到質疑時條理分明地回應，結尾給予鼓勵性建議\n\n`;
+  p+=`▌主持人 B（反方）\n`;
+  p+=`姓名：${nameB}（${gB}性）\n`;
+  p+=`立場：對「${topic}」持懷疑、保留或批判態度\n`;
+  if(toneB)p+=`語氣風格：${toneB}\n`;
+  if(skillB)p+=`人設專長：${skillB}\n`;
+  p+=`發言習慣：每段至少提出 2 個質疑或追問，善用「真的嗎？」「有數據支持嗎？」「但實際上...」\n\n`;
+  p+=`請讓 ${nameA}、${nameB} 兩人的立場在整集節目中有清楚對比，互動方式：${style}。\n`;
+  p+=`（${styleRules[style]||style}）\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【五、節目設定】\n`;
+  p+=`節目長度：${length}\n`;
+  if(intro==='full')p+=`開場自介：請 ${nameA} 和 ${nameB} 在節目開頭先做完整自我介紹，包含姓名、專長領域及今天要討論的主題「${topic}」\n`;
+  else if(intro==='brief')p+=`開場自介：請 ${nameA} 和 ${nameB} 在節目開頭簡短自介（姓名＋一句話定位）\n`;
+  p+=`\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【六、節目結構】\n`;
+  p+=`請依照以下段落順序生成腳本：\n\n`;
+  p+=`第一段｜開場\n`;
+  p+=`${nameA} 用一個來自上傳資料的驚人數據或衝擊性觀點破題，${nameB} 立刻以半懷疑的語氣接話，引出今日核心主題。\n\n`;
+  p+=`第二段｜現況解析\n`;
+  p+=`從上傳資料萃取 2-3 個核心數據或關鍵事實。${nameA} 解讀正向面向，${nameB} 至少追問 2 次，${nameA} 逐一回應。\n\n`;
+  p+=`第三段｜深度討論（情緒高峰）\n`;
+  p+=`針對資料中最具爭議的議題正面交鋒，雙方各提出 1-2 個具體案例或數據佐證立場。情緒強度最高。\n\n`;
+  p+=`第四段｜實用建議\n`;
+  p+=`${nameA} 提供 2-3 個「可立即行動」的具體建議，${nameB} 為每個建議補充「風險或前提條件」。\n\n`;
+  p+=`第五段｜結語\n`;
+  p+=`${nameA} 先收尾給激勵性總結，${nameB} 補充現實提醒，兩人各說一句針對「${topic}」的金句作結。\n\n`;
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【七、內容規則】\n\n`;
+  p+=`✅ 必須做到：\n`;
+  p+=`- 全程使用上傳資料中的具體數據、名詞、案例，不憑空捏造\n`;
+  p+=`- 引用來自資料時自然說出出處（「根據這份報告...」「文件中提到...」）\n`;
+  p+=`- 語言：繁體中文，語氣口語化，像真人在對話\n`;
+  p+=`- 兩人的發言長度大致均衡，不讓某人主導超過 70%\n`;
+  if(kw.length)p+=`- 節目中必須提及：${kw.join('、')}\n`;
+  p+=`\n❌ 禁止事項：\n`;
+  p+=`- 不捏造資料中沒有的數據\n`;
+  p+=`- 不讓兩人立場完全一致（失去對話張力）\n`;
+  p+=`- 不使用過度正式的書面語，要像說話而非演講\n`;
+  if(fbd.length)p+=`- 禁止提及：${fbd.join('、')}\n`;
+  p+=`\n`;
+
+  if(extra){
+    p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    p+=`【八、額外要求】\n${extra}\n\n`;
+  }
+
+  p+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  p+=`【九、輸出格式】\n\n`;
+  p+=`請以以下格式輸出完整腳本：\n\n`;
+  p+=`【節目標題】（根據主題自動生成一個吸引人的標題）\n`;
+  p+=`【預估時長】X 分鐘\n`;
+  p+=`【字數統計】約 X 字\n\n`;
+  p+=`---腳本開始---\n\n`;
+  p+=`${nameA}：[開場白...]\n\n`;
+  p+=`${nameB}：[回應...]\n\n`;
+  p+=`（以此格式持續對話直到結尾）\n\n`;
+  p+=`---腳本結束---\n\n`;
+  p+=`【本集重點整理】\n1. \n2. \n3. \n\n`;
+  p+=`【資料引用摘要】（列出腳本中引用到的資料段落或數據來源）`;
+
+  const result=p.trim();
+
+  $('outputTa').value=result;
+  $('outputTa').style.display='block';
+  $('outputEmpty').style.display='none';
+  $('meterWrap').style.display='block';
+  $('outputActions').style.display='flex';
+  $('compressCard').style.display='none';
+  updateMeter(result.length);
+
+  if(window.innerWidth<=980)$('outputTa').scrollIntoView({behavior:'smooth',block:'start'});
+  toast('✅ 提示詞已產生！共 '+result.length+' 字元');
+}
+
+function copyOut(){
+  const ta=$('outputTa');ta.select();
+  try{document.execCommand('copy')}catch(e){navigator.clipboard.writeText(ta.value)}
+  toast('📋 已複製！');
+}
+function clearOut(){
+  $('outputTa').value='';$('outputTa').style.display='none';
+  $('outputEmpty').style.display='flex';
+  $('meterWrap').style.display='none';
+  $('outputActions').style.display='none';
+  $('compressCard').style.display='none';
+  $('outputBadge').style.display='none';
+  $('outputCard').className='output-card';
+}
+function resetAll(){
+  if(!confirm('確定要重設所有欄位嗎？'))return;
+  $('audTopic').value='';
+  $('hostAName').value='小安';$('hostAGender').value='男';
+  $('hostATone').value='聲音磁性、穩重，有點神祕感';
+  $('hostASkill').value='擅長從產業趨勢、案例分析與樂觀視角解讀議題，善於用比喻讓複雜概念變得易懂';
+  $('hostBName').value='小北';$('hostBGender').value='女';
+  $('hostBTone').value='活潑好奇，常追問「真的嗎？」「有數據嗎？」';
+  $('hostBSkill').value='擅長引用產業報告、實際企業案例，從 KPI、ROI 等指標提出反思與質疑';
+  $('audIntro').value='full';$('audLength').value='中';$('audStyle').value='輕鬆對談';$('audExtra').value='';
+  $('kwTags').innerHTML='';$('fbdTags').innerHTML='';
+  $('kwIn').value='';$('fbdIn').value='';
+  selSeg(document.querySelector('#audSeg .seg-btn'),'audSeg','audienceVal');
+  document.querySelectorAll('.emo-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  $('emoCurveDesc').value='開場高亢 → 中段沉澱 → 結尾振奮';
+  clearOut();toast('🔄 已重設所有欄位');
+}
+
+/* ── TEMPLATES ── */
+const TPLS={
+  industry:{topic:'產業趨勢深度分析',audience:'投資人/決策者',emoDesc:'多次高低起伏，保持聽眾注意力',
+    hostA:{name:'小安',gender:'男',tone:'穩重、有洞見，善於抓住大趨勢',skill:'擅長從宏觀經濟、產業週期解讀議題'},
+    hostB:{name:'小北',gender:'女',tone:'活潑好追問，用數據打臉',skill:'擅長引用產業報告、企業財報'},
+    kw:['市場規模','成長率'],fbd:[]},
+  career:{topic:'職涯發展與轉型策略',audience:'一般大眾',emoDesc:'平靜開場 → 逐漸升溫 → 高潮結尾',
+    hostA:{name:'小安',gender:'男',tone:'溫暖鼓勵、像職涯教練',skill:'擅長從個人優勢、市場需求角度給建議'},
+    hostB:{name:'小北',gender:'女',tone:'直白務實、不灌雞湯',skill:'擅長從薪資數據、求職市場現實面提醒'},
+    kw:['技能樹','職涯規劃'],fbd:[]},
+  tech:{topic:'新技術趨勢解讀',audience:'一般大眾',emoDesc:'開場高亢 → 中段沉澱 → 結尾振奮',
+    hostA:{name:'阿科',gender:'男',tone:'技術宅、興奮、充滿好奇心',skill:'擅長白話文解釋複雜技術原理'},
+    hostB:{name:'小美',gender:'女',tone:'務實、關心落地應用',skill:'擅長從市場需求、ROI 評估技術'},
+    kw:['技術原理','應用場景'],fbd:[]},
+  debate:{topic:'熱門議題正反辯論',audience:'一般大眾',emoDesc:'多次高低起伏，保持聽眾注意力',
+    hostA:{name:'正方',gender:'男',tone:'自信有力、論點清晰',skill:'擅長建構正面論述，用案例數據支持'},
+    hostB:{name:'反方',gender:'女',tone:'犀利質疑、邏輯嚴密',skill:'擅長拆解對方論點、提出反例'},
+    kw:[],fbd:['不人身攻擊']},
+  story:{topic:'主題故事深度說書',audience:'一般大眾',emoDesc:'平靜開場 → 逐漸升溫 → 高潮結尾',
+    hostA:{name:'說書人',gender:'男',tone:'故事感、戲劇張力',skill:'擅長用敘事手法包裝資訊'},
+    hostB:{name:'評論者',gender:'女',tone:'知性、善於提問',skill:'在轉折處插入評論、補充背景'},
+    kw:[],fbd:[]},
+  bazi:{topic:'八字命理：命盤解析與人生密碼',audience:'一般大眾',emoDesc:'開場高亢 → 中段沉澱 → 結尾振奮',
+    hostA:{name:'命師',gender:'男',tone:'沉穩神秘、語氣有溫度，像智者在解密',skill:'精通八字五行、十神理論、大運流年'},
+    hostB:{name:'小疑',gender:'女',tone:'好奇懷疑、敢問敢追',skill:'以心理學、統計學角度質疑命理'},
+    kw:['八字','五行','天干地支','大運','流年'],fbd:['不做絕對吉凶預言']},
+  nameology:{topic:'姓名學：名字能量與人生影響',audience:'一般大眾',emoDesc:'開場高亢 → 中段沉澱 → 結尾振奮',
+    hostA:{name:'名師',gender:'女',tone:'親切自信、語氣溫和有說服力',skill:'精通三才五格姓名學、數理筆畫、音靈理論'},
+    hostB:{name:'阿問',gender:'男',tone:'理性直白、不迷信但好奇',skill:'從語言學、心理學角度分析名字影響'},
+    kw:['三才五格','筆畫數理','音靈'],fbd:['不建議更名','不做吉凶絕對判斷']},
+  stock:{topic:'台股/美股深度解盤分析',audience:'投資人/決策者',emoDesc:'多次高低起伏，保持聽眾注意力',
+    hostA:{name:'多方',gender:'男',tone:'積極自信、數據說話',skill:'擅長技術分析（均線、KD、MACD）、籌碼面、基本面'},
+    hostB:{name:'空方',gender:'女',tone:'謹慎冷靜、風控優先',skill:'擅長從總經面、外資動向、財報地雷提出風險'},
+    kw:['技術分析','籌碼面','外資動向','停損點'],fbd:['不提具體個股明牌','不做投資建議']}
+};
+
+function loadTpl(type){
+  const t=TPLS[type];if(!t)return;
+  $('audTopic').value=t.topic;
+  $('hostAName').value=t.hostA.name;$('hostAGender').value=t.hostA.gender;
+  $('hostATone').value=t.hostA.tone;$('hostASkill').value=t.hostA.skill;
+  $('hostBName').value=t.hostB.name;$('hostBGender').value=t.hostB.gender;
+  $('hostBTone').value=t.hostB.tone;$('hostBSkill').value=t.hostB.skill;
+  // audience
+  const audBtns=document.querySelectorAll('#audSeg .seg-btn');
+  audBtns.forEach(b=>{b.classList.remove('sel');if(b.dataset.val===t.audience)b.classList.add('sel')});
+  $('audienceVal').value=t.audience;
+  // emo
+  document.querySelectorAll('.emo-btn').forEach(b=>b.classList.toggle('sel',b.dataset.desc===t.emoDesc));
+  $('emoCurveDesc').value=t.emoDesc;
+  // tags
+  $('kwTags').innerHTML='';$('fbdTags').innerHTML='';
+  (t.kw||[]).forEach(k=>addTag(k,'kw'));(t.fbd||[]).forEach(k=>addTag(k,'fbd'));
+  $('audExtra').value='';clearOut();
+  toast('⚡ 已載入「'+t.topic.slice(0,14)+'…」模板');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

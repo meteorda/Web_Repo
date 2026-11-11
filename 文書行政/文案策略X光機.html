@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>文案策略X光機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+:root{
+  --paper:#dde5f0; --panel:#e4eaf4; --line:#c3cfe0;
+  --ink:#1f2a3d; --ink2:#4b5a72; --ink3:#7b889c;
+  --cream:#fbf5e4; --navy:#2d5b8a; --blue:#3f7fc2;
+  --brick:#d24a4a; --green:#4f9a5e; --amber:#c98a2a;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","PMingLiU",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.7 var(--sans);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+header.top{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;padding:22px 28px 14px;border-bottom:1px solid var(--line)}
+header.top h1{font:900 26px/1.2 var(--serif);margin:0;letter-spacing:.04em}
+header.top p{margin:0;color:var(--ink2);font-size:14px}
+header.top .sp{flex:1}
+
+.layout{display:grid;grid-template-columns:380px 1fr;gap:22px;padding:22px 28px 60px;align-items:start}
+@media(max-width:980px){.layout{grid-template-columns:1fr;padding:16px}}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.side{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 32px);overflow:auto}
+@media(max-width:980px){.side{position:static;max-height:none}}
+
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink3);letter-spacing:.18em;margin:0 0 10px}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+label.f{display:block;font-size:13px;color:var(--ink2);margin:10px 0 4px}
+textarea,input[type=text],input[type=password],select{width:100%;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+textarea{resize:vertical}
+#copy{min-height:220px;line-height:1.75}
+#keys{min-height:64px;font-family:Consolas,monospace;font-size:12.5px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+.hint{font-size:12.5px;color:var(--ink3);margin:6px 0 0}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;padding:11px 16px;width:100%}
+.btn.primary:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.ai{border-color:var(--amber);color:var(--amber)}
+.btn.ai:hover{background:var(--amber);color:#fff}
+.btn.sm{padding:4px 10px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:20px;padding:3px 12px;font-size:13px;cursor:pointer;background:var(--panel);user-select:none}
+.chip.on{border-color:var(--green);background:var(--green);color:#fff}
+
+.status{font-size:13px;color:var(--ink2);min-height:20px}
+.status.err{color:var(--brick)}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px;display:none}
+.prog i{display:block;height:100%;width:30%;background:var(--amber);animation:slide 1.2s linear infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(340%)}}
+@media(prefers-reduced-motion:reduce){.prog i{animation:none;width:100%}}
+
+/* 結果區 */
+.empty{border:1px dashed var(--line);border-radius:14px;padding:60px 30px;text-align:center;color:var(--ink2)}
+.empty h2{font:900 30px/1.3 var(--serif);color:var(--ink);margin:0 0 10px}
+.empty p{max-width:520px;margin:0 auto 18px}
+
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+.score{font:900 84px/1 var(--serif);color:var(--navy)}
+.score small{font:500 15px var(--sans);color:var(--ink3);margin-left:4px}
+.verdict h2{font:900 24px/1.4 var(--serif);margin:0 0 8px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+.fact{background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.fact b{display:block;font-size:12px;color:var(--ink3);font-weight:500}
+@media(max-width:600px){.verdict{grid-template-columns:1fr}.score{font-size:64px}}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 14px}
+.tab{border:1px solid var(--line);border-radius:20px;padding:5px 16px;cursor:pointer;background:var(--panel)}
+.tab.on{background:var(--green);border-color:var(--green);color:#fff}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column}
+.card h3{margin:0;font:700 16px/1.4 var(--sans);display:flex;align-items:center;gap:8px}
+.card h3 .n{color:var(--brick);font-size:13px;font-weight:700}
+.card h3 .sp{flex:1}
+.canvas{position:relative;height:280px;margin:10px 0;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:8px}
+.insight{font-size:13.5px;color:var(--ink2);margin:0}
+
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.swot div{background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.swot h4{margin:0 0 4px;font-size:14px}
+.swot ul{margin:0;padding-left:18px;font-size:14px}
+@media(max-width:600px){.swot{grid-template-columns:1fr}}
+
+.strat{display:flex;flex-direction:column;gap:10px}
+.st{background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.st .hd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.st .hd b{font-size:15.5px}
+.st .no{color:var(--brick);font-weight:700}
+.pri{font-size:12px;border-radius:20px;padding:1px 10px;border:1px solid var(--line)}
+.pri.h{border-color:var(--brick);color:var(--brick)}
+.pri.m{border-color:var(--amber);color:var(--amber)}
+.pri.l{border-color:var(--ink3);color:var(--ink3)}
+.st dl{display:grid;grid-template-columns:72px 1fr;gap:2px 10px;margin:8px 0 0;font-size:14px}
+.st dt{color:var(--ink3)}
+.st dd{margin:0}
+.st .deep{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;font-size:14px;white-space:pre-wrap}
+
+.rw{display:flex;gap:10px;align-items:flex-start;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.rw .k{font-size:12.5px;color:var(--amber);white-space:nowrap;padding-top:2px}
+.rw p{flex:1;margin:0}
+.list{margin:0;padding-left:20px}
+.list li{margin:4px 0}
+
+.qa{display:flex;flex-direction:column;gap:10px}
+.msg{background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:10px 14px;white-space:pre-wrap;font-size:14.5px}
+.msg.u{background:var(--panel);color:var(--ink2)}
+
+.hist{display:flex;flex-direction:column;gap:6px}
+.hi{display:flex;gap:6px;align-items:center;font-size:13px}
+.hi span{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hi span:hover{color:var(--blue)}
+details summary{cursor:pointer;color:var(--ink2);font-size:13.5px}
+.hide{display:none!important}
+.plat{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+@media(max-width:600px){.plat{grid-template-columns:1fr}}
+.pf .phd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.pf .phd b{font-size:16px}
+.pf .phd .sp{flex:1}
+.pstat{font-size:12px;border-radius:20px;padding:1px 10px;border:1px solid var(--line)}
+.pstat.ok{border-color:var(--green);color:var(--green)}
+.pstat.soft{border-color:var(--amber);color:var(--amber)}
+.pstat.over{border-color:var(--brick);color:var(--brick)}
+.fld{margin-top:10px}
+.fld .lb{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink2);margin-bottom:3px}
+.cnt{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cnt.ok{color:var(--green)} .cnt.soft{color:var(--amber)} .cnt.over{color:var(--brick);font-weight:700}
+.li{display:flex;gap:6px;align-items:center;margin-top:4px}
+.li .ix{color:var(--brick);font-size:12px;width:18px;text-align:right}
+.li input{padding:6px 9px}
+.pn{font-size:12px;color:var(--ink3);margin:3px 0 0;word-break:break-all}
+.drop{display:block;border:1.5px dashed var(--line);border-radius:8px;padding:12px;text-align:center;font-size:13px;color:var(--ink2);cursor:pointer;margin-top:8px;background:var(--cream)}
+.drop:hover,.drop.over{border-color:var(--blue);color:var(--blue)}
+.drop b{color:var(--ink)}
+.files{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.fi{display:flex;align-items:center;gap:8px;font-size:12.5px;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.fi .ty{font-size:11px;border-radius:20px;padding:0 8px;border:1px solid var(--line);color:var(--ink2)}
+.fi .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi .fs{color:var(--ink3);white-space:nowrap} .fi .fs.ok{color:var(--green)} .fi .fs.err{color:var(--brick);white-space:normal} .fi .fs.run{color:var(--amber)}
+.fi button{border:0;background:none;cursor:pointer;color:var(--ink3);padding:0 2px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 18px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+
+@media print{
+  .side,header.top .btn,.tabs,.card .btn,#qaBox{display:none!important}
+  .layout{grid-template-columns:1fr;padding:0}
+  .tabpane{display:block!important}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>文案策略X光機</h1>
+  <p>貼上一份行銷文案，產出九張分析圖表與可執行的策略</p>
+  <span class="sp"></span>
+  <button class="btn" id="btnDemo">看範例結果</button>
+</header>
+
+<div class="layout">
+  <!-- 左側 -->
+  <aside class="side">
+    <section class="panel">
+      <p class="eyebrow">文案</p>
+      <textarea id="copy" placeholder="貼上要分析的行銷文案（廣告、DM、商品頁、貼文…）"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="btnSample">填入範例文案</button>
+        <button class="btn" id="btnClear">清空</button>
+      </div>
+      <label class="drop" id="drop">
+        <b>上傳檔案</b>　點選或拖曳到這裡<br>支援 PDF、DOCX、TXT／MD、圖像（JPG／PNG／WEBP），可多選
+        <input type="file" id="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.html,.htm,image/*" hidden>
+      </label>
+      <div class="files" id="files"></div>
+      <p class="hint" id="count">0 字</p>
+
+      <label class="f">產業／品類（選填）</label>
+      <input type="text" id="industry" placeholder="例：精品咖啡、補習班、餐飲">
+      <label class="f">目標受眾（選填）</label>
+      <input type="text" id="target" placeholder="例：25–35 歲上班族">
+      <label class="f">主要競品（選填，逗號分隔）</label>
+      <input type="text" id="rivals" placeholder="例：星巴克, 路易莎">
+      <label class="f">分析重點</label>
+      <div class="chips" id="focus">
+        <span class="chip on" data-v="品牌定位">品牌定位</span>
+        <span class="chip on" data-v="轉換率">轉換率</span>
+        <span class="chip" data-v="社群擴散">社群擴散</span>
+        <span class="chip" data-v="在地經營">在地經營</span>
+        <span class="chip" data-v="會員回購">會員回購</span>
+        <span class="chip" data-v="B2B 開發">B2B 開發</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">Groq 設定</p>
+      <label class="f">API Key（一行一把，額度用完自動換下一把）</label>
+      <textarea id="keys" placeholder="gsk_..."></textarea>
+      <div class="row" style="margin-top:8px">
+        <select id="model"><option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option><option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option></select>
+        <button class="btn" id="btnModels" style="flex:0">更新清單</button>
+      </div>
+      <label class="f">每分鐘 Token 上限 TPM（留空自動；免費帳戶約 8000）</label>
+      <input type="text" id="tpm" inputmode="numeric" placeholder="自動">
+      <label class="f">圖像辨識模型（圖片、掃描版 PDF 用）</label>
+      <select id="vmodel"><option value="auto">自動（Groq 圖像模型 → 本機 OCR）</option><option value="ocr">只用本機 OCR（免 Key、無畫面描述）</option></select>
+      <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="remember" checked> 在這台電腦記住 Key</label>
+    </section>
+
+    <section class="panel">
+      <button class="btn primary" id="btnRun">分析文案</button>
+      <div class="prog" id="prog"><i></i></div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="panel">
+      <details id="histBox">
+        <summary>最近的分析</summary>
+        <div class="hist" id="hist" style="margin-top:8px"></div>
+      </details>
+    </section>
+  </aside>
+
+  <!-- 右側 -->
+  <main id="main">
+    <div class="empty" id="empty">
+      <h2>從一份文案，看出它能打到誰、該怎麼推</h2>
+      <p>左側貼上文案並填入 Groq API Key，按「分析文案」。分析包含文案健檢、AIDA 說服路徑、情緒光譜、訴求組成、關鍵詞、族群適配、競品定位、通路適配、顧客旅程，以及 SWOT 與分階段策略。</p>
+      <button class="btn" onclick="loadDemo()">先看一份範例結果</button>
+    </div>
+
+    <div id="result" class="hide">
+      <section class="panel">
+        <div class="verdict">
+          <div class="score" id="score">0<small>/100</small></div>
+          <div>
+            <h2 id="headline"></h2>
+            <p class="insight" id="summary"></p>
+          </div>
+        </div>
+        <div class="facts" id="facts"></div>
+        <div class="row" style="margin-top:14px;flex-wrap:wrap">
+          <button class="btn" id="btnMd" style="flex:0">下載報告 .md</button>
+          <button class="btn" id="btnPptx" style="flex:0">匯出 PPTX 簡報</button>
+          <button class="btn" id="btnJson" style="flex:0">下載資料 .json</button>
+          <button class="btn" id="btnPng" style="flex:0">下載全部圖表 PNG</button>
+          <button class="btn" onclick="window.print()" style="flex:0">列印／存 PDF</button>
+        </div>
+      </section>
+
+      <nav class="tabs" id="tabs">
+        <span class="tab on" data-t="charts">分析圖表</span>
+        <span class="tab" data-t="strategy">策略運用</span>
+        <span class="tab" data-t="copywrite">文案優化</span>
+        <span class="tab" data-t="platform">多平台版本</span>
+        <span class="tab" data-t="qa">追問顧問</span>
+      </nav>
+
+      <div class="tabpane" id="pane-charts"><div class="grid" id="charts"></div></div>
+
+      <div class="tabpane hide" id="pane-strategy">
+        <section class="panel" style="margin-bottom:14px">
+          <p class="eyebrow">SWOT</p>
+          <div class="swot" id="swot"></div>
+        </section>
+        <section class="panel" style="margin-bottom:14px">
+          <p class="eyebrow">策略與行動</p>
+          <div class="strat" id="strat"></div>
+        </section>
+        <section class="panel">
+          <div class="row"><p class="eyebrow" style="margin:0">30 天執行計畫</p><button class="btn ai sm" id="btnPlan" style="flex:0">AI 產生計畫</button></div>
+          <div id="plan" class="msg" style="margin-top:10px">按「AI 產生計畫」，依上方策略排出四週行程與預算分配。</div>
+        </section>
+      </div>
+
+      <div class="tabpane hide" id="pane-copywrite">
+        <section class="panel" style="margin-bottom:14px">
+          <p class="eyebrow">改寫標題</p>
+          <div class="strat" id="rewrites"></div>
+        </section>
+        <section class="panel" style="margin-bottom:14px">
+          <p class="eyebrow">逐項改進建議</p>
+          <ol class="list" id="improve"></ol>
+        </section>
+        <section class="panel">
+          <p class="eyebrow">風險與法規提醒</p>
+          <ul class="list" id="risks"></ul>
+        </section>
+      </div>
+
+      <div class="tabpane hide" id="pane-platform">
+        <section class="panel" style="margin-bottom:14px">
+          <div class="row">
+            <p class="eyebrow" style="margin:0;flex:1 1 200px">一鍵轉成各平台版本</p>
+            <select id="platTone" style="flex:0 0 150px"><option>依原文語氣</option><option>活潑口語</option><option>專業可信</option><option>溫暖故事</option><option>強力促銷</option></select>
+            <button class="btn ai" id="btnPlat" style="flex:0">AI 產生六平台版本</button>
+          </div>
+          <p class="hint">產生後可直接修改，字數即時檢查：<span style="color:var(--green)">綠＝符合</span>、<span style="color:var(--amber)">黃＝超過建議長度</span>、<span style="color:var(--brick)">紅＝超過平台上限</span>。Google Ads 依顯示寬度計算（中文與全形字算 2）。</p>
+        </section>
+        <div class="grid plat" id="plat"></div>
+      </div>
+
+      <div class="tabpane hide" id="pane-qa">
+        <section class="panel" id="qaBox">
+          <p class="eyebrow">針對這份分析追問</p>
+          <div class="qa" id="qa"></div>
+          <div class="row" style="margin-top:10px">
+            <input type="text" id="qaIn" placeholder="例：預算只有 3 萬，先做哪一項？">
+            <button class="btn ai" id="btnAsk" style="flex:0">送出</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== 基本工具 ========== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp = (v, a = 0, b = 100) => { v = Number(v); return isFinite(v) ? Math.max(a, Math.min(b, v)) : a; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1800); }
+function setStatus(t, err) { const s = $('#status'); s.textContent = t; s.classList.toggle('err', !!err); }
+function busy(on) { $('#prog').style.display = on ? 'block' : 'none'; $('#btnRun').disabled = on; }
+function download(name, text, type = 'text/plain') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type + ';charset=utf-8' }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ========== Groq ========== */
+const GROQ = 'https://api.groq.com/openai/v1';
+const FALLBACK = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
+let keyIdx = 0;
+const getKeys = () => $('#keys').value.split(/\s+/).map(s => s.trim()).filter(Boolean);
+
+/* ---- Token 額度控管（避免 413 / TPM 超限）---- */
+const TPM_DEFAULT = 8000;
+function tpmOf(m) {
+  const manual = parseInt($('#tpm').value, 10);
+  if (manual > 0) return manual;
+  return LS.get('csa_tpm', {})[m] || TPM_DEFAULT;
+}
+function learnTpm(m, lim) { if (!(lim > 0)) return; const o = LS.get('csa_tpm', {}); if (o[m] !== lim) { o[m] = lim; LS.set('csa_tpm', o); } }
+function estTok(x) {
+  const s = typeof x === 'string' ? x : JSON.stringify(x);
+  const cjk = (s.match(/[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/g) || []).length;
+  return Math.ceil(cjk * 1.15 + (s.length - cjk) / 3.3) + 8;
+}
+function estMsgs(msgs) {
+  let n = 30;
+  for (const m of msgs) {
+    if (typeof m.content === 'string') n += estTok(m.content) + 6;
+    else for (const p of m.content || []) n += p.type === 'text' ? estTok(p.text) : 1600;
+  }
+  return n;
+}
+const USED = {};
+function usedIn(key) { const now = Date.now(); USED[key] = (USED[key] || []).filter(r => now - r.t < 60000); return USED[key].reduce((a, r) => a + r.n, 0); }
+async function waitRoom(keys, need, lim) {
+  for (;;) {
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[(keyIdx + i) % keys.length];
+      if (usedIn(k) + need <= lim || !USED[k].length) { keyIdx = (keyIdx + i) % keys.length; return k; }
+    }
+    const k = keys[keyIdx % keys.length];
+    const wait = 60000 - (Date.now() - USED[k][0].t) + 400;
+    setStatus(`等待 Groq 每分鐘額度釋放，約 ${Math.ceil(wait / 1000)} 秒…`);
+    await sleep(Math.min(Math.max(wait, 500), 4000));
+  }
+}
+function tooBig(model, lim, inTok) {
+  const e = new Error(`內容過長：約 ${inTok} tokens，超過 ${model} 每分鐘上限 ${lim}`);
+  e.code = 'TOO_BIG'; e.limit = lim; e.inTok = inTok; return e;
+}
+
+async function groq(messages, { json = true, maxTokens = 5000, minOut = 1200, temperature = 0.5, models: only = null, onModel = null, effort = 'low' } = {}) {
+  const keys = getKeys();
+  if (!keys.length) throw new Error('請先填入 Groq API Key');
+  const models = only || [...new Set([$('#model').value, ...FALLBACK])];
+  let lastErr = '', bigErr = null;
+  for (const model of models) {
+    let useJson = json, useEffort = /gpt-oss/i.test(model);
+    let lim = tpmOf(model), inTok = estMsgs(messages);
+    let out = Math.min(maxTokens, lim - inTok - 150);
+    if (out < minOut) { bigErr = tooBig(model, lim, inTok); lastErr = bigErr.message; continue; }
+    for (let attempt = 0; attempt < keys.length * 2 + 3; attempt++) {
+      const key = await waitRoom(keys, inTok + out, lim);
+      const body = { model, messages, temperature, max_tokens: out };
+      if (useJson) body.response_format = { type: 'json_object' };
+      if (useEffort) body.reasoning_effort = effort;
+      let res;
+      try {
+        res = await fetch(GROQ + '/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+          body: JSON.stringify(body)
+        });
+      } catch (e) { lastErr = '網路連線失敗：' + e.message; await sleep(1500); continue; }
+      const hdrLim = Number(res.headers.get('x-ratelimit-limit-tokens'));
+      if (hdrLim > 0 && !($('#tpm').value > 0)) { learnTpm(model, hdrLim); lim = hdrLim; }
+      if (res.ok) {
+        USED[key].push({ t: Date.now(), n: inTok + out });
+        const d = await res.json();
+        const c = d.choices?.[0]?.message?.content || '';
+        if (c.trim()) { onModel && onModel(model); return c; }
+        const grow = Math.min(out + 2000, lim - inTok - 150);
+        lastErr = '模型輸出被截斷（內容太長）';
+        if (grow > out) { out = grow; continue; }
+        if (useEffort) { useEffort = false; continue; }
+        break;
+      }
+      const errText = await res.text().catch(() => '');
+      lastErr = `${model}：HTTP ${res.status} ${errText.slice(0, 160)}`;
+      const mLim = errText.match(/Limit\s*(\d+)/i), mReq = errText.match(/Requested\s*(\d+)/i);
+      const isTPM = /tokens per minute|\bTPM\b/i.test(errText);
+      if (res.status === 413 || (res.status === 429 && isTPM && mLim && mReq && +mReq[1] > +mLim[1])) {
+        // 單次請求超過每分鐘上限：校正估算後縮小輸出再試
+        if (mLim) { lim = +mLim[1]; learnTpm(model, lim); }
+        if (mReq) inTok = Math.max(inTok, +mReq[1] - out);
+        const out2 = lim - inTok - 150;
+        if (out2 >= minOut && out2 < out) { out = out2; continue; }
+        bigErr = tooBig(model, lim, inTok); lastErr = bigErr.message; break;
+      }
+      if (res.status === 429) {
+        keyIdx++;
+        const m = errText.match(/try again in\s*([\d.]+)\s*(ms|s|m)/i);
+        let wait = Number(res.headers.get('retry-after')) * 1000;
+        if (m) wait = parseFloat(m[1]) * (m[2] === 'ms' ? 1 : m[2] === 'm' ? 60000 : 1000);
+        if (!(wait > 0)) wait = 2 ** Math.min(attempt, 4) * 1000;
+        setStatus(`Groq 額度暫滿，${Math.ceil(wait / 1000)} 秒後重試（${attempt + 1}）…`);
+        if (attempt >= keys.length - 1 || /per day|TPD|RPD/i.test(errText)) await sleep(Math.min(wait + 300, 65000));
+        continue;
+      }
+      if (res.status === 401 || res.status === 403) { keyIdx++; continue; }
+      if (res.status === 404 || /model_not_found|decommissioned|does not exist/i.test(errText)) break;
+      if (res.status === 400 && useEffort && /reasoning_effort/i.test(errText)) { useEffort = false; continue; }
+      if (res.status === 400 && useJson && /json|response_format|failed_generation/i.test(errText)) { useJson = false; continue; }
+      if (res.status >= 500) { await sleep(1500); continue; }
+      break;
+    }
+  }
+  if (bigErr && /HTTP 4(04|13)|過長/.test(lastErr)) throw bigErr;
+  throw new Error(lastErr || 'Groq 呼叫失敗');
+}
+
+/* ---- 長文案分段濃縮 ---- */
+function splitByTok(text, maxTok) {
+  const parts = [], paras = text.split(/\n+/);
+  let cur = '';
+  const push = () => { if (cur.trim()) parts.push(cur.trim()); cur = ''; };
+  for (let p of paras) {
+    while (estTok(p) > maxTok) {           // 單段過長就硬切
+      const n = Math.floor(p.length * maxTok / estTok(p) * .95);
+      push(); parts.push(p.slice(0, n)); p = p.slice(n);
+    }
+    if (estTok(cur + '\n' + p) > maxTok) push();
+    cur += (cur ? '\n' : '') + p;
+  }
+  push(); return parts;
+}
+async function condense(text, targetTok, depth = 0) {
+  const lim = tpmOf($('#model').value);
+  const chunkTok = Math.max(800, lim - 2200);
+  const chunks = splitByTok(text, chunkTok);
+  const perChars = Math.max(250, Math.floor(targetTok / 1.15 / chunks.length));
+  const outs = [];
+  for (let i = 0; i < chunks.length; i++) {
+    setStatus(`內容較長，分段濃縮中 ${i + 1}/${chunks.length}…`);
+    const t = await groq([
+      { role: 'system', content: '你是行銷文案整理員。用繁體中文輸出，不加任何說明。' },
+      { role: 'user', content: `把以下行銷素材濃縮到 ${perChars} 字以內，供後續做文案分析。必須保留：標題與標語原句、產品/服務名稱、價格與優惠數字、訴求與賣點原句、行動呼籲、目標對象線索、【視覺元素】描述、檔名標記。刪除重複、目錄、頁碼、法律小字。\n\n${chunks[i]}` }
+    ], { json: false, maxTokens: Math.min(2000, Math.ceil(perChars * 1.4) + 300), minOut: 600, temperature: .2 });
+    outs.push(t.replace(/\*\*/g, '').trim());
+  }
+  const merged = outs.join('\n\n');
+  if (estTok(merged) > targetTok && depth < 2) return condense(merged, targetTok, depth + 1);
+  return merged;
+}
+
+function parseJSON(text) {
+  let t = text.replace(/```json|```/g, '').trim();
+  try { return JSON.parse(t); } catch {}
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  throw new Error('AI 回傳的格式無法解析，請再按一次分析');
+}
+
+let ALL_MODELS = [];
+const VISION_RE = /vision|vl\b|-vl|llama-4|scout|maverick|multimodal|omni|gemma-3|kimi.*vl|pixtral/i;
+function fillVModels() {
+  const cur = LS.get('csa_vmodel', 'auto');
+  const vs = ALL_MODELS.filter(id => VISION_RE.test(id));
+  $('#vmodel').innerHTML = '<option value="auto">自動（Groq 圖像模型 → 本機 OCR）</option><option value="ocr">只用本機 OCR（免 Key、無畫面描述）</option>' +
+    vs.map(id => `<option>${esc(id)}</option>`).join('');
+  if (cur !== 'auto' && cur !== 'ocr' && !vs.includes(cur)) $('#vmodel').add(new Option(cur, cur));
+  $('#vmodel').value = cur;
+}
+async function ensureModels() {
+  if (ALL_MODELS.length) return ALL_MODELS;
+  const keys = getKeys(); if (!keys.length) throw new Error('請先填入 Groq API Key');
+  const r = await fetch(GROQ + '/models', { headers: { Authorization: 'Bearer ' + keys[0] } });
+  if (!r.ok) throw new Error('讀取模型清單失敗 HTTP ' + r.status);
+  ALL_MODELS = ((await r.json()).data || []).map(m => m.id); fillVModels();
+  return ALL_MODELS;
+}
+async function loadModels() {
+  const keys = getKeys();
+  if (!keys.length) return toast('先填入 API Key');
+  try {
+    const r = await fetch(GROQ + '/models', { headers: { Authorization: 'Bearer ' + keys[0] } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const ids = (d.data || []).map(m => m.id)
+      .filter(id => !/whisper|tts|guard|playai|orpheus|distil|compound|prompt-guard|safeguard/i.test(id)).sort();
+    const cur = $('#model').value;
+    $('#model').innerHTML = ids.map(id => `<option ${id === cur ? 'selected' : ''}>${esc(id)}</option>`).join('');
+    if (!ids.includes(cur) && ids.includes('openai/gpt-oss-120b')) $('#model').value = 'openai/gpt-oss-120b';
+    LS.set('csa_model', $('#model').value);
+    ALL_MODELS = ids; fillVModels();
+    toast(`已載入 ${ids.length} 個模型`);
+  } catch (e) { toast('讀取模型清單失敗：' + e.message); }
+}
+
+/* ========== 分析提示詞 ========== */
+const SCHEMA = `{
+"overall":0-100整數,
+"headline":"一句話總評（20字內）",
+"summary":"80-120字的整體判讀",
+"facts":{"product":"產品/服務","coreMessage":"核心訊息","usp":"獨特賣點","tone":"語氣風格","audience":"推定受眾","cta":"文案中的行動呼籲（沒有寫『無』）"},
+"health":{"clarity":0-100,"appeal":0-100,"credibility":0-100,"differentiation":0-100,"urgency":0-100,"cta":0-100,"readability":0-100},
+"aida":{"attention":0-100,"interest":0-100,"desire":0-100,"action":0-100},
+"emotions":[{"name":"情緒名稱","score":0-100}] 6項,
+"appeals":[{"type":"訴求類型（如理性功能、感性共鳴、社會認同、稀缺急迫、權威背書、價格優惠）","ratio":百分比整數}] 4-6項且總和100,
+"keywords":[{"word":"文案中的關鍵詞","weight":0-100}] 10項,
+"segments":[{"name":"族群名稱","fit":0-100,"intent":0-100,"size":1-5,"why":"一句理由"}] 4-6項,
+"positioning":{"xLabel":"橫軸（例：價格低→高）","yLabel":"縱軸（例：功能→情感）","points":[{"name":"品牌或競品名","x":0-100,"y":0-100,"self":true或false}]} 本品牌1個+競品3-5個,
+"channels":[{"name":"通路名稱","fit":0-100}] 6-8項,
+"journey":[{"stage":"認知","score":0-100},{"stage":"興趣","score":0-100},{"stage":"考慮","score":0-100},{"stage":"購買","score":0-100},{"stage":"忠誠","score":0-100},{"stage":"推薦","score":0-100}],
+"insights":{"health":"","aida":"","emotions":"","appeals":"","keywords":"","segments":"","positioning":"","channels":"","journey":""} 每項40-70字，說明圖表看出的重點與該怎麼做,
+"swot":{"s":["3-4點"],"w":["3-4點"],"o":["3-4點"],"t":["3-4點"]},
+"strategies":[{"title":"策略名稱","priority":"高/中/低","channel":"執行通路","action":"具體做法（50-90字）","kpi":"衡量指標與目標值","timeline":"時程","budget":"預算等級：低/中/高"}] 5-6項,
+"rewrites":[{"style":"風格（例：痛點直擊、數據說服、故事情境、限時促購、社群口語）","text":"改寫後的標題或開場"}] 5項,
+"improvements":["逐項改進建議，每條指出原句問題與改法"] 5-7項,
+"risks":["誇大不實、比較廣告、個資、醫療/食品等法規或品牌風險提醒"] 2-4項
+}`;
+
+function buildPrompt(copy) {
+  const focus = [...document.querySelectorAll('#focus .chip.on')].map(c => c.dataset.v).join('、') || '整體';
+  return [
+    { role: 'system', content: '你是台灣資深行銷策略顧問與文案總監。全部使用繁體中文（台灣用語）。分數要有鑑別度，不可全部給高分；依據要來自文案本身。只輸出一個 JSON 物件，不要任何說明或程式碼框。' },
+    { role: 'user', content:
+`請分析以下行銷文案（可能含多個檔案；【視覺元素】段落是圖像素材的畫面描述，也請納入評估），依照 JSON 結構輸出：
+${SCHEMA}
+
+補充資訊：
+產業：${$('#industry').value || '請自行判斷'}
+目標受眾：${$('#target').value || '請自行判斷'}
+主要競品：${$('#rivals').value || '請依產業推定常見競品'}
+分析重點：${focus}
+
+【文案開始】
+${copy}
+【文案結束】` }
+  ];
+}
+
+/* ========== 資料正規化 ========== */
+function normalize(d) {
+  const arr = v => Array.isArray(v) ? v : [];
+  const o = {
+    overall: clamp(d.overall),
+    headline: d.headline || '', summary: d.summary || '',
+    facts: d.facts || {},
+    health: {}, aida: {},
+    emotions: arr(d.emotions).map(e => ({ name: e.name, score: clamp(e.score) })).slice(0, 8),
+    appeals: arr(d.appeals).map(e => ({ type: e.type, ratio: clamp(e.ratio) })),
+    keywords: arr(d.keywords).map(e => ({ word: e.word, weight: clamp(e.weight) })).sort((a, b) => b.weight - a.weight).slice(0, 12),
+    segments: arr(d.segments).map(e => ({ name: e.name, fit: clamp(e.fit), intent: clamp(e.intent), size: clamp(e.size, 1, 5), why: e.why || '' })),
+    positioning: { xLabel: d.positioning?.xLabel || '價格', yLabel: d.positioning?.yLabel || '價值感',
+      points: arr(d.positioning?.points).map(p => ({ name: p.name, x: clamp(p.x), y: clamp(p.y), self: !!p.self })) },
+    channels: arr(d.channels).map(e => ({ name: e.name, fit: clamp(e.fit) })).sort((a, b) => b.fit - a.fit),
+    journey: arr(d.journey).map(e => ({ stage: e.stage, score: clamp(e.score) })),
+    insights: d.insights || {},
+    swot: { s: arr(d.swot?.s), w: arr(d.swot?.w), o: arr(d.swot?.o), t: arr(d.swot?.t) },
+    strategies: arr(d.strategies),
+    rewrites: arr(d.rewrites),
+    improvements: arr(d.improvements),
+    risks: arr(d.risks)
+  };
+  for (const k of ['clarity','appeal','credibility','differentiation','urgency','cta','readability']) o.health[k] = clamp(d.health?.[k]);
+  for (const k of ['attention','interest','desire','action']) o.aida[k] = clamp(d.aida?.[k]);
+  const sum = o.appeals.reduce((s, a) => s + a.ratio, 0);
+  if (sum > 0) o.appeals.forEach(a => a.ratio = Math.round(a.ratio / sum * 100));
+  if (o.positioning.points.length && !o.positioning.points.some(p => p.self)) o.positioning.points[0].self = true;
+  return o;
+}
+
+/* ========== 圖表 ========== */
+const C = { navy:'#2d5b8a', amber:'#c98a2a', green:'#4f9a5e', brick:'#d24a4a', blue:'#3f7fc2', slate:'#7b889c', ink:'#1f2a3d', line:'#c3cfe0' };
+const PAL = [C.navy, C.amber, C.green, C.brick, C.blue, C.slate, '#8a6fb0', '#3a9a9a'];
+const alpha = (hex, a) => hex + Math.round(a * 255).toString(16).padStart(2, '0');
+let charts = [];
+let DATA = null, COPY = '', QA = [];
+
+function chartDefaults() {
+  if (!window.Chart) return;
+  Chart.defaults.font.family = getComputedStyle(document.body).getPropertyValue('--sans');
+  Chart.defaults.font.size = 12.5;
+  Chart.defaults.color = '#4b5a72';
+  Chart.defaults.borderColor = C.line;
+  Chart.defaults.plugins.legend.labels.boxWidth = 12;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.animation.duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 600;
+}
+const pct = { min: 0, max: 100, ticks: { stepSize: 20 } };
+
+const CHART_DEFS = [
+  { id:'health', title:'文案健檢', build: d => ({ type:'radar',
+      data:{ labels:['清晰度','吸引力','可信度','差異化','急迫感','行動呼籲','易讀性'],
+        datasets:[{ label:'本文案', data:Object.values(d.health), borderColor:C.navy, backgroundColor:alpha(C.navy,.18), pointBackgroundColor:C.navy },
+                  { label:'及格線', data:Array(7).fill(70), borderColor:C.brick, borderDash:[4,4], pointRadius:0, fill:false, borderWidth:1 }]},
+      options:{ scales:{ r:{ ...pct, angleLines:{color:C.line}, grid:{color:C.line}, ticks:{display:false} } } } }) },
+  { id:'aida', title:'AIDA 說服路徑', build: d => ({ type:'bar',
+      data:{ labels:['注意 Attention','興趣 Interest','慾望 Desire','行動 Action'],
+        datasets:[{ label:'強度', data:Object.values(d.aida), backgroundColor:[C.navy,C.blue,C.amber,C.brick], borderRadius:4 }]},
+      options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:pct } } }) },
+  { id:'emotions', title:'情緒光譜', build: d => ({ type:'polarArea',
+      data:{ labels:d.emotions.map(e=>e.name), datasets:[{ data:d.emotions.map(e=>e.score), backgroundColor:PAL.map(c=>alpha(c,.65)), borderColor:'#fbf5e4' }]},
+      options:{ scales:{ r:{ ...pct, grid:{color:C.line}, ticks:{display:false} } }, plugins:{legend:{position:'right'}} } }) },
+  { id:'appeals', title:'說服訴求組成', build: d => ({ type:'doughnut',
+      data:{ labels:d.appeals.map(a=>a.type), datasets:[{ data:d.appeals.map(a=>a.ratio), backgroundColor:PAL, borderColor:'#fbf5e4', borderWidth:2 }]},
+      options:{ cutout:'58%', plugins:{ legend:{position:'right'}, tooltip:{callbacks:{label:c=>` ${c.label}：${c.raw}%`}} } } }) },
+  { id:'keywords', title:'關鍵詞權重', build: d => ({ type:'bar',
+      data:{ labels:d.keywords.map(k=>k.word), datasets:[{ label:'權重', data:d.keywords.map(k=>k.weight),
+        backgroundColor:d.keywords.map((k,i)=>i<3?C.amber:alpha(C.navy,.75)), borderRadius:3 }]},
+      options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:pct } } }) },
+  { id:'segments', title:'目標族群適配', build: d => ({ type:'bubble',
+      data:{ datasets:d.segments.map((s,i)=>({ label:s.name, data:[{x:s.fit,y:s.intent,r:6+s.size*5}],
+        backgroundColor:alpha(PAL[i%PAL.length],.55), borderColor:PAL[i%PAL.length] }))},
+      options:{ scales:{ x:{...pct, title:{display:true,text:'文案適配度'}}, y:{...pct, title:{display:true,text:'購買意圖'}} },
+        plugins:{ legend:{position:'bottom'}, tooltip:{callbacks:{label:c=>{const s=d.segments[c.datasetIndex];return `${s.name}｜適配 ${s.fit}・意圖 ${s.intent}｜${s.why}`;}}} } } }) },
+  { id:'positioning', title:'競品定位圖', build: d => ({ type:'scatter',
+      data:{ datasets:d.positioning.points.map(p=>({ label:p.name, data:[{x:p.x,y:p.y}],
+        pointRadius:p.self?11:7, pointStyle:p.self?'rectRot':'circle',
+        backgroundColor:p.self?C.brick:alpha(C.navy,.6), borderColor:p.self?C.brick:C.navy }))},
+      options:{ scales:{ x:{...pct, title:{display:true,text:d.positioning.xLabel}}, y:{...pct, title:{display:true,text:d.positioning.yLabel}} },
+        layout:{padding:{right:70,top:10}}, plugins:{ legend:{position:'bottom'} } },
+      plugins:[{ id:'quad', beforeDatasetsDraw(ch){ const {ctx,chartArea:a,scales:{x,y}}=ch; ctx.save(); ctx.strokeStyle=C.slate; ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(x.getPixelForValue(50),a.top); ctx.lineTo(x.getPixelForValue(50),a.bottom);
+        ctx.moveTo(a.left,y.getPixelForValue(50)); ctx.lineTo(a.right,y.getPixelForValue(50)); ctx.stroke(); ctx.restore(); },
+        afterDatasetsDraw(ch){ const {ctx}=ch; ctx.save(); ctx.font=Chart.defaults.font.size+'px '+Chart.defaults.font.family; ctx.fillStyle=C.ink;
+          ch.data.datasets.forEach((ds,i)=>{ const pt=ch.getDatasetMeta(i).data[0]; if(pt) ctx.fillText(ds.label, pt.x+10, pt.y-8); }); ctx.restore(); } }] }) },
+  { id:'channels', title:'通路適配度', build: d => ({ type:'bar',
+      data:{ labels:d.channels.map(c=>c.name), datasets:[{ label:'適配度', data:d.channels.map(c=>c.fit),
+        backgroundColor:d.channels.map(c=>c.fit>=75?C.green:c.fit>=50?C.amber:C.slate), borderRadius:4 }]},
+      options:{ plugins:{legend:{display:false}}, scales:{ y:pct } } }) },
+  { id:'journey', title:'顧客旅程覆蓋', build: d => ({ type:'line',
+      data:{ labels:d.journey.map(j=>j.stage), datasets:[
+        { label:'文案覆蓋度', data:d.journey.map(j=>j.score), borderColor:C.navy, backgroundColor:alpha(C.navy,.12), fill:true, tension:.35, pointRadius:5, pointBackgroundColor:d.journey.map(j=>j.score<50?C.brick:C.navy) },
+        { label:'建議水準', data:d.journey.map(()=>65), borderColor:C.amber, borderDash:[5,5], pointRadius:0, fill:false, borderWidth:1.5 }]},
+      options:{ scales:{ y:pct }, plugins:{legend:{position:'bottom'}} } }) }
+];
+
+function renderCharts(d) {
+  charts.forEach(c => c.destroy()); charts = [];
+  const box = $('#charts');
+  box.innerHTML = CHART_DEFS.map((c, i) => `
+    <article class="card">
+      <h3><span class="n">${i + 1}</span>${c.title}<span class="sp"></span><button class="btn sm" data-png="${i}">PNG</button></h3>
+      <div class="canvas"><canvas id="cv-${c.id}"></canvas></div>
+      <p class="insight">${esc(d.insights[c.id] || '')}</p>
+    </article>`).join('');
+  if (!window.Chart) { box.insertAdjacentHTML('afterbegin', '<p class="status err">圖表元件未載入（需連網讀取 Chart.js），文字分析仍可使用。</p>'); return; }
+  CHART_DEFS.forEach(c => {
+    try { charts.push(new Chart($('#cv-' + c.id), c.build(d))); }
+    catch (e) { console.error(c.id, e); charts.push(null); }
+  });
+}
+
+function chartPNG(i) {
+  const ch = charts[i]; if (!ch) return null;
+  const src = ch.canvas, out = document.createElement('canvas');
+  out.width = src.width; out.height = src.height + 60;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#fbf5e4'; ctx.fillRect(0, 0, out.width, out.height);
+  ctx.fillStyle = '#1f2a3d'; ctx.font = `bold ${Math.round(22 * devicePixelRatio)}px ${Chart.defaults.font.family}`;
+  ctx.fillText(CHART_DEFS[i].title, 20, 40);
+  ctx.drawImage(src, 0, 60);
+  return out.toDataURL('image/png');
+}
+function savePNG(i) {
+  const url = chartPNG(i); if (!url) return;
+  const a = document.createElement('a'); a.href = url; a.download = `${i + 1}_${CHART_DEFS[i].title}.png`; a.click();
+}
+
+/* ========== 文字區塊 ========== */
+function renderAll(d) {
+  $('#empty').classList.add('hide'); $('#result').classList.remove('hide');
+  $('#score').innerHTML = `${d.overall}<small>/100</small>`;
+  $('#score').style.color = d.overall >= 75 ? C.green : d.overall >= 55 ? C.navy : C.brick;
+  $('#headline').textContent = d.headline;
+  $('#summary').textContent = d.summary;
+  const F = { product:'產品／服務', coreMessage:'核心訊息', usp:'獨特賣點', tone:'語氣', audience:'推定受眾', cta:'行動呼籲' };
+  $('#facts').innerHTML = Object.entries(F).map(([k, l]) => `<div class="fact"><b>${l}</b>${esc(d.facts[k] || '—')}</div>`).join('');
+
+  renderCharts(d);
+
+  const S = { s:['優勢 Strengths',C.green], w:['劣勢 Weaknesses',C.brick], o:['機會 Opportunities',C.navy], t:['威脅 Threats',C.amber] };
+  $('#swot').innerHTML = Object.entries(S).map(([k, [l, col]]) =>
+    `<div style="border-left:4px solid ${col}"><h4 style="color:${col}">${l}</h4><ul>${d.swot[k].map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('');
+
+  $('#strat').innerHTML = d.strategies.map((s, i) => {
+    const p = /高/.test(s.priority) ? 'h' : /低/.test(s.priority) ? 'l' : 'm';
+    return `<div class="st">
+      <div class="hd"><span class="no">${i + 1}</span><b>${esc(s.title)}</b><span class="pri ${p}">優先 ${esc(s.priority || '中')}</span><span class="sp" style="flex:1"></span><button class="btn ai sm" data-deep="${i}">深挖</button></div>
+      <dl><dt>通路</dt><dd>${esc(s.channel)}</dd><dt>做法</dt><dd>${esc(s.action)}</dd><dt>KPI</dt><dd>${esc(s.kpi)}</dd><dt>時程</dt><dd>${esc(s.timeline)}</dd><dt>預算</dt><dd>${esc(s.budget)}</dd></dl>
+      <div class="deep hide" id="deep-${i}"></div></div>`;
+  }).join('');
+
+  $('#rewrites').innerHTML = d.rewrites.map((r, i) =>
+    `<div class="rw"><span class="k">${esc(r.style)}</span><p>${esc(r.text)}</p><button class="btn sm" data-cp="${i}">複製</button></div>`).join('');
+  $('#improve').innerHTML = d.improvements.map(x => `<li>${esc(x)}</li>`).join('');
+  $('#risks').innerHTML = d.risks.map(x => `<li>${esc(x)}</li>`).join('');
+  $('#plan').textContent = d._plan || '按「AI 產生計畫」，依上方策略排出四週行程與預算分配。';
+  QA = d._qa || []; renderQA(); renderPlat();
+}
+
+function renderQA() {
+  $('#qa').innerHTML = QA.length ? QA.map(m => `<div class="msg ${m.role === 'user' ? 'u' : ''}">${esc(m.content)}</div>`).join('')
+    : '<p class="hint">可以問：哪個族群最該先投？標題怎麼改更適合 IG？預算有限要砍哪一項？</p>';
+}
+
+/* ========== 主流程 ========== */
+async function run() {
+  const copy = $('#copy').value.trim();
+  if (copy.length < 20) return setStatus('文案太短，至少貼 20 個字', true);
+  saveSettings();
+  busy(true); setStatus('分析中，約 20–60 秒…');
+  try {
+    const lim = tpmOf($('#model').value);
+    const OUT = 4500, base = estMsgs(buildPrompt(''));
+    let budget = Math.max(600, lim - OUT - base - 200), text = copy, note = '';
+    if (estTok(text) > budget) {
+      text = await condense(text, budget);
+      note = `（原文 ${copy.length} 字已濃縮為 ${text.length} 字後分析）`;
+    }
+    let raw;
+    for (let tries = 0; ; tries++) {
+      try { setStatus('分析中，約 20–60 秒…' + note); raw = await groq(buildPrompt(text), { maxTokens: 6000, minOut: 2800 }); break; }
+      catch (e) {
+        if (e.code !== 'TOO_BIG' || tries >= 2) throw e;
+        budget = Math.max(400, Math.floor(e.limit - 2900 - base));
+        text = await condense(text, budget);
+        note = `（原文 ${copy.length} 字已濃縮為 ${text.length} 字後分析）`;
+      }
+    }
+    const d = normalize(parseJSON(raw));
+    d._note = note;
+    DATA = d; COPY = copy;
+    renderAll(d); switchTab('charts');
+    pushHistory();
+    setStatus(`完成${d._note || ''}`);
+    $('#main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { setStatus(e.message, true); }
+  finally { busy(false); }
+}
+
+function ctxBrief() {
+  const d = DATA;
+  return `文案：${COPY.slice(0, 1200)}\n\n分析摘要：${d.summary}\n總分：${d.overall}\nSWOT：${JSON.stringify(d.swot)}\n策略：${d.strategies.map((s, i) => `${i + 1}.${s.title}（${s.channel}）${s.action}`).join('；')}\n族群：${d.segments.map(s => `${s.name}(適配${s.fit})`).join('、')}\n通路：${d.channels.map(c => `${c.name}${c.fit}`).join('、')}`;
+}
+
+async function deep(i) {
+  const box = $('#deep-' + i), s = DATA.strategies[i];
+  box.classList.remove('hide'); box.textContent = '展開中…';
+  try {
+    const t = await groq([
+      { role: 'system', content: '你是台灣資深行銷顧問，用繁體中文、條列清楚、可直接執行。不要使用 Markdown 表格。' },
+      { role: 'user', content: `${ctxBrief()}\n\n請把策略「${s.title}」展開成執行手冊：1)執行步驟（5-7步）2)需要的素材與文案範例（2則）3)預算拆分 4)KPI 與檢核時間點 5)常見失敗原因與預防。` }
+    ], { json: false, maxTokens: 3500, minOut: 1500, temperature: .6, effort: 'medium' });
+    box.textContent = t.replace(/\*\*/g, '');
+    s._deep = box.textContent; pushHistory(true);
+  } catch (e) { box.textContent = e.message; }
+}
+
+async function makePlan() {
+  const b = $('#btnPlan'); b.disabled = true; $('#plan').textContent = '排程中…';
+  try {
+    const t = await groq([
+      { role: 'system', content: '你是台灣資深行銷專案經理，用繁體中文，條列清楚，不要使用 Markdown 表格。' },
+      { role: 'user', content: `${ctxBrief()}\n\n請依上述策略排出 30 天執行計畫：分第1-4週，每週列出目標、每日/每兩日的具體任務、負責角色、產出物，最後給預算占比（以百分比）與第30天的成效檢核清單。` }
+    ], { json: false, maxTokens: 4000, minOut: 1800, temperature: .5, effort: 'medium' });
+    DATA._plan = t.replace(/\*\*/g, ''); $('#plan').textContent = DATA._plan; pushHistory(true);
+  } catch (e) { $('#plan').textContent = e.message; }
+  b.disabled = false;
+}
+
+function qaFit() {
+  const lim = tpmOf($('#model').value), room = lim - 1200 - estTok(ctxBrief()) - 200;
+  let h = QA.slice(-10);
+  while (h.length > 1 && estMsgs(h) > room) h = h.slice(2);
+  return h.map(m => ({ role: m.role, content: m.content.slice(0, Math.max(300, room)) }));
+}
+async function ask() {
+  const q = $('#qaIn').value.trim(); if (!q || !DATA) return;
+  $('#qaIn').value = ''; QA.push({ role: 'user', content: q }); renderQA();
+  const btn = $('#btnAsk'); btn.disabled = true;
+  try {
+    const t = await groq([
+      { role: 'system', content: '你是台灣資深行銷顧問，根據提供的文案分析回答，繁體中文、直接、具體，不要使用 Markdown 表格。\n\n' + ctxBrief() },
+      ...qaFit()
+    ], { json: false, maxTokens: 2500, minOut: 900, temperature: .6, effort: 'medium' });
+    QA.push({ role: 'assistant', content: t.replace(/\*\*/g, '') });
+  } catch (e) { QA.push({ role: 'assistant', content: '（錯誤）' + e.message }); }
+  DATA._qa = QA; renderQA(); pushHistory(true); btn.disabled = false;
+}
+
+/* ========== 多平台版本 ========== */
+const PLATFORMS = [
+  { id:'ig', name:'Instagram 貼文', fields:[
+      { k:'caption', label:'貼文內文', type:'text', max:2200, rows:9, note:v => `動態牆只顯示前 125 字：「${[...v].slice(0,125).join('')}…」` },
+      { k:'hashtags', label:'主題標籤（上限 30 個）', type:'tags', max:30, soft:15 } ],
+    schema:'"ig":{"caption":"300-600字，前125字內要有鉤子，可分段並用少量 emoji，不要放 hashtag","hashtags":["#標籤"] 共8-15個}' },
+  { id:'fb', name:'Facebook 貼文', fields:[
+      { k:'text', label:'貼文內文', type:'text', max:63206, soft:800, rows:9, note:v => `未展開時約只看到前 125 字：「${[...v].slice(0,125).join('')}…」` } ],
+    schema:'"fb":{"text":"300-500字，開頭兩行吸睛、分段、結尾明確 CTA 與 [連結]"}' },
+  { id:'line', name:'LINE 官方帳號', fields:[
+      { k:'text', label:'訊息內容', type:'text', max:5000, soft:300, rows:7, note:() => '文字訊息上限 5000 字；推播通知只露出開頭，重點請放第一行' } ],
+    schema:'"line":{"text":"150-250字，口語親切、短段落，第一行就是重點，含 CTA 與 [連結]"}' },
+  { id:'gads', name:'Google 回應式搜尋廣告', fields:[
+      { k:'headlines', label:'廣告標題', type:'list', max:30, unit:'w', count:15, min:3 },
+      { k:'descriptions', label:'廣告說明', type:'list', max:90, unit:'w', count:4, min:2 },
+      { k:'path1', label:'顯示路徑 1', type:'line', max:15, unit:'w' },
+      { k:'path2', label:'顯示路徑 2', type:'line', max:15, unit:'w' } ],
+    schema:'"gads":{"headlines":[15個，每個最多15個中文字（英數半形算半個），彼此不重複，涵蓋品牌、賣點、優惠、CTA],"descriptions":[4個，每個最多45個中文字],"path1":"最多7個中文字","path2":"最多7個中文字"}' },
+  { id:'sms', name:'簡訊', fields:[
+      { k:'text', label:'簡訊內容', type:'text', max:335, soft:70, rows:4, note:v => { const n=[...v].length; return `${n<=70?1:Math.ceil(n/67)} 則計費（中文單則 70 字；超過時每則 67 字）`; } } ],
+    schema:'"sms":{"text":"70字以內（含標點與 [短網址]），開頭用【品牌名】，含優惠與 CTA"}' },
+  { id:'dm', name:'DM 文宣', fields:[
+      { k:'headline', label:'主標', type:'line', max:30, soft:15 },
+      { k:'subhead', label:'副標', type:'line', max:60, soft:30 },
+      { k:'body', label:'內文', type:'text', max:600, soft:300, rows:6 },
+      { k:'bullets', label:'賣點條列', type:'list', max:40, soft:20, count:5, min:3 },
+      { k:'cta', label:'行動呼籲', type:'line', max:30, soft:15 },
+      { k:'note', label:'活動辦法／小字', type:'text', max:200, rows:3 } ],
+    schema:'"dm":{"headline":"15字內","subhead":"30字內","body":"200-300字","bullets":["3-5個賣點，各20字內"],"cta":"15字內","note":"活動期間、辦法、注意事項"}' }
+];
+const PMAP = Object.fromEntries(PLATFORMS.map(p => [p.id, p]));
+const wlen = v => { let n = 0; for (const ch of String(v)) { const c = ch.codePointAt(0); n += (c >= 0x2E80 && c <= 0x9FFF) || (c >= 0xAC00 && c <= 0xD7AF) || (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFF00 && c <= 0xFFEF) || c > 0xFFFF ? 2 : 1; } return n; };
+const meas = (v, f) => f.type === 'tags' ? tagList(v).length : f.unit === 'w' ? wlen(v) : [...String(v || '')].length;
+const tagList = v => (Array.isArray(v) ? v : String(v || '').split(/[\s,，]+/)).map(t => t.trim()).filter(Boolean);
+const lvl = (n, f) => n > f.max ? 'over' : f.soft && n > f.soft ? 'soft' : 'ok';
+const unitTxt = f => f.type === 'tags' ? ' 個' : f.unit === 'w' ? ' 寬' : ' 字';
+const cntHTML = (v, f) => { const n = meas(v, f); return `<span class="cnt ${lvl(n, f)}">${n}/${f.max}${unitTxt(f)}${f.soft && f.type !== 'tags' ? `（建議 ${f.soft}）` : ''}</span>`; };
+
+function normPlat(id, o) {
+  const P = PMAP[id], out = {};
+  o = o || {};
+  for (const f of P.fields) {
+    let v = o[f.k];
+    if (f.type === 'list') v = (Array.isArray(v) ? v : String(v || '').split('\n')).map(x => String(x).trim()).filter(Boolean).slice(0, f.count);
+    else if (f.type === 'tags') v = tagList(v).map(t => t.startsWith('#') ? t : '#' + t);
+    else v = String(v ?? '').replace(/\*\*/g, '').trim();
+    out[f.k] = v;
+  }
+  return out;
+}
+
+function platIssues(id) {
+  const P = PMAP[id], d = DATA._plat?.[id]; if (!d) return [];
+  const iss = [];
+  for (const f of P.fields) {
+    if (f.type === 'list') {
+      d[f.k].forEach((v, i) => { const n = meas(v, f), l = lvl(n, f); if (l !== 'ok') iss.push({ l, t: `${f.label}${i + 1}：${v}（${n}/${f.max}${unitTxt(f)}）` }); });
+      if (f.min && d[f.k].length < f.min) iss.push({ l: 'over', t: `${f.label}至少需要 ${f.min} 個，目前 ${d[f.k].length} 個` });
+    } else {
+      const n = meas(d[f.k], f), l = lvl(n, f);
+      if (l !== 'ok') iss.push({ l, t: `${f.label}（${n}/${f.max}${unitTxt(f)}）` });
+    }
+  }
+  return iss;
+}
+function statHTML(id) {
+  const iss = platIssues(id), over = iss.filter(x => x.l === 'over').length, soft = iss.length - over;
+  return over ? `<span class="pstat over">${over} 項超過上限</span>` : soft ? `<span class="pstat soft">${soft} 項超過建議</span>` : '<span class="pstat ok">全部符合</span>';
+}
+
+function fieldHTML(id, f, v) {
+  const a = `data-pf="${id}" data-k="${f.k}"`;
+  if (f.type === 'text') return `<div class="fld"><div class="lb"><span>${f.label}</span>${cntHTML(v, f)}</div>
+    <textarea ${a} rows="${f.rows || 4}">${esc(v)}</textarea>${f.note ? `<p class="pn">${esc(f.note(v))}</p>` : ''}</div>`;
+  if (f.type === 'line') return `<div class="fld"><div class="lb"><span>${f.label}</span>${cntHTML(v, f)}</div><input type="text" ${a} value="${esc(v)}"></div>`;
+  if (f.type === 'tags') return `<div class="fld"><div class="lb"><span>${f.label}</span>${cntHTML(v, f)}</div><input type="text" ${a} value="${esc(v.join(' '))}"></div>`;
+  const rows = [...v]; while (rows.length < (f.min || 0)) rows.push('');
+  return `<div class="fld"><div class="lb"><span>${f.label}（${v.length}/${f.count} 個，每個上限 ${f.max}${unitTxt(f)}）</span></div>` +
+    rows.map((x, i) => `<div class="li"><span class="ix">${i + 1}</span><input type="text" ${a} data-i="${i}" value="${esc(x)}">${cntHTML(x, f)}</div>`).join('') +
+    (rows.length < f.count ? `<button class="btn sm" data-addi="${id}|${f.k}" style="margin-top:6px">＋ 新增一個</button>` : '') + '</div>';
+}
+
+function renderPlat() {
+  const box = $('#plat');
+  if (!DATA?._plat) { box.innerHTML = '<p class="hint" style="padding:6px 2px">按上方「AI 產生六平台版本」，依分析結果改寫成各平台可直接貼上的文案。</p>'; return; }
+  box.innerHTML = PLATFORMS.map(P => {
+    const d = DATA._plat[P.id];
+    if (!d) return `<article class="card pf"><div class="phd"><b>${P.name}</b><span class="sp"></span><button class="btn ai sm" data-regen="${P.id}">產生</button></div></article>`;
+    const iss = platIssues(P.id);
+    return `<article class="card pf" id="pf-${P.id}">
+      <div class="phd"><b>${P.name}</b><span class="pst">${statHTML(P.id)}</span><span class="sp"></span>
+        <button class="btn sm" data-pcopy="${P.id}">複製全部</button>
+        <button class="btn ai sm" data-regen="${P.id}" data-fix="${iss.length ? 1 : ''}">${iss.length ? 'AI 修正超限' : 'AI 重寫'}</button></div>
+      ${P.fields.map(f => fieldHTML(P.id, f, d[f.k])).join('')}
+    </article>`;
+  }).join('');
+}
+
+function onPlatInput(el) {
+  const id = el.dataset.pf, k = el.dataset.k, f = PMAP[id].fields.find(x => x.k === k), d = DATA._plat[id];
+  if (f.type === 'list') { d[k][+el.dataset.i] = el.value; d[k] = d[k].map(x => x ?? ''); }
+  else if (f.type === 'tags') d[k] = tagList(el.value);
+  else d[k] = el.value;
+  const fld = el.closest(f.type === 'list' ? '.li' : '.fld');
+  fld.querySelector('.cnt').outerHTML = cntHTML(el.value, f);
+  if (f.note) { const pn = fld.querySelector('.pn'); if (pn) pn.textContent = f.note(el.value); }
+  const card = $('#pf-' + id);
+  card.querySelector('.pst').innerHTML = statHTML(id);
+  const rb = card.querySelector('[data-regen]'), has = platIssues(id).length;
+  rb.textContent = has ? 'AI 修正超限' : 'AI 重寫'; rb.dataset.fix = has ? 1 : '';
+  clearTimeout(onPlatInput.t); onPlatInput.t = setTimeout(() => pushHistory(true), 800);
+}
+
+function platText(id) {
+  const d = DATA._plat[id];
+  switch (id) {
+    case 'ig': return d.caption + '\n\n' + d.hashtags.join(' ');
+    case 'gads': return '【標題】\n' + d.headlines.join('\n') + '\n\n【說明】\n' + d.descriptions.join('\n') + `\n\n【顯示路徑】/${d.path1}/${d.path2}`;
+    case 'dm': return `${d.headline}\n${d.subhead}\n\n${d.body}\n\n${d.bullets.map(b => '・' + b).join('\n')}\n\n${d.cta}\n\n${d.note}`;
+    default: return d.text;
+  }
+}
+
+function platBrief() {
+  const d = DATA;
+  return `原文案：\n${COPY.slice(0, 1400)}\n\n分析重點：產品 ${d.facts.product}；核心訊息 ${d.facts.coreMessage}；獨特賣點 ${d.facts.usp}；主要族群 ${d.segments.slice(0, 2).map(s => s.name).join('、')}；` +
+    `需補強 ${Object.entries(d.health).sort((a, b) => a[1] - b[1]).slice(0, 2).map(x => x[0]).join('、')}；最佳改寫標題 ${d.rewrites[0]?.text || ''}`;
+}
+const PLAT_SYS = '你是台灣資深社群與廣告文案。用繁體中文（台灣用語）。嚴格遵守每個欄位的字數限制，寧可短也不要超過。不得捏造原文沒有的價格、數據、獎項或療效。只輸出一個 JSON 物件。';
+
+async function genPlatforms() {
+  if (!DATA) return;
+  const b = $('#btnPlat'); b.disabled = true; setStatus('產生六平台版本中…');
+  try {
+    const raw = await groq([{ role: 'system', content: PLAT_SYS }, { role: 'user', content:
+      `${platBrief()}\n\n語氣：${$('#platTone').value}\n請輸出 JSON：{${PLATFORMS.map(p => p.schema).join(',')}}` }],
+      { maxTokens: 5000, minOut: 2600, temperature: .7 });
+    const o = parseJSON(raw);
+    DATA._plat = {}; PLATFORMS.forEach(p => { if (o[p.id]) DATA._plat[p.id] = normPlat(p.id, o[p.id]); });
+    renderPlat(); pushHistory(true);
+    const bad = PLATFORMS.filter(p => platIssues(p.id).some(x => x.l === 'over')).map(p => p.name);
+    setStatus(bad.length ? `完成，${bad.join('、')} 有超限項目，可按「AI 修正超限」` : '六平台版本完成，全部符合字數上限');
+  } catch (e) { setStatus(e.message, true); }
+  b.disabled = false;
+}
+
+async function regenPlatform(id, fix) {
+  const P = PMAP[id], btn = document.querySelector(`[data-regen="${id}"]`); if (btn) btn.disabled = true;
+  try {
+    let extra = '';
+    if (fix && DATA._plat?.[id]) extra = `\n\n上一版：${JSON.stringify(DATA._plat[id])}\n以下項目不符合字數限制，請只縮短或補足這些項目，其餘盡量保留：\n${platIssues(id).map(x => '- ' + x.t).join('\n')}`;
+    const raw = await groq([{ role: 'system', content: PLAT_SYS }, { role: 'user', content:
+      `${platBrief()}\n\n語氣：${$('#platTone').value}\n請只輸出 ${P.name} 版本，JSON：{${P.schema}}${extra}` }],
+      { maxTokens: 2500, minOut: 1000, temperature: fix ? .4 : .8 });
+    const o = parseJSON(raw);
+    DATA._plat = DATA._plat || {};
+    DATA._plat[id] = normPlat(id, o[id] || o);
+    renderPlat(); pushHistory(true); toast(`${P.name} 已更新`);
+  } catch (e) { setStatus(e.message, true); if (btn) btn.disabled = false; }
+}
+
+/* ========== PPTX 簡報 ========== */
+
+function chartImage(i, w = 960, h = 600) {
+  const holder = document.createElement('div');
+  holder.style.cssText = `position:fixed;left:-10000px;top:0;width:${w}px;height:${h}px`;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h; holder.appendChild(cv); document.body.appendChild(holder);
+  const oldSize = Chart.defaults.font.size; Chart.defaults.font.size = 19;
+  try {
+    const cfg = CHART_DEFS[i].build(DATA);
+    cfg.options = { ...cfg.options, responsive: false, animation: false, devicePixelRatio: 1.5 };
+    if (cfg.options.scales?.r) cfg.options.scales.r = { ...cfg.options.scales.r, pointLabels: { font: { size: 20 } } };
+    cfg.plugins = [...(cfg.plugins || []), { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.fillStyle = '#fbf5e4'; x.fillRect(0, 0, c.width, c.height); x.restore(); } }];
+    const ch = new Chart(cv, cfg);
+    const url = ch.toBase64Image('image/png');
+    ch.destroy(); return url;
+  } finally { Chart.defaults.font.size = oldSize; holder.remove(); }
+}
+
+function keyStats(id) {
+  const d = DATA, H = { clarity:'清晰度', appeal:'吸引力', credibility:'可信度', differentiation:'差異化', urgency:'急迫感', cta:'行動呼籲', readability:'易讀性' };
+  switch (id) {
+    case 'health': return Object.entries(d.health).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${H[k]}　${v}${v < 70 ? '　▼待加強' : ''}`);
+    case 'aida': return [['注意',d.aida.attention],['興趣',d.aida.interest],['慾望',d.aida.desire],['行動',d.aida.action]].map(([k, v]) => `${k}　${v}`);
+    case 'emotions': return [...d.emotions].sort((a, b) => b.score - a.score).map(e => `${e.name}　${e.score}`);
+    case 'appeals': return d.appeals.map(a => `${a.type}　${a.ratio}%`);
+    case 'keywords': return d.keywords.slice(0, 8).map(k => `${k.word}　${k.weight}`);
+    case 'segments': return [...d.segments].sort((a, b) => b.fit - a.fit).map(s => `${s.name}　適配 ${s.fit}／意圖 ${s.intent}`);
+    case 'positioning': return d.positioning.points.map(p => `${p.self ? '★ ' : ''}${p.name}　(${p.x}, ${p.y})`);
+    case 'channels': return d.channels.slice(0, 8).map(c => `${c.name}　${c.fit}`);
+    case 'journey': return d.journey.map(j => `${j.stage}　${j.score}${j.score < 60 ? '　▼缺口' : ''}`);
+  }
+  return [];
+}
+
+async function exportPPTX() {
+  if (!DATA) return;
+  const btn = $('#btnPptx'); btn.disabled = true; setStatus('產生簡報中…');
+  try {
+    await loadScript(LIB.pptx);
+    const d = DATA, X = { bg:'F2F5FA', panel:'E4EAF4', line:'C3CFE0', ink:'1F2A3D', ink2:'4B5A72', ink3:'7B889C', cream:'FBF5E4', navy:'2D5B8A', brick:'D24A4A', green:'4F9A5E', amber:'C98A2A', white:'FFFFFF' };
+    const F = 'Microsoft JhengHei';
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; pptx.title = '文案策略分析報告'; pptx.author = '文案策略X光機';
+    const prod = d.facts.product || '行銷文案';
+    let page = 0;
+    const T = (s, txt, o) => s.addText(txt, { fontFace: F, color: X.ink, margin: 0, valign: 'top', ...o });
+    const box = (s, x, y, w, h, fill = X.cream) => s.addShape(pptx.ShapeType.roundRect, { x, y, w, h, rectRadius: 0.08, fill: { color: fill }, line: { color: X.line, width: 0.75 } });
+    const newSlide = (no, title) => {
+      const s = pptx.addSlide(); page++;
+      s.background = { color: X.bg };
+      T(s, `${String(no).padStart(2, '0')}`, { x: 0.6, y: 0.42, w: 0.6, h: 0.3, fontSize: 12, bold: true, color: X.brick, charSpacing: 2 });
+      T(s, title, { x: 0.6, y: 0.7, w: 12, h: 0.6, fontSize: 26, bold: true });
+      T(s, `${prod}｜文案策略分析`, { x: 7.2, y: 7.05, w: 5.5, h: 0.25, fontSize: 9, color: X.ink3, align: 'right' });
+      T(s, String(page), { x: 12.75, y: 7.05, w: 0.3, h: 0.25, fontSize: 9, color: X.ink3, align: 'right' });
+      return s;
+    };
+
+    // 1 封面
+    { const s = pptx.addSlide(); page++; s.background = { color: X.ink };
+      T(s, '文案策略分析報告', { x: 0.8, y: 1.0, w: 8, h: 0.4, fontSize: 14, color: 'A9B8CC', charSpacing: 4 });
+      T(s, prod, { x: 0.8, y: 1.6, w: 8.6, h: 1.4, fontSize: 40, bold: true, color: X.cream, valign: 'middle', fit: 'shrink' });
+      T(s, d.headline, { x: 0.8, y: 3.2, w: 8.4, h: 0.8, fontSize: 20, color: 'D5DEEA' });
+      T(s, new Date().toLocaleDateString('zh-TW'), { x: 0.8, y: 6.5, w: 4, h: 0.3, fontSize: 12, color: 'A9B8CC' });
+      s.addShape(pptx.ShapeType.ellipse, { x: 9.6, y: 1.7, w: 2.9, h: 2.9, fill: { color: '2A3850' }, line: { color: X.amber, width: 2 } });
+      T(s, String(d.overall), { x: 9.6, y: 2.2, w: 2.9, h: 1.3, fontSize: 64, bold: true, color: X.amber, align: 'center', valign: 'middle' });
+      T(s, '綜合分數 / 100', { x: 9.6, y: 3.5, w: 2.9, h: 0.4, fontSize: 12, color: 'D5DEEA', align: 'center' });
+    }
+
+    // 2 分析總覽
+    { const s = newSlide(1, '分析總覽');
+      const sc = d.overall >= 75 ? X.green : d.overall >= 55 ? X.navy : X.brick;
+      box(s, 0.6, 1.55, 2.6, 2.6, X.cream);
+      T(s, String(d.overall), { x: 0.6, y: 1.8, w: 2.6, h: 1.4, fontSize: 60, bold: true, color: sc, align: 'center', valign: 'middle' });
+      T(s, '綜合分數 / 100', { x: 0.6, y: 3.3, w: 2.6, h: 0.4, fontSize: 12, color: X.ink3, align: 'center' });
+      T(s, d.headline, { x: 3.6, y: 1.55, w: 9.1, h: 0.55, fontSize: 20, bold: true, color: X.navy });
+      T(s, d.summary, { x: 3.6, y: 2.2, w: 9.1, h: 1.95, fontSize: 14, color: X.ink2, lineSpacingMultiple: 1.3, fit: 'shrink' });
+      const facts = [['產品／服務','product'],['核心訊息','coreMessage'],['獨特賣點','usp'],['語氣','tone'],['推定受眾','audience'],['行動呼籲','cta']];
+      facts.forEach(([l, k], i) => {
+        const x = 0.6 + (i % 3) * 4.1, y = 4.5 + Math.floor(i / 3) * 1.25;
+        box(s, x, y, 3.9, 1.1, X.panel);
+        T(s, l, { x: x + 0.2, y: y + 0.13, w: 3.5, h: 0.28, fontSize: 10, color: X.ink3 });
+        T(s, d.facts[k] || '—', { x: x + 0.2, y: y + 0.42, w: 3.5, h: 0.6, fontSize: 13, bold: true, fit: 'shrink' });
+      });
+    }
+
+    // 3-11 九張圖表
+    for (let i = 0; i < CHART_DEFS.length; i++) {
+      setStatus(`產生簡報中… 圖表 ${i + 1}/${CHART_DEFS.length}`); await sleep(10);
+      const c = CHART_DEFS[i], s = newSlide(i + 2, c.title);
+      box(s, 0.6, 1.5, 8.2, 5.35, X.cream);
+      s.addImage({ data: chartImage(i), x: 0.7, y: 1.6, w: 8.0, h: 5.0 });
+      box(s, 9.1, 1.5, 3.65, 5.35, X.panel);
+      T(s, '判讀', { x: 9.35, y: 1.7, w: 3.2, h: 0.3, fontSize: 11, bold: true, color: X.amber, charSpacing: 2 });
+      T(s, d.insights[c.id] || '', { x: 9.35, y: 2.05, w: 3.2, h: 2.0, fontSize: 12.5, color: X.ink, lineSpacingMultiple: 1.25, fit: 'shrink' });
+      T(s, '重點數據', { x: 9.35, y: 4.2, w: 3.2, h: 0.3, fontSize: 11, bold: true, color: X.amber, charSpacing: 2 });
+      T(s, keyStats(c.id).slice(0, 8).map(t => ({ text: t, options: { breakLine: true } })), { x: 9.35, y: 4.55, w: 3.2, h: 2.15, fontSize: 11, color: X.ink2, lineSpacingMultiple: 1.15, fit: 'shrink' });
+    }
+
+    // 12 SWOT
+    { const s = newSlide(11, 'SWOT 分析');
+      const Q = [['s','優勢 Strengths',X.green],['w','劣勢 Weaknesses',X.brick],['o','機會 Opportunities',X.navy],['t','威脅 Threats',X.amber]];
+      Q.forEach(([k, l, col], i) => {
+        const x = 0.6 + (i % 2) * 6.15, y = 1.5 + Math.floor(i / 2) * 2.75;
+        box(s, x, y, 5.95, 2.6, X.cream);
+        T(s, l, { x: x + 0.3, y: y + 0.2, w: 5.4, h: 0.4, fontSize: 16, bold: true, color: col });
+        T(s, d.swot[k].map(t => ({ text: t, options: { bullet: { indent: 14 }, breakLine: true } })), { x: x + 0.3, y: y + 0.7, w: 5.4, h: 1.75, fontSize: 13, color: X.ink, lineSpacingMultiple: 1.2, fit: 'shrink' });
+      });
+    }
+
+    // 13 策略
+    { const s = newSlide(12, '策略與行動');
+      const hd = ['優先', '策略', '通路', '做法', 'KPI', '時程'].map(t => ({ text: t, options: { bold: true, color: X.white, fill: { color: X.navy } } }));
+      const pc = p => /高/.test(p) ? X.brick : /低/.test(p) ? X.ink3 : X.amber;
+      const rows = d.strategies.map((t, i) => [
+        { text: t.priority || '中', options: { bold: true, color: pc(t.priority || ''), align: 'center' } },
+        { text: t.title, options: { bold: true } }, t.channel || '', t.action || '', t.kpi || '', t.timeline || ''
+      ].map(c => typeof c === 'string' ? { text: c } : c).map(c => ({ ...c, options: { ...(c.options || {}), fill: { color: i % 2 ? X.panel : X.cream } } })));
+      const n = rows.length, fs = n > 5 ? 9.5 : 10.5;
+      s.addTable([hd, ...rows], { x: 0.6, y: 1.5, w: 12.15, colW: [0.7, 1.9, 1.6, 4.55, 2.2, 1.2], fontFace: F, fontSize: fs, color: X.ink,
+        border: { type: 'solid', pt: 0.75, color: X.line }, valign: 'middle', margin: 0.06, rowH: Math.min(0.9, 5.3 / (n + 1)) });
+    }
+
+    const fname = `文案策略分析_${prod.replace(/[\\/:*?"<>|\s]/g, '').slice(0, 20)}_${stamp()}.pptx`;
+    await pptx.writeFile({ fileName: fname });
+    setStatus(`簡報已下載（${page} 頁）`);
+  } catch (e) { console.error(e); setStatus('簡報產生失敗：' + e.message, true); }
+  btn.disabled = false;
+}
+
+/* ========== 匯出 ========== */
+function toMarkdown() {
+  const d = DATA, L = [];
+  L.push(`# 文案策略分析報告`, '', `**總分：${d.overall}/100**　${d.headline}`, '', d.summary, '');
+  L.push('## 文案重點'); Object.entries(d.facts).forEach(([k, v]) => L.push(`- ${k}：${v}`));
+  L.push('', '## 圖表判讀');
+  CHART_DEFS.forEach((c, i) => L.push(`### ${i + 1}. ${c.title}`, d.insights[c.id] || '', ''));
+  L.push('### 文案健檢分數', ...Object.entries(d.health).map(([k, v]) => `- ${k}：${v}`), '');
+  L.push('### 族群', ...d.segments.map(s => `- ${s.name}｜適配 ${s.fit}｜意圖 ${s.intent}｜${s.why}`), '');
+  L.push('### 通路', ...d.channels.map(c => `- ${c.name}：${c.fit}`), '');
+  L.push('## SWOT');
+  [['優勢', 's'], ['劣勢', 'w'], ['機會', 'o'], ['威脅', 't']].forEach(([l, k]) => L.push(`**${l}**`, ...d.swot[k].map(x => `- ${x}`), ''));
+  L.push('## 策略');
+  d.strategies.forEach((s, i) => { L.push(`### ${i + 1}. ${s.title}（優先 ${s.priority}）`, `- 通路：${s.channel}`, `- 做法：${s.action}`, `- KPI：${s.kpi}`, `- 時程：${s.timeline}`, `- 預算：${s.budget}`); if (s._deep) L.push('', s._deep); L.push(''); });
+  if (d._plan) L.push('## 30 天執行計畫', d._plan, '');
+  L.push('## 改寫標題', ...d.rewrites.map(r => `- 【${r.style}】${r.text}`), '');
+  L.push('## 改進建議', ...d.improvements.map((x, i) => `${i + 1}. ${x}`), '');
+  L.push('## 風險提醒', ...d.risks.map(x => `- ${x}`), '');
+  if (d._plat) { L.push('## 多平台版本'); PLATFORMS.forEach(P => { if (d._plat[P.id]) L.push(`### ${P.name}`, platText(P.id), ''); }); }
+  L.push('---', '## 原始文案', COPY);
+  return L.join('\n');
+}
+const stamp = () => new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+
+/* ========== 歷史紀錄 ========== */
+let histId = null;
+function pushHistory(update) {
+  const list = LS.get('csa_hist', []);
+  if (!update || !histId) histId = Date.now();
+  const item = { id: histId, t: new Date().toLocaleString('zh-TW'), title: DATA.facts.product || COPY.slice(0, 20), copy: COPY, data: DATA };
+  const i = list.findIndex(x => x.id === histId);
+  if (i >= 0) list[i] = item; else list.unshift(item);
+  LS.set('csa_hist', list.slice(0, 10)); renderHist();
+}
+function renderHist() {
+  const list = LS.get('csa_hist', []);
+  $('#hist').innerHTML = list.length ? list.map(h =>
+    `<div class="hi"><span data-h="${h.id}" title="${esc(h.t)}">${esc(h.title)}・${esc(h.t)}</span><button class="btn sm" data-hd="${h.id}">刪</button></div>`).join('')
+    : '<p class="hint">尚無紀錄</p>';
+}
+
+/* ========== 設定 ========== */
+function saveSettings() {
+  LS.set('csa_tpm_manual', $('#tpm').value.trim());
+  LS.set('csa_vmodel', $('#vmodel').value);
+  LS.set('csa_model', $('#model').value);
+  LS.set('csa_remember', $('#remember').checked);
+  LS.set('csa_keys', $('#remember').checked ? $('#keys').value : '');
+}
+function loadSettings() {
+  $('#remember').checked = LS.get('csa_remember', true);
+  $('#keys').value = LS.get('csa_keys', '');
+  $('#tpm').value = LS.get('csa_tpm_manual', '');
+  const vm = LS.get('csa_vmodel', 'auto');
+  if (vm !== 'auto' && vm !== 'ocr') $('#vmodel').add(new Option(vm, vm));
+  $('#vmodel').value = vm;
+  const m = LS.get('csa_model', '');
+  if (m) { if (![...$('#model').options].some(o => o.value === m)) $('#model').add(new Option(m, m)); $('#model').value = m; }
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('hide', p.id !== 'pane-' + t));
+  if (t === 'charts') charts.forEach(c => c && c.resize());
+}
+
+/* ========== 檔案解析 ========== */
+const LIB = {
+  pdf: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+  pdfWorker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+  mammoth: 'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js',
+  pptx: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
+};
+const loaded = {};
+function loadScript(src) {
+  return loaded[src] ||= new Promise((ok, no) => {
+    const el = document.createElement('script'); el.src = src;
+    el.onload = ok; el.onerror = () => { delete loaded[src]; no(new Error('元件載入失敗，請確認網路連線')); };
+    document.head.appendChild(el);
+  });
+}
+const FILES = [];
+function kindOf(f) {
+  const n = f.name.toLowerCase();
+  if (f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/.test(n)) return '圖像';
+  if (n.endsWith('.pdf') || f.type === 'application/pdf') return 'PDF';
+  if (n.endsWith('.docx')) return 'DOCX';
+  if (n.endsWith('.doc')) return 'DOC';
+  return 'TXT';
+}
+function renderFiles() {
+  $('#files').innerHTML = FILES.map((f, i) => `<div class="fi"><span class="ty">${f.kind}</span><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="fs ${f.cls || ''}">${esc(f.msg || '')}</span><button data-fx="${i}" aria-label="移除">✕</button></div>`).join('');
+}
+function setF(rec, msg, cls) { rec.msg = msg; rec.cls = cls; renderFiles(); }
+
+async function handleFiles(list) {
+  const arr = [...list]; if (!arr.length) return;
+  const recs = arr.map(f => ({ file: f, name: f.name || '貼上的圖片.png', kind: kindOf(f), msg: '等待中', cls: '' }));
+  FILES.push(...recs); renderFiles();
+  for (const r of recs) {
+    try {
+      setF(r, '解析中…', 'run');
+      let text = '';
+      if (r.kind === 'PDF') text = await readPDF(r);
+      else if (r.kind === 'DOCX') text = await readDOCX(r.file);
+      else if (r.kind === 'DOC') throw new Error('舊版 .doc 請另存為 .docx');
+      else if (r.kind === '圖像') text = await readImage(r);
+      else { text = await r.file.text(); if (/\.html?$/i.test(r.name)) text = new DOMParser().parseFromString(text, 'text/html').body.innerText; }
+      text = text.replace(/\n{3,}/g, '\n\n').trim();
+      if (!text) throw new Error('沒有讀到文字');
+      r.text = text;
+      const cur = $('#copy').value.trim();
+      $('#copy').value = (cur ? cur + '\n\n' : '') + `【${r.name}】\n` + text;
+      updCount(); setF(r, `${text.length} 字`, 'ok');
+    } catch (e) { setF(r, e.message, 'err'); }
+  }
+}
+
+async function readDOCX(file) {
+  await loadScript(LIB.mammoth);
+  const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+  return res.value;
+}
+
+async function readPDF(rec) {
+  await loadScript(LIB.pdf);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
+  const pdf = await pdfjsLib.getDocument({ data: await rec.file.arrayBuffer() }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    setF(rec, `讀取第 ${i}/${pdf.numPages} 頁`, 'run');
+    const tc = await (await pdf.getPage(i)).getTextContent();
+    let line = '', out = [], lastY = null;
+    for (const it of tc.items) {
+      const y = it.transform?.[5];
+      if (lastY !== null && Math.abs(y - lastY) > 4) { out.push(line); line = ''; }
+      line += it.str; lastY = y;
+    }
+    out.push(line); pages.push(out.join('\n').trim());
+  }
+  const text = pages.join('\n\n');
+  // 掃描版：平均每頁文字太少 → 轉圖像辨識
+  if (text.replace(/\s/g, '').length / pdf.numPages < 40) {
+    const max = Math.min(pdf.numPages, 6), parts = [];
+    for (let i = 1; i <= max; i++) {
+      setF(rec, `掃描頁辨識 ${i}/${max}`, 'run');
+      const page = await pdf.getPage(i), vp = page.getViewport({ scale: 1.6 });
+      const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      parts.push(await visionRead(shrink(cv), `第 ${i} 頁`, rec));
+    }
+    if (pdf.numPages > max) parts.push(`（僅辨識前 ${max} 頁，共 ${pdf.numPages} 頁）`);
+    return parts.join('\n\n');
+  }
+  return text;
+}
+
+function shrink(src, maxSide = 1600) {
+  const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
+  const k = Math.min(1, maxSide / Math.max(w, h));
+  const cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+  const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(src, 0, 0, cv.width, cv.height);
+  let q = .85, url = cv.toDataURL('image/jpeg', q);
+  while (url.length > 3.5e6 && q > .4) { q -= .15; url = cv.toDataURL('image/jpeg', q); }
+  return url;
+}
+
+async function readImage(rec) {
+  const url = URL.createObjectURL(rec.file);
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('圖片無法開啟')); i.src = url; });
+    return await visionRead(shrink(img), '圖像', rec);
+  } finally { URL.revokeObjectURL(url); }
+}
+
+const NOT_VISION = /whisper|tts|guard|orpheus|playai|safeguard|gpt-oss|compound|allam|distil|embed/i;
+let NO_VISION = LS.get('csa_novision', 0) > Date.now() - 6 * 3600e3;   // 6 小時內探測過無圖像模型就直接走 OCR
+async function visionCandidates() {
+  const pick = $('#vmodel').value;
+  if (pick !== 'auto') return [pick];
+  const ids = await ensureModels();
+  const ok = LS.get('csa_vmodel_ok', '');
+  const bad = LS.get('csa_vmodel_bad', []);
+  const named = ids.filter(id => VISION_RE.test(id));
+  const others = ids.filter(id => !VISION_RE.test(id) && !NOT_VISION.test(id));   // 名稱看不出來的也試
+  return [...new Set([ok, ...named, ...others])].filter(id => id && ids.includes(id) && !bad.includes(id)).slice(0, 8);
+}
+
+const VISION_PROMPT = label => `這是一份行銷素材（${label}）。請用繁體中文輸出：\n1.【文字內容】完整逐字抄錄圖中所有文字，保留標題、段落與條列順序，不要改寫\n2.【視覺元素】用 2-4 句描述主視覺、色調、版面配置、人物或產品呈現、品牌標誌位置\n只輸出這兩段。`;
+
+async function groqVision(dataUrl, label, rec) {
+  const models = await visionCandidates();
+  const tried = [];
+  for (const m of models) {
+    rec && setF(rec, `AI 辨識（${m.split('/').pop()}）…`, 'run');
+    try {
+      const t = await groq([{ role: 'user', content: [
+        { type: 'text', text: VISION_PROMPT(label) },
+        { type: 'image_url', image_url: { url: dataUrl } }
+      ] }], { json: false, maxTokens: 2500, minOut: 800, temperature: .2, models: [m], effort: 'low' });
+      LS.set('csa_vmodel_ok', m);
+      return t.replace(/\*\*/g, '').trim();
+    } catch (e) {
+      if (/HTTP (400|404|422)|過長/.test(e.message)) { tried.push(m); continue; }   // 不支援圖像
+      throw e;                                                                  // 額度、網路等問題直接回報
+    }
+  }
+  if ($('#vmodel').value === 'auto') {
+    LS.set('csa_vmodel_bad', [...new Set([...LS.get('csa_vmodel_bad', []), ...tried])]);
+    LS.set('csa_novision', Date.now()); NO_VISION = true;
+  }
+  throw new Error('NO_VISION');
+}
+
+/* ---- 本機 OCR（Tesseract.js，繁中＋英文）---- */
+LIB.tess = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let ocrWorker = null, ocrRec = null;
+async function ocrRead(dataUrl, rec) {
+  await loadScript(LIB.tess);
+  ocrRec = rec;
+  if (!ocrWorker) {
+    rec && setF(rec, '下載 OCR 語言檔（首次約 10MB）…', 'run');
+    ocrWorker = await Tesseract.createWorker(['chi_tra', 'eng'], 1, {
+      logger: m => { if (ocrRec && m.status === 'recognizing text') setF(ocrRec, `本機 OCR ${Math.round(m.progress * 100)}%`, 'run'); }
+    });
+  }
+  const { data } = await ocrWorker.recognize(dataUrl);
+  const text = (data.text || '')
+    .replace(/([\u2E80-\u9FFF\uFF00-\uFFEF\u3000-\u303F])[ \t]+(?=[\u2E80-\u9FFF\uFF00-\uFFEF\u3000-\u303F])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  if (!text) throw new Error('圖中沒有辨識到文字');
+  return `1.【文字內容】（本機 OCR，可能有錯字）\n${text}`;
+}
+
+async function visionRead(dataUrl, label, rec) {
+  const mode = $('#vmodel').value;
+  if (mode !== 'ocr' && !(mode === 'auto' && NO_VISION) && getKeys().length) {
+    try { return await groqVision(dataUrl, label, rec); }
+    catch (e) { if (e.message !== 'NO_VISION') throw e; }
+  }
+  return ocrRead(dataUrl, rec);
+}
+
+/* ========== 範例 ========== */
+const SAMPLE = `【山嵐冷萃｜每週一瓶，喝到阿里山的清晨】
+你有多久沒好好喝一杯咖啡了？
+山嵐冷萃選用阿里山海拔 1,200 公尺契作咖啡豆，低溫 18 小時慢萃，酸度降低 60%，入口是蜜香與烏龍茶般的回甘。
+不加糖、不加奶，一樣順口。
+現在訂閱「週週到」方案，每週宅配一瓶 1000ml，單瓶只要 299 元，比門市省 25%。
+前 300 名加碼送手工陶杯，限量送完為止。
+加入會員還能累積點數，推薦好友各得一瓶。
+👉 立即訂閱，讓下週一的早晨，從山上開始。`;
+
+const DEMO = {"overall":72,"headline":"感官有畫面，信任與差異化待補","summary":"文案以產地與慢萃工藝建立質感，搭配訂閱價差與限量贈品推動轉換，AIDA 路徑完整。弱點是『酸度降低60%』缺少佐證、與一般冷萃的差異說得不夠銳利，且受眾過廣，未鎖定早晨通勤或居家辦公等具體情境。",
+"facts":{"product":"阿里山冷萃咖啡訂閱","coreMessage":"每週宅配，喝到產地清晨的順口冷萃","usp":"阿里山契作豆＋18小時低溫慢萃","tone":"溫潤感性、帶生活畫面","audience":"重視品質的都會上班族","cta":"立即訂閱週週到方案"},
+"health":{"clarity":82,"appeal":78,"credibility":58,"differentiation":55,"urgency":74,"cta":80,"readability":85},
+"aida":{"attention":76,"interest":80,"desire":72,"action":78},
+"emotions":[{"name":"期待","score":78},{"name":"療癒","score":72},{"name":"信任","score":55},{"name":"驚喜","score":48},{"name":"急迫","score":66},{"name":"歸屬","score":40}],
+"appeals":[{"type":"感性共鳴","ratio":30},{"type":"理性功能","ratio":25},{"type":"價格優惠","ratio":20},{"type":"稀缺急迫","ratio":15},{"type":"社會推薦","ratio":10}],
+"keywords":[{"word":"阿里山","weight":92},{"word":"冷萃","weight":88},{"word":"訂閱","weight":80},{"word":"18小時慢萃","weight":74},{"word":"省25%","weight":68},{"word":"手工陶杯","weight":60},{"word":"蜜香回甘","weight":58},{"word":"不加糖","weight":50},{"word":"限量","weight":46},{"word":"推薦好友","weight":38}],
+"segments":[{"name":"都會上班族","fit":82,"intent":70,"size":5,"why":"早晨情境與宅配便利直接對應"},{"name":"居家工作者","fit":74,"intent":66,"size":3,"why":"大容量瓶裝適合在家分次飲用"},{"name":"精品咖啡愛好者","fit":68,"intent":58,"size":2,"why":"產地與工藝有吸引力，但缺風味細節與烘焙資訊"},{"name":"送禮族","fit":45,"intent":40,"size":3,"why":"文案未提禮盒或包裝"},{"name":"健康飲食族","fit":62,"intent":52,"size":3,"why":"無糖低酸是賣點，可再強化"}],
+"positioning":{"xLabel":"價格 低 → 高","yLabel":"功能取向 → 情感體驗","points":[{"name":"山嵐冷萃","x":62,"y":74,"self":true},{"name":"超商瓶裝咖啡","x":15,"y":20,"self":false},{"name":"連鎖咖啡外帶","x":55,"y":45,"self":false},{"name":"精品咖啡館","x":85,"y":82,"self":false},{"name":"即溶冷萃粉","x":28,"y":30,"self":false}]},
+"channels":[{"name":"Instagram","fit":86},{"name":"官網訂閱頁","fit":84},{"name":"LINE 官方帳號","fit":80},{"name":"Facebook 社團","fit":64},{"name":"Podcast 贊助","fit":58},{"name":"辦公室團購","fit":72},{"name":"超商通路","fit":30}],
+"journey":[{"stage":"認知","score":75},{"stage":"興趣","score":80},{"stage":"考慮","score":60},{"stage":"購買","score":78},{"stage":"忠誠","score":55},{"stage":"推薦","score":48}],
+"insights":{"health":"易讀與清晰度高，但可信度、差異化低於及格線；『酸度降低60%』應補檢測來源，並說清楚與一般冷萃的不同。","aida":"四階段平衡，慾望略弱；可加入喝第一口的情境描寫或真實用戶回饋，把『想要』推高。","emotions":"期待與療癒是主調，信任感偏低；加入農友照片、產地故事可補足。","appeals":"感性與理性兼具，社會推薦僅一成，訂閱型商品需要更多口碑佐證。","keywords":"『阿里山』『冷萃』記憶點強，建議在標題與廣告素材固定這兩個詞，形成搜尋聯想。","segments":"都會上班族適配與意圖最高，應為首投族群；送禮族適配低，需另做禮盒文案。","positioning":"落在中高價、情感體驗象限，與精品咖啡館相近但更便利，可主打『在家喝到咖啡館等級』。","channels":"IG 與 LINE 最適合，官網訂閱頁承接轉換；超商通路與訂閱模式衝突，不建議。","journey":"考慮、忠誠、推薦三段偏弱；需要比較資訊、續訂誘因與推薦機制的細節。"},
+"swot":{"s":["產地與工藝具體，有畫面感","訂閱價差明確，計算簡單","贈品與限量製造行動理由"],"w":["功效數據缺乏佐證","差異化敘述不足","未說明停訂與退貨規則，降低信任"],"o":["居家工作族群擴大","企業辦公室福利訂閱","與早餐品牌或選物店聯名"],"t":["連鎖品牌推出平價冷萃","訂閱疲勞導致流失","食品標示與廣告法規風險"]},
+"strategies":[{"title":"產地信任包","priority":"高","channel":"官網、IG","action":"拍攝契作農友與 18 小時萃取過程短影音，官網加入檢測報告與農友故事頁，所有廣告導流到這頁再進訂閱。","kpi":"訂閱頁轉換率由 2% 提升至 3.5%","timeline":"第1–3週","budget":"中"},{"title":"上班族早晨情境廣告","priority":"高","channel":"IG、Facebook 廣告","action":"鎖定 25–40 歲辦公族，以『週一早上 7:30』情境做 3 支 15 秒短片，A/B 測試痛點與療癒兩種開場。","kpi":"CTR 1.8% 以上、CPA 低於 350 元","timeline":"第2–6週","budget":"高"},{"title":"LINE 續訂與推薦機制","priority":"中","channel":"LINE 官方帳號","action":"訂閱第3週推送風味筆記與續訂優惠，推薦碼雙方各得一瓶，並設排行榜每月獎勵。","kpi":"第2個月續訂率 70%、推薦占新客 20%","timeline":"第3週起","budget":"低"},{"title":"辦公室團訂方案","priority":"中","channel":"業務開發、LinkedIn","action":"推出 10 瓶起的辦公室週配方案與茶水間陳列卡，先找 20 家新創試喝。","kpi":"首月簽下 5 家企業","timeline":"第4–8週","budget":"中"},{"title":"禮盒版文案","priority":"低","channel":"官網、電商平台","action":"針對節慶推出陶杯禮盒，另寫送禮情境文案，避免與訂閱主訊息混雜。","kpi":"節慶檔期禮盒 500 組","timeline":"節慶前 6 週","budget":"中"}],
+"rewrites":[{"style":"痛點直擊","text":"喝咖啡胃酸？試試阿里山 18 小時冷萃，順到不用加糖"},{"style":"數據說服","text":"1,200 公尺契作豆 × 18 小時慢萃，每瓶 299 元比門市省 25%"},{"style":"故事情境","text":"週一 7:30，打開冰箱，就是阿里山的清晨"},{"style":"限時促購","text":"前 300 名訂閱送手工陶杯，送完就沒了"},{"style":"社群口語","text":"上班族續命新選擇：一週一瓶，喝起來像烏龍茶的冷萃"}],
+"improvements":["『酸度降低60%』需註明比較基準與檢測單位，否則易被質疑誇大","開頭問句太常見，可改成具體時間與場景，提升注意力","『蜜香與烏龍茶般的回甘』可加入第三方評價或杯測分數支撐","補上停訂、暫停與運費規則，降低訂閱心理門檻","推薦機制只一句帶過，應寫清楚獎勵與門檻","CTA 可加入『第一週免運』等低門檻試用，減少首次購買猶豫"],
+"risks":["功效比例需有檢測依據，避免違反食品廣告不實標示規定","『比門市省25%』需確認比較價格基準一致","限量贈品需明確數量與活動期間，避免消費爭議"]};
+
+function loadDemo() {
+  $('#copy').value = SAMPLE; updCount();
+  DATA = normalize(DEMO); COPY = SAMPLE; histId = null;
+  renderAll(DATA); switchTab('charts');
+  setStatus('這是範例結果，填入 Key 後可分析自己的文案');
+}
+
+function updCount() { $('#count').textContent = $('#copy').value.length + ' 字'; }
+
+/* ========== 事件 ========== */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.matches('#focus .chip')) t.classList.toggle('on');
+  if (t.matches('.tab')) switchTab(t.dataset.t);
+  if (t.dataset.png != null) savePNG(+t.dataset.png);
+  if (t.dataset.deep != null) deep(+t.dataset.deep);
+  if (t.dataset.cp != null) { navigator.clipboard?.writeText(DATA.rewrites[+t.dataset.cp].text).then(() => toast('已複製')); }
+  if (t.dataset.h) { const h = LS.get('csa_hist', []).find(x => x.id == t.dataset.h); if (h) { DATA = h.data; COPY = h.copy; histId = h.id; $('#copy').value = h.copy; updCount(); renderAll(DATA); switchTab('charts'); } }
+  if (t.dataset.regen) regenPlatform(t.dataset.regen, !!t.dataset.fix);
+  if (t.dataset.pcopy) navigator.clipboard?.writeText(platText(t.dataset.pcopy)).then(() => toast('已複製'));
+  if (t.dataset.addi) { const [id, k] = t.dataset.addi.split('|'); DATA._plat[id][k].push(''); renderPlat(); }
+  if (t.dataset.fx != null) { FILES.splice(+t.dataset.fx, 1); renderFiles(); }
+  if (t.dataset.hd) { LS.set('csa_hist', LS.get('csa_hist', []).filter(x => x.id != t.dataset.hd)); renderHist(); }
+});
+$('#btnRun').onclick = run;
+$('#btnDemo').onclick = loadDemo;
+$('#btnSample').onclick = () => { $('#copy').value = SAMPLE; updCount(); };
+$('#btnModels').onclick = loadModels;
+$('#btnPlan').onclick = makePlan;
+$('#btnAsk').onclick = ask;
+$('#qaIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) ask(); });
+$('#copy').addEventListener('input', updCount);
+$('#copy').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); });
+$('#keys').addEventListener('change', saveSettings);
+$('#model').addEventListener('change', saveSettings);
+$('#remember').addEventListener('change', saveSettings);
+$('#file').addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
+const drop = $('#drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+document.addEventListener('paste', e => {
+  const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
+  if (imgs.length) { e.preventDefault(); handleFiles(imgs); }
+});
+$('#btnClear').onclick = () => { $('#copy').value = ''; FILES.length = 0; renderFiles(); updCount(); };
+$('#vmodel').addEventListener('change', saveSettings);
+$('#btnModels').addEventListener('click', () => { LS.set('csa_vmodel_bad', []); LS.set('csa_novision', 0); NO_VISION = false; });
+$('#tpm').addEventListener('change', saveSettings);
+$('#btnMd').onclick = () => download(`文案分析_${stamp()}.md`, toMarkdown(), 'text/markdown');
+$('#btnJson').onclick = () => download(`文案分析_${stamp()}.json`, JSON.stringify({ copy: COPY, ...DATA }, null, 2), 'application/json');
+$('#btnPlat').onclick = genPlatforms;
+$('#btnPptx').onclick = exportPPTX;
+document.addEventListener('input', e => { if (e.target.dataset?.pf) onPlatInput(e.target); });
+$('#btnPng').onclick = async () => { for (let i = 0; i < charts.length; i++) { savePNG(i); await sleep(350); } };
+
+chartDefaults(); loadSettings(); renderHist(); updCount();
+</script>
+</body>
+</html>

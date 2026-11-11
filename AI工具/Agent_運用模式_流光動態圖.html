@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent 十種運用模式｜流光動態圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dde5f0; --panel:#e6ecf5; --panel2:#eef2f8; --line:#c3cfe0;
+  --text:#1f2a3d; --muted:#5b6a82; --faint:#8a97ab;
+  --gold:#a8781c; --jade:#2f8f78; --blue:#3f7fc2; --violet:#7a5fc8; --coral:#d24a4a; --io:#4b5a72;
+  --edge:#b4c2d6; --nodebg:#fbf5e4; --stagebg:#e9eef6; --grid:rgba(31,42,61,.06);
+  --serif:"Noto Serif TC","Songti TC",serif; --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1424; --panel:rgba(20,32,55,.72); --panel2:rgba(26,40,66,.6); --line:#24365a;
+    --text:#e8ecf3; --muted:#9aa7bd; --faint:#64738d;
+    --gold:#e0c074; --jade:#52d3b6; --blue:#74a9ff; --violet:#b49cff; --coral:#f08a7c; --io:#c9d2e0;
+    --edge:#26385a; --nodebg:#101b30; --stagebg:#0a1120; --grid:rgba(120,150,200,.07);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1424; --panel:rgba(20,32,55,.72); --panel2:rgba(26,40,66,.6); --line:#24365a;
+  --text:#e8ecf3; --muted:#9aa7bd; --faint:#64738d;
+  --gold:#e0c074; --jade:#52d3b6; --blue:#74a9ff; --violet:#b49cff; --coral:#f08a7c; --io:#c9d2e0;
+  --edge:#26385a; --nodebg:#101b30; --stagebg:#0a1120; --grid:rgba(120,150,200,.07);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-family:var(--serif);font-weight:900;font-size:24px;letter-spacing:.04em}
+header h1 small{display:block;font-family:var(--sans);font-weight:400;font-size:13px;color:var(--muted);letter-spacing:0}
+.spacer{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 14px;font-size:14px;color:var(--muted)}
+.seg button.sel{background:var(--panel2);color:var(--text);box-shadow:inset 0 -2px 0 var(--gold)}
+.icon-btn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:14px}
+
+/* 單一模式 */
+#focus{display:grid;grid-template-columns:220px minmax(0,1fr) 340px;gap:18px;padding:18px 22px}
+#list{display:flex;flex-direction:column;gap:4px}
+#list button{display:flex;gap:10px;align-items:baseline;text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:8px 10px}
+#list button .n{font-family:var(--mono);font-size:12px;color:var(--faint);min-width:20px}
+#list button b{font-weight:500;font-size:15px;display:block}
+#list button em{font-style:normal;font-size:12px;color:var(--muted)}
+#list button:hover{background:var(--panel2)}
+#list button.sel{background:var(--panel);border-color:var(--line)}
+#list button.sel .n{color:var(--gold)}
+
+.stage-wrap{min-width:0}
+.stage{background:var(--stagebg);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px}
+.stage svg{display:block;width:100%;height:auto}
+.stage .ptitle{position:absolute;left:20px;top:14px;font-family:var(--serif);font-size:22px;font-weight:900;pointer-events:none}
+.stage .ptitle span{display:block;font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)}
+.caption{display:flex;gap:14px;align-items:center;min-height:56px;margin-top:12px;padding:10px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.caption .cnt{font-family:var(--mono);font-size:13px;color:var(--gold);white-space:nowrap}
+.caption .txt{font-size:16px;transition:opacity .25s}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.controls button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 14px;font-size:14px}
+.controls button.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700}
+.controls label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:6px}
+.controls input[type=range]{width:110px;accent-color:var(--gold)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:2px solid;margin-right:6px;vertical-align:-1px}
+
+#info{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;align-self:start}
+#info h2{margin:0 0 4px;font-family:var(--serif);font-size:22px}
+#info .en{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#info .lead{margin:10px 0 0;font-size:15px}
+#info h3{margin:18px 0 6px;font-size:13px;color:var(--gold);font-weight:700;padding-bottom:4px;border-bottom:1px solid var(--line)}
+#info ol{margin:0;padding-left:22px;font-size:14px}
+#info ol li{padding:3px 0;color:var(--muted);transition:color .2s}
+#info ol li.cur{color:var(--text);font-weight:500}
+#info ol li.cur::marker{color:var(--gold)}
+#info ul{margin:0;padding-left:18px;font-size:14px}
+#info ul li{padding:2px 0}
+#info .pc{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px}
+#info .pc div b{display:block;font-size:12px;margin-bottom:2px}
+#info .pc .p b{color:var(--jade)} #info .pc .c b{color:var(--coral)}
+
+/* 總覽 */
+#grid{display:none;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;padding:18px 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--gold)}
+.card h4{margin:0 0 8px;font-family:var(--serif);font-size:17px;display:flex;justify-content:space-between;align-items:baseline}
+.card h4 span{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted)}
+.card .stage{border-radius:10px}
+.card .mini-cap{font-size:13px;color:var(--muted);margin-top:8px;min-height:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.grid #focus{display:none} body.grid #grid{display:grid}
+
+/* SVG 元素 */
+.edge-base{fill:none;stroke:var(--edge);stroke-width:2}
+.edge-hot{fill:none;stroke:var(--gold);stroke-width:3;opacity:0}
+.arrow{fill:var(--edge)}
+.edge.hidden,.node.hidden{opacity:0;pointer-events:none}
+.edge,.node{transition:opacity .45s}
+.node .body{fill:var(--nodebg);stroke:var(--kc);stroke-width:1.6;transition:stroke-width .3s}
+.node .lbl{fill:var(--text);font-family:var(--sans);font-weight:700;text-anchor:middle;dominant-baseline:central}
+.node .sub{fill:var(--muted);font-family:var(--mono);text-anchor:middle;dominant-baseline:central}
+.node .ring{fill:none;stroke:var(--kc);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.node.on .body{stroke-width:3}
+.node.on{filter:drop-shadow(0 0 10px var(--kc))}
+.node.on .ring{animation:ring 1.4s ease-out infinite}
+.node.on .sub{fill:var(--kc)}
+.node.done .body{stroke-width:2.2}
+@keyframes ring{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
+.k-llm{--kc:var(--gold)} .k-tool{--kc:var(--jade)} .k-data{--kc:var(--blue)} .k-gate{--kc:var(--violet)} .k-human{--kc:var(--coral)} .k-io{--kc:var(--io)}
+.particle{filter:drop-shadow(0 0 6px currentColor)}
+
+@media (prefers-reduced-motion: reduce){.node.on .ring{animation:none}}
+@media (max-width:1180px){#focus{grid-template-columns:200px minmax(0,1fr)} #info{grid-column:1/-1}}
+@media (max-width:760px){
+  header{padding:12px 14px} header h1{font-size:20px}
+  #focus{grid-template-columns:1fr;padding:12px 14px;gap:12px}
+  #list{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  #list button{flex:0 0 auto} #list button em{display:none}
+  .stage .ptitle{font-size:16px;left:12px;top:8px}
+  #grid{grid-template-columns:1fr;padding:12px 14px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Agent 十種運用模式<small>流光動態圖：看資料如何在 LLM、工具、記憶與人之間流動</small></h1>
+  <div class="spacer"></div>
+  <div class="seg" role="tablist">
+    <button id="vFocus" class="sel">單一模式</button>
+    <button id="vGrid">全部總覽</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" title="切換深淺色">◐</button>
+</header>
+
+<main>
+  <section id="focus">
+    <nav id="list" aria-label="模式清單"></nav>
+    <div class="stage-wrap">
+      <div class="stage" id="mainStage"><div class="ptitle" id="ptitle"></div></div>
+      <div class="caption"><span class="cnt" id="cnt">1／1</span><span class="txt" id="cap"></span></div>
+      <div class="controls">
+        <button class="primary" id="playBtn">暫停</button>
+        <button id="prevBtn">上一步</button>
+        <button id="nextBtn">下一步</button>
+        <button id="restartBtn">重播</button>
+        <label>速度 <input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="spdV">1.0×</span></label>
+        <label><input type="checkbox" id="auto"> 播完自動換下一個</label>
+      </div>
+      <div class="legend">
+        <span><i style="border-color:var(--gold)"></i>LLM／Agent</span>
+        <span><i style="border-color:var(--jade)"></i>工具</span>
+        <span><i style="border-color:var(--blue)"></i>資料／記憶</span>
+        <span><i style="border-color:var(--violet);transform:rotate(45deg) scale(.8)"></i>判斷閘門</span>
+        <span><i style="border-color:var(--coral);border-radius:6px"></i>人</span>
+        <span><i style="border-color:var(--io);border-radius:6px"></i>輸入／輸出</span>
+      </div>
+    </div>
+    <aside id="info"></aside>
+  </section>
+  <section id="grid"></section>
+</main>
+
+<script>
+/* ========== 模式資料 ========== */
+const S=(e,cap,o={})=>Object.assign({e:e.map(x=>x.split('>')),cap},o);
+
+const PATTERNS=[
+{id:'chain',name:'提示鏈',en:'Prompt Chaining',short:'一棒接一棒',
+ lead:'把任務拆成固定順序的多個步驟，每個 LLM 只做一件事，中間可插入程式閘門檢查品質。',
+ nodes:[['in','io',80,290,'輸入','任務需求'],['l1','llm',235,290,'LLM ①','擬大綱'],['g','gate',400,290,'閘門','格式檢查'],['l2','llm',565,290,'LLM ②','撰寫內文'],['l3','llm',730,290,'LLM ③','潤飾翻譯'],['out','io',905,290,'輸出','完成稿']],
+ edges:[['in','l1'],['l1','g'],['g','l2'],['l2','l3'],['l3','out'],['g','l1',-120]],
+ script:L=>{const s=[S(['in>l1'],'使用者丟入任務：撰寫新品介紹文'),S(['l1>g'],'大綱交給閘門，用程式檢查段落與字數',{set:{g:'格式檢查'}})];
+   if(L%2===1){s.push(S(['g>l1'],'格式不符 → 退回 LLM ① 重擬',{set:{g:'未通過'}}),S(['l1>g'],'修正後重新送檢',{set:{g:'複檢'}}));}
+   s.push(S(['g>l2'],'檢查通過，交棒給 LLM ② 撰寫',{set:{g:'通過 ✓'}}),S(['l2>l3'],'內文交給 LLM ③ 潤飾與翻譯'),S(['l3>out'],'每一棒專心一件事，串起來品質更穩'));return s;},
+ when:['步驟固定、可事先拆解的任務','願意用多一點延遲換準確度'],
+ cases:['行銷文案：大綱 → 內文 → 多語翻譯','教材製作：重點擷取 → 出題 → 解析','報告：資料摘要 → 圖表說明 → 結論'],
+ pros:'每步可單獨除錯、品質可控',cons:'步驟一多延遲就累加'},
+
+{id:'route',name:'路由',en:'Routing',short:'先分類再分派',
+ lead:'先判斷輸入屬於哪一類，再交給專門的提示詞、模型或流程處理，避免一個萬用提示詞顧此失彼。',
+ nodes:[['in','io',90,280,'輸入','使用者訊息'],['r','gate',310,280,'路由器','意圖分類'],['a','llm',590,110,'退款專員','專用提示詞'],['b','llm',590,280,'技術支援','附技術文件'],['c','llm',590,450,'一般問答','小模型'],['out','io',880,280,'輸出','回覆']],
+ edges:[['in','r'],['r','a'],['r','b'],['r','c'],['a','out'],['b','out'],['c','out']],
+ script:L=>{const k=L%3,id=['a','b','c'][k],q=['我要退貨，錢多久退回？','App 一打開就閃退','請問營業時間幾點？'][k],nm=['退款專員','技術支援','一般問答'][k];
+   return [S(['in>r'],`使用者問：「${q}」`),S([`r>${id}`],`路由器判斷意圖 → 分派給「${nm}」`,{set:{r:nm}}),S([`${id}>out`],k===2?'簡單問題用小模型，省錢又快':'交給專責角色處理，回答更精準')];},
+ when:['輸入類型差異大、各類處理方式不同','想把簡單問題導向便宜模型'],
+ cases:['客服：退款／技術／一般分流','學生提問：觀念題／計算題／作業規範','便當店訊息：訂餐／客訴／營業資訊'],
+ pros:'專責分工、可省成本',cons:'分類錯誤會整條走偏'},
+
+{id:'para',name:'平行化',en:'Parallelization',short:'同時開工再彙整',
+ lead:'把同一份工作同時交給多個 LLM：可以「分段」各看不同面向，也可以「投票」做同一題取多數。',
+ nodes:[['in','io',80,280,'輸入','程式碼'],['sp','gate',250,280,'分派器','拆段'],['a','llm',500,120,'審查員 A','安全性'],['b','llm',500,280,'審查員 B','效能'],['c','llm',500,440,'審查員 C','可讀性'],['agg','llm',740,280,'彙整器','合併意見'],['out','io',910,280,'輸出','審查報告']],
+ edges:[['in','sp'],['sp','a'],['sp','b'],['sp','c'],['a','agg'],['b','agg'],['c','agg'],['agg','out']],
+ script:L=>{const vote=L%2===1;
+   const set=vote?{sp:'複製',a:'判斷 #1',b:'判斷 #2',c:'判斷 #3',agg:'多數決'}:{sp:'拆段',a:'安全性',b:'效能',c:'可讀性',agg:'合併意見'};
+   return [S(['in>sp'],vote?'投票模式：同一題請三個模型各自判斷':'分段模式：一份程式碼拆成三個審查面向',{set}),
+     S(['sp>a','sp>b','sp>c'],'三條支線同時執行，總時間只算最慢的一條'),
+     S(['a>agg','b>agg','c>agg'],vote?'收回三票，取多數意見':'收回三份意見，去重合併'),
+     S(['agg>out'],vote?'多數決降低單次判斷失誤':'多面向同時審，又快又完整')];},
+ when:['子任務彼此獨立','需要多角度或多次判斷提高信心'],
+ cases:['程式審查：安全／效能／可讀性同時看','內容審核：三次判斷取多數','作文批改：結構／用字／論點分開評'],
+ pros:'速度快、結果更穩',cons:'呼叫次數倍增、成本較高'},
+
+{id:'orch',name:'協調者-工作者',en:'Orchestrator–Workers',short:'動態拆任務',
+ lead:'由協調者在執行當下判斷要拆成幾個子任務，動態產生工作者，最後合成結果。子任務數量無法事先預知。',
+ nodes:[['in','io',80,280,'輸入','需求'],['o','llm',255,280,'協調者','拆解任務'],['w1','llm',520,85,'工作者 1','',1],['w2','llm',520,215,'工作者 2','',1],['w3','llm',520,345,'工作者 3','',1],['w4','llm',520,475,'工作者 4','',1],['sy','llm',760,280,'合成器','整合結果'],['out','io',915,280,'輸出','交付']],
+ edges:[['in','o'],['o','w1'],['o','w2'],['o','w3'],['o','w4'],['w1','sy'],['w2','sy'],['w3','sy'],['w4','sy'],['sy','out']],
+ script:L=>{const n=[3,2,4][L%3],ws=['w1','w2','w3','w4'].slice(0,n);
+   const jobs=[['改 api.js','改 db.sql','改 ui.html','補測試'],['寫第 1 章','寫第 2 章'],['查台北場地','查台中場地','查高雄場地','比價']][L%3];
+   const req=['在系統加入會員點數功能','把講義擴寫成兩章','找三地工作坊場地並比價'][L%3];
+   const set={};ws.forEach((w,i)=>set[w]=jobs[i]);
+   return [S(['in>o'],`需求：${req}`),S(ws.map(w=>'o>'+w),`協調者判斷需要 ${n} 個子任務，當場產生工作者`,{show:ws,set}),
+     S(ws.map(w=>w+'>sy'),'各工作者完成後回傳成果'),S(['sy>out'],'合成器整合為一份交付物')];},
+ when:['無法預先知道要拆幾份的複雜任務','需要跨多檔案、多資料源'],
+ cases:['程式修改：依需求決定要改哪些檔案','研究報告：依主題決定查幾個來源','活動籌備：依地點數量分頭詢價'],
+ pros:'彈性大，能處理開放式任務',cons:'協調者判斷失準會漏項'},
+
+{id:'eval',name:'評估-優化',en:'Evaluator–Optimizer',short:'反覆打分修正',
+ lead:'一個 LLM 產出，另一個 LLM 依評分標準打分並給回饋，循環修正直到達標。',
+ nodes:[['in','io',90,280,'輸入','原始文件'],['gen','llm',340,280,'生成者','產出草稿'],['ev','llm',650,280,'評估者','評分標準'],['out','io',895,280,'輸出','定稿']],
+ edges:[['in','gen'],['gen','ev',70],['ev','gen',70],['ev','out']],
+ script:L=>[S(['in>gen'],'任務：把技術文件改寫成國中生看得懂的版本',{set:{gen:'產出草稿',ev:'評分標準'}}),
+   S(['gen>ev'],'第 1 版送審',{set:{gen:'草稿 v1'}}),S(['ev>gen'],'評分 58：專有名詞太多 → 回饋修改',{set:{ev:'58 分 ✗'}}),
+   S(['gen>ev'],'第 2 版送審',{set:{gen:'草稿 v2'}}),S(['ev>gen'],'評分 76：缺少生活化例子 → 再修',{set:{ev:'76 分 ✗'}}),
+   S(['gen>ev'],'第 3 版送審',{set:{gen:'草稿 v3'}}),S(['ev>out'],'評分 92，達標輸出',{set:{ev:'92 分 ✓'}})],
+ when:['有明確評分標準','人工給回饋就能明顯改善的任務'],
+ cases:['翻譯潤稿：信達雅逐輪提升','程式：寫完跑測試，失敗再修','簡報：依檢核表反覆調整'],
+ pros:'品質逐輪上升、可設門檻',cons:'需設最大輪數避免無限循環'},
+
+{id:'react',name:'ReAct 工具迴圈',en:'Reason + Act Agent',short:'思考→行動→觀察',
+ lead:'自主 Agent 的核心：反覆「思考下一步 → 呼叫工具 → 觀察結果」，直到能回答為止，步數由 Agent 自己決定。',
+ nodes:[['u','io',100,290,'使用者','提問'],['ag','llm',420,290,'Agent','思考'],['db','tool',760,100,'資料庫','查詢'],['calc','tool',830,290,'計算機','運算'],['web','tool',760,480,'網路搜尋','外部資訊']],
+ edges:[['u','ag',30],['ag','u',30],['ag','db',22],['db','ag',22],['ag','calc',22],['calc','ag',22],['ag','web',22],['web','ag',22]],
+ script:L=>[S(['u>ag'],'問：本月門市營收比上月成長多少？跟同業比如何？',{set:{ag:'Thought'}}),
+   S(['ag>db'],'Action：查詢資料庫的兩個月營收',{set:{ag:'Action'}}),S(['db>ag'],'Observation：取得兩個月的數字',{set:{ag:'Observation'}}),
+   S(['ag>calc'],'Thought → Action：計算成長率',{set:{ag:'Action'}}),S(['calc>ag'],'Observation：得到成長百分比',{set:{ag:'Observation'}}),
+   S(['ag>web'],'Thought：還缺同業資料 → 上網搜尋',{set:{ag:'Action'}}),S(['web>ag'],'Observation：取得同業平均',{set:{ag:'Observation'}}),
+   S(['ag>u'],'資訊足夠 → 整合推理後回答',{set:{ag:'Answer'}})],
+ when:['步數無法預知、需要邊做邊判斷','需要存取外部系統或即時資料'],
+ cases:['營運分析助理：查表、計算、比對','程式 Agent：讀檔、改碼、跑測試','研究助理：搜尋、閱讀、整理'],
+ pros:'最有彈性，能處理開放問題',cons:'成本與風險較高，需設護欄'},
+
+{id:'rag',name:'檢索增強生成',en:'RAG',short:'先查資料再回答',
+ lead:'先把文件切塊、轉成向量存進資料庫；提問時找出最相關的片段，連同問題一起交給 LLM，讓回答有憑有據。',
+ nodes:[['doc','data',95,110,'文件庫','PDF／網頁'],['ch','tool',275,110,'切塊','Chunking'],['em','tool',455,110,'嵌入模型','Embedding'],['vdb','data',570,285,'向量資料庫','索引'],['q','io',95,450,'問題','使用者'],['qe','tool',310,450,'嵌入查詢','轉向量'],['llm','llm',815,285,'LLM','生成回答'],['out','io',815,460,'答案','附來源']],
+ edges:[['doc','ch'],['ch','em'],['em','vdb'],['q','qe'],['qe','vdb'],['vdb','llm'],['llm','out']],
+ script:L=>{const s=[];
+   if(L%2===0)s.push(S(['doc>ch'],'離線階段：把文件切成小段落'),S(['ch>em'],'每一段轉成向量'),S(['em>vdb'],'寫入向量資料庫，建好索引'));
+   s.push(S(['q>qe'],L%2===0?'線上階段：員工問「特休怎麼計算？」':'索引已建好，直接提問：「加班費怎麼算？」'),
+     S(['qe>vdb'],'問題也轉成向量，做相似度搜尋'),S(['vdb>llm'],'取回最相關的 3 段，連同問題送入 LLM',{set:{vdb:'Top-3'}}),
+     S(['llm>out'],'依據文件內容回答，並標示出處'));return s;},
+ when:['答案在內部文件裡','資料常更新、不想重新訓練模型'],
+ cases:['公司規章問答','課程講義助教','產品手冊客服'],
+ pros:'減少幻覺、可追溯來源',cons:'切塊與檢索品質決定上限'},
+
+{id:'multi',name:'多代理協作',en:'Multi-Agent Supervisor',short:'主管帶團隊',
+ lead:'多個各有專長的 Agent，由主管 Agent 分工與控管，透過交棒（Handoff）與共享記憶協作。',
+ nodes:[['u','io',90,285,'使用者','需求'],['sup','llm',300,285,'主管 Agent','分工控管'],['r','llm',590,100,'研究員','蒐集資料'],['c','llm',590,285,'工程師','實作'],['v','llm',590,470,'審稿員','品質把關'],['mem','data',860,285,'共享記憶','黑板']],
+ edges:[['u','sup',40],['sup','u',40],['sup','r'],['r','mem'],['r','c'],['mem','c'],['c','v'],['v','sup']],
+ script:L=>[S(['u>sup'],'需求：做一份競品分析網頁'),S(['sup>r'],'主管指派研究員蒐集競品資料'),
+   S(['r>mem'],'研究結果寫入共享記憶'),S(['r>c','mem>c'],'Handoff：研究員交棒，工程師讀取共享記憶開工'),
+   S(['c>v'],'網頁完成，交給審稿員'),S(['v>sup'],'審稿意見回報主管'),S(['sup>u'],'主管整合後交付使用者')],
+ when:['任務跨多種專業','單一 Agent 的提示詞與工具過多難以管理'],
+ cases:['軟體開發：PM／工程師／QA','行銷活動：研究／文案／設計','課程開發：內容／出題／審核'],
+ pros:'職責清楚、可分別優化',cons:'溝通成本高、除錯較難'},
+
+{id:'hitl',name:'人機協作',en:'Human-in-the-Loop',short:'關鍵動作要人核准',
+ lead:'Agent 遇到高風險動作（寄信、付款、刪資料）先暫停，交由人審核，核准後才真正執行。',
+ nodes:[['in','io',80,280,'輸入','任務'],['ag','llm',290,280,'Agent','擬定動作'],['h','human',530,280,'人工審核','待審'],['t','tool',760,280,'執行工具','寄信'],['out','io',915,280,'結果','已完成']],
+ edges:[['in','ag'],['ag','h'],['h','ag',-110],['h','t'],['t','out']],
+ script:L=>{const s=[S(['in>ag'],'任務：寄送 300 封課程通知信',{set:{h:'待審'}}),S(['ag>h'],'高風險動作 → 暫停，送人工審核',{set:{ag:'草擬名單'}})];
+   if(L%2===0)s.push(S(['h>ag'],'駁回：收件名單混入舊學員，請修正',{set:{h:'駁回 ✗'}}),S(['ag>h'],'修正名單後重新送審',{set:{ag:'已修正',h:'待審'}}));
+   s.push(S(['h>t'],'核准 ✓ 才真正呼叫工具執行',{set:{h:'核准 ✓'}}),S(['t>out'],'執行完成並留下審核紀錄'));return s;},
+ when:['動作不可逆或影響金錢、名譽','法規要求留存人工決策'],
+ cases:['大量寄信、社群發文前確認','退款或付款前核准','刪除資料前二次確認'],
+ pros:'安全、可稽核',cons:'人會成為瓶頸'},
+
+{id:'plan',name:'規劃-執行',en:'Plan-and-Execute',short:'先列清單再逐項做',
+ lead:'規劃者先產生完整待辦清單，執行者逐項完成；遇到意外就回報規劃者重新規劃。',
+ nodes:[['g','io',80,290,'目標','使用者'],['pl','llm',270,290,'規劃者','產生計畫'],['todo','data',490,110,'待辦清單','0 項'],['ex','llm',700,290,'執行者','待命'],['tl','tool',700,470,'工具','行事曆／表單'],['done','io',910,290,'完成','回報']],
+ edges:[['g','pl'],['pl','todo'],['todo','ex'],['ex','tl',22],['tl','ex',22],['ex','pl',80],['ex','done']],
+ script:L=>[S(['g>pl'],'目標：籌辦一場 AI 工作坊',{set:{todo:'0 項',ex:'待命',pl:'產生計畫'}}),
+   S(['pl>todo'],'拆成待辦：場地、報名表、教材',{set:{todo:'3 項'}}),S(['todo>ex'],'取出第 1 項：預訂場地',{set:{ex:'訂場地'}}),
+   S(['ex>tl'],'呼叫工具查詢場地'),S(['tl>ex'],'回報：當天場地已滿',{set:{ex:'受阻'}}),
+   S(['ex>pl'],'狀況改變 → 請規劃者重新規劃',{set:{pl:'重新規劃'}}),S(['pl>todo'],'更新清單：改線上直播＋備案場地',{set:{todo:'4 項'}}),
+   S(['todo>ex'],'繼續執行：建立報名表',{set:{ex:'開報名表'}}),S(['ex>tl'],'呼叫表單工具'),S(['tl>ex'],'報名表已上線',{set:{ex:'✓'}}),
+   S(['ex>done'],'清單全部完成，回報結果')],
+ when:['長流程、多步驟任務','需要看得到整體進度'],
+ cases:['活動籌備','資料遷移專案','長篇報告撰寫'],
+ pros:'全局可見、可中途調整',cons:'計畫太細會僵化'}
+];
+
+/* ========== 工具函式 ========== */
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const tw=(s,f)=>{let w=0;for(const ch of s)w+=/[\u2E80-\uFFFF]/.test(ch)?f:f*.6;return w;};
+const ease=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const KCOL={llm:'var(--gold)',tool:'var(--jade)',data:'var(--blue)',gate:'var(--violet)',human:'var(--coral)',io:'var(--io)'};
+const TRAVEL=1250,DWELL=750,ENDWAIT=1500;
+let SPEED=1;
+
+/* ========== 舞台引擎 ========== */
+class Stage{
+  constructor(host,pat,mini=false){
+    this.pat=pat;this.mini=mini;this.host=host;this.loop=0;this.onStep=null;this.onLoop=null;
+    this.svg=el('svg',{viewBox:'0 0 1000 560',role:'img','aria-label':pat.name+' 動態流程圖'});
+    host.appendChild(this.svg);this.build();this.reset();this.start(0);
+  }
+  build(){
+    const svg=this.svg,fs=this.mini?20:15;
+    this.gE=el('g',{},svg);this.gP=el('g',{},svg);this.gN=el('g',{},svg);
+    this.N={};
+    for(const [id,k,x,y,label,sub,hid] of this.pat.nodes){
+      const lw=tw(label,fs),sw=this.mini?0:tw(sub||'',11);
+      let w=Math.max(this.mini?84:100,lw+30,sw+26),h=this.mini?52:60;
+      const g=el('g',{class:`node k-${k}`,transform:`translate(${x},${y})`},this.gN);
+      let shape,hw=w/2,hh=h/2;
+      if(k==='gate'){hw=w/2+16;hh=h/2+12;shape=['polygon',{points:`0,${-hh} ${hw},0 0,${hh} ${-hw},0`}];}
+      else if(k==='data'){const e=8;shape=['path',{d:`M${-hw},${-hh+e} A${hw},${e} 0 0 1 ${hw},${-hh+e} V${hh-e} A${hw},${e} 0 0 1 ${-hw},${hh-e} Z M${-hw},${-hh+e} A${hw},${e} 0 0 0 ${hw},${-hh+e}`}];}
+      else if(k==='tool'){const c=10;shape=['polygon',{points:`${-hw+c},${-hh} ${hw-c},${-hh} ${hw},${-hh+c} ${hw},${hh-c} ${hw-c},${hh} ${-hw+c},${hh} ${-hw},${hh-c} ${-hw},${-hh+c}`}];}
+      else{const r=(k==='io'||k==='human')?hh:12;shape=['rect',{x:-hw,y:-hh,width:hw*2,height:hh*2,rx:r}];}
+      el(shape[0],Object.assign({class:'ring'},shape[1]),g);
+      el(shape[0],Object.assign({class:'body'},shape[1]),g);
+      const lb=el('text',{class:'lbl',y:this.mini?0:-9,'font-size':fs},g);lb.textContent=label;
+      const sb=el('text',{class:'sub',y:13,'font-size':11},g);sb.textContent=sub||'';if(this.mini)sb.style.display='none';
+      this.N[id]={id,k,x,y,hw,hh,g,sb,sub0:sub||'',hid:!!hid,vis:true};
+    }
+    this.E={};
+    for(const [a,b,bend=0] of this.pat.edges){
+      const A=this.N[a],B=this.N[b],dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy);
+      const nx=-dy/len,ny=dx/len,cx=(A.x+B.x)/2+nx*bend,cy=(A.y+B.y)/2+ny*bend;
+      const P=[];for(let i=0;i<=90;i++){const t=i/90,u=1-t;P.push([u*u*A.x+2*u*t*cx+t*t*B.x,u*u*A.y+2*u*t*cy+t*t*B.y]);}
+      const inside=(n,p)=>{const ax=Math.abs(p[0]-n.x),ay=Math.abs(p[1]-n.y);return n.k==='gate'?(ax/(n.hw+4)+ay/(n.hh+4)<=1):(ax<=n.hw+5&&ay<=n.hh+5);};
+      let s=0,e=P.length-1;while(s<e&&inside(A,P[s]))s++;while(e>s&&inside(B,P[e]))e--;
+      const pts=P.slice(s,e+1),cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+      const d='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+      const g=el('g',{class:'edge'},this.gE);
+      el('path',{class:'edge-base',d},g);const hot=el('path',{class:'edge-hot',d},g);
+      const pe=pts[pts.length-1],pb=pts[Math.max(0,pts.length-4)],ang=Math.atan2(pe[1]-pb[1],pe[0]-pb[0])*180/Math.PI;
+      const ar=el('polygon',{class:'arrow',points:'0,0 -11,-5.5 -11,5.5',transform:`translate(${pe[0]},${pe[1]}) rotate(${ang})`},g);
+      this.E[a+'>'+b]={a,b,g,hot,ar,pts,cum,L:cum[cum.length-1],heat:0,active:false};
+    }
+  }
+  at(E,u){const d=u*E.L,c=E.cum;let i=1;while(i<c.length-1&&c[i]<d)i++;const f=(d-c[i-1])/((c[i]-c[i-1])||1),p=E.pts[i-1],q=E.pts[i];return[p[0]+(q[0]-p[0])*f,p[1]+(q[1]-p[1])*f];}
+  setVis(){for(const n of Object.values(this.N))n.g.classList.toggle('hidden',!n.vis);
+    for(const E of Object.values(this.E))E.g.classList.toggle('hidden',!(this.N[E.a].vis&&this.N[E.b].vis));}
+  reset(){
+    this.steps=this.pat.script(this.loop);this.si=0;this.t=0;this.phase='travel';
+    for(const n of Object.values(this.N)){n.vis=!n.hid;n.g.classList.remove('on','done');n.sb.textContent=n.sub0;}
+    for(const E of Object.values(this.E)){E.heat=0;E.active=false;E.hot.style.opacity=0;E.ar.style.fill='';}
+    this.clearP();this.setVis();
+  }
+  clearP(){this.gP.textContent='';this.parts=[];}
+  start(i,instant=false){
+    this.si=i;this.t=0;this.phase='travel';const s=this.steps[i];
+    if(s.show)s.show.forEach(id=>this.N[id].vis=true);
+    if(s.set)for(const id in s.set)this.N[id].sb.textContent=s.set[id];
+    this.setVis();this.clearP();
+    for(const [a,b] of s.e){const E=this.E[a+'>'+b];if(!E){console.warn('缺邊',a,b);continue;}
+      E.active=true;E.heat=1;this.N[a].g.classList.add('on');this.N[a].g.classList.remove('done');
+      if(!instant){const col=KCOL[this.N[a].k],grp=el('g',{class:'particle',style:`color:${col}`},this.gP),cs=[];
+        for(let k=0;k<10;k++)cs.push(el('circle',{r:Math.max(1.2,(this.mini?7:5.5)-k*.5),fill:col,opacity:(1-k/10).toFixed(2)},grp));
+        this.parts.push({E,cs});}}
+    if(this.onStep)this.onStep(this,i,this.steps.length,s.cap);
+  }
+  arrive(){
+    const s=this.steps[this.si],tg=new Set(s.e.map(x=>x[1]));
+    for(const n of Object.values(this.N))if(n.g.classList.contains('on')&&!tg.has(n.id)){n.g.classList.remove('on');n.g.classList.add('done');}
+    tg.forEach(id=>{this.N[id].g.classList.add('on');this.N[id].g.classList.remove('done');});
+    for(const [a,b] of s.e){const E=this.E[a+'>'+b];if(E){E.active=false;E.ar.style.fill=KCOL[this.N[a].k];}}
+    this.clearP();this.phase='dwell';this.t=0;
+  }
+  jump(i){
+    const n=Math.max(0,Math.min(i,this.steps.length-1));this.reset();
+    for(let j=0;j<n;j++){this.start(j,true);this.arrive();}
+    for(const E of Object.values(this.E))E.heat=E.heat?0.35:0;
+    this.start(n);
+  }
+  next(){if(this.si>=this.steps.length-1){this.loop++;if(this.onLoop)this.onLoop(this);this.reset();this.start(0);}else this.jump(this.si+1);}
+  prev(){this.jump(this.si-(this.phase==='travel'&&this.t<300?1:0)-(this.phase!=='travel'?0:0));}
+  tick(dt){
+    dt*=SPEED;this.t+=dt;
+    for(const E of Object.values(this.E)){if(!E.active)E.heat=Math.max(0,E.heat-dt/1800);E.hot.style.opacity=E.heat.toFixed(3);
+      if(E.heat===0)E.ar.style.fill='';}
+    if(this.phase==='travel'){
+      const p=Math.min(1,this.t/TRAVEL);
+      for(const P of this.parts){P.cs.forEach((c,k)=>{const u=Math.max(0,ease(Math.max(0,p-k*.018)));const q=this.at(P.E,u);c.setAttribute('cx',q[0]);c.setAttribute('cy',q[1]);});}
+      if(p>=1)this.arrive();
+    }else if(this.phase==='dwell'){
+      if(this.t>=DWELL){if(this.si<this.steps.length-1)this.start(this.si+1);else{this.phase='end';this.t=0;}}
+    }else if(this.phase==='end'){
+      if(this.t>=ENDWAIT){this.loop++;if(this.onLoop)this.onLoop(this);this.reset();this.start(0);}
+    }
+  }
+}
+
+/* ========== 介面 ========== */
+const $=s=>document.querySelector(s);
+let cur=0,main=null,minis=[],playing=true,view='focus';
+
+function renderList(){
+  $('#list').innerHTML=PATTERNS.map((p,i)=>`<button data-i="${i}" class="${i===cur?'sel':''}"><span class="n">${String(i+1).padStart(2,'0')}</span><span><b>${p.name}</b><em>${p.short}</em></span></button>`).join('');
+  $('#list').querySelectorAll('button').forEach(b=>b.onclick=()=>select(+b.dataset.i));
+}
+function renderInfo(st){
+  const p=PATTERNS[cur];
+  $('#info').innerHTML=`<h2>${p.name}</h2><div class="en">${p.en}</div><p class="lead">${p.lead}</p>
+   <h3>運作步驟（本輪）</h3><ol id="stepList">${st.steps.map(s=>`<li>${s.cap}</li>`).join('')}</ol>
+   <h3>適用時機</h3><ul>${p.when.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <h3>應用案例</h3><ul>${p.cases.map(x=>`<li>${x}</li>`).join('')}</ul>
+   <h3>優缺點</h3><div class="pc"><div class="p"><b>優點</b>${p.pros}</div><div class="c"><b>注意</b>${p.cons}</div></div>`;
+}
+function select(i){
+  cur=(i+PATTERNS.length)%PATTERNS.length;const p=PATTERNS[cur];
+  const host=$('#mainStage');host.querySelectorAll('svg').forEach(s=>s.remove());
+  $('#ptitle').innerHTML=`${p.name}<span>${p.en}</span>`;
+  main=new Stage(host,p);
+  main.onStep=(st,si,n,cap)=>{$('#cnt').textContent=`${si+1}／${n}`;const t=$('#cap');t.style.opacity=0;setTimeout(()=>{t.textContent=cap;t.style.opacity=1;},120);
+    document.querySelectorAll('#stepList li').forEach((li,k)=>li.classList.toggle('cur',k===si));};
+  main.onLoop=st=>{if($('#auto').checked){setTimeout(()=>select(cur+1),0);return;}renderInfo(st);};
+  renderInfo(main);main.onStep(main,0,main.steps.length,main.steps[0].cap);renderList();
+}
+function buildGrid(){
+  const g=$('#grid');g.innerHTML='';minis=[];
+  PATTERNS.forEach((p,i)=>{
+    const c=document.createElement('div');c.className='card';c.tabIndex=0;
+    c.innerHTML=`<h4>${p.name}<span>${p.en}</span></h4><div class="stage"></div><div class="mini-cap"></div>`;
+    g.appendChild(c);const st=new Stage(c.querySelector('.stage'),p,true),mc=c.querySelector('.mini-cap');
+    st.onStep=(s,si,n,cap)=>mc.textContent=cap;st.onStep(st,0,st.steps.length,st.steps[0].cap);
+    const go=()=>{setView('focus');select(i);};c.onclick=go;c.onkeydown=e=>{if(e.key==='Enter')go();};
+    minis.push(st);
+  });
+}
+function setView(v){view=v;document.body.classList.toggle('grid',v==='grid');$('#vFocus').classList.toggle('sel',v==='focus');$('#vGrid').classList.toggle('sel',v==='grid');
+  if(v==='grid'&&!minis.length)buildGrid();}
+
+$('#vFocus').onclick=()=>setView('focus');$('#vGrid').onclick=()=>setView('grid');
+$('#playBtn').onclick=()=>{playing=!playing;$('#playBtn').textContent=playing?'暫停':'播放';};
+$('#nextBtn').onclick=()=>main.next();
+$('#prevBtn').onclick=()=>main.jump(main.si-1);
+$('#restartBtn').onclick=()=>{main.loop=0;main.reset();renderInfo(main);main.start(0);};
+$('#speed').oninput=e=>{SPEED=+e.target.value;$('#spdV').textContent=SPEED.toFixed(1)+'×';};
+$('#themeBtn').onclick=()=>{const r=document.documentElement,dark=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0c1424';
+  r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('agentFlowTheme',r.dataset.theme);}catch(e){}};
+try{const t=localStorage.getItem('agentFlowTheme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
+document.addEventListener('keydown',e=>{if(view!=='focus'||e.target.tagName==='INPUT')return;
+  if(e.key===' '){e.preventDefault();$('#playBtn').click();}
+  else if(e.key==='ArrowRight')main.next();else if(e.key==='ArrowLeft')main.jump(main.si-1);
+  else if(e.key==='ArrowDown'){e.preventDefault();select(cur+1);}else if(e.key==='ArrowUp'){e.preventDefault();select(cur-1);}});
+
+let last=performance.now();
+function frame(now){const dt=Math.min(64,now-last);last=now;
+  if(playing){if(view==='focus'&&main)main.tick(dt);if(view==='grid')minis.forEach(s=>s.tick(dt));}
+  requestAnimationFrame(frame);}
+select(0);requestAnimationFrame(frame);
+</script>
+</body>
+</html>

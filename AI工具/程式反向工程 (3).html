@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 程式反向工程 — 提示詞產生器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ECF Design — 藍灰紙感色彩系統 */
+  :root{
+    /* 專業圖表版：石板灰底 × 靛藍主色 × 琥珀強調 */
+    --paper:#0f141c;
+    --panel:#161d28;
+    --panel-2:#1e2735;
+    --cream:#aeb6c4;
+    --cream-2:#9fa8b9;
+    --cream-ink:#0d121b;
+    --cream-ink-2:#33405a;
+    --line:#2b3648;
+    --line-strong:#3d4b62;
+    --ink:#f2f5fa;
+    --ink-2:#c3cbd8;
+    --ink-3:#8e99ab;
+    --indigo:#5b8def;
+    --indigo-deep:#3a6fd8;
+    --indigo-soft:#1d2a44;
+    --teal:#0e8a80;
+    --amber-soft:#fdf3dd;
+    --orange:#2f5fd0;
+    --orange-soft:#20449c;
+    --copper:#5b6678;
+    --copper-deep:#20449c;
+    --navy:#20449c;
+    --navy-deep:#16326f;
+    --blue:#2f5fd0;
+    --brick:#c0392b;
+    --green:#1f8a4c;
+    --amber:#c9871b;
+    --r-panel:14px;
+    --r-btn:8px;
+    --r-chip:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  *{scrollbar-width:thin;scrollbar-color:#4a5b76 #141a24;}
+  ::-webkit-scrollbar{width:11px;height:11px;}
+  ::-webkit-scrollbar-track{background:#141a24;border-radius:8px;}
+  ::-webkit-scrollbar-thumb{background:#4a5b76;border-radius:8px;border:2px solid #141a24;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--indigo);}
+  ::-webkit-scrollbar-corner{background:#141a24;}
+  .out-wrap{scrollbar-color:#5d6b85 #9fa8b9;}
+  .out-wrap::-webkit-scrollbar-track{background:#9fa8b9;}
+  .out-wrap::-webkit-scrollbar-thumb{background:#5d6b85;border-color:#9fa8b9;}
+  .editor{scrollbar-color:#5d6b85 #9fa8b9;}
+  html,body{height:100%;}
+  html,body{min-height:0;}
+  body{
+    font-family:'Noto Sans TC',sans-serif;
+    background:
+      linear-gradient(rgba(91,141,239,.055) 1px, transparent 1px) 0 0/100% 52px,
+      linear-gradient(90deg, rgba(91,141,239,.055) 1px, transparent 1px) 0 0/52px 100%,
+      var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    padding:22px 18px 10px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .container{max-width:1320px;margin:0 auto;}
+
+  /* Header */
+  .header{text-align:center;padding:14px 8px 20px;}
+  .header .eyebrow{font-size:0.66rem;letter-spacing:0.4em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:10px;}
+  .header h1{font-family:'Noto Sans TC',sans-serif;font-size:clamp(1.9rem,4.4vw,2.7rem);font-weight:800;letter-spacing:2px;display:inline-flex;align-items:center;gap:10px;color:var(--ink);}
+  .header h1 .t{color:#8fb4ff;}
+  .header h1 .e{font-size:.82em;}
+  .header .rule{width:200px;max-width:60%;margin:14px auto 0;display:flex;align-items:center;justify-content:center;gap:12px;}
+  .header .rule span{flex:1;height:1px;background:var(--line-strong);}
+  .header .rule i{width:6px;height:6px;transform:rotate(45deg);background:var(--amber);}
+  .header p{font-size:.95rem;color:var(--ink-2);margin-top:12px;letter-spacing:.5px;}
+  .header .badge{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 18px;background:var(--indigo-soft);border:1px solid #33518a;color:#9dbcff;border-radius:var(--r-chip);font-size:.78rem;font-weight:500;}
+
+  .zoom-bar{margin-top:10px;font-size:.78rem;color:var(--ink-3);display:inline-flex;gap:4px;align-items:center;}
+  .zoom-bar button{background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink-2);border-radius:6px;padding:3px 10px;font-size:.76rem;font-family:inherit;cursor:pointer;}
+  .zoom-bar button.on{background:var(--indigo);border-color:var(--indigo);color:#fff;}
+  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-panel);padding:18px;margin-bottom:16px;box-shadow:0 18px 44px -28px rgba(0,0,0,.85);}
+
+  /* Config */
+  .cfg-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+  .field label{display:block;font-size:.76rem;color:#9dbcff;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:7px;}
+  .field .hint{font-size:.78rem;color:var(--ink-3);margin-top:5px;}
+  textarea,input[type=text],input[type=password],select{
+    width:100%;background:var(--cream);border:1px solid var(--line-strong);color:var(--cream-ink);
+    border-radius:var(--r-btn);padding:11px 13px;font-size:.9rem;font-family:inherit;transition:border-color .15s,box-shadow .15s;
+  }
+  textarea{resize:vertical;line-height:1.6;}
+  textarea.code{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:.84rem;color:var(--cream-ink);}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(47,95,208,.15);}
+  .key-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .key-row textarea{flex:1 1 280px;min-height:46px;}
+  textarea.masked{-webkit-text-security:disc;text-security:disc;letter-spacing:2px;}
+  .keytest{margin-top:8px;font-size:.82rem;font-family:'JetBrains Mono',monospace;line-height:1.7;}
+  .keytest .ok{color:#9fe6bd;} .keytest .bad{color:#ffb3aa;}
+  .pool-bar{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-top:12px;}
+  .pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:10px;}
+  .pk{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:.78rem;color:var(--ink-2);position:relative;}
+  .pk.busy{border-color:var(--indigo);box-shadow:0 0 0 2px rgba(91,141,239,.25);}
+  .pk.cool{border-color:#e0a935;}
+  .pk.dead,.pk.off{opacity:.5;}
+  .pk .top{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+  .pk .dot{width:9px;height:9px;border-radius:50%;background:#5b6678;flex:0 0 auto;}
+  .pk.ok .dot{background:#3fb877;} .pk.busy .dot{background:var(--indigo);animation:blink 1s steps(2) infinite;}
+  .pk.cool .dot{background:#e0a935;} .pk.dead .dot{background:#e2574a;}
+  .pk .nm{font-weight:700;color:var(--ink);} .pk .mk{font-family:'JetBrains Mono',monospace;color:var(--ink-3);font-size:.72rem;}
+  .pk .tg{margin-left:auto;cursor:pointer;color:#9dbcff;font-size:.72rem;user-select:none;}
+  .pk .bar{height:5px;background:#0f141c;border-radius:3px;overflow:hidden;margin:5px 0 4px;}
+  .pk .bar i{display:block;height:100%;background:linear-gradient(90deg,#3fb877,#5b8def);}
+  .pk .meta{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--ink-3);}
+  .pk .st{margin-top:3px;font-size:.72rem;color:#f6d493;min-height:1em;}
+  .pk.dead .st{color:#ffb3aa;}
+  .cfg-mini{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+  .cfg-mini .field{flex:1 1 180px;min-width:150px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:.86rem;color:var(--ink-2);cursor:pointer;user-select:none;}
+  .checkline input{width:16px;height:16px;accent-color:var(--indigo);}
+
+  /* Buttons */
+  .btn{border:1px solid var(--line-strong);border-radius:var(--r-btn);padding:11px 20px;font-size:.88rem;font-weight:700;font-family:inherit;letter-spacing:.5px;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--panel-2);color:var(--ink-2);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-primary{background:var(--indigo-deep);border-color:#5b8def;color:#fff;letter-spacing:2px;font-size:.95rem;box-shadow:0 10px 24px -10px rgba(91,141,239,.75);}
+  .btn-primary:hover:not(:disabled){background:var(--indigo);transform:translateY(-1px);}
+  .btn-gold{background:var(--indigo-soft);border-color:#33518a;color:#9dbcff;}
+  .btn-gold:hover:not(:disabled){border-color:var(--indigo);color:#fff;background:var(--indigo);}
+  .btn-ghost{background:var(--panel-2);border-color:var(--line-strong);color:var(--ink-2);}
+  .btn-ghost:hover:not(:disabled){background:#28344a;color:#fff;border-color:var(--indigo);}
+  .btn-sm{padding:7px 13px;font-size:.76rem;}
+
+  /* Workspace */
+  .work{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:920px){.work{grid-template-columns:1fr;}}
+  .pane{position:relative;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 44px -28px rgba(0,0,0,.85);border-radius:var(--r-panel);padding:16px;display:flex;flex-direction:column;height:calc(100vh - 140px);min-height:520px;max-height:900px;overflow:hidden;}
+  @media(max-width:920px){.pane{height:80vh;}}
+  .pane-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .pane-title{font-family:'Noto Serif TC',serif;font-size:1.08rem;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .pane-title .tag{font-family:'Noto Sans TC';font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:#9dbcff;font-weight:600;}
+  .pane-actions{display:flex;gap:7px;flex-wrap:wrap;}
+
+  .drop{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .editor{position:relative;flex:1;min-height:0;display:flex;}
+  .editor pre.hl{position:absolute;inset:0;margin:0;padding:10px 12px;border:1px solid transparent;border-radius:var(--r-btn);overflow:hidden;pointer-events:none;
+    font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:.84rem;line-height:1.62;white-space:pre;color:#141a26;background:var(--cream);}
+  .editor pre.hl code{font:inherit;background:none;color:inherit;display:block;}
+  .editor textarea#html-input{position:relative;flex:1;min-height:0;resize:none;overflow:auto;white-space:pre;background:transparent;color:transparent;caret-color:var(--indigo);z-index:1;}
+  .editor textarea#html-input::placeholder{color:var(--cream-ink-2);}
+  .editor.plain textarea#html-input{color:#1a2233;}
+  .editor.plain pre.hl{display:none;}
+  /* 語法色：預設白，變數／指令保留色 */
+  .hljs{color:#1a2233;}
+  .hljs-keyword,.hljs-selector-tag,.hljs-doctag,.hljs-meta-keyword{color:#a62f9e;}
+  .hljs-built_in,.hljs-title.function_,.hljs-title.class_,.hljs-title{color:#20449c;}
+  .hljs-variable,.hljs-template-variable,.hljs-attr,.hljs-attribute,.hljs-property,.hljs-params{color:#0e6d8a;}
+  .hljs-string,.hljs-regexp,.hljs-template-tag{color:#1f7a4d;}
+  .hljs-number,.hljs-literal,.hljs-symbol{color:#b25000;}
+  .hljs-comment,.hljs-quote{color:#8b93a3;font-style:italic;}
+  .hljs-name,.hljs-tag{color:#a62f9e;}
+  .hljs-selector-class,.hljs-selector-id,.hljs-selector-attr,.hljs-selector-pseudo{color:#0e6d8a;}
+  .hljs-meta,.hljs-section{color:#5b6678;}
+  .hljs-deletion{color:#ff6a6a;} .hljs-addition{color:#9fe6c0;}
+  .hljs-emphasis{font-style:italic;} .hljs-strong{font-weight:700;}
+  .md pre.code code.hljs{color:#e8edf5;}
+  .md pre.code .hljs-keyword,.md pre.code .hljs-name,.md pre.code .hljs-tag,.md pre.code .hljs-selector-tag{color:#ff9ae0;}
+  .md pre.code .hljs-string{color:#96e6b3;}
+  .md pre.code .hljs-attr,.md pre.code .hljs-attribute,.md pre.code .hljs-variable{color:#7fd8ff;}
+  .md pre.code .hljs-number,.md pre.code .hljs-literal{color:#ffc46b;}
+  .md pre.code .hljs-comment{color:#8b93a3;}
+  .input-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.8rem;color:var(--ink-2);gap:8px;flex-wrap:wrap;}
+
+  .out-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line-strong);border-radius:10px;background:var(--cream);padding:20px 24px;color:var(--cream-ink);}
+  .out-empty{color:var(--cream-ink-2);font-size:.85rem;text-align:center;padding:60px 16px;line-height:1.9;}
+  /* rendered markdown */
+  .md h1,.md h2,.md h3,.md h4{font-family:'Noto Sans TC',sans-serif;color:var(--cream-ink);margin:18px 0 8px;line-height:1.3;}
+  .md h1{font-size:1.5rem;color:var(--indigo-deep);border-bottom:2px solid var(--indigo);padding-bottom:8px;}
+  .md h2{font-size:1.2rem;color:var(--indigo-deep);border-left:3px solid var(--indigo);padding-left:9px;}
+  .md h3{font-size:1.04rem;color:var(--teal);}
+  .md h4{font-size:.98rem;color:var(--cream-ink);}
+  .md p{font-size:.95rem;line-height:1.8;margin:8px 0;color:var(--cream-ink);}
+  .md ul,.md ol{margin:8px 0 8px 20px;}
+  .md li{font-size:.93rem;line-height:1.78;margin:3px 0;color:var(--cream-ink-2);}
+  .md strong{color:var(--indigo-deep);}
+  .md code{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:.86rem;background:#d7c191;border:1px solid #ab8e50;border-radius:5px;padding:1px 6px;color:#4d2f05;}
+  .md pre.code{background:#1a2233;border:1px solid #2b3550;border-radius:10px;padding:12px 14px;overflow:auto;margin:10px 0;}
+  .md pre.code code{background:none;border:none;padding:0;color:#e8edf5;font-size:.86rem;line-height:1.65;display:block;white-space:pre;}
+  .md hr{border:none;border-top:1px solid var(--line);margin:18px 0;}
+  .md table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9rem;background:#bcc4d1;}
+  .md th,.md td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top;line-height:1.55;}
+  .md th{background:var(--indigo-soft);color:var(--indigo-deep);font-weight:600;}
+  .md tbody tr:nth-child(even) td{background:#b2bac9;}
+  .diag-wrap{position:relative;margin:10px 0;}
+  .diag-wrap pre.mermaid{margin:0;}
+  .diag-tools{display:flex;gap:6px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap;}
+  .diag-edit{display:none;margin-top:8px;}
+  .diag-edit.show{display:block;}
+  .diag-edit textarea{width:100%;min-height:160px;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:.82rem;line-height:1.55;background:var(--cream-2);color:var(--cream-ink);border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;resize:vertical;}
+  .diag-edit .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;}
+  .diag-edit input[type=text]{flex:1 1 220px;background:var(--cream-2);color:var(--cream-ink);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;font-size:.82rem;}
+  .diag-edit .note{font-size:.76rem;color:var(--cream-ink-2);}
+  .diag-tools button{background:var(--panel-2);border:1px solid var(--line-strong);color:#9dbcff;border-radius:6px;padding:5px 12px;font-size:.78rem;font-family:inherit;cursor:pointer;}
+  .diag-tools button:hover{background:var(--indigo-deep);border-color:var(--indigo);color:#fff;}
+  .diag-row{display:none;flex-wrap:wrap;gap:8px 16px;margin-top:4px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);}
+  .diag-row.show{display:flex;}
+  .diag-row .checkline{font-size:.85rem;}
+  .diag-row .all{flex-basis:100%;font-size:.78rem;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase;display:flex;gap:10px;align-items:center;}
+  .diag-row .all button{background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:3px 10px;font-size:.76rem;color:var(--ink-2);cursor:pointer;font-family:inherit;}
+  .md blockquote{border-left:4px solid var(--amber);padding:8px 16px;margin:12px 0;color:#3a2c0a;background:#d7c191;border-radius:0 8px 8px 0;font-size:.92rem;}
+  .out-raw{white-space:pre-wrap;font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-size:.86rem;line-height:1.65;color:var(--cream-ink);}
+  .cursor::after{content:'▋';color:var(--indigo);animation:blink 1s steps(2) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+
+  /* status */
+  .status{margin-top:12px;flex:0 0 auto;max-height:120px;overflow:auto;padding:11px 15px;border-radius:var(--r-btn);font-size:.88rem;display:none;line-height:1.55;border:1px solid;}
+  .status.show{display:block;}
+  .status.info{background:var(--indigo-soft);border-color:#33518a;color:#9dbcff;}
+  .status.success{background:#12301f;border-color:#3fb877;color:#9fe6bd;}
+  .status.error{background:#3a1715;border-color:#e2574a;color:#ffb3aa;}
+  .status.warn{background:#352a10;border-color:#e0a935;color:#f6d493;}
+  .spinner{width:15px;height:15px;border:2px solid rgba(47,95,208,.2);border-top-color:var(--indigo);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+  .btn-primary .spinner{border-color:rgba(255,255,255,.35);border-top-color:#fff;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .footer{text-align:center;font-size:.8rem;color:var(--ink-3);padding:18px 0 24px;line-height:1.8;}
+  .footer a{color:#9dbcff;text-decoration:none;}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--r-btn);overflow:hidden;background:var(--panel-2);}
+  .seg button{background:transparent;border:none;color:var(--ink-2);padding:6px 13px;font-size:.82rem;font-family:inherit;cursor:pointer;}
+  .seg button.on{background:var(--indigo);color:#fff;}
+  details.adv{margin-top:4px;}
+  details.adv summary{cursor:pointer;color:var(--ink-2);font-size:.86rem;list-style:none;padding:4px 0;}
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary::before{content:'▸ ';color:var(--indigo);}
+  details.adv[open] summary::before{content:'▾ ';}
+  .dragover{border-color:var(--indigo)!important;box-shadow:0 0 0 3px rgba(47,95,208,.2);}
+  /* 多檔 / 網址 / 圖像 */
+  .src-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+  .src-row input[type=text]{flex:1 1 260px;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px;max-height:64px;overflow:auto;flex:0 0 auto;}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border:1px solid var(--line);background:var(--panel-2);border-radius:var(--r-chip);font-size:.78rem;color:var(--ink-2);font-family:'JetBrains Mono',monospace;}
+  .chip b{color:#9dbcff;font-weight:600;}
+  .chip .x{cursor:pointer;color:var(--ink-3);}
+  .chip .x:hover{color:var(--brick);}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;max-height:72px;overflow:auto;flex:0 0 auto;}
+  .thumb{position:relative;width:88px;height:64px;border:1px solid var(--line-strong);border-radius:6px;overflow:hidden;background:var(--panel-2);}
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .thumb .x{position:absolute;top:2px;right:4px;font-size:.8rem;color:var(--brick);cursor:pointer;background:rgba(255,255,255,.85);border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;}
+  .md pre.mermaid{background:#c3cad7;border:1px solid #8c98ac;border-radius:10px;padding:18px 14px;margin:14px 0;text-align:center;overflow:auto;}
+  .md pre.mermaid svg{max-width:100%;height:auto;}
+  .md pre.mermaid.mmd-error{background:#fceceb;text-align:left;}
+  .md pre.mermaid.mmd-error code{display:block;white-space:pre;color:#96281b;font-size:.76rem;line-height:1.55;}
+  .mmd-err{color:#96281b;font-size:.76rem;margin-bottom:8px;font-family:'Noto Sans TC',sans-serif;}
+  .dl-group{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--r-btn);overflow:hidden;}
+  .dl-group button{background:var(--panel-2);border:none;border-right:1px solid var(--line);color:#9dbcff;padding:8px 12px;font-size:.82rem;font-family:inherit;cursor:pointer;font-weight:600;}
+  .dl-group button:last-child{border-right:none;}
+  .dl-group button:hover:not(:disabled){background:var(--indigo);color:#fff;}
+  .dl-group button:disabled{opacity:.45;cursor:not-allowed;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">ECF · Reverse Engineering Studio</div>
+    <h1><span class="e">🔍</span><span class="t">程式反向工程</span></h1>
+    <div class="rule"><span></span><i></i><span></span></div>
+    <p>讀取任意程式碼 · 自動拆解成完整創作提示詞 · 由 Groq 驅動</p>
+    <span class="badge">⚡ Groq 多帳號分流／Ollama · Mermaid／UML 生成與圖上編輯 · 多檔／ZIP／網址／截圖輸入</span>
+    <div class="zoom-bar">縮放 <button data-z="0.5">50%</button><button data-z="0.67">67%</button><button data-z="0.8">80%</button><button data-z="1">100%</button></div>
+  </div>
+
+  <!-- 設定 -->
+  <div class="card">
+    <div class="cfg-grid">
+      <div class="field">
+        <label>Groq API Key 分流池（每行一組；可加帳號標籤：<code style="text-transform:none;">帳號A | gsk_...</code>）</label>
+        <div class="key-row">
+          <textarea id="api-keys" class="code masked" placeholder="帳號A | gsk_xxx&#10;帳號B | gsk_yyy&#10;gsk_zzz" autocomplete="off" spellcheck="false"></textarea>
+          <button class="btn btn-ghost btn-sm" id="btn-eye" title="顯示／隱藏">👁</button>
+          <button class="btn btn-gold btn-sm" id="btn-test-key">🔌 測試連線</button>
+          <button class="btn btn-gold btn-sm" id="btn-save-key">💾 儲存</button>
+          <button class="btn btn-ghost btn-sm" id="btn-load-models">⟳ 載入模型</button>
+        </div>
+        <div class="hint">金鑰僅存於本機瀏覽器 localStorage，不會上傳。<b>不同帳號</b>建立的 Key 各有獨立 TPM／RPD 額度才有分流效果；同帳號多把 Key 共用額度，請標同一個帳號標籤，冷卻時會整組一起避開。切換至 <b>Ollama 本機</b> 時不需金鑰。</div>
+        <div class="pool-bar">
+          <div class="field" style="flex:0 0 auto;margin:0;">
+            <label>分流策略</label>
+            <select id="pool-strategy" style="width:210px;">
+              <option value="least">剩餘額度優先（推薦）</option>
+              <option value="rr">輪流分配 Round-Robin</option>
+              <option value="failover">主備（第一組用完才換）</option>
+            </select>
+          </div>
+          <label class="checkline"><input type="checkbox" id="pool-parallel" checked> 圖解多張時，各帳號並行分流生成</label>
+          <button class="btn btn-ghost btn-sm" id="pool-reset" type="button">↺ 重設統計</button>
+        </div>
+        <div class="pool" id="pool"></div>
+        <div class="keytest" id="keytest"></div>
+      </div>
+      <div class="cfg-mini">
+        <div class="field" style="flex:0 0 auto;">
+          <label>後端</label>
+          <select id="backend" style="width:150px;">
+            <option value="groq">Groq 雲端</option>
+            <option value="ollama">Ollama 本機</option>
+          </select>
+        </div>
+        <div class="field" id="ollama-field" style="display:none;flex:0 0 auto;">
+          <label>Ollama 服務位址</label>
+          <input type="text" id="ollama-url" value="http://localhost:11434" style="width:210px;">
+        </div>
+        <div class="field">
+          <label>模型</label>
+          <select id="model">
+            <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+            <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
+            <option value="qwen/qwen3.6-27b">qwen/qwen3.6-27b</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>輸出語言</label>
+          <select id="lang">
+            <option value="繁體中文（台灣）">繁體中文</option>
+            <option value="English">English</option>
+            <option value="日本語">日本語</option>
+          </select>
+        </div>
+        <div class="field" style="flex:0 0 auto;">
+          <label>創意溫度</label>
+          <input type="text" id="temp" value="0.35" style="width:90px;">
+        </div>
+        <div class="field">
+          <label>輸出模式</label>
+          <select id="outmode">
+            <option value="full">完整提示詞（0～8 章）</option>
+            <option value="sysuser">System + User 雙提示詞套件</option>
+            <option value="skill">Claude Skill（SKILL.md）</option>
+            <option value="diagram">Mermaid／UML 圖解（只出圖）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>輸入處理模式</label>
+          <select id="preprocess">
+            <option value="slim">標準精簡</option>
+            <option value="digest">深度萃取（大檔建議）</option>
+            <option value="none">原文</option>
+          </select>
+        </div>
+      </div>
+      <div class="diag-row" id="diag-row">
+        <div class="all">圖解類型 <button type="button" id="diag-all">全選</button><button type="button" id="diag-none">清除</button><button type="button" id="diag-uml">UML 五式</button>
+          <label class="checkline" style="margin-left:auto;text-transform:none;letter-spacing:0;"><input type="checkbox" id="diag-batch" checked> 逐張分批生成（避免截斷）</label></div>
+        <label class="checkline"><input type="checkbox" class="dg" value="layout" checked> 版型結構 flowchart TB</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="sequence" checked> 序列圖 sequenceDiagram</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="state" checked> 狀態機 stateDiagram-v2</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="class"> 類別圖 classDiagram</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="activity"> 活動圖 flowchart TD（分支／迴圈）</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="usecase"> 使用案例 flowchart LR（角色→功能）</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="dataflow"> 資料流 flowchart LR（輸入→處理→輸出）</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="er"> 資料模型 erDiagram</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="c4"> 系統脈絡 C4Context</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="mindmap"> 功能心智圖 mindmap</label>
+        <label class="checkline"><input type="checkbox" class="dg" value="timeline"> 使用流程時間軸 timeline</label>
+      </div>
+      <details class="adv">
+        <summary>進階選項</summary>
+        <div style="margin-top:10px;display:flex;gap:18px;flex-wrap:wrap;">
+          <label class="checkline"><input type="checkbox" id="opt-pitfall" checked> 自動加入「實作陷阱」章節</label>
+          <label class="checkline"><input type="checkbox" id="opt-mermaid" checked> 附 Mermaid 圖解（版型 flowchart／流程 sequenceDiagram）</label>
+          <label class="checkline"><input type="checkbox" id="opt-vision" checked> 有截圖時先用視覺模型分析 UI</label>
+          <label class="checkline"><input type="checkbox" id="opt-stream" checked> 串流即時輸出</label>
+          <label class="checkline"><input type="checkbox" id="opt-autofit" checked> 自動壓縮以符合 TPM（建議開啟）</label>
+          <label class="checkline"><input type="checkbox" id="opt-fullshot" checked> 附帶完整 One-Shot 範例（TPM 不足時自動改精簡）</label>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="flex:0 0 auto;">
+            <label>每分鐘 token 上限 TPM</label>
+            <input type="text" id="tpm" value="" placeholder="自動偵測" style="width:120px;">
+            <div class="hint">留空＝首次呼叫後自動讀取帳戶 TPM；免費 on_demand 約 8000</div>
+          </div>
+          <div class="field" style="flex:0 0 auto;">
+            <label>輸出上限 tokens</label>
+            <input type="text" id="maxtok" value="6000" style="width:120px;">
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 工作區 -->
+  <div class="work">
+    <!-- 輸入 -->
+    <div class="pane" id="input-pane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="tag">Input</span> 原始程式碼</div>
+        <div class="pane-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-upload">📁 多檔／ZIP</button>
+          <button class="btn btn-ghost btn-sm" id="btn-image">🖼 截圖</button>
+          <button class="btn btn-ghost btn-sm" id="btn-sample">範例</button>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-in">清空</button>
+          <input type="file" id="file-input" multiple accept=".html,.htm,.js,.ts,.jsx,.tsx,.py,.css,.json,.vue,.java,.cs,.go,.php,.rb,.sql,.sh,.ps1,.txt,.zip,text/*,application/zip" style="display:none;">
+          <input type="file" id="img-input" multiple accept="image/*" style="display:none;">
+        </div>
+      </div>
+      <div class="src-row">
+        <input type="text" id="url-input" placeholder="https://… 貼上網址直接抓原始碼（先直連，失敗改走 CORS proxy）">
+        <button class="btn btn-gold btn-sm" id="btn-fetch-url">🌐 抓取</button>
+      </div>
+      <div class="chips" id="file-chips"></div>
+      <div class="thumbs" id="img-thumbs"></div>
+      <div class="drop" id="drop">
+        <div class="editor" id="editor"><pre class="hl" id="hl-layer" aria-hidden="true"><code class="hljs"></code></pre><textarea id="html-input" class="code" spellcheck="false" placeholder="在此貼上完整程式原始碼（HTML / JS / Python …），或拖曳 / 上傳程式檔…"></textarea></div>
+        <div class="input-foot">
+          <span id="in-stats">0 字元 · 約 0 tokens</span>
+          <span>可拖放多檔／ZIP／圖片到此區塊 · Ctrl+V 可貼截圖</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-run" style="margin-top:12px;width:100%;">🔍 開始反向工程</button>
+      <button class="btn btn-ghost btn-sm" id="btn-stop" style="margin-top:8px;width:100%;display:none;">■ 停止</button>
+      <button class="btn btn-gold btn-sm" id="btn-continue" style="margin-top:8px;width:100%;display:none;">▶ 繼續生成（接續中斷處）</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- 輸出 -->
+    <div class="pane" id="output-pane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="tag">Output</span> 創作提示詞</div>
+        <div class="pane-actions">
+          <span class="seg"><button id="seg-view" class="on">預覽</button><button id="seg-raw">原始</button></span>
+          <button class="btn btn-gold btn-sm" id="btn-edit" disabled>✎ 編輯</button>
+          <button class="btn btn-gold btn-sm" id="btn-copy" disabled>📋 複製</button>
+          <span class="dl-group">
+            <button id="dl-allsvg" disabled title="所有圖打包成 ZIP（SVG+PNG）">🗜 圖 ZIP</button>
+            <button id="dl-report" disabled title="含所有圖的單檔 HTML 報告">📄 報告</button>
+            <button id="dl-md" disabled>⬇ .md</button>
+            <button id="dl-txt" disabled>.txt</button>
+            <button id="dl-docx" disabled>.docx</button>
+            <button id="dl-json" disabled>.json</button>
+          </span>
+        </div>
+      </div>
+      <div class="out-wrap">
+        <div id="out-view" class="md"></div>
+        <pre id="out-raw" class="out-raw" style="display:none;"></pre>
+        <textarea id="out-edit" class="code" style="display:none;width:100%;height:100%;min-height:420px;border:none;background:transparent;font-size:.86rem;line-height:1.65;"></textarea>
+        <div id="out-empty" class="out-empty">⟵ 在左側貼上程式碼，按「開始反向工程」<br>即可產出可重建此程式的完整創作提示詞</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    🔍 程式反向工程 · Powered by <a href="https://groq.com" target="_blank">Groq</a> ·
+    讀取程式碼 → 產生標題 / 配色 / 版型 / 元件 / 功能 / 實作陷阱完整提示詞（0～8 章）
+    <br><span style="color:var(--ink-faint);font-size:.68rem;">build R11 · 多帳號 Groq Key 分流池／圖上編輯／單張重生／全圖匯出／Ollama 本機</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  const MODELS_URL = 'https://api.groq.com/openai/v1/models';
+  /* 後端路由：Groq 雲端 / Ollama 本機（OpenAI 相容端點） */
+  const backend = ()=> ($('backend')?$('backend').value:'groq');
+  const isLocal = ()=> backend()==='ollama';
+  const ollamaBase = ()=> (($('ollama-url')&&$('ollama-url').value)||'http://localhost:11434').replace(/\/+$/,'');
+  const chatURL  = ()=> isLocal() ? ollamaBase()+'/v1/chat/completions' : GROQ_URL;
+  const listURL  = ()=> isLocal() ? ollamaBase()+'/v1/models' : MODELS_URL;
+  const authHdr  = (key)=> (key && !isLocal()) ? {'Authorization':'Bearer '+key} : {};
+  const LS_KEY = 'codere_groq_keys';
+  const LS_MODEL = 'codere_model';
+  const FALLBACK_CHAIN = ['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.6-27b'];
+
+  /* ================= 多帳號 Key 分流池 ================= */
+  const LS_POOL='codere_pool_stats', LS_STRAT='codere_pool_strategy';
+  const KP=(function(){
+    let list=[], rr=0;
+    const day=()=>new Date().toISOString().slice(0,10);
+    let saved={}; try{ saved=JSON.parse(localStorage.getItem(LS_POOL)||'{}'); }catch(_){}
+    if(saved.day!==day()) saved={day:day(),keys:{}};
+    const fp=k=>k.slice(-10);   // 只用末 10 碼當統計識別，不存完整金鑰
+    function parseDur(s){ if(!s) return 0; let t=0; const re=/([\d.]+)(ms|h|m|s)/g; let m;
+      while((m=re.exec(s))){ const v=parseFloat(m[1]); t+= m[2]==='ms'?v/1000 : m[2]==='h'?v*3600 : m[2]==='m'?v*60 : v; }
+      return t || (parseFloat(s)||0); }
+    function sync(text){
+      const old=new Map(list.map(e=>[e.key,e]));
+      const lines=text.split(/\n|,(?=\s*(?:gsk_|[^|,]*\|))/).map(s=>s.trim()).filter(Boolean);
+      const seen=new Set(); list=[];
+      lines.forEach((ln,ix)=>{
+        let label='', key=ln;
+        const p=ln.indexOf('|'); if(p>=0){ label=ln.slice(0,p).trim(); key=ln.slice(p+1).trim(); }
+        if(!key || seen.has(key)) return; seen.add(key);
+        const st=saved.keys[fp(key)]||{};
+        const e=old.get(key)||{key, inflight:0, coolUntil:0, dead:'', off:!!st.off,
+          tpmLimit:0, tpmRemain:null, tpmReset:0, rpdLimit:0, rpdRemain:null,
+          used:st.used||0, tok:st.tok||0, ok:st.ok||0, fail:st.fail||0, last:''};
+        e.label=label||('Key '+(list.length+1)); e.group=label||('#'+key.slice(-6)); e.idx=list.length;
+        list.push(e);
+      });
+      render();
+    }
+    function persist(){
+      const keys={}; list.forEach(e=>keys[fp(e.key)]={used:e.used,tok:e.tok,ok:e.ok,fail:e.fail,off:e.off});
+      saved={day:day(),keys}; try{ localStorage.setItem(LS_POOL,JSON.stringify(saved)); }catch(_){}
+    }
+    const now=()=>Date.now();
+    const groupCool=g=>Math.max(0,...list.filter(e=>e.group===g).map(e=>e.coolUntil));
+    const usable=e=>!e.off && !e.dead;
+    const ready=e=>usable(e) && groupCool(e.group)<=now();
+    function score(e){   // 越大越優先
+      let s=0;
+      if(e.tpmRemain!=null && e.tpmReset<=now()) s+=1e9;                  // 視窗已重置 → 視為滿額
+      else if(e.tpmRemain!=null) s+=e.tpmRemain*1000;
+      else s+=5e8;                                                          // 尚無資料 → 中高優先，讓它被探測
+      if(e.rpdRemain!=null && e.rpdRemain<5) s-=2e9;
+      s-= e.inflight*3e8 + list.filter(x=>x.group===e.group&&x!==e).reduce((a,x)=>a+x.inflight,0)*3e8;
+      return s;
+    }
+    /* 回傳本次請求要嘗試的 key 順序（可用的在前、冷卻中的在後） */
+    function order(onlyReady){
+      const strat=($('pool-strategy')&&$('pool-strategy').value)||'least';
+      const a=list.filter(ready), b=list.filter(e=>usable(e)&&!ready(e)).sort((x,y)=>groupCool(x.group)-groupCool(y.group));
+      if(strat==='rr' && a.length){ const s=rr++%a.length; a.push(...a.splice(0,s)); }
+      else if(strat==='least') a.sort((x,y)=>score(y)-score(x));
+      // failover：維持輸入順序
+      return (onlyReady?a:[...a,...b]).map(e=>e.key);
+    }
+    const get=k=>list.find(e=>e.key===k);
+    function begin(k){ const e=get(k); if(e){ e.inflight++; e.used++; e.last=''; render(); } }
+    function end(k){ const e=get(k); if(e){ e.inflight=Math.max(0,e.inflight-1); render(); } }
+    function headers(k,res){
+      const e=get(k); if(!e||!res) return; const h=n=>res.headers.get(n);
+      const lt=parseInt(h('x-ratelimit-limit-tokens')), rt=parseInt(h('x-ratelimit-remaining-tokens'));
+      const lr=parseInt(h('x-ratelimit-limit-requests')), rq=parseInt(h('x-ratelimit-remaining-requests'));
+      if(lt>0) e.tpmLimit=lt; if(!isNaN(rt)) e.tpmRemain=rt;
+      if(lr>0) e.rpdLimit=lr; if(!isNaN(rq)) e.rpdRemain=rq;
+      const rs=parseDur(h('x-ratelimit-reset-tokens')); if(rs) e.tpmReset=now()+rs*1000;
+      render();
+    }
+    function success(k,tokens){ const e=get(k); if(!e) return; e.ok++; if(tokens) e.tok+=tokens; e.dead=''; persist(); render(); }
+    function failure(k,err){
+      const e=get(k); if(!e) return; e.fail++;
+      const st=err&&err.status;
+      if(st===401||st===403){ e.dead='金鑰無效或無權限（'+st+'）'; }
+      else if(st===429){
+        const isDay=/per day|RPD|TPD|daily/i.test(err.message||'');
+        const sec = err.retryAfter || (isDay?600:20);
+        list.filter(x=>x.group===e.group).forEach(x=>x.coolUntil=Math.max(x.coolUntil,now()+sec*1000));
+        e.last=isDay?'今日額度用完':'速率上限';
+      } else if(st>=500) e.last='伺服器錯誤 '+st;
+      persist(); render();
+    }
+    const minWait=()=>{ const r=list.filter(usable); if(!r.length) return -1; if(r.some(ready)) return 0;
+      return Math.max(1,Math.ceil((Math.min(...r.map(e=>groupCool(e.group)))-now())/1000)); };
+    const readyCount=()=>list.filter(ready).length;
+    const groups=()=>new Set(list.filter(usable).map(e=>e.group)).size;
+    const label=k=>{ const e=get(k); return e?e.label:'Key'; };
+    function reset(){ list.forEach(e=>{e.used=0;e.tok=0;e.ok=0;e.fail=0;e.coolUntil=0;e.dead='';e.last='';}); persist(); render(); }
+    function toggle(i){ const e=list[i]; if(e){ e.off=!e.off; persist(); render(); } }
+    let tick=null;
+    function render(){
+      const box=document.getElementById('pool'); if(!box) return;
+      if(typeof isLocal==='function' && isLocal()){ box.innerHTML=''; return; }
+      const t=now();
+      box.innerHTML=list.map((e,i)=>{
+        const cool=groupCool(e.group)>t, cls=e.off?'off':e.dead?'dead':e.inflight?'busy':cool?'cool':(e.ok?'ok':'');
+        const pct=e.tpmLimit&&e.tpmRemain!=null ? Math.round((e.tpmReset<=t?1:e.tpmRemain/e.tpmLimit)*100) : null;
+        const st=e.off?'已停用':e.dead?e.dead:cool?`${e.last||'冷卻'} · ${Math.ceil((groupCool(e.group)-t)/1000)} 秒後恢復`:e.inflight?`處理中 ×${e.inflight}`:e.last;
+        return `<div class="pk ${cls}"><div class="top"><span class="dot"></span><span class="nm">${esc(e.label)}</span><span class="mk">${maskKey(e.key)}</span><span class="tg" data-i="${i}">${e.off?'啟用':'停用'}</span></div>
+          <div class="bar"><i style="width:${pct==null?0:pct}%"></i></div>
+          <div class="meta"><span>TPM ${pct==null?'—':(e.tpmReset<=t?e.tpmLimit:e.tpmRemain).toLocaleString()+'/'+e.tpmLimit.toLocaleString()}</span><span>RPD 剩 ${e.rpdRemain==null?'—':e.rpdRemain.toLocaleString()}</span></div>
+          <div class="meta"><span>今日 ${e.ok}✓ ${e.fail}✗</span><span>${e.tok?e.tok.toLocaleString()+' tok':''}</span></div>
+          <div class="st">${esc(st||'')}</div></div>`;
+      }).join('') + (list.length>1?`<div class="pk" style="display:flex;align-items:center;font-size:.76rem;">共 ${list.length} 組 · ${groups()} 個帳號 · 可用 ${readyCount()} 組</div>`:'');
+      box.querySelectorAll('.tg').forEach(x=>x.onclick=()=>toggle(+x.dataset.i));
+      const anyCool=list.some(e=>groupCool(e.group)>t);
+      if(anyCool && !tick) tick=setInterval(()=>{ render(); if(!list.some(e=>groupCool(e.group)>Date.now())){clearInterval(tick);tick=null;render();} },1000);
+    }
+    return {sync,order,begin,end,headers,success,failure,minWait,readyCount,groups,label,reset,render,get size(){return list.filter(usable).length;}};
+  })();
+
+  let lastMarkdown = '';
+  let abortCtrl = null;
+  let VISION_MODEL = 'qwen/qwen3.6-27b';
+  let liveModels = null;   // 帳戶實際可用的對話模型（首次執行時載入）
+  const PREFERRED = ['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.6-27b','qwen/qwen3-32b','llama-3.3-70b-versatile','meta-llama/llama-4-scout-17b-16e-instruct','llama-3.1-8b-instant'];
+  async function ensureModels(key){
+    if(liveModels) return liveModels;
+    try{
+      const r=await fetch(listURL(),{headers:authHdr(key),signal:AbortSignal.timeout(10000)});
+      if(!r.ok) return null;
+      const j=await r.json();
+      liveModels=(j.data||[]).map(m=>m.id).filter(id=>!/whisper|tts|guard|prompt-guard|embed|playai/i.test(id));
+      const vis=liveModels.find(id=>/qwen3\.6|vision|llama-4|scout|maverick/i.test(id));
+      if(vis) VISION_MODEL=vis; else VISION_MODEL='';
+      // 同步下拉選單：保留目前選擇，補齊可用模型
+      const sel=$('model'), cur=sel.value;
+      const opts=[...new Set([...PREFERRED.filter(m=>liveModels.includes(m)),...liveModels.sort()])];
+      sel.innerHTML=opts.map(id=>`<option value="${id}">${id}</option>`).join('');
+      sel.value=opts.includes(cur)?cur:opts[0];
+      return liveModels;
+    }catch(_){ return null; }
+  }
+  const FILE_SEP = (name)=>'\n\n// ===== FILE: '+name+' =====\n';
+  const images = [];   // {name,dataUrl}
+  const fileList = []; // {name,size}
+  if(window.mermaid){ try{ mermaid.initialize({startOnLoad:false, securityLevel:'loose', fontFamily:'Noto Sans TC, Noto Sans, sans-serif', theme:'base',
+      themeVariables:{background:'#c3cad7', primaryColor:'#b6c6e8', primaryBorderColor:'#2f5fd0', primaryTextColor:'#1a2233',
+        secondaryColor:'#ddcb9e', secondaryBorderColor:'#c9871b', tertiaryColor:'#bdd7d4', tertiaryBorderColor:'#0e8a80',
+        lineColor:'#5b6678', textColor:'#1a2233', mainBkg:'#b6c6e8', nodeBorder:'#2f5fd0', clusterBkg:'#b7bfcd', clusterBorder:'#c3cad6',
+        titleColor:'#20449c', edgeLabelBackground:'#c3cad7', fontSize:'16px',
+        actorBkg:'#b6c6e8', actorBorder:'#2f5fd0', actorTextColor:'#1a2233', signalColor:'#5b6678', signalTextColor:'#1a2233',
+        labelBoxBkgColor:'#ddcb9e', labelBoxBorderColor:'#c9871b', noteBkgColor:'#ddcb9e', noteBorderColor:'#c9871b', noteTextColor:'#5a4108',
+        classText:'#1a2233', attributeBackgroundColorOdd:'#c3cad7', attributeBackgroundColorEven:'#b4bccb'},
+      flowchart:{htmlLabels:false, curve:'basis', padding:18, nodeSpacing:55, rankSpacing:65, useMaxWidth:false},
+      sequence:{useMaxWidth:true, mirrorActors:false, boxMargin:10}, htmlLabels:false}); }catch(_){} }
+
+  /* ---------- One-Shot 參考範例（精簡，示範輸出結構與顆粒度） ---------- */
+  const ONE_SHOT = `# RemoveBG Studio — 完整創作提示詞
+
+## 0. 角色與目標
+你是資深前端工程師兼介面設計師。請產出單一檔案 HTML（內嵌 CSS、JS，不使用任何框架），主題為一支深色高質感的 AI 智能去背工具。純 vanilla JS，互動用 Canvas 2D，介面語言繁體中文。
+
+## 1. 程式標題
+- 分頁標題：\`✂️ RemoveBG Studio — AI 智能去背工具\`
+- 主標：\`RemoveBG Studio\`（襯線、金色漸層字）
+- eyebrow：\`AI · Background Atelier\`
+- 副標：\`AI 智能去背工作室 · 一鍵移除圖像背景\`
+- Badge：\`✦ 內建 3 組 API Key 智慧輪換 · 支援自訂 Key\`
+
+## 2. 技術規格
+- 單一 .html，無 build、無框架；字體 Noto Serif/Sans TC（Google Fonts）。
+- 串接 remove.bg API：\`POST https://api.remove.bg/v1.0/removebg\`，標頭 \`X-Api-Key\`，FormData 帶 image_file/size/type。
+- 自訂 Key 存 localStorage。
+
+## 3. 設計系統（深色奢華 · 金/玉）
+配色 tokens（以 CSS 變數實作）：
+\`\`\`
+--bg:#0a0b0e
+--surface:rgba(21,22,28,0.72)
+--gold:#d4af37
+--jade:#4fb89a
+--ink:#ece8e1
+--danger:#e07070
+\`\`\`
+質感：近黑底＋金/玉徑向光暈；玻璃卡片＋四角金色刻線；主標金色漸層襯線字；金色只給重點、玉色給主行動。
+
+## 4. 版型結構（max-width 1080px 置中）
+Header → 上傳卡 → 預覽卡（原圖/結果雙欄）→ 批次卡 → Footer。
+
+## 5. 元件清單與規格
+- 拖放上傳區（點擊/拖放/貼上）。
+- 設定列：輸出尺寸 select、物件類型 select。
+- API Key 指示燈（閒置灰/嘗試金/成功玉/失敗紅）。
+- 自訂 API Key 摺疊區（localStorage）。
+- 預覽雙欄、選取工具列（矩形/多邊形/套索）、背景色票、動作按鈕列。
+
+## 6. 功能規格
+- 去背核心＋3 組 Key 隨機輪換＋自訂 Key 優先＋失敗自動切換（402/403/429 換 Key，400 中止）。
+- 選取去背：矩形/多邊形/套索三模式，座標以比例 0~1 儲存，只保留選取區去背結果、其餘透明。
+- 帶 25% 邊距裁切送 API；失敗則「整圖去背→裁進選取形狀」後援。
+- 背景色合成、透明/含背景 PNG 下載、批次處理。
+
+## 7. 實作陷阱
+- 選取 canvas 不可用 \`inset:0\` 撐滿（replaced element 不會被撐滿）；尺寸以圖片 clientWidth/Height 為基準；ResizeObserver 觀察圖片，否則破圖。
+- 合成要把 API 回傳圖「等比例拉伸」回對應矩形再 clip（免費 Key 回傳預覽尺寸），否則位移縮放。
+
+## 8. 文案與語氣
+全繁體中文、精簡直接；錯誤態給「怎麼了＋下一步」。`;
+
+  /* ---------- 精簡版 One-Shot（TPM 吃緊時改用） ---------- */
+  const ONE_SHOT_SKELETON =
+`（結構骨架，請依此章節順序與顆粒度輸出，內容換成使用者 HTML 真實內容）
+# {程式名稱} — 完整創作提示詞
+## 0. 角色與目標：一句定位（單檔/框架/語言/用途）
+## 1. 程式標題：分頁標題、主標、eyebrow、副標、badge 等實際文案（用 code 反引號）
+## 2. 技術規格：單檔/框架/CDN/字體；呼叫的 API 端點、方法、標頭、參數；localStorage 等
+## 3. 設計系統：配色 tokens 用 code block 條列實際數值；字體；質感原則
+## 4. 版型結構：由上到下分區
+## 5. 元件清單與規格：逐一列出主要元件與互動
+## 6. 功能規格：核心流程、錯誤/容錯、邊界
+## 7. 實作陷阱：易踩雷處（Canvas/DPR、座標、API 回傳尺寸、SSE、CORS、競態）
+## 8. 文案與語氣`;
+
+  /* ---------- 系統提示詞 ---------- */
+  const DIAG={
+    layout:['版型結構','flowchart TB：頂層為 body 直系區塊，逐層展開主要容器與互動元件（含 id），忽略純裝飾'],
+    sequence:['主流程序列圖','sequenceDiagram：participant 為 使用者／前端函式（實際函式名）／外部 API（實際端點）；含 alt 錯誤重試、fallback；串流用 loop'],
+    state:['UI 狀態機','stateDiagram-v2：列出實際 UI 狀態（如 閒置/處理中/成功/失敗/已停止），轉移線標上觸發事件（按鈕 id 或錯誤碼）'],
+    class:['類別／模組圖','classDiagram：每個主要物件、模組或函式群一個 class，列公開方法與狀態變數，用箭頭標依賴或呼叫'],
+    activity:['活動圖','flowchart TD：主要操作流程，含判斷菱形{ }、迴圈與結束節點，對應實際函式'],
+    usecase:['使用案例圖','flowchart LR：左側角色（使用者／管理者／外部系統），右側功能節點（橢圓 ([ ]) ），角色 --> 功能'],
+    dataflow:['資料流管線','flowchart LR：輸入 → 每個處理函式（實際名稱）→ 輸出，邊上註記資料型別或大小變化'],
+    er:['資料模型','erDiagram：從 localStorage 鍵、JSON 結構、API 回傳物件推出實體、欄位與關聯'],
+    c4:['系統脈絡圖','C4Context：Person、System、System_Ext（外部 API／CDN）、Rel 關係，title 用程式名稱'],
+    mindmap:['功能心智圖','mindmap：根為程式名稱，一級為功能模組，二級為具體功能（每項 ≤ 8 字）'],
+    timeline:['使用流程時間軸','timeline：以使用者一次完整操作為序，每個階段列 1～3 個動作']
+  };
+  window.__DIAG=DIAG;
+  const DIAG_LABEL={layout:'版型結構',sequence:'主流程序列圖',state:'UI 狀態機',class:'類別／模組圖',activity:'活動圖',usecase:'使用案例圖',dataflow:'資料流管線',er:'資料模型',c4:'系統脈絡圖',mindmap:'功能心智圖',timeline:'使用流程時間軸'};
+  function buildMessages(html, lang, withPitfall, oneShot, mode, withMermaid, diagKeys){
+    mode = mode || 'full';
+    const refBlock = (oneShot && mode==='full')
+      ? `\n\n以下是「輸出格式與詳細度」的參考範例（請模仿其結構與顆粒度，內容換成使用者程式的真實內容）：\n<<<REFERENCE\n${oneShot}\nREFERENCE>>>`
+      : '';
+    const common =
+`你是頂尖前端工程師與技術文件專家，專長是把一份完整的程式（HTML / JS / Python 等任何語言）「逆向拆解」成可以重建它的創作提示詞。
+
+鐵則：
+- 必須忠實反映「這份程式實際的內容」——實際的標題與文案、實際的配色數值、實際使用的字體、實際的元件、實際的函式與呼叫的 API（端點/參數/標頭）、實際的功能流程。
+- 若輸入含多個檔案（以「// ===== FILE: 檔名 =====」分隔），視為同一專案整體分析，並在技術規格列出檔案分工。
+- 若輸入含「=== UI 截圖分析 ===」，把其中的配色、版型、元件描述併入設計系統與元件章節（程式碼有的以程式碼為準）。
+- 若為網頁程式，配色一律從 CSS 變數/數值萃取，用 code block 條列；非網頁程式則以「模組/類別/資料結構/CLI 介面」取代設計系統章節。
+- 機密（API key、token、密碼）一律用占位符（如 KEY_1），絕不輸出真實值。
+- 語言：以「${lang}」輸出。
+- 只輸出 Markdown 本身，不要任何前言、說明或結語。`;
+    const mermaidRule = withMermaid
+      ? `\n- Mermaid 圖解：「## 4 版型結構」條列後附一個 \`\`\`mermaid 的 flowchart TB（區塊由上到下、節點用實際元件 id）；「## 6 功能規格」條列後附一個 \`\`\`mermaid 的 sequenceDiagram（使用者 → 前端函式 → 外部 API，含 alt 錯誤/重試分支）；有明確 UI 狀態機時再加 stateDiagram-v2。節點文字含中文、括號、冒號時必須用雙引號包住；participant 用英數別名（participant FE as 前端）；一個 code block 只放一張圖。`
+      : '';
+    let sys, user;
+    const codeBlock = `\`\`\`\n${html}\n\`\`\``;
+    if(mode==='sysuser'){
+      sys = common + `
+
+任務：閱讀程式碼，產出可直接貼進任何 AI（ChatGPT / Claude / Gemini）的「System + User 雙提示詞套件」，格式固定：
+# {程式名稱} — 提示詞套件
+## System Prompt
+（一個 \`\`\`text code block：角色定位、技術鐵則（單檔/框架/語言/API 規格/機密占位符）、設計系統（配色 tokens 實際值、字體、質感）、輸出要求）
+## User Prompt
+（一個 \`\`\`text code block：請建立 {程式名稱}，逐項列出 標題文案／版型分區／元件清單與互動／功能規格／錯誤與容錯／實作陷阱／文案語氣，最後一句「請輸出完整單檔程式碼」）
+## 使用說明
+（3 行內：貼哪裡、可調整的變數、驗證方式）${withMermaid ? '\n## 圖解\n（放在使用說明之後：版型 flowchart TB 與流程 sequenceDiagram 各一個 ```mermaid block，規則同上）' : ''}`;
+      user = `請逆向工程以下程式碼，產生 System + User 雙提示詞套件：\n\n${codeBlock}`;
+    }else if(mode==='diagram'){
+      const DIAG=window.__DIAG;
+      const picked=(diagKeys&&diagKeys.length?diagKeys:[...document.querySelectorAll('.dg:checked')].map(c=>c.value)).filter(v=>DIAG[v]);
+      const list=(picked.length?picked:['layout','sequence','state']).map((k,ix)=>`## ${ix+1}. ${DIAG[k][0]}\n（一句話說明此圖涵蓋範圍）\n\`\`\`mermaid\n${DIAG[k][1]}\n\`\`\``).join('\n\n');
+      const head=(diagKeys&&diagKeys.length===1)?'（只輸出下列這一個章節，不要加大標題、不要任何前言）':'# {程式名稱} — Mermaid／UML 圖解';
+      sys = common + `
+
+任務：閱讀程式碼，只輸出「Mermaid／UML 圖解」，不輸出任何提示詞章節。格式固定：
+${head}
+${list}
+
+Mermaid 鐵則（違反會渲染失敗）：
+- 每張圖一個 \`\`\`mermaid code block，block 內第一行就是圖型宣告，不加標題註解。
+- 節點／狀態／訊息文字含中文、空白、括號、冒號、斜線、# 時一律用雙引號包住，例如 A["開始反向工程 #btn-run"]。
+- 節點 id 只用英數與底線；sequenceDiagram 的 participant 用英數別名（participant FE as "前端"）。
+- classDiagram 的方法與屬性用英數；中文說明放 note。
+- erDiagram 實體與欄位用英數（可加中文 note）。
+- C4Context 需用 Person/System/System_Ext/Rel 語法，title 可用中文。
+- mindmap 與 timeline 每層縮排兩個空白，勿用引號以外的特殊符號。
+- 每張圖必須以獨立一行的 \`\`\`mermaid 開始、獨立一行的 \`\`\` 結束，圍欄前後不可接其他文字。
+- 每張圖控制在 40 行以內，狀態機與序列圖只留主要流程（次要分支合併），確保全部圖解都能在輸出上限內完成。
+- 不要在 code block 外加任何多餘說明，圖與圖之間只放章節標題與一句說明。`;
+      user = `請逆向工程以下程式碼，只產生上述指定的 Mermaid／UML 圖解：\n\n${codeBlock}`;
+    }else if(mode==='skill'){
+      sys = common + `
+
+任務：閱讀程式碼，產出一份可直接放進 Claude Skills 的 SKILL.md，格式固定：
+---
+name: {英文-kebab-case-名稱}
+description: {一段繁中描述：這個 skill 會產出什麼程式、觸發情境（使用者說「做一個 XXX」「重建 XXX」等）、即使只說名稱也要立即執行}
+---
+# {程式名稱}
+## 何時使用
+## 產出規格（技術棧、單檔/框架、API 端點與參數、localStorage）
+## 設計系統（配色 tokens code block、字體、質感原則）
+## 版型與元件（由上到下分區、元件清單與互動）
+## 功能規格（核心流程、錯誤/容錯、邊界）
+## 實作陷阱
+## 產出流程（步驟：讀取需求 → 生成 → 用 node --check 驗證 → 輸出到 /mnt/user-data/outputs/）
+## 驗收清單（可勾選的 checkbox 列表）${withMermaid ? '\n- Mermaid 圖解：「版型與元件」附 flowchart TB、「功能規格」附 sequenceDiagram，規則同上。' : ''}`;
+      user = `請逆向工程以下程式碼，產生 Claude Skill 格式的 SKILL.md：\n\n${codeBlock}`;
+    }else{
+      sys = common + `
+- 不要照抄範例內容；範例只示範「輸出的章節結構與詳細顆粒度」。${mermaidRule}
+${withPitfall ? '- 若程式有關鍵或易踩雷的實作細節（Canvas/DPR、座標換算、API 回傳尺寸、SSE 串流解析、CORS、localStorage、競態），務必新增「## 7. 實作陷阱」章節具體提醒。' : ''}
+
+任務：閱讀使用者提供的程式碼（或其結構摘要），產出一份完整、精確、可直接交給 AI 重建此程式的「創作提示詞」。
+請依下列章節輸出（沒有的章節可省略，但盡量完整）：
+# {程式名稱} — 完整創作提示詞 / ## 0 角色 / ## 1 標題 / ## 2 技術規格 / ## 3 設計系統(配色tokens) / ## 4 版型 / ## 5 元件清單 / ## 6 功能規格 / ## 7 實作陷阱 / ## 8 文案語氣${refBlock}
+
+注意：不要輸出「一句話濃縮版」、總結或任何 ## 8 之後的章節，## 8 寫完即結束。`;
+      user = `請逆向工程以下程式碼（或其結構摘要），產生一份完整、可重建它的創作提示詞：\n\n${codeBlock}`;
+    }
+    return [{role:'system',content:sys},{role:'user',content:user}];
+  }
+
+
+  /* ---------- HTML 精簡 ---------- */
+  function slimHtml(html){
+    return html
+      .replace(/<!--[\s\S]*?-->/g,'')                       // 註解
+      .replace(/data:[a-zA-Z0-9.+/-]+;base64,[A-Za-z0-9+/=]{60,}/g,'data:[BASE64_OMITTED]') // base64
+      .replace(/[ \t]+\n/g,'\n')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  /* ---------- 深度萃取：把大檔壓成結構摘要（大幅降 token） ---------- */
+  function summarizeCode(js, out){
+    const pick=(re,label,max=50)=>{
+      const set=new Set(); let m;
+      while((m=re.exec(js))&&set.size<max){ if(m[1])set.add(m[1]); }
+      if(set.size) out.push(label+'：'+[...set].join(', '));
+    };
+    pick(/function\s+([A-Za-z0-9_$]+)\s*\(/g,'函式');
+    pick(/(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/g,'箭頭函式');
+    pick(/^\s*(?:async\s+)?def\s+([A-Za-z0-9_]+)\s*\(/gm,'Python 函式');
+    pick(/^\s*class\s+([A-Za-z0-9_]+)/gm,'類別');
+    pick(/^\s*(?:import|from)\s+([A-Za-z0-9_.]+)/gm,'import',40);
+    pick(/(?:const|let|var)\s+([A-Z][A-Z0-9_]{2,})\s*=/g,'常數');
+    pick(/fetch\(\s*[`'"]([^`'"]+)[`'"]/g,'fetch 端點',30);
+    pick(/['"](https?:\/\/[^'"]+)['"]/g,'網址字面量',20);
+    pick(/addEventListener\(\s*['"]([a-zA-Z]+)['"]/g,'監聽事件',40);
+    pick(/localStorage\.(?:get|set|remove)Item\(\s*[`'"]([^`'"]+)[`'"]/g,'localStorage 鍵',30);
+    pick(/['"](Authorization|X-[A-Za-z-]+|Content-Type|model|temperature|max_tokens|stream)['"]/g,'API 參數/標頭',30);
+    pick(/getElementById\(\s*['"]([^'"]+)['"]/g,'取用元素 id',60);
+  }
+  function digestNonHtml(code, name){
+    const out=[]; if(name) out.push('FILE: '+name);
+    const slim=slimHtml(code);
+    const CAP=4000;
+    out.push(slim.length>CAP ? slim.slice(0,CAP)+'\n/* …已截斷… */' : slim);
+    out.push('=== 程式摘要 ===');
+    summarizeCode(code,out);
+    return out.join('\n');
+  }
+  function splitFiles(text){
+    const parts=text.split(/\n?\/\/ ===== FILE: (.+?) =====\n/);
+    if(parts.length<3) return null;
+    const files=[]; if(parts[0].trim()) files.push({name:'(pasted)',code:parts[0]});
+    for(let k=1;k<parts.length;k+=2) files.push({name:parts[k],code:parts[k+1]||''});
+    return files;
+  }
+  function extractDigest(html){
+    const files=splitFiles(html);
+    if(files){
+      return files.map(f=> /\.(html?|vue)$/i.test(f.name) || /<\s*(html|body|head)\b/i.test(f.code)
+        ? '##### FILE: '+f.name+'\n'+extractDigest(f.code)
+        : '##### '+digestNonHtml(f.code,f.name)).join('\n\n');
+    }
+    if(!/<\s*(html|body|head|div|script|style)\b/i.test(html)) return digestNonHtml(html,'');
+    let doc;
+
+    try{ doc=new DOMParser().parseFromString(html,'text/html'); }
+    catch(_){ return slimHtml(html); }
+    const out=[];
+
+    // 1. 標題 / meta / 外部資源
+    const title=doc.querySelector('title');
+    if(title) out.push('TITLE: '+title.textContent.trim());
+    doc.querySelectorAll('meta[name],meta[property]').forEach(m=>{
+      const n=m.getAttribute('name')||m.getAttribute('property');
+      out.push('META '+n+': '+(m.getAttribute('content')||''));
+    });
+    const links=[];
+    doc.querySelectorAll('link[href],script[src]').forEach(el=>links.push(el.getAttribute('href')||el.getAttribute('src')));
+    if(links.length) out.push('外部資源: '+[...new Set(links)].join(' , '));
+
+    // 2. CSS：:root 變數完整保留，其餘截斷
+    let css='';
+    doc.querySelectorAll('style').forEach(s=>css+='\n'+s.textContent);
+    css=css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n{2,}/g,'\n').trim();
+    const rootM=css.match(/:root\s*\{[\s\S]*?\}/);
+    const rootBlock=rootM?rootM[0]:'';
+    let cssRest=rootBlock?css.replace(rootBlock,''):css;
+    const CSS_CAP=5000;
+    if(cssRest.length>CSS_CAP) cssRest=cssRest.slice(0,CSS_CAP)+'\n/* …CSS 已截斷，其餘樣式從略… */';
+    out.push('\n=== CSS ===');
+    if(rootBlock) out.push(rootBlock);
+    if(cssRest.trim()) out.push(cssRest.trim());
+
+    // 3. DOM 結構大綱（去除 script/style，標籤+id/class+關鍵屬性+截斷文字）
+    out.push('\n=== DOM 結構大綱 ===');
+    const lines=[];
+    const walk=(el,depth)=>{
+      if(depth>14) return;
+      for(const node of el.children){
+        const tag=node.tagName.toLowerCase();
+        if(tag==='script'||tag==='style') continue;
+        let d=tag;
+        if(node.id) d+='#'+node.id;
+        if(node.className && typeof node.className==='string' && node.className.trim())
+          d+='.'+node.className.trim().split(/\s+/).join('.');
+        ['type','placeholder','value','href','for','name','alt'].forEach(a=>{
+          if(node.hasAttribute(a)){const v=node.getAttribute(a);if(v)d+=' '+a+'="'+v.slice(0,30)+'"';}
+        });
+        const txt=[...node.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
+        if(txt) d+='  「'+txt.slice(0,40)+'」';
+        lines.push('  '.repeat(depth)+'· '+d);
+        walk(node,depth+1);
+      }
+    };
+    if(doc.body) walk(doc.body,0);
+    let domTxt=lines.join('\n');
+    const DOM_CAP=6000;
+    if(domTxt.length>DOM_CAP) domTxt=domTxt.slice(0,DOM_CAP)+'\n  … (DOM 大綱已截斷)';
+    out.push(domTxt);
+
+    // 4. JS 摘要：函式 / API / 事件 / 常數 / localStorage / 標頭
+    let js='';
+    doc.querySelectorAll('script:not([src])').forEach(s=>js+='\n'+s.textContent);
+    out.push('\n=== JS 摘要（僅列出識別資訊，非完整實作） ===');
+    summarizeCode(js,out);
+
+    return out.join('\n');
+  }
+
+  function preprocess(html){
+    const mode=$('preprocess').value;
+    if(mode==='digest') return extractDigest(html);
+    if(mode==='slim') return slimHtml(html);
+    return html;
+  }
+
+  /* ---------- 自動壓縮以符合 TPM（輸入＋輸出都計入 TPM） ---------- */
+  function estTok(s){ return Math.round((s||'').length/2.8); }   // 保守高估，避免 413
+  function promptTokens(msgs){ return estTok(msgs[0].content)+estTok(msgs[1].content)+16; }
+
+  function buildAndFit(rawHtml, lang, userMax, tpmOverride, diagKeys){
+    const autofit=$('opt-autofit').checked;
+    const CTX_LIMIT=115000;   // gpt-oss 系列 131k，保留餘裕（估算為保守高估）
+    let tpm=tpmOverride||parseInt($('tpm').value)||0;
+    tpm = tpm ? Math.min(tpm,CTX_LIMIT) : CTX_LIMIT;
+    const pitfall=$('opt-pitfall').checked;
+    const wantFull=$('opt-fullshot').checked;
+    const outMode=$('outmode').value;
+    const wantMermaid=$('opt-mermaid').checked;
+    const safety=600;
+    const notes=[];
+
+    let mode=$('preprocess').value;
+    let payload = mode==='none'?rawHtml : (mode==='slim'?slimHtml(rawHtml):extractDigest(rawHtml));
+    let oneShot = wantFull?ONE_SHOT:ONE_SHOT_SKELETON;
+    let maxtok = userMax;
+
+    let msgs=buildMessages(payload,lang,pitfall,oneShot,outMode,wantMermaid,diagKeys);
+    if(!autofit) return {msgs,maxtok,promptTok:promptTokens(msgs),notes};
+
+    const over=()=>promptTokens(msgs)+maxtok > tpm;
+
+    if(over() && mode!=='digest'){
+      payload=extractDigest(rawHtml); mode='digest';
+      notes.push('自動切換深度萃取');
+      msgs=buildMessages(payload,lang,pitfall,oneShot,outMode,wantMermaid,diagKeys);
+    }
+    if(over() && oneShot===ONE_SHOT){
+      oneShot=ONE_SHOT_SKELETON; notes.push('改用精簡 One-Shot');
+      msgs=buildMessages(payload,lang,pitfall,oneShot,outMode,wantMermaid,diagKeys);
+    }
+    if(over()){
+      const room=tpm - promptTokens(msgs) - safety;
+      const newMax=Math.max(2000, Math.min(maxtok, room));
+      if(newMax<maxtok){ maxtok=newMax; notes.push('輸出上限下調至 '+maxtok); }
+    }
+    if(over()){
+      const allowTok = tpm - maxtok - safety - estTok(oneShot) - 320;
+      const allowChars = Math.max(900, Math.floor(allowTok*2.8));
+      if(payload.length>allowChars){
+        payload = payload.slice(0,allowChars)+'\n\n…(內容已截斷以符合 TPM 上限，請依上述資訊盡量還原)…';
+        notes.push('內容截斷至約 '+Math.round(allowChars/2.8).toLocaleString()+' tokens');
+        msgs=buildMessages(payload,lang,pitfall,oneShot,outMode,wantMermaid,diagKeys);
+      }
+    }
+    return {msgs,maxtok,promptTok:promptTokens(msgs),notes};
+  }
+
+  /* ---------- 極簡 Markdown 轉 HTML ---------- */
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function mdToHtml(md, finalRender){
+    const blocks=[];
+    md = md.replace(/```(\w*)\n?([\s\S]*?)```/g,(m,lang,code)=>{
+      if(lang==='mermaid' && finalRender && window.mermaid)
+        blocks.push('<div class="diag-wrap"><pre class="mermaid" data-src="'+esc(code.trim()).replace(/"/g,'&quot;')+'">'+esc(code.trim())+'</pre><div class="diag-tools"><button data-act="edit">✎ 編輯</button><button data-act="regen">↻ 重生</button><button data-act="ask">✎ 追加指令</button><button data-act="svg">⬇ SVG</button><button data-act="png">⬇ PNG</button><button data-act="copy">複製 Mermaid</button><button data-act="mmed">Mermaid Editor</button><button data-act="live">mermaid.live</button></div>'+'<div class="diag-edit"><textarea spellcheck="false"></textarea><div class="row"><button class="btn btn-gold btn-sm" data-ed="apply">✓ 套用並重繪</button><button class="btn btn-ghost btn-sm" data-ed="reset">↺ 還原</button><span class="note">改完按套用即時重繪，並同步回輸出內容</span></div><div class="row" data-ask style="display:none;"><input type="text" placeholder="追加指令，例如：拆細一點／只留主流程／加上錯誤分支"><button class="btn btn-gold btn-sm" data-ed="send">▶ 重新產生</button></div></div></div>');
+      else
+        blocks.push('<pre class="code"><code>'+esc(code.replace(/\n$/,''))+'</code></pre>');
+      return '\u0000B'+(blocks.length-1)+'\u0000';
+    });
+    md = esc(md);
+    md = md.replace(/^###### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^##### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^#### (.*)$/gm,'<h4>$1</h4>')
+           .replace(/^### (.*)$/gm,'<h3>$1</h3>')
+           .replace(/^## (.*)$/gm,'<h2>$1</h2>')
+           .replace(/^# (.*)$/gm,'<h1>$1</h1>');
+    md = md.replace(/(?:^|\n)(\|[^\n]+\|\n\|[ \t:|-]+\|(?:\n\|[^\n]*\|)*)/g,(m,tbl)=>{
+      const rows=tbl.trim().split('\n').map(r=>r.replace(/^\||\|$/g,'').split('|').map(c=>c.trim()));
+      const head=rows[0], body=rows.slice(2);
+      return '\n\n<table><thead><tr>'+head.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+
+        body.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+    });
+    md = md.replace(/^\s*---+\s*$/gm,'<hr>');
+    md = md.replace(/^&gt;\s?(.*)$/gm,'<blockquote>$1</blockquote>');
+    md = md.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+           .replace(/`([^`]+)`/g,'<code>$1</code>');
+    md = md.replace(/(?:^|\n)((?:[-*] .*(?:\n|$))+)/g,(m,list)=>{
+      const items=list.trim().split('\n').map(l=>'<li>'+l.replace(/^[-*] /,'')+'</li>').join('');
+      return '\n<ul>'+items+'</ul>';
+    });
+    md = md.replace(/(?:^|\n)((?:\d+\. .*(?:\n|$))+)/g,(m,list)=>{
+      const items=list.trim().split('\n').map(l=>'<li>'+l.replace(/^\d+\. /,'')+'</li>').join('');
+      return '\n<ol>'+items+'</ol>';
+    });
+    md = md.split(/\n{2,}/).map(b=>{
+      b=b.trim(); if(!b) return '';
+      if(/^<(h\d|ul|ol|pre|hr|blockquote|table)/.test(b)) return b;
+      return '<p>'+b.replace(/\n/g,'<br>')+'</p>';
+    }).join('\n');
+    md = md.replace(/\u0000B(\d+)\u0000/g,(m,i)=>blocks[+i]);
+    return md;
+  }
+
+  /* ---------- 圖解工具列：SVG / PNG / 複製 / mermaid.live ---------- */
+  function svgOf(pre){ const svg=pre.querySelector('svg'); if(!svg) return null;
+    const c=svg.cloneNode(true); c.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    if(!c.getAttribute('width')&&c.viewBox&&c.viewBox.baseVal){c.setAttribute('width',c.viewBox.baseVal.width);c.setAttribute('height',c.viewBox.baseVal.height);}
+    return new XMLSerializer().serializeToString(c); }
+  function diagName(pre,ext){ const h=pre.closest('.diag-wrap')?.previousElementSibling; let t=''; for(let el=pre.closest('.diag-wrap');el;el=el.previousElementSibling){ if(/^H[1-4]$/.test(el.tagName)){t=el.textContent;break;} } return ((t||'diagram').replace(/[\\/:*?"<>|]/g,'_').slice(0,50))+'.'+ext; }
+  function diagTitle(wrap){ for(let el=wrap; el; el=el.previousElementSibling){ if(/^H[1-4]$/.test(el.tagName)) return el.textContent.trim(); } return ''; }
+  async function renderOnePre(pre, src){
+    try{
+      const {svg}=await mermaid.render('mmd-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), src);
+      pre.classList.remove('mmd-error'); pre.innerHTML=svg; pre.dataset.src=src; return true;
+    }catch(e){
+      pre.classList.add('mmd-error');
+      pre.innerHTML='<div class="mmd-err">⚠ Mermaid 語法錯誤：'+esc((e&&e.message||String(e)).split('\n')[0].slice(0,160))+'</div><code>'+esc(src)+'</code>';
+      pre.dataset.src=src; return false;
+    }
+  }
+  /* 以新原始碼替換 lastMarkdown 中的舊圖，維持匯出／下載一致 */
+  function replaceDiagSource(oldSrc,newSrc){
+    const idx=lastMarkdown.indexOf(oldSrc.trim());
+    if(idx<0) return false;
+    lastMarkdown=lastMarkdown.slice(0,idx)+newSrc.trim()+lastMarkdown.slice(idx+oldSrc.trim().length);
+    $('out-raw').textContent=lastMarkdown; return true;
+  }
+  /* 單張重生：以目前程式碼＋該圖類型（由標題反查）重新產一張 */
+  async function regenOneDiagram(wrap, pre, extra){
+    const html=$('html-input').value.trim();
+    if(!html){ setStatus('⚠ 左側沒有程式碼，無法重生','warn'); return; }
+    const title=diagTitle(wrap).replace(/^\d+\.\s*/,'');
+    let key=Object.keys(DIAG_LABEL).find(k=>DIAG_LABEL[k]===title);
+    if(!key){ const src=pre.dataset.src||'';
+      key = /sequenceDiagram/.test(src)?'sequence' : /stateDiagram/.test(src)?'state' : /classDiagram/.test(src)?'class'
+          : /erDiagram/.test(src)?'er' : /mindmap/.test(src)?'mindmap' : /timeline/.test(src)?'timeline'
+          : /C4Context/.test(src)?'c4' : 'layout'; }
+    let keys=getKeys(); if(isLocal()) keys=[''];
+    if(!keys.length){ setStatus('⚠ 請先填入 API Key（或切換 Ollama 本機）','warn'); return; }
+    const model=$('model').value;
+    const lang=$('lang').value;
+    const fit=buildAndFit(html,lang,2600,parseInt($('tpm').value)||null,[key]);
+    if(extra) fit.msgs[1].content += `\n\n【追加指令】${extra}`;
+    const old=pre.dataset.src||'';
+    setStatus(`<span class="spinner"></span> 重新產生「${esc(title||key)}」…`,'info');
+    try{
+      abortCtrl=new AbortController();
+      let out='';
+      let lastE=null, got=false;
+      for(const k of keys){
+        try{ await callGroq(fit.msgs,model,k,{temp:parseFloat($('temp').value)||0.35,maxtok:fit.maxtok,stream:false,signal:abortCtrl.signal},(full)=>{out=full;}); got=true; break; }
+        catch(e){ if(e.name==='AbortError') throw e; lastE=e; if(!(e.status===429||e.status===401||e.status===403||e.status>=500)) throw e; }
+      }
+      if(!got) throw lastE||new Error('所有 Key 皆不可用');
+      const fixed=fixFences(out.trim());
+      const m=fixed.match(/```mermaid\n([\s\S]*?)```/);
+      if(!m) throw new Error('回應中找不到 mermaid 圖');
+      const newSrc=m[1].trim();
+      await renderOnePre(pre,newSrc);
+      replaceDiagSource(old,newSrc);
+      const ta=wrap.querySelector('.diag-edit textarea'); if(ta) ta.value=newSrc;
+      setStatus('✅ 已重新產生此圖','success');
+      setTimeout(()=>{ if($('status').classList.contains('success')) setStatus('',''); },1800);
+    }catch(e){
+      setStatus(e.name==='AbortError'?'⏹ 已停止':'❌ 重生失敗：'+esc(e.message),e.name==='AbortError'?'warn':'error');
+    }finally{ abortCtrl=null; }
+  }
+  function bindDiagTools(){
+    $('out-view').querySelectorAll('.diag-wrap').forEach(w=>{
+      const pre=w.querySelector('pre.mermaid');
+      const ed=w.querySelector('.diag-edit'), ta=ed&&ed.querySelector('textarea');
+      if(ta){
+        const orig=pre.dataset.src||'';
+        ta.value=orig;
+        ed.querySelector('[data-ed=apply]').onclick=async()=>{
+          const old=pre.dataset.src||'';
+          const ok=await renderOnePre(pre,ta.value.trim());
+          replaceDiagSource(old,ta.value.trim());
+          setStatus(ok?'✅ 已套用新的 Mermaid 原始碼':'⚠ 已套用，但語法有誤（見圖框訊息）',ok?'success':'warn');
+          setTimeout(()=>setStatus('',''),1800);
+          bindDiagTools();
+        };
+        ed.querySelector('[data-ed=reset]').onclick=async()=>{ ta.value=orig; await renderOnePre(pre,orig); bindDiagTools(); };
+        ed.querySelector('[data-ed=send]').onclick=()=>{ const inp=ed.querySelector('input[type=text]'); regenOneDiagram(w,pre,inp.value.trim()); };
+      }
+      w.querySelectorAll('.diag-tools button').forEach(b=>b.onclick=async()=>{
+        const act=b.dataset.act, src=pre.dataset.src||'';
+        if(act==='edit'){ ed.classList.toggle('show'); ed.querySelector('[data-ask]').style.display='none'; if(ed.classList.contains('show')) ta.focus(); return; }
+        if(act==='ask'){ ed.classList.add('show'); ed.querySelector('[data-ask]').style.display='flex'; ed.querySelector('input[type=text]').focus(); return; }
+        if(act==='regen'){ await regenOneDiagram(w,pre,''); return; }
+        if(act==='mmed'){ openInMermaidEditor(src); return; }
+        if(act==='copy'){ try{await navigator.clipboard.writeText(src); const o=b.textContent; b.textContent='✓ 已複製'; setTimeout(()=>b.textContent=o,1200);}catch(_){ } return; }
+        if(act==='live'){ const state={code:src,mermaid:{theme:'neutral'},autoSync:true,updateDiagram:true};
+          const json=JSON.stringify(state); const b64=btoa(unescape(encodeURIComponent(json)));
+          window.open('https://mermaid.live/edit#base64:'+b64,'_blank'); return; }
+        const xml=svgOf(pre); if(!xml) return;
+        if(act==='svg'){ saveBlob(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),diagName(pre,'svg')); return; }
+        if(act==='png'){
+          const img=new Image(); const url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));
+          img.onload=()=>{ const sc=2, c=document.createElement('canvas'); c.width=img.width*sc; c.height=img.height*sc;
+            const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+            try{ c.toBlob(bl=>{ saveBlob(bl,diagName(pre,'png')); URL.revokeObjectURL(url); },'image/png'); }
+            catch(e){ URL.revokeObjectURL(url); saveBlob(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}),diagName(pre,'svg')); setStatus('⚠ 瀏覽器不允許此圖轉 PNG，已改下載 SVG','warn'); } };
+          img.onerror=()=>{ URL.revokeObjectURL(url); setStatus('❌ PNG 轉換失敗（SVG 含外部字型時請改用 SVG）','error'); };
+          img.src=url;
+        }
+      });
+    });
+  }
+
+  /* ---------- 在 Mermaid Editor 開啟（本機單檔工具） ---------- */
+  const LS_MMED='codere_mmeditor_path';
+  function openInMermaidEditor(src){
+    try{ localStorage.setItem('mermaid_editor_incoming',src); }catch(_){}
+    let path=localStorage.getItem(LS_MMED)||'';
+    if(!path){
+      path=prompt('請貼上 Mermaid Editor 的位置（檔案路徑或網址），例如：\nfile:///D:/tools/Mermaid_Editor.html\n或 http://localhost:8080/Mermaid_Editor.html','Mermaid_Editor.html')||'';
+      if(!path) return;
+      localStorage.setItem(LS_MMED,path);
+    }
+    const url=path+(path.includes('?')?'&':'?')+'code='+encodeURIComponent(src);
+    const w=window.open(url,'_blank');
+    if(!w) setStatus('⚠ 瀏覽器阻擋開新視窗；原始碼已複製到剪貼簿與 localStorage（鍵名 mermaid_editor_incoming）','warn');
+    navigator.clipboard&&navigator.clipboard.writeText(src).catch(()=>{});
+  }
+
+  /* ---------- 狀態 ---------- */
+  function setStatus(msg,type){
+    const s=$('status');
+    if(!msg){s.className='status';s.innerHTML='';return;}
+    s.className='status show '+(type||'info');
+    s.innerHTML=msg;
+  }
+
+  /* ---------- Key 管理 ---------- */
+  /* 依分流策略排序後的 key 清單（每次呼叫都重新排序） */
+  function getKeys(){ KP.sync($('api-keys').value); return KP.order(); }
+  $('api-keys').addEventListener('input',()=>KP.sync($('api-keys').value));
+  $('pool-strategy').addEventListener('change',()=>localStorage.setItem(LS_STRAT,$('pool-strategy').value));
+  $('pool-reset').addEventListener('click',()=>KP.reset());
+  $('btn-save-key').addEventListener('click',()=>{
+    localStorage.setItem(LS_KEY,$('api-keys').value.trim());
+    localStorage.setItem(LS_STRAT,$('pool-strategy').value);
+    localStorage.setItem(LS_MODEL,$('model').value);
+    localStorage.setItem('codere_outmode',$('outmode').value);
+    localStorage.setItem('codere_tpm',$('tpm').value.trim());
+    setStatus('✅ 已儲存金鑰與模型設定到本機','success');
+    setTimeout(()=>setStatus('',''),1800);
+  });
+
+  /* ---------- 後端切換 ---------- */
+  function syncBackend(){
+    const loc=isLocal();
+    $('ollama-field').style.display=loc?'':'none';
+    liveModels=null; VISION_MODEL=loc?'':VISION_MODEL;
+    $('btn-test-key').textContent=loc?'🔌 測試 Ollama':'🔌 測試連線';
+    if(loc) loadLocalModels();
+    KP.render();
+  }
+  async function loadLocalModels(){
+    try{
+      setStatus('<span class="spinner"></span> 讀取 Ollama 模型清單…','info');
+      const r=await fetch(listURL(),{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const j=await r.json(); const ids=(j.data||[]).map(m=>m.id);
+      if(!ids.length) throw new Error('沒有已下載的模型（請先 ollama pull）');
+      liveModels=ids;
+      $('model').innerHTML=ids.map(id=>`<option value="${id}">${id}</option>`).join('');
+      const vis=ids.find(id=>/llava|vision|minicpm|qwen.*v|gemma3/i.test(id)); VISION_MODEL=vis||'';
+      setStatus(`✅ Ollama 就緒，共 ${ids.length} 個模型`,'success');
+      setTimeout(()=>{ if($('status').classList.contains('success')) setStatus('',''); },2000);
+    }catch(e){ setStatus('❌ 無法連線 Ollama：'+esc(e.message)+'<br><span style="opacity:.8">請確認已啟動，且設定 OLLAMA_ORIGINS=* 允許瀏覽器跨來源存取。</span>','error'); }
+  }
+  $('backend').addEventListener('change',syncBackend);
+  $('ollama-url').addEventListener('change',()=>{ if(isLocal()) loadLocalModels(); });
+
+  /* ---------- 金鑰顯示切換 / 連線測試 ---------- */
+  function syncDiagRow(){ $('diag-row').classList.toggle('show',$('outmode').value==='diagram'); }
+  $('outmode').addEventListener('change',syncDiagRow);
+  $('diag-all').addEventListener('click',()=>document.querySelectorAll('.dg').forEach(c=>c.checked=true));
+  $('diag-none').addEventListener('click',()=>document.querySelectorAll('.dg').forEach(c=>c.checked=false));
+  $('diag-uml').addEventListener('click',()=>document.querySelectorAll('.dg').forEach(c=>c.checked=['sequence','state','class','activity','usecase'].includes(c.value)));
+  $('btn-eye').addEventListener('click',()=>{
+    const ta=$('api-keys'); ta.classList.toggle('masked');
+    $('btn-eye').textContent=ta.classList.contains('masked')?'👁':'🙈';
+  });
+  const maskKey=k=>k.length<12?'****':k.slice(0,7)+'…'+k.slice(-4);
+  $('btn-test-key').addEventListener('click',async()=>{
+    if(isLocal()){ await loadLocalModels(); return; }
+    const keys=getKeys();
+    if(!keys.length){setStatus('⚠ 請先填入至少一組 Groq API Key','warn');return;}
+    const box=$('keytest'); box.innerHTML='<span class="spinner"></span> 測試 '+keys.length+' 組金鑰…';
+    const rows=[];
+    for(let i=0;i<keys.length;i++){
+      const t0=performance.now();
+      try{
+        const r=await fetch(listURL(),{headers:authHdr(keys[i]),signal:AbortSignal.timeout(12000)});
+        const ms=Math.round(performance.now()-t0);
+        if(!r.ok){ let d=''; try{d=(await r.json()).error?.message||'';}catch(_){} rows.push(`<span class="bad">✗ ${esc(KP.label(keys[i]))} ${maskKey(keys[i])} — HTTP ${r.status} ${esc(d).slice(0,60)}</span>`); KP.failure(keys[i],{status:r.status,message:d}); continue; }
+        const j=await r.json(); const n=(j.data||[]).length;
+        const chosen=$('model').value, has=(j.data||[]).some(m=>m.id===chosen);
+        // 用一次極短的 chat 呼叫拿 TPM 標頭
+        let tpm='';
+        try{
+          const c=await fetch(chatURL(),{method:'POST',headers:Object.assign({'Content-Type':'application/json'},authHdr(keys[i])),body:JSON.stringify({model:chosen,messages:[{role:'user',content:'hi'}],max_tokens:1}),signal:AbortSignal.timeout(12000)});
+          const lim=c.headers.get('x-ratelimit-limit-tokens'); const rem=c.headers.get('x-ratelimit-remaining-tokens');
+          KP.headers(keys[i],c);
+          if(lim){ tpm=` · TPM ${(+lim).toLocaleString()}${rem?'（剩 '+(+rem).toLocaleString()+'）':''}`; learnTpm(c); }
+          if(!c.ok) tpm+=` · 模型 ${chosen} 回 HTTP ${c.status}`;
+        }catch(_){}
+        rows.push(`<span class="ok">✓ ${esc(KP.label(keys[i]))} ${maskKey(keys[i])} — ${ms}ms · ${n} 個模型${has?'':' · ⚠ 目前選的模型不可用'}${tpm}</span>`);
+      }catch(e){ rows.push(`<span class="bad">✗ ${esc(KP.label(keys[i]))} ${maskKey(keys[i])} — ${esc(e.message)}</span>`); }
+      box.innerHTML=rows.join('<br>');
+    }
+    box.innerHTML=rows.join('<br>');
+  });
+
+  /* ---------- 載入可用模型 ---------- */
+  $('btn-load-models').addEventListener('click',async()=>{
+    const keys=getKeys();
+    if(!keys.length){setStatus('⚠ 請先填入至少一組 Groq API Key','warn');return;}
+    setStatus('<span class="spinner"></span> 載入可用模型…','info');
+    try{
+      const r=await fetch(listURL(),{headers:authHdr(keys[0])});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      const ids=(j.data||[]).map(m=>m.id)
+        .filter(id=>!/whisper|tts|guard|prompt-guard|embed/i.test(id))
+        .sort();
+      if(!ids.length) throw new Error('沒有可用的對話模型');
+      liveModels=ids;
+      const vis=ids.find(id=>/qwen3\.6|vision|llama-4|scout|maverick/i.test(id)); VISION_MODEL=vis||'';
+      const cur=$('model').value;
+      const opts=[...new Set([...PREFERRED.filter(m=>ids.includes(m)),...ids])];
+      $('model').innerHTML=opts.map(id=>`<option value="${id}">${id}</option>`).join('');
+      $('model').value=opts.includes(cur)?cur:opts[0];
+      setStatus('✅ 已載入 '+ids.length+' 個模型','success');
+      setTimeout(()=>setStatus('',''),1800);
+    }catch(e){
+      setStatus('❌ 載入模型失敗：'+e.message,'error');
+    }
+  });
+
+  /* ---------- Groq 串流呼叫 ---------- */
+  let lastFinish='', lastCtx=null;   // lastCtx: {messages,model,key,opts} 供「繼續生成」
+  function learnTpm(res){
+    try{
+      const lim=parseInt(res.headers.get('x-ratelimit-limit-tokens'));
+      if(lim>0 && !parseInt($('tpm').value)){ $('tpm').value=lim; localStorage.setItem('codere_tpm',lim); }
+    }catch(_){}
+  }
+  /* 分流包裝：計數、讀額度標頭、成功/失敗回報給 Key 池 */
+  async function callGroq(messages,model,key,opts,onToken){
+    const pooled=!isLocal() && !!key;
+    if(pooled) KP.begin(key);
+    try{
+      const r=await callGroqRaw(messages,model,key,opts,onToken);
+      if(pooled) KP.success(key, opts._usage||estTok(r)+promptTokens(messages.length>=2?messages:[{content:''},{content:''}]));
+      return r;
+    }catch(e){ if(pooled && e.name!=='AbortError') KP.failure(key,e); throw e; }
+    finally{ if(pooled) KP.end(key); }
+  }
+  async function callGroqRaw(messages,model,key,opts,onToken){
+    const signal = opts.signal || (abortCtrl=new AbortController()).signal;
+    opts._usage=0;
+    const body={
+      model, messages,
+      temperature: opts.temp,
+      max_tokens: opts.maxtok,
+      stream: opts.stream
+    };
+    const res=await fetch(chatURL(),{
+      method:'POST',
+      headers:Object.assign({'Content-Type':'application/json'},authHdr(key)),
+      body:JSON.stringify(body),
+      signal
+    });
+    learnTpm(res);
+    if(!isLocal() && key) KP.headers(key,res);
+    lastFinish='';
+    if(!res.ok){
+      let detail='';
+      try{const ej=await res.json();detail=ej.error?.message||JSON.stringify(ej);}catch(_){detail=await res.text().catch(()=> '');}
+      const err=new Error('HTTP '+res.status+(detail?'：'+detail:''));
+      err.status=res.status;
+      const ra=res.headers.get('retry-after');
+      const m=detail.match(/try again in\s+([\d.]+)\s*(ms|s|m)?/i);
+      err.retryAfter = ra ? parseFloat(ra)
+        : m ? (m[2]==='ms'? parseFloat(m[1])/1000 : m[2]==='m'? parseFloat(m[1])*60 : parseFloat(m[1]))
+        : null;
+      throw err;
+    }
+    if(!opts.stream){
+      const j=await res.json();
+      const txt=j.choices?.[0]?.message?.content||'';
+      lastFinish=j.choices?.[0]?.finish_reason||''; opts._finish=lastFinish;
+      opts._usage=j.usage?.total_tokens||0;
+      onToken(txt,txt);
+      return txt;
+    }
+    const reader=res.body.getReader();
+    const dec=new TextDecoder();
+    let buf='',full='',gotDone=false;
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop();
+      for(const line of lines){
+        const t=line.trim();
+        if(!t.startsWith('data:'))continue;
+        const data=t.slice(5).trim();
+        if(data==='[DONE]'){ gotDone=true; opts._finish=lastFinish; return full; }
+        try{
+          const j=JSON.parse(data);
+          const u=j.x_groq?.usage||j.usage; if(u&&u.total_tokens) opts._usage=u.total_tokens;
+          const fr=j.choices?.[0]?.finish_reason; if(fr) lastFinish=fr;
+          const d=j.choices?.[0]?.delta?.content;
+          if(d){full+=d;onToken(full,d);}
+        }catch(_){}
+      }
+    }
+    if(!gotDone && lastFinish!=='stop') lastFinish='interrupted';
+    opts._finish=lastFinish;
+    return full;
+  }
+
+  /* ---------- Markdown 圍欄修復：模型常漏掉 ``` 或把圍欄接在同一行 ---------- */
+  const DIAG_HEAD=/^\s*(flowchart|graph|sequenceDiagram|stateDiagram(-v2)?|classDiagram|erDiagram|journey|gantt|pie|mindmap|timeline|C4Context|C4Container|requirementDiagram|gitGraph)\b/;
+  function fixFences(md){
+    if(!md) return md;
+    // 圍欄若黏在文字後面，拆成獨立一行
+    md = md.replace(/([^\n])(```)/g,'$1\n$2').replace(/^([ \t]*```[a-zA-Z]*)[ \t]+(?=\S)/gm,'$1\n');
+    const lines=md.split('\n'); const out=[];
+    let inFence=false;
+    for(let i=0;i<lines.length;i++){
+      let ln=lines[i];
+      if(/^\s*```/.test(ln)){ inFence=!inFence; out.push(ln); continue; }
+      // 未在圍欄內，卻出現圖型宣告 → 自動補開頭圍欄，直到空行或下一個標題
+      if(!inFence && DIAG_HEAD.test(ln)){
+        out.push('```mermaid'); out.push(ln);
+        let j=i+1;
+        for(; j<lines.length; j++){
+          const nx=lines[j];
+          if(/^\s*```/.test(nx)){ break; }
+          if(/^\s*#{1,6}\s/.test(nx)) break;
+          if(/^\s*$/.test(nx) && /^\s*$/.test(lines[j+1]||'')) break;
+          out.push(nx);
+        }
+        out.push('```');
+        if(/^\s*```/.test(lines[j]||'')) j++;   // 吃掉模型自己補的收尾圍欄
+        i=j-1; continue;
+      }
+      out.push(ln);
+    }
+    if(inFence) out.push('```');   // 圍欄沒收尾 → 補上
+    return out.join('\n');
+  }
+
+  /* ---------- 輸出渲染（串流節流） ---------- */
+  let rafPending=false, viewMode='view';
+  let lastStreaming=false;
+  function renderOut(md,streaming){
+    lastMarkdown=md; lastStreaming=!!streaming;
+    $('out-empty').style.display='none';
+    if(viewMode==='raw'){
+      $('out-raw').textContent=md;
+    }else{
+      if(rafPending)return;
+      rafPending=true;
+      requestAnimationFrame(async()=>{
+        rafPending=false;
+        streaming=lastStreaming;
+        if(!streaming){ const f=fixFences(lastMarkdown); if(f!==lastMarkdown) lastMarkdown=f; }
+        $('out-view').innerHTML=mdToHtml(lastMarkdown,!streaming);
+        $('out-view').classList.toggle('cursor',!!streaming);
+        if(!streaming && window.mermaid){
+          const pres=[...$('out-view').querySelectorAll('pre.mermaid')];
+          for(let k=0;k<pres.length;k++){
+            const pre=pres[k], src=pre.dataset.src||pre.textContent;
+            try{
+              const {svg}=await mermaid.render('mmd-'+Date.now()+'-'+k, src);
+              pre.innerHTML=svg;
+            }catch(e){
+              pre.classList.add('mmd-error');
+              pre.innerHTML='<div class="mmd-err">⚠ Mermaid 語法錯誤：'+esc((e&&e.message||String(e)).split('\n')[0].slice(0,160))+'</div><code>'+esc(src)+'</code>';
+              document.querySelectorAll('#dmmd-'+k).forEach(x=>x.remove());
+            }
+          }
+          bindDiagTools();
+        }
+        if(!streaming && window.hljs){
+          $('out-view').querySelectorAll('pre.code code').forEach(c=>{ try{ hljs.highlightElement(c); }catch(_){} });
+        }
+        const w=$('out-view').parentElement;
+        if(streaming)w.scrollTop=w.scrollHeight;
+      });
+    }
+  }
+
+  /* ---------- 截圖 → 視覺模型 UI 分析 ---------- */
+  async function analyzeImages(keys){
+    if(!images.length || !$('opt-vision').checked) return '';
+    if(!VISION_MODEL){ setStatus('⚠ 此帳戶無可用視覺模型，略過截圖分析','warn'); return ''; }
+    const content=[{type:'text',text:'你是資深 UI 設計師。請分析這些程式介面截圖，用繁體中文條列輸出：1) 整體風格與主題（深/淺色、質感）2) 主要配色（估計 hex 值：背景/面板/主文字/次文字/主按鈕/強調色/邊框）3) 字體特徵（襯線/無襯線/等寬、粗細）4) 版型結構（由上到下分區、欄位數、最大寬度估計）5) 元件清單（按鈕、輸入框、卡片、圖表、標籤等，含實際可見文案）6) 圓角/間距/陰影/邊框風格。只輸出條列，不要前言。'}];
+    images.forEach(im=>content.push({type:'image_url',image_url:{url:im.dataUrl}}));
+    let lastErr=null;
+    keys=isLocal()?keys:KP.order();
+    for(let ki=0;ki<keys.length;ki++){
+      const k=keys[ki]; if(!isLocal()) KP.begin(k);
+      try{
+        setStatus(`<span class="spinner"></span> 視覺模型 <b>${VISION_MODEL}</b> 分析 ${images.length} 張截圖 · ${esc(KP.label(k))}…`,'info');
+        const r=await fetch(chatURL(),{method:'POST',headers:Object.assign({'Content-Type':'application/json'},authHdr(k)),
+          body:JSON.stringify({model:VISION_MODEL,messages:[{role:'user',content}],temperature:0.2,max_tokens:1500})});
+        if(!isLocal()) KP.headers(k,r);
+        if(!r.ok){ const t=await r.text().catch(()=> ''); const er=new Error('HTTP '+r.status+' '+t.slice(0,120)); er.status=r.status; er.retryAfter=parseFloat(r.headers.get('retry-after'))||null; throw er; }
+        const j=await r.json();
+        if(!isLocal()) KP.success(k,j.usage?.total_tokens||0);
+        return (j.choices?.[0]?.message?.content||'').trim();
+      }catch(e){ lastErr=e; if(!isLocal()) KP.failure(k,e); }
+      finally{ if(!isLocal()) KP.end(k); }
+    }
+    setStatus('⚠ 截圖分析失敗（略過）：'+(lastErr?lastErr.message:''),'warn');
+    return '';
+  }
+
+
+  /* ---------- 主流程 ---------- */
+  $('btn-run').addEventListener('click',run);
+  async function run(){
+    let html=$('html-input').value.trim();
+    if(!html && !images.length){setStatus('⚠ 請先貼上或上傳程式碼','warn');return;}
+    let keys=getKeys();
+    if(isLocal()) keys=[''];
+    if(!keys.length){setStatus('⚠ 請先填入 Groq API Key（或切換為 Ollama 本機）','warn');return;}
+
+    $('btn-run').disabled=true;
+    setStatus('<span class="spinner"></span> 檢查可用模型…','info');
+    await ensureModels(keys[0]);
+    const uiNote=await analyzeImages(keys);
+    if(uiNote) html += '\n\n=== UI 截圖分析 ===\n'+uiNote;
+
+    const lang=$('lang').value;
+    const opts={
+      temp:parseFloat($('temp').value)||0.35,
+      maxtok:parseInt($('maxtok').value)||4000,
+      stream:$('opt-stream').checked
+    };
+
+    $('btn-run').disabled=true;
+    $('btn-run').innerHTML='<span class="spinner"></span> 反向工程中…';
+    $('btn-stop').style.display='block';
+    $('btn-copy').disabled=true; setDl(true); $('btn-continue').style.display='none';
+    $('out-view').innerHTML=''; $('out-raw').textContent=''; lastMarkdown='';
+
+    // 模型 fallback：選定模型優先，再接 fallback chain
+    const chosen=$('model').value;
+    let chain=[chosen,...PREFERRED.filter(m=>m!==chosen)];
+    if(liveModels){
+      chain=chain.filter(m=>liveModels.includes(m));
+      if(!chain.length) chain=liveModels.slice(0,3);
+      if(!chain.includes(chosen)) setStatus(`⚠ 模型 ${chosen} 此帳戶不可用，改用 ${chain[0]}`,'warn');
+    }
+    const fails=[];
+    const autofit=$('opt-autofit').checked;
+    let baseTpm=parseInt($('tpm').value)||0;
+
+    const outMode=$('outmode').value;
+    // ---- 圖解模式：逐張分批生成，避免多圖共用一次輸出上限被截斷 ----
+    if(outMode==='diagram' && $('diag-batch').checked){
+      const picked=[...document.querySelectorAll('.dg:checked')].map(c=>c.value);
+      const list=picked.length?picked:['layout','sequence','state'];
+      const name=(($('html-input').value.match(/<title>([^<]{1,60})<\/title>/i)||[])[1]||'程式').trim();
+      abortCtrl=new AbortController();
+      let acc='# '+name+' — Mermaid／UML 圖解\n';
+      renderOut(acc,true);
+      let done=0; const failMsgs=[];
+      let shrinkB=1;   // 跨張沿用的縮小倍率：一旦某張 413 縮小成功，後面直接沿用
+      const isTooBig=e=>e.status===413||(e.status===400&&/reduce the length|context.length|too (large|long)|maximum context|exceed/i.test(e.message));
+      const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+      async function waitRate(sec,label){
+        let left=Math.max(1,Math.ceil(sec));
+        while(left>0){
+          if(abortCtrl.signal.aborted) throw Object.assign(new Error('aborted'),{name:'AbortError'});
+          setStatus(`<span class="spinner"></span> ${label} 已達速率上限（429），${left} 秒後自動重試…`,'warn');
+          await sleep(1000); left--;
+        }
+      }
+      const head=acc;
+      const slots=new Array(list.length).fill('');
+      const paint=(stream)=>{ acc=head+slots.filter(Boolean).map(x=>'\n'+x.replace(/\s+$/,'')+'\n').join(''); renderOut(acc,stream); };
+      const keyOrder=()=> isLocal()?[''] : KP.order(true);
+      let aborted=false, nextIdx=0;
+      const conc = (!isLocal() && $('pool-parallel').checked) ? Math.max(1,Math.min(4,KP.groups(),list.length)) : 1;
+      async function doOne(di){
+        const dk=list[di], title=DIAG_LABEL[dk]||dk;
+        let okOne=false;
+        for(let att=0; att<8 && !okOne && !aborted; att++){
+          const tpmNow = baseTpm ? Math.round(baseTpm*shrinkB) : Math.round(115000*shrinkB);
+          const fit=buildAndFit(html,lang,Math.min(opts.maxtok,2600),tpmNow,[dk]);
+          let tooBig=false, rated=false;
+          const ks=keyOrder();
+          outer2:
+          for(const m of chain){
+            for(const k of ks){
+              if(!isLocal() && !KP.order(true).includes(k)){ rated=true; continue; }   // 其他 worker 剛把它打進冷卻
+              try{
+                setStatus(`<span class="spinner"></span> 圖解 ${done}/${list.length} 完成 · 進行中：<b>${title}</b> · ${m} · ${esc(KP.label(k))}`+
+                  (conc>1?` · ${conc} 路並行`:'')+(shrinkB<1?` · 已壓縮至 ${Math.round(shrinkB*100)}%`:''),'info');
+                const o={temp:opts.temp,maxtok:fit.maxtok,stream:opts.stream,signal:abortCtrl.signal};
+                let chunk='';
+                await callGroq(fit.msgs,m,k,o,(full)=>{ chunk=full; slots[di]=full; paint(true); });
+                slots[di]=fixFences(chunk.trim()); paint(true);
+                okOne=true; done++;
+                lastCtx={messages:fit.msgs,model:m,key:k,opts:{temp:opts.temp,maxtok:fit.maxtok,stream:opts.stream}};
+                break outer2;
+              }catch(e){
+                if(e.name==='AbortError'){ aborted=true; break outer2; }
+                if(isTooBig(e)){ tooBig=true; break outer2; }
+                if(e.status===429||e.status===401||e.status===403){ rated=true; continue; }   // 換下一個帳號
+                failMsgs.push(`${title} · ${m} · ${KP.label(k)} → ${e.message.slice(0,90)}`);
+              }
+            }
+          }
+          if(okOne||aborted) break;
+          if(tooBig){
+            if(!baseTpm) baseTpm=Math.min(fit.promptTok+fit.maxtok,115000);
+            shrinkB*=0.5;
+            if(shrinkB<0.02){ failMsgs.push(`${title} → 內容過大，壓縮後仍超過模型上限`); break; }
+            continue;
+          }
+          if(rated || !ks.length){
+            const w=isLocal()?20:KP.minWait();
+            if(w<0){ failMsgs.push(`${title} → 所有 Key 皆無效或停用`); break; }
+            try{ await waitRate(Math.min((w||3)+1,120), `「${title}」所有帳號`); }catch(_){ aborted=true; }
+            continue;
+          }
+          break;
+        }
+        if(!okOne && !aborted) slots[di]=`## ${title}\n> ⚠ 此圖產生失敗，可單獨勾選後重試。`;
+        paint(true);
+      }
+      async function worker(wi){
+        if(wi) await sleep(wi*400);   // 錯開起跑，避免同時撞 RPM
+        while(!aborted){
+          const di=nextIdx++; if(di>=list.length) return;
+          await doOne(di);
+          if(conc===1 && nextIdx<list.length) await sleep(900);
+        }
+      }
+      await Promise.all(Array.from({length:conc},(_,i)=>worker(i)));
+      paint(!aborted);
+      if(aborted){ renderOut(acc,false); setStatus('⏹ 已停止（已產生 '+done+' 張）','warn');
+        $('btn-run').disabled=false; $('btn-run').innerHTML='🔍 開始反向工程'; $('btn-stop').style.display='none'; abortCtrl=null;
+        if(lastMarkdown){$('btn-copy').disabled=false;setDl(false);} return; }
+      renderOut(acc,false);
+      $('btn-copy').disabled=false; setDl(false);
+      $('btn-run').disabled=false; $('btn-run').innerHTML='🔍 開始反向工程'; $('btn-stop').style.display='none'; abortCtrl=null;
+      if(done===list.length) setStatus(`✅ 完成！共 ${done} 張圖 · ${lastMarkdown.length} 字`+(conc>1?` · ${conc} 帳號並行分流`:''),'success');
+      else setStatus(`⚠ 完成 ${done}/${list.length} 張。失敗：<br>`+failMsgs.slice(0,5).map(esc).join('<br>'),'warn');
+      return;
+    }
+
+    let ok=false,usedModel='',usedKeyIdx=-1,lastErr=null,tooLarge=false;
+    let shrink=1, fitAttempt=0;
+
+    refit:
+    while(fitAttempt<5){
+      fitAttempt++;
+      // 依目前縮小倍率重新組裝以符合 TPM
+      const fit=buildAndFit(html,lang,parseInt($('maxtok').value)||4000, Math.round(baseTpm*shrink));
+      const messages=fit.msgs;
+      opts.maxtok=fit.maxtok;
+      if(fit.notes.length || shrink<1){
+        setStatus('⚙ 自動調整：'+(fit.notes.join('、')||'縮小重試')+'（送出約 '+fit.promptTok.toLocaleString()+' tokens，目標 TPM '+Math.round(baseTpm*shrink)+'）','warn');
+      }
+
+      let got413=false;
+      tooLarge=false;
+      outer:
+      for(const model of chain){
+        let waits=0;
+        while(true){
+          const ks=isLocal()?['']:KP.order(true);
+          let rated=false, modelBad=false;
+          for(const k of ks){
+            try{
+              setStatus(`<span class="spinner"></span> 模型 <b>${model}</b> · ${esc(isLocal()?'Ollama':KP.label(k))} 產生中…`+(KP.size>1?` <span style="opacity:.75">（分流池 ${KP.readyCount()}/${KP.size} 可用）</span>`:''),'info');
+              $('out-view').innerHTML=''; lastMarkdown='';
+              await callGroq(messages,model,k,opts,(full,delta)=>renderOut(full,true));
+              lastCtx={messages,model,key:k,opts:{...opts}};
+              ok=true;usedModel=model;usedKeyIdx=k;break outer;
+            }catch(e){
+              lastErr=e;
+              if(e.name==='AbortError'){setStatus('⏹ 已停止','warn');ok=null;break refit;}
+              fails.push(`${model} · ${isLocal()?'Ollama':KP.label(k)} → ${e.message.slice(0,140)}`);
+              const tooBig = e.status===413 || (e.status===400 && /reduce the length|context.length|too (large|long)|maximum context|exceed/i.test(e.message));
+              if(tooBig){got413=true;tooLarge=true;break outer;}   // 過大 → 跳出去縮小重試
+              if(e.status===400||e.status===404){modelBad=true;break;}   // 模型問題 → 換下一個模型
+              if(e.status===429) rated=true;                         // 速率／額度 → 換下一個帳號
+            }
+          }
+          if(modelBad) break;
+          const w=isLocal()?-1:KP.minWait();
+          if((rated||!ks.length) && w>=0 && w<=90 && waits<3){   // 全部帳號都在冷卻 → 等最快恢復的那個
+            waits++;
+            for(let left=Math.max(1,w);left>0;left--){
+              setStatus(`<span class="spinner"></span> 所有帳號已達速率上限，${left} 秒後自動重試…`,'warn');
+              await new Promise(r=>setTimeout(r,1000));
+            }
+            continue;
+          }
+          break;   // 換下一個模型
+        }
+      }
+      if(ok===true || ok===null) break refit;
+      if(got413 && autofit && shrink>0.25){
+        if(!baseTpm){ baseTpm=Math.min(fit.promptTok+opts.maxtok,115000); }   // 未知 TPM：以本次估算值為基準往下縮
+        shrink*=0.55; continue refit;
+      }
+      break refit;
+    }
+
+    $('btn-run').disabled=false;
+    $('btn-run').innerHTML='🔍 開始反向工程';
+    $('btn-stop').style.display='none';
+    abortCtrl=null;
+
+    if(ok===true){
+      renderOut(lastMarkdown,false);
+      $('btn-copy').disabled=false; setDl(false);
+      if(lastFinish==='length'){
+        $('btn-continue').style.display='block';
+        setStatus(`⚠ 輸出達上限（max_tokens ${opts.maxtok}）被截斷，已產出 ${lastMarkdown.length} 字。按「▶ 繼續生成」接續，或把「輸出上限 tokens」調高後重跑。`,'warn');
+      }else if(lastFinish==='interrupted'){
+        $('btn-continue').style.display='block';
+        setStatus(`⚠ 串流在 ${lastMarkdown.length} 字處中斷（連線或伺服器端提前結束，未收到結束訊號）。按「▶ 繼續生成」接續。`,'warn');
+      }else{
+        setStatus(`✅ 完成！使用模型 <b>${usedModel}</b> · ${esc(isLocal()?'Ollama':KP.label(usedKeyIdx))} · ${lastMarkdown.length} 字`,'success');
+      }
+    }else if(ok===null){
+      if(lastMarkdown){$('btn-copy').disabled=false;setDl(false);}
+    }else if(tooLarge){
+      setStatus('❌ 多次自動縮小後仍超過模型上下文／TPM。建議：①把「TPM 上限」設成你方案的實際值 ②關閉「附帶完整 One-Shot 範例」③改用 TPM 較高的模型 ④升級 Groq Dev Tier。<br><span style="color:var(--ink-faint)">'+(lastErr?lastErr.message:'')+'</span>','error');
+    }else{
+      setStatus('❌ 全部模型/金鑰皆失敗：<br>'+(fails.length?fails.slice(0,8).map(esc).join('<br>'):(lastErr?esc(lastErr.message):'未知錯誤'))+'<br><span style="opacity:.75">按「⟳ 載入模型」可查看此帳戶實際可用的模型。</span>','error');
+    }
+  }
+
+  $('btn-stop').addEventListener('click',()=>{if(abortCtrl)abortCtrl.abort();});
+
+  /* ---------- 繼續生成：把已產出內容當 assistant 回合接續 ---------- */
+  $('btn-continue').addEventListener('click',async function cont(){
+    if(!lastCtx||!lastMarkdown) return;
+    const base=lastMarkdown;
+    const msgs=[...lastCtx.messages,{role:'assistant',content:base},{role:'user',content:'請從上一則回覆的中斷處直接接續輸出，不要重複已輸出的任何文字，不要前言、不要重述標題，直接從斷句的下一個字開始。'}];
+    $('btn-continue').style.display='none'; $('btn-run').disabled=true; $('btn-stop').style.display='block';
+    $('btn-copy').disabled=true; setDl(true);
+    const o={...lastCtx.opts};
+    try{
+      setStatus(`<span class="spinner"></span> 接續生成中…`,'info');
+      const ks=isLocal()?[lastCtx.key]:[lastCtx.key,...KP.order(true).filter(k=>k!==lastCtx.key)];
+      let got=false, le=null;
+      for(const k of ks){
+        try{ await callGroq(msgs,lastCtx.model,k,o,(full)=>renderOut(base+full,true)); lastCtx.key=k; got=true; break; }
+        catch(e){ if(e.name==='AbortError') throw e; le=e; if(!(e.status===429||e.status===401||e.status===403||e.status>=500)) throw e; }
+      }
+      if(!got) throw le||new Error('所有帳號皆不可用');
+      lastCtx.messages=msgs.slice(0,-2); // 保留原始 system/user，下次再接
+      renderOut(lastMarkdown,false);
+      $('btn-copy').disabled=false; setDl(false);
+      if(lastFinish==='length'||lastFinish==='interrupted'){ $('btn-continue').style.display='block'; setStatus(`⚠ 仍未結束（${lastMarkdown.length} 字），可再按「▶ 繼續生成」`,'warn'); }
+      else setStatus(`✅ 接續完成 · 共 ${lastMarkdown.length} 字`,'success');
+    }catch(e){
+      if(e.name==='AbortError') setStatus('⏹ 已停止','warn'); else setStatus('❌ 接續失敗：'+e.message,'error');
+      $('btn-continue').style.display='block'; if(lastMarkdown){$('btn-copy').disabled=false;setDl(false);}
+    }
+    $('btn-run').disabled=false; $('btn-stop').style.display='none'; abortCtrl=null;
+  });
+
+  /* ---------- 預覽/原始切換 ---------- */
+  $('seg-view').addEventListener('click',()=>{
+    viewMode='view';$('seg-view').classList.add('on');$('seg-raw').classList.remove('on');
+    $('out-view').style.display='';$('out-raw').style.display='none';
+    if(lastMarkdown)renderOut(lastMarkdown,false);
+  });
+  $('seg-raw').addEventListener('click',()=>{
+    viewMode='raw';$('seg-raw').classList.add('on');$('seg-view').classList.remove('on');
+    $('out-view').style.display='none';$('out-raw').style.display='';
+    $('out-raw').textContent=lastMarkdown;
+  });
+
+  /* ---------- 複製 / 下載 ---------- */
+  $('btn-copy').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(lastMarkdown);
+      const b=$('btn-copy');const o=b.innerHTML;b.innerHTML='✓ 已複製';setTimeout(()=>b.innerHTML=o,1500);
+    }catch(_){setStatus('複製失敗，請手動選取','error');}
+  });
+  function setDl(dis){ ['dl-md','dl-txt','dl-docx','dl-json','dl-allsvg','dl-report'].forEach(id=>$(id).disabled=dis); $('btn-edit').disabled=dis; }
+  function outName(){
+    const m=lastMarkdown.match(/^#\s*(.+?)\s*$/m);
+    return (m?m[1]:'創作提示詞').replace(/[\\/:*?"<>|]/g,'_').slice(0,60);
+  }
+  function saveBlob(blob,name){
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }
+  $('dl-md').addEventListener('click',()=>saveBlob(new Blob([lastMarkdown],{type:'text/markdown;charset=utf-8'}),outName()+'.md'));
+  $('dl-txt').addEventListener('click',()=>saveBlob(new Blob([lastMarkdown],{type:'text/plain;charset=utf-8'}),outName()+'.txt'));
+
+  /* Markdown → 章節結構 JSON */
+  function mdToJson(md){
+    const doc={title:'',generatedAt:new Date().toISOString(),mode:$('outmode').value,language:$('lang').value,sections:[]};
+    let cur=null, inCode=false, codeLang='', codeBuf=[];
+    const pushSec=(title)=>{
+      const m=title.match(/^(\d+)\.\s*(.+)/);
+      cur={id:doc.sections.length,number:m?+m[1]:null,title:m?m[2].trim():title,blocks:[]};
+      doc.sections.push(cur); return cur;
+    };
+    for(const ln of md.split('\n')){
+      const fence=ln.match(/^```(\w*)/);
+      if(fence){
+        if(!inCode){inCode=true;codeLang=fence[1]||'';codeBuf=[];}
+        else{inCode=false;(cur||pushSec('')).blocks.push({type:codeLang==='mermaid'?'mermaid':'code',lang:codeLang,content:codeBuf.join('\n')});}
+        continue;
+      }
+      if(inCode){codeBuf.push(ln);continue;}
+      const h1=ln.match(/^#\s+(.+)/), h2=ln.match(/^##\s+(.+)/), h3=ln.match(/^###\s+(.+)/);
+      if(h3){(cur||pushSec('')).blocks.push({type:'subheading',content:h3[1].trim()});continue;}
+      if(h2){pushSec(h2[1].trim());continue;}
+      if(h1){ if(!doc.title) doc.title=h1[1].trim(); else pushSec(h1[1].trim()); continue; }
+      const li=ln.match(/^\s*[-*]\s+(.+)/), ol=ln.match(/^\s*\d+\.\s+(.+)/);
+      if(li||ol){
+        const c=cur||pushSec(''); const last=c.blocks[c.blocks.length-1];
+        if(last&&last.type==='list'){last.items.push((li||ol)[1].trim());}
+        else c.blocks.push({type:'list',items:[(li||ol)[1].trim()]});
+        continue;
+      }
+      if(ln.trim()){(cur||pushSec('')).blocks.push({type:'paragraph',content:ln.trim()});}
+    }
+    return doc;
+  }
+  /* ---------- 匯出：所有圖 ZIP / HTML 報告 ---------- */
+  function collectDiagrams(){
+    return [...$('out-view').querySelectorAll('.diag-wrap')].map((w,i)=>{
+      const pre=w.querySelector('pre.mermaid');
+      return {title:diagTitle(w)||('diagram-'+(i+1)), src:pre.dataset.src||'', svg:svgOf(pre)};
+    }).filter(d=>d.svg);
+  }
+  function svgToPngBlob(xml,scale){
+    return new Promise((res,rej)=>{
+      const url=URL.createObjectURL(new Blob([xml],{type:'image/svg+xml;charset=utf-8'}));
+      const img=new Image();
+      img.onload=()=>{ const c=document.createElement('canvas'); c.width=img.width*scale; c.height=img.height*scale;
+        const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+        try{ c.toBlob(bl=>{ URL.revokeObjectURL(url); bl?res(bl):rej(new Error('toBlob 失敗')); },'image/png'); }
+        catch(e){ URL.revokeObjectURL(url); rej(e); } };
+      img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('SVG 載入失敗')); };
+      img.src=url;
+    });
+  }
+  $('dl-allsvg').addEventListener('click',async()=>{
+    if(!window.JSZip){ setStatus('❌ JSZip 未載入（需網路）','error'); return; }
+    const ds=collectDiagrams();
+    if(!ds.length){ setStatus('⚠ 目前沒有可匯出的圖','warn'); return; }
+    setStatus(`<span class="spinner"></span> 打包 ${ds.length} 張圖…`,'info');
+    const zip=new JSZip(), svgF=zip.folder('svg'), pngF=zip.folder('png'), mmdF=zip.folder('mermaid');
+    for(let i=0;i<ds.length;i++){
+      const base=String(i+1).padStart(2,'0')+'_'+ds[i].title.replace(/[\\/:*?"<>|]/g,'_').slice(0,50);
+      svgF.file(base+'.svg',ds[i].svg);
+      mmdF.file(base+'.mmd',ds[i].src);
+      try{ pngF.file(base+'.png', await svgToPngBlob(ds[i].svg,2)); }catch(_){}
+    }
+    zip.file('index.md',lastMarkdown);
+    saveBlob(await zip.generateAsync({type:'blob'}), outName()+'_圖解.zip');
+    setStatus(`✅ 已匯出 ${ds.length} 張圖（SVG＋PNG＋Mermaid 原始碼）`,'success');
+    setTimeout(()=>setStatus('',''),2200);
+  });
+  $('dl-report').addEventListener('click',()=>{
+    const ds=collectDiagrams();
+    const title=outName();
+    const body=$('out-view').innerHTML.replace(/<div class="diag-tools">[\s\S]*?<\/div>/g,'').replace(/<div class="diag-edit"[\s\S]*?<\/div><\/div>/g,'');
+    const html=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)}</title>
+<style>
+ body{margin:0;padding:32px 24px;background:#eef1f5;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#141a26;}
+ .wrap{max-width:960px;margin:0 auto;background:#fff;border:1px solid #c3cad6;border-radius:14px;padding:32px 36px;}
+ h1{font-size:1.6rem;color:#20449c;border-bottom:2px solid #2f5fd0;padding-bottom:10px;}
+ h2{font-size:1.2rem;color:#20449c;border-left:3px solid #2f5fd0;padding-left:10px;margin-top:28px;}
+ h3{font-size:1.04rem;color:#0e8a80;}
+ p,li{font-size:.95rem;line-height:1.8;}
+ code{font-family:Consolas,monospace;background:#fdf3dd;border:1px solid #efdcae;border-radius:5px;padding:1px 6px;color:#8a5a12;}
+ pre.code{background:#1a2233;border-radius:10px;padding:14px 16px;overflow:auto;}
+ pre.code code{background:none;border:none;color:#e8edf5;}
+ table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.9rem;}
+ th,td{border:1px solid #c3cad6;padding:7px 11px;text-align:left;}
+ th{background:#e8eefc;color:#20449c;}
+ blockquote{border-left:4px solid #c9871b;background:#fdf3dd;padding:8px 16px;margin:12px 0;}
+ pre.mermaid{background:#fff;border:1px solid #c3cad6;border-radius:10px;padding:18px;text-align:center;overflow:auto;}
+ pre.mermaid svg{max-width:100%;height:auto;}
+ .foot{max-width:960px;margin:14px auto 0;font-size:.78rem;color:#5b6678;text-align:center;}
+ @media print{body{background:#fff;padding:0;} .wrap{border:none;border-radius:0;}}
+</style></head><body><div class="wrap"><div class="md">${body}</div></div>
+<div class="foot">由「程式反向工程」產出 · ${new Date().toLocaleString('zh-TW')} · 共 ${ds.length} 張圖</div>
+</body></html>`;
+    saveBlob(new Blob([html],{type:'text/html;charset=utf-8'}), title+'_報告.html');
+  });
+
+  /* ---------- 輸出後編輯 ---------- */
+  let editing=false;
+  $('btn-edit').addEventListener('click',()=>{
+    const ta=$('out-edit');
+    if(!editing){
+      editing=true; ta.value=lastMarkdown;
+      $('out-view').style.display='none'; $('out-raw').style.display='none'; ta.style.display='';
+      $('btn-edit').textContent='✓ 完成編輯'; $('btn-edit').classList.add('btn-primary');
+      ta.focus();
+    }else{
+      editing=false; lastMarkdown=ta.value; ta.style.display='none';
+      $('out-view').style.display=''; $('btn-edit').textContent='✎ 編輯'; $('btn-edit').classList.remove('btn-primary');
+      viewMode='view'; $('seg-view').classList.add('on'); $('seg-raw').classList.remove('on');
+      renderOut(lastMarkdown,false);
+      setStatus('✅ 已套用編輯內容（複製與下載都會用這份）','success');
+      setTimeout(()=>setStatus('',''),1800);
+    }
+  });
+
+  $('dl-json').addEventListener('click',()=>saveBlob(new Blob([JSON.stringify(mdToJson(lastMarkdown),null,2)],{type:'application/json;charset=utf-8'}),outName()+'.json'));
+
+  /* Markdown → DOCX（JSZip 手工組裝 OOXML，無需 docx 函式庫） */
+  const xe=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function runsFromInline(text,base){
+    const out=[]; const re=/(\*\*[^*]+\*\*|`[^`]+`)/g; let last=0,m;
+    const push=(t,b,c)=>{ if(!t)return; out.push(`<w:r><w:rPr>${b?'<w:b/>':''}${c?'<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:eastAsia="Consolas"/><w:color w:val="9B2F2F"/><w:shd w:val="clear" w:color="auto" w:fill="EEF2F8"/>':''}${base||''}</w:rPr><w:t xml:space="preserve">${xe(t)}</w:t></w:r>`); };
+    while((m=re.exec(text))){ push(text.slice(last,m.index)); const tk=m[0]; if(tk.startsWith('**'))push(tk.slice(2,-2),true); else push(tk.slice(1,-1),false,true); last=m.index+tk.length; }
+    push(text.slice(last)); return out.join('');
+  }
+  function mdToDocxXml(md){
+    const ps=[]; let inCode=false, codeLang='', codeBuf=[];
+    const para=(runs,style,extra)=>ps.push(`<w:p><w:pPr>${style?`<w:pStyle w:val="${style}"/>`:''}${extra||''}</w:pPr>${runs}</w:p>`);
+    const flushCode=()=>{
+      if(codeLang==='mermaid') para(runsFromInline('Mermaid 圖解（原始碼可貼至 mermaid.live 檢視）','<w:i/><w:color w:val="7B889C"/>'),'Normal');
+      codeBuf.forEach(l=>ps.push(`<w:p><w:pPr><w:pStyle w:val="Code"/></w:pPr><w:r><w:t xml:space="preserve">${xe(l)}</w:t></w:r></w:p>`));
+      para('','Normal');
+    };
+    for(const ln of md.split('\n')){
+      const fence=ln.match(/^```(\w*)/);
+      if(fence){ if(!inCode){inCode=true;codeLang=fence[1]||'';codeBuf=[];} else{inCode=false;flushCode();} continue; }
+      if(inCode){codeBuf.push(ln);continue;}
+      let m;
+      if((m=ln.match(/^###\s+(.+)/))) para(runsFromInline(m[1]),'Heading3');
+      else if((m=ln.match(/^##\s+(.+)/))) para(runsFromInline(m[1]),'Heading2');
+      else if((m=ln.match(/^#\s+(.+)/))) para(runsFromInline(m[1]),'Heading1');
+      else if((m=ln.match(/^\s*[-*]\s+(.+)/))) para(runsFromInline(m[1]),'ListParagraph','<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>');
+      else if((m=ln.match(/^\s*\d+\.\s+(.+)/))) para(runsFromInline(m[1]),'ListParagraph','<w:numPr><w:ilvl w:val="0"/><w:numId w:val="2"/></w:numPr>');
+      else if((m=ln.match(/^>\s?(.+)/))) para(runsFromInline(m[1],'<w:i/><w:color w:val="4B5A72"/>'),'Quote');
+      else if(/^\s*---+\s*$/.test(ln)) para('','Normal','<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="C3CFE0"/></w:pBdr>');
+      else if(ln.trim()) para(runsFromInline(ln.trim()),'Normal');
+    }
+    return ps.join('');
+  }
+  async function buildDocx(md){
+    const body=mdToDocxXml(md);
+    const W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}>
+<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Microsoft JhengHei"/><w:sz w:val="21"/><w:color w:val="1F2A3D"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="300" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="160"/><w:pBdr><w:bottom w:val="single" w:sz="8" w:space="4" w:color="A9B8CF"/></w:pBdr><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="34"/><w:color w:val="2D5B8A"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="220" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="27"/><w:color w:val="2D5B8A"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="160" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="23"/><w:color w:val="4B5A72"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="720"/><w:spacing w:after="40"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="480"/><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="C98A2A"/></w:pBdr></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:shd w:val="clear" w:color="auto" w:fill="EEF2F8"/><w:ind w:left="200" w:right="200"/></w:pPr><w:rPr><w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:eastAsia="Consolas"/><w:sz w:val="18"/></w:rPr></w:style>
+</w:styles>`;
+    const numbering=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ${W}>
+<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
+<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
+<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`;
+    const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>`;
+    const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+    const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>`;
+    const zip=new JSZip();
+    zip.file('[Content_Types].xml',contentTypes);
+    zip.file('_rels/.rels',rels);
+    zip.file('word/document.xml',docXml);
+    zip.file('word/styles.xml',styles);
+    zip.file('word/numbering.xml',numbering);
+    zip.file('word/_rels/document.xml.rels',docRels);
+    return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  }
+  $('dl-docx').addEventListener('click',async()=>{
+    if(!window.JSZip){setStatus('❌ JSZip 未載入（需網路）','error');return;}
+    try{ saveBlob(await buildDocx(lastMarkdown),outName()+'.docx'); }
+    catch(e){ setStatus('❌ DOCX 產生失敗：'+e.message,'error'); }
+  });
+
+
+  /* ---------- 輸入：多檔 / ZIP / 圖片 / 網址 / 拖放 ---------- */
+  const TEXT_EXT=/\.(html?|js|mjs|cjs|ts|tsx|jsx|vue|svelte|py|css|scss|json|java|cs|go|php|rb|sql|sh|ps1|bat|txt|md|xml|yaml|yml|toml|ini|env|cfg|c|h|cpp|hpp|rs|kt|swift|dart|lua|r)$/i;
+  const SKIP_PATH=/(^|\/)(node_modules|\.git|dist|build|\.next|__pycache__|vendor)\//i;
+  const MAX_FILE=400*1024;
+  function renderChips(){
+    $('file-chips').innerHTML=fileList.map((f,ix)=>`<span class="chip"><b>${esc(f.name)}</b> ${(f.size/1024).toFixed(1)}KB <span class="x" data-i="${ix}">✕</span></span>`).join('');
+    $('file-chips').querySelectorAll('.x').forEach(x=>x.addEventListener('click',()=>{
+      const f=fileList[+x.dataset.i]; fileList.splice(+x.dataset.i,1);
+      const files=splitFiles($('html-input').value)||[];
+      $('html-input').value=files.filter(ff=>ff.name!==f.name).map(ff=>'// ===== FILE: '+ff.name+' =====\n'+ff.code.replace(/\s+$/,'')).join('\n\n');
+      renderChips(); updateStats();
+    }));
+  }
+  function renderThumbs(){
+    $('img-thumbs').innerHTML=images.map((im,ix)=>`<div class="thumb" title="${esc(im.name)}"><img src="${im.dataUrl}"><span class="x" data-i="${ix}">✕</span></div>`).join('');
+    $('img-thumbs').querySelectorAll('.x').forEach(x=>x.addEventListener('click',()=>{images.splice(+x.dataset.i,1);renderThumbs();}));
+  }
+  function appendCode(name,code){
+    const ta=$('html-input');
+    if(!ta.value.trim()) ta.value='// ===== FILE: '+name+' =====\n'+code;
+    else ta.value=ta.value.replace(/\s+$/,'')+FILE_SEP(name)+code;
+    fileList.push({name,size:code.length}); renderChips(); updateStats();
+  }
+  function readTextFile(file){
+    return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});
+  }
+  function readDataUrl(file){
+    return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});
+  }
+  function shrinkImage(dataUrl,max){
+    return new Promise(res=>{
+      const img=new Image(); img.onload=()=>{
+        const sc=Math.min(1,max/Math.max(img.width,img.height));
+        if(sc>=1) return res(dataUrl);
+        const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height); res(c.toDataURL('image/jpeg',0.85));
+      }; img.onerror=()=>res(dataUrl); img.src=dataUrl;
+    });
+  }
+  async function addImage(file){
+    const dataUrl=await readDataUrl(file);
+    images.push({name:file.name||'截圖.png',dataUrl:await shrinkImage(dataUrl,1600)}); renderThumbs();
+  }
+  async function addZip(file){
+    if(!window.JSZip){setStatus('❌ JSZip 未載入，無法解析 ZIP','error');return;}
+    const zip=await JSZip.loadAsync(file); let n=0,skip=0;
+    const entries=Object.values(zip.files).filter(e=>!e.dir).sort((a,b)=>a.name.localeCompare(b.name));
+    for(const e of entries){
+      if(SKIP_PATH.test(e.name)||!TEXT_EXT.test(e.name)){skip++;continue;}
+      const txt=await e.async('string');
+      if(txt.length>MAX_FILE){skip++;continue;}
+      appendCode(e.name,txt); n++;
+    }
+    setStatus(`✅ ZIP 解析：載入 ${n} 個文字檔${skip?'，略過 '+skip+' 個（二進位/過大/依賴目錄）':''}`,'success');
+  }
+  async function handleFiles(files){
+    for(const f of files){
+      try{
+        if(/\.zip$/i.test(f.name)) await addZip(f);
+        else if(f.type.startsWith('image/')) await addImage(f);
+        else { appendCode(f.name, await readTextFile(f)); setStatus('✅ 已載入：'+f.name,'success'); }
+      }catch(e){ setStatus('❌ 讀取失敗 '+f.name+'：'+e.message,'error'); }
+    }
+    setTimeout(()=>{ if($('status').classList.contains('success')) setStatus('',''); },1800);
+  }
+  $('btn-upload').addEventListener('click',()=>$('file-input').click());
+  $('btn-image').addEventListener('click',()=>$('img-input').click());
+  $('file-input').addEventListener('change',e=>{handleFiles([...e.target.files]);e.target.value='';});
+  $('img-input').addEventListener('change',e=>{handleFiles([...e.target.files]);e.target.value='';});
+  const drop=$('drop');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('dragover');}));
+  drop.addEventListener('drop',e=>{const fs=[...e.dataTransfer.files];if(fs.length)handleFiles(fs);});
+  document.addEventListener('paste',e=>{
+    const items=[...(e.clipboardData?.items||[])].filter(it=>it.type.startsWith('image/'));
+    if(items.length){ e.preventDefault(); handleFiles(items.map(it=>it.getAsFile()).filter(Boolean)); }
+  });
+
+  /* 網址抓取：直連 → CORS proxy 後援 */
+  async function fetchSource(url){
+    const tries=[
+      {name:'直連',u:url},
+      {name:'allorigins',u:'https://api.allorigins.win/raw?url='+encodeURIComponent(url)},
+      {name:'corsproxy.io',u:'https://corsproxy.io/?'+encodeURIComponent(url)},
+      {name:'r.jina.ai',u:'https://r.jina.ai/'+url}
+    ];
+    let lastErr='';
+    for(const t of tries){
+      try{
+        setStatus(`<span class="spinner"></span> 抓取中（${t.name}）…`,'info');
+        const r=await fetch(t.u,{signal:AbortSignal.timeout(15000)});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const txt=await r.text();
+        if(!txt.trim()) throw new Error('空內容');
+        return {txt,via:t.name};
+      }catch(e){ lastErr=e.message; }
+    }
+    throw new Error(lastErr);
+  }
+  $('btn-fetch-url').addEventListener('click',async()=>{
+    let url=$('url-input').value.trim();
+    if(!url){setStatus('⚠ 請貼上網址','warn');return;}
+    if(!/^https?:\/\//i.test(url)) url='https://'+url;
+    url=url.replace(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\//,'https://raw.githubusercontent.com/$1/$2/');
+    try{
+      const {txt,via}=await fetchSource(url);
+      const name=url.split('/').filter(Boolean).pop().split('?')[0]||'index.html';
+      appendCode(name,txt);
+      setStatus(`✅ 已抓取 ${name}（${(txt.length/1024).toFixed(1)}KB · 經 ${via}）`,'success');
+      setTimeout(()=>setStatus('',''),2200);
+    }catch(e){ setStatus('❌ 抓取失敗：'+e.message+'。可改用「檢視原始碼」手動貼上。','error'); }
+  });
+  $('url-input').addEventListener('keydown',e=>{if(e.key==='Enter')$('btn-fetch-url').click();});
+
+
+  /* ---------- 輸入區語法高亮（疊層） ---------- */
+  const HL_MAX=3*1024*1024;   // 3MB 以上才改純白
+  let hlTimer=null;
+  function guessLang(text){
+    const f=(text.match(/\/\/ ===== FILE: (.+?) =====/)||[])[1]||'';
+    const m=f.match(/\.([a-z0-9]+)$/i); const ext=m?m[1].toLowerCase():'';
+    const map={html:'xml',htm:'xml',vue:'xml',js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',tsx:'typescript',jsx:'javascript',py:'python',css:'css',scss:'scss',json:'json',java:'java',cs:'csharp',go:'go',php:'php',rb:'ruby',sql:'sql',sh:'bash',ps1:'powershell',yaml:'yaml',yml:'yaml',md:'markdown',xml:'xml',c:'c',cpp:'cpp',h:'c',rs:'rust',kt:'kotlin',swift:'swift'};
+    if(map[ext]) return map[ext];
+    if(/<\s*(html|body|head|div|script|style)\b/i.test(text)) return 'xml';
+    if(/^\s*(def |import |from .+ import|class .+:)/m.test(text)) return 'python';
+    if(/\b(const|let|var|function|=>)\b/.test(text)) return 'javascript';
+    return '';
+  }
+  function highlightInput(){
+    const ta=$('html-input'), ed=$('editor'), layer=$('hl-layer').firstElementChild;
+    const text=ta.value;
+    if(!window.hljs || text.length>HL_MAX){ ed.classList.add('plain'); return; }
+    ed.classList.remove('plain');
+    let html='';
+    const parts=text.split(/(^\/\/ ===== FILE: .+? =====$)/m);
+    for(let k=0;k<parts.length;k++){
+      const seg=parts[k]; if(!seg) continue;
+      if(/^\/\/ ===== FILE: .+? =====$/.test(seg)){ html+='<span class="hljs-comment">'+esc(seg)+'</span>'; continue; }
+      const lang=guessLang((parts[k-1]||'')+'\n'+seg.slice(0,4000)) || 'xml';
+      html += hlSegment(seg, lang);
+    }
+    layer.innerHTML=html+'\n';
+    syncScroll();
+  }
+  /* 分段上色：HTML 拆成 標記／<style>→css／<script>→js，長段再依空行切塊，
+     每塊獨立 highlight，避免 hljs 在大檔中途狀態錯亂或觸發迴圈保護而整段變白 */
+  function hlChunk(code, lang){
+    if(!code) return '';
+    try{ return hljs.highlight(code,{language:lang,ignoreIllegals:true}).value; }
+    catch(_){ return esc(code); }
+  }
+  function hlBlocks(code, lang){
+    const CH=6000; if(code.length<=CH) return hlChunk(code,lang);
+    let out='', buf='';
+    const lines=code.split(/(?<=\n)/);
+    for(const ln of lines){
+      buf+=ln;
+      // 在「空行」或「頂層收尾」處切塊，盡量不切斷字串／樣板字面量
+      if(buf.length>=CH && (/^\s*$/.test(ln) || /^[}\]);]\s*;?\s*\n?$/.test(ln) || /^\S/.test(ln))){
+        const bt=(buf.match(/`/g)||[]).length, cm=(buf.match(/\/\*/g)||[]).length-(buf.match(/\*\//g)||[]).length;
+        if(bt%2===0 && cm<=0){ out+=hlChunk(buf,lang); buf=''; }
+      }
+    }
+    return out+hlChunk(buf,lang);
+  }
+  function hlSegment(seg, lang){
+    if(lang!=='xml') return hlBlocks(seg, lang);
+    let out='', last=0;
+    const re=/(<(style|script)\b[^>]*>)([\s\S]*?)(<\/\2\s*>)/gi; let m;
+    while((m=re.exec(seg))){
+      out+=hlBlocks(seg.slice(last,m.index)+m[1],'xml');
+      const inner=m[3], isJs=m[2].toLowerCase()==='script';
+      const typ=(m[1].match(/type\s*=\s*["']([^"']+)/i)||[])[1]||'';
+      const l = !isJs ? 'css' : (/json/i.test(typ)?'json': (typ && !/javascript|module/i.test(typ)) ? 'xml' : 'javascript');
+      out+=hlBlocks(inner,l);
+      out+=hlChunk(m[4],'xml');
+      last=m.index+m[0].length;
+    }
+    return out+hlBlocks(seg.slice(last),'xml');
+  }
+  function syncScroll(){ const ta=$('html-input'), pre=$('hl-layer'); pre.scrollTop=ta.scrollTop; pre.scrollLeft=ta.scrollLeft; }
+  function scheduleHl(){ clearTimeout(hlTimer); const n=$('html-input').value.length; hlTimer=setTimeout(highlightInput, n>150000?600:n>40000?250:120); }
+  $('html-input').addEventListener('scroll',syncScroll);
+  $('html-input').addEventListener('input',scheduleHl);
+  if(window.hljs){ try{ hljs.configure({ignoreUnescapedHTML:true}); }catch(_){} }
+
+  let statTimer=null;
+  let updateStats=function(){
+    const raw=$('html-input').value;
+    let processed=raw;
+    try{ if(raw.trim()) processed=preprocess(raw); }catch(_){ processed=raw; }
+    const tok=Math.round(processed.length/3.2);
+    const mode=$('preprocess').value;
+    const modeTxt=mode==='digest'?'深度萃取':mode==='slim'?'標準精簡':'原文';
+    $('in-stats').innerHTML=raw.length.toLocaleString()+' 字元 → '+modeTxt+'後送出約 <b>'
+      +tok.toLocaleString()+'</b> tokens'+(tok>100000?' <span style="color:var(--brick)">⚠ 超過模型上下文，會自動改深度萃取</span>':tok>30000?' <span style="color:var(--amber)">⚠ 偏大，建議深度萃取</span>':'');
+  };
+  function scheduleStats(){clearTimeout(statTimer);statTimer=setTimeout(updateStats,250);}
+  const _updateStats=updateStats; updateStats=function(){ _updateStats(); scheduleHl(); };
+  $('html-input').addEventListener('input',scheduleStats);
+  $('preprocess').addEventListener('change',updateStats);
+  $('btn-clear-in').addEventListener('click',()=>{$('html-input').value='';fileList.length=0;images.length=0;renderChips();renderThumbs();updateStats();});
+
+  /* ---------- 範例 ---------- */
+  $('btn-sample').addEventListener('click',()=>{
+    $('html-input').value=
+`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+<title>⏱️ 番茄鐘 Focus</title>
+<style>
+  :root{--bg:#0f1115;--accent:#ff6b6b;--ink:#e8e8ea;}
+  body{background:var(--bg);color:var(--ink);font-family:system-ui;display:grid;place-items:center;height:100vh;}
+  .timer{font-size:5rem;font-weight:800;color:var(--accent);}
+  button{background:var(--accent);border:none;color:#fff;padding:12px 28px;border-radius:12px;font-size:1rem;cursor:pointer;}
+</style></head><body>
+  <div>
+    <div class="timer" id="t">25:00</div>
+    <button id="start">開始</button><button id="reset">重設</button>
+  </div>
+<script>
+  let sec=1500,iv=null;const t=document.getElementById('t');
+  const fmt=s=>String((s/60)|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  document.getElementById('start').onclick=()=>{if(iv)return;iv=setInterval(()=>{if(sec--<=0){clearInterval(iv);iv=null;new Audio().play();}t.textContent=fmt(sec);},1000);};
+  document.getElementById('reset').onclick=()=>{clearInterval(iv);iv=null;sec=1500;t.textContent=fmt(sec);};
+<\/script></body></html>`;
+    fileList.length=0;renderChips();
+    updateStats();
+    setStatus('已載入範例（番茄鐘），可直接按「開始反向工程」','info');
+    setTimeout(()=>setStatus('',''),2200);
+  });
+
+  /* ---------- 整頁縮放（預設 50%） ---------- */
+  let curZoom=0.5;
+  function fitPanes(){
+    // 模擬瀏覽器縮放：vh 不受 CSS zoom 影響，改以 JS 依實際視窗高度換算
+    const h=Math.max(520, Math.min(900, Math.round(window.innerHeight/curZoom) - 140));
+    document.querySelectorAll('.pane').forEach(p=>p.style.height=h+'px');
+  }
+  function setZoom(z){
+    curZoom=parseFloat(z)||0.5;
+    document.body.style.zoom=curZoom;
+    document.querySelectorAll('.zoom-bar button').forEach(b=>b.classList.toggle('on',parseFloat(b.dataset.z)===curZoom));
+    fitPanes();
+  }
+  document.querySelectorAll('.zoom-bar button').forEach(b=>b.addEventListener('click',()=>setZoom(b.dataset.z)));
+  window.addEventListener('resize',fitPanes);
+  try{ localStorage.removeItem('codere_zoom'); }catch(_){}
+  setZoom(1);   // 每次進入都以 100% 起始
+
+  /* ---------- 初始化 ---------- */
+  (function init(){
+    const k=localStorage.getItem(LS_KEY); if(k)$('api-keys').value=k;
+    const sg=localStorage.getItem(LS_STRAT); if(sg && [...$('pool-strategy').options].some(o=>o.value===sg)) $('pool-strategy').value=sg;
+    KP.sync($('api-keys').value);
+    const m=localStorage.getItem(LS_MODEL);
+    if(m){const opt=[...$('model').options].find(o=>o.value===m);if(opt)$('model').value=m;}
+    const om=localStorage.getItem('codere_outmode'); if(om && [...$('outmode').options].some(o=>o.value===om))$('outmode').value=om;
+    syncDiagRow();
+    const tp=localStorage.getItem('codere_tpm'); if(tp)$('tpm').value=tp;
+    updateStats();
+    console.log('%c🔍 程式反向工程 已就緒 · build R11','color:#ff6a2a;font-weight:bold;');
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業提示詞工程產生器 · Prompt Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root{
+  --bg:#dde5f0; --bg2:#e8eef7; --panel:#e4eaf4; --line:#c3cfe0;
+  --cream:#fbf5e4; --cream-b:#e6dcbf;
+  --ink:#1f2a3d; --ink2:#4b5a72; --ink3:#7b889c;
+  --navy:#2d5b8a; --blue:#3f7fc2; --blue2:#5e6fd8;
+  --red:#d24a4a; --green:#4f9a5e; --green-bg:#dff3dc;
+  --amber:#c98a2a; --amber-bg:#f7e9c5;
+  --r:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);
+  background:linear-gradient(160deg,#dfe7f2 0%,#e7edf6 45%,#dbe4f0 100%);min-height:100vh;font-size:15px;line-height:1.6}
+.wrap{max-width:1500px;margin:0 auto;padding:44px 48px 80px}
+/* hero */
+.hero{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;padding-bottom:40px;border-bottom:1px solid #9fb2cc}
+.eyebrow{font-size:12px;letter-spacing:.2em;color:var(--ink3);display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.eyebrow::before{content:"";width:36px;height:1px;background:var(--ink3)}
+h1{font-size:64px;line-height:1.12;margin:0 0 20px;font-weight:800;letter-spacing:-.01em}
+h1 span{background:linear-gradient(90deg,var(--blue),var(--blue2));-webkit-background-clip:text;background-clip:text;color:transparent;font-family:"Segoe UI",Inter,system-ui,sans-serif}
+.hero p{color:var(--ink2);max-width:640px;margin:0}
+.hero-art{width:230px;height:230px;flex:none}
+/* progress */
+.progress{margin:32px 0 28px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px}
+.progress .seg{flex:1;height:5px;border-radius:3px;background:#c9d4e4;transition:background .3s}
+.progress .seg.done{background:var(--navy)}
+.progress .seg.cur{background:var(--red)}
+.progress .cnt{font-size:12px;color:var(--ink3);margin-left:6px;min-width:32px;text-align:right}
+/* layout */
+.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:36px}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}.wrap{padding:28px 20px 60px}h1{font-size:42px}.hero-art{display:none}}
+/* steps */
+.step{display:grid;grid-template-columns:76px 1fr;padding:34px 0 30px;border-top:1px solid #a9bad2;position:relative}
+.step:first-child{border-top:0}
+.step .num{width:38px;height:38px;border-radius:50%;border:2px solid var(--red);color:var(--red);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;background:#f6f8fc;box-shadow:0 0 0 4px #f6f8fc;position:relative;z-index:1}
+.step .num::after{content:"";position:absolute;top:44px;left:17px;width:2px;height:calc(100vh);max-height:400px;background:#d9b2b2;z-index:-1}
+.step .lbl{font-size:11px;letter-spacing:.18em;color:var(--ink3);margin-bottom:6px}
+.step h2{font-size:24px;margin:0 0 16px;display:flex;align-items:center;gap:10px}
+.step h2 .ic{font-size:20px}
+.field-l{font-size:12px;font-weight:700;color:var(--ink2);margin:14px 0 6px;display:block}
+.field-l:first-of-type{margin-top:0}
+.hint{font-size:12px;color:var(--ink3);margin-top:8px}
+input[type=text],input[type=password],textarea,select{
+  width:100%;background:var(--cream);border:1px solid var(--cream-b);border-radius:8px;padding:12px 14px;font:inherit;color:var(--ink);outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(63,127,194,.18)}
+textarea{resize:vertical;min-height:100px}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%234b5a72' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1px solid var(--line);background:#eef2f9;border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--ink2);transition:all .15s;user-select:none}
+.chip:hover{border-color:var(--blue);color:var(--navy)}
+.chip.on{background:var(--green-bg);border-color:var(--green);color:#2e6b3b;font-weight:600}
+.seg-ctl{display:flex;background:#d5deec;border:1px solid var(--line);border-radius:8px;padding:4px;gap:4px}
+.seg-ctl button{flex:1;border:0;background:transparent;padding:9px 12px;border-radius:6px;font:inherit;font-size:13px;color:var(--ink2);cursor:pointer}
+.seg-ctl button.on{background:var(--green-bg);color:#2e6b3b;font-weight:600;box-shadow:inset 0 0 0 1px var(--green)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.card{border:1px solid var(--line);background:#d9e2ef;border-radius:10px;padding:14px 12px;text-align:center;cursor:pointer;transition:all .15s}
+.card:hover{border-color:var(--blue)}
+.card.on{background:var(--green-bg);border-color:var(--green)}
+.card .t{font-weight:700;font-size:13.5px;margin-top:6px}
+.card .s{font-size:11px;color:var(--ink3)}
+.card .em{font-size:22px}
+/* buttons */
+.btn{border:1px solid var(--line);background:#eef2f9;color:var(--ink);border-radius:8px;padding:9px 16px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn:hover{border-color:var(--blue);background:#f5f8fd}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.warm{background:var(--amber-bg);border-color:#dcc48a;color:#7a5410;font-weight:600}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.btn.primary:hover{background:#244a72}
+.btn.danger{color:var(--red);border-color:#e6b6b6;background:#f7e6e6}
+.btn.sm{padding:6px 11px;font-size:12px}
+/* right column */
+.rcol .box{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:20px}
+.rtitle{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:.18em;color:var(--ink3);margin:34px 0 12px}
+.rtitle::after{content:"";flex:1;height:1px;background:#aab9d0}
+.rtitle:first-child{margin-top:0}
+.rhead{display:grid;grid-template-columns:52px 1fr;gap:12px;padding-bottom:20px}
+.rhead .num{width:38px;height:38px;border-radius:50%;border:2px solid var(--red);color:var(--red);display:flex;align-items:center;justify-content:center;background:#f6f8fc;font-size:16px}
+.rhead h2{font-size:22px;margin:4px 0 12px}
+.rhead p{font-size:12.5px;color:var(--ink2);margin:0 0 14px;line-height:1.75}
+.out{background:var(--cream);border:1px solid var(--cream-b);border-radius:10px;min-height:300px;max-height:640px;overflow:auto;padding:16px;font-family:"JetBrains Mono",Consolas,"Noto Sans TC",monospace;font-size:12.5px;white-space:pre-wrap;line-height:1.7;outline:none}
+.out:empty::before{content:"尚未產生。完成左側步驟後按「產生提示詞」。";color:var(--ink3);font-family:inherit}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:#eef2f9;padding:6px 12px;border-radius:20px;font:inherit;font-size:12px;cursor:pointer;color:var(--ink2)}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.status{font-size:12px;color:var(--ink3);margin-top:8px;min-height:18px}
+.status.err{color:var(--red)}
+.status.ok{color:var(--green)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid #b7c5da;border-top-color:var(--navy);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.drop{border:1.5px dashed #b6c3d8;border-radius:10px;padding:14px;text-align:center;font-size:12.5px;color:var(--ink3);background:#eaf0f8;cursor:pointer}
+.drop.over{border-color:var(--blue);background:#e2ecf8}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ftag{background:#d5deec;border-radius:6px;padding:4px 10px;font-size:12px;display:flex;gap:8px;align-items:center}
+.ftag b{color:var(--red);cursor:pointer}
+.tpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tpl button{text-align:left;border:1px solid var(--line);background:#eef2f9;border-radius:8px;padding:10px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.tpl button:hover{border-color:var(--blue)}
+.tpl button small{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px;color:var(--ink2)}
+.runbox{background:#fff8f0;border:1px solid #efd9b8;border-radius:10px;padding:14px;font-size:13px;white-space:pre-wrap;max-height:400px;overflow:auto;margin-top:10px;display:none}
+.badge{font-size:11px;background:#d8e3f3;color:var(--navy);border-radius:10px;padding:2px 8px}
+
+/* collapse */
+.step h2,.rhead h2,.rtitle{cursor:pointer;user-select:none}
+.step h2::after,.rhead h2::after{content:"";width:9px;height:9px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);margin-left:auto;margin-right:6px;transition:transform .2s}
+.rtitle .arr{width:8px;height:8px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .2s}
+.col .step h2::after,.col .rhead h2::after,.rtitle.col .arr{transform:rotate(-45deg)}
+.sec-body{overflow:hidden}
+.step.col .sec-body,.rhead.col .sec-body,.rhead.col + .box,.rtitle.col + .box{display:none}
+.step.col{padding-bottom:22px}
+.rhead.col{padding-bottom:14px}
+.step h2 .sum{font-size:12px;color:var(--ink3);font-weight:400;margin-left:8px;display:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.step.col h2 .sum{display:inline}
+.foldbar{display:flex;gap:8px;justify-content:flex-end;margin:-10px 0 14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <div class="eyebrow">ENTERPRISE PROMPT STUDIO</div>
+    <h1>貼上素材，生成<br>企業級 <span>AI Prompt</span></h1>
+    <p>選定業務情境（行銷分析／合約比對／風險管理／流程解構／進出貨等 20 種），貼上文件、網址或圖像，AI 依提示詞工程技巧（角色設定、思維鏈、少樣本、結構化輸出、自我檢核）撰寫可直接複用的完整提示詞，並可在本頁試跑、下載 TXT / MD。</p>
+  </div>
+  <svg class="hero-art" viewBox="0 0 200 200" aria-hidden="true">
+    <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#3f7fc2"/><stop offset="1" stop-color="#5e6fd8"/></linearGradient></defs>
+    <rect x="30" y="34" width="140" height="96" rx="10" fill="#2a3b55" stroke="#1a2637" stroke-width="3"/>
+    <rect x="40" y="44" width="120" height="76" rx="6" fill="#dfe7f2"/>
+    <rect x="50" y="56" width="70" height="6" rx="3" fill="#2d5b8a"/>
+    <rect x="50" y="70" width="98" height="6" rx="3" fill="#8fa5c2"/>
+    <rect x="50" y="84" width="84" height="6" rx="3" fill="#8fa5c2"/>
+    <rect x="50" y="98" width="40" height="6" rx="3" fill="url(#g1)"/>
+    <rect x="94" y="96" width="4" height="10" fill="#d24a4a"/>
+    <path d="M85 130 L115 130 L122 150 L78 150 Z" fill="#c33d3d" stroke="#8f2a2a" stroke-width="3"/>
+    <rect x="60" y="150" width="80" height="12" rx="4" fill="#2a3b55" stroke="#1a2637" stroke-width="3"/>
+    <circle cx="150" cy="60" r="18" fill="#d24a4a" stroke="#8f2a2a" stroke-width="3"/>
+    <path d="M143 60 l5 5 l9 -11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</header>
+
+<div class="progress" id="prog"></div>
+
+<div class="foldbar"><button class="btn sm" id="expAll">全部展開</button><button class="btn sm" id="colAll">全部收合</button></div>
+<div class="grid">
+<!-- ================= LEFT ================= -->
+<main>
+
+<section class="step">
+  <div class="num">AI</div>
+  <div>
+    <div class="lbl">AUTO-FILL</div>
+    <h2><span class="ic">✨</span>貼上素材自動填表</h2>
+    <textarea id="rawInput" placeholder="貼上文件內容或網址（http 開頭會經 r.jina.ai 讀取），AI 解析後自動填入下方情境、角色、目標與資料欄位（需 Groq API Key）"></textarea>
+    <div class="drop" id="drop">拖曳或點選上傳：.txt .md .csv .json .html .pdf .docx 與圖片（png/jpg/webp，以視覺模型解析）</div>
+    <input type="file" id="fileIn" multiple hidden accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx,image/*">
+    <div class="files" id="fileList"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn warm" id="btnParse">✨ AI 解析填表</button>
+      <button class="btn" id="btnFetch">🔗 讀取網址</button>
+      <button class="btn" id="btnClearMat">清除素材</button>
+      <span class="badge" id="matBadge">素材 0 字</span>
+    </div>
+    <div class="status" id="stParse"></div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">01</div>
+  <div>
+    <div class="lbl">SCENARIO</div>
+    <h2><span class="ic">🏢</span>企業情境</h2>
+    <label class="field-l">選擇業務情境（可自訂）</label>
+    <input type="text" id="scenario" placeholder="例：跨境電商進出貨異常分析">
+    <div class="chips" id="scenChips"></div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">02</div>
+  <div>
+    <div class="lbl">ROLE & GOAL</div>
+    <h2><span class="ic">🎯</span>角色與目標</h2>
+    <div class="row2">
+      <div><label class="field-l">AI 扮演角色</label><input type="text" id="role" placeholder="例：資深供應鏈風險分析師"></div>
+      <div><label class="field-l">使用者身分</label><input type="text" id="user" placeholder="例：採購部主管"></div>
+    </div>
+    <label class="field-l">任務目標（一句話說清楚要 AI 做什麼）</label>
+    <textarea id="goal" style="min-height:70px" placeholder="例：比對兩份供應商合約差異，列出對本公司不利之條款並給出修改建議"></textarea>
+    <label class="field-l">背景與限制（產業、法規、禁忌、品牌語氣等）</label>
+    <textarea id="constraints" style="min-height:70px" placeholder="例：遵循台灣個資法；避免給出法律結論性意見；以繁體中文、金額以新台幣呈現"></textarea>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">03</div>
+  <div>
+    <div class="lbl">INPUT SOURCE</div>
+    <h2><span class="ic">📥</span>資料來源型態</h2>
+    <label class="field-l">提示詞要處理哪種輸入（多選，將產生對應的變數插槽）</label>
+    <div class="chips" id="srcChips"></div>
+    <label class="field-l">變數插槽命名（逗號分隔，留空自動）</label>
+    <input type="text" id="vars" placeholder="例：{{合約A}}, {{合約B}}, {{公司名稱}}">
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">04</div>
+  <div>
+    <div class="lbl">TECHNIQUES</div>
+    <h2><span class="ic">🧠</span>提示詞工程技巧</h2>
+    <label class="field-l">套用的技巧（多選）</label>
+    <div class="cards" id="techCards"></div>
+    <label class="field-l">少樣本範例（選用，貼 1～3 組輸入→輸出示範）</label>
+    <textarea id="fewshot" style="min-height:70px" placeholder="輸入：…&#10;輸出：…"></textarea>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">05</div>
+  <div>
+    <div class="lbl">OUTPUT</div>
+    <h2><span class="ic">📤</span>輸出規格</h2>
+    <div class="row2">
+      <div><label class="field-l">輸出格式</label>
+        <select id="fmt"><option>Markdown 報告</option><option>結構化 JSON</option><option>Markdown 表格</option><option>條列摘要</option><option>Excel 可貼欄位（TSV）</option><option>簡報大綱</option><option>Email 草稿</option></select></div>
+      <div><label class="field-l">語言</label>
+        <select id="lang"><option>繁體中文</option><option>English</option><option>繁體中文＋英文對照</option><option>日本語</option></select></div>
+    </div>
+    <div class="row2">
+      <div><label class="field-l">語氣</label>
+        <select id="tone"><option>專業精準</option><option>簡潔直接</option><option>顧問式建議</option><option>親切易懂</option><option>正式公文</option></select></div>
+      <div><label class="field-l">深度</label>
+        <select id="depth"><option>標準（含重點與建議）</option><option>精簡（一頁內）</option><option>深度（含推論過程與風險等級）</option></select></div>
+    </div>
+    <label class="field-l">必含章節／欄位（選用）</label>
+    <input type="text" id="sections" placeholder="例：摘要、關鍵發現、風險等級、行動建議、資料缺口">
+  </div>
+</section>
+
+</main>
+
+<!-- ================= RIGHT ================= -->
+<aside class="rcol">
+  <div class="rhead">
+    <div class="num">✎</div>
+    <div>
+      <div class="lbl">GENERATED PROMPT</div>
+      <h2>完整提示詞 → TXT / MD</h2>
+      <p>依左側設定，由 Groq 撰寫包含 <b>System Prompt</b>、<b>User Prompt 模板</b>（含變數插槽）、<b>輸出範例骨架</b>、<b>檢核清單</b>與<b>使用說明</b>的完整提示詞套件。可直接點擊編輯，「試跑」會把目前素材代入實際執行。</p>
+      <div class="row">
+        <button class="btn warm" id="btnGen">✎ 產生提示詞</button>
+        <button class="btn" id="btnRefine">🔁 AI 精修</button>
+        <button class="btn" id="btnRun">▶ 以素材試跑</button>
+      </div>
+      <div class="status" id="stGen"></div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="tabs" id="tabs">
+      <button class="on" data-t="all">完整套件</button>
+      <button data-t="system">System</button>
+      <button data-t="user">User 模板</button>
+      <button data-t="notes">使用說明</button>
+    </div>
+    <div class="out" id="out" contenteditable="true" spellcheck="false"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" id="btnCopy">📋 複製</button>
+      <button class="btn sm primary" id="dlTxt">⬇ 下載 .txt</button>
+      <button class="btn sm primary" id="dlMd">⬇ 下載 .md</button>
+      <button class="btn sm" id="dlJson">⬇ 設定 .json</button>
+    </div>
+    <div class="runbox" id="runbox"></div>
+  </div>
+
+  <div class="rtitle">設定檔管理</div>
+  <div class="box">
+    <div class="row" style="flex-wrap:nowrap">
+      <input type="text" id="presetName" placeholder="設定檔名稱（例：採購合約比對）">
+      <button class="btn primary" id="btnSave">💾 儲存</button>
+    </div>
+    <div class="row" style="flex-wrap:nowrap;margin-top:10px">
+      <select id="presetSel"><option value="">— 選擇設定檔 —</option></select>
+      <button class="btn" id="btnLoad">載入</button>
+      <button class="btn danger" id="btnDel">🗑</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" id="btnExp">⬇ 匯出 JSON</button>
+      <button class="btn sm" id="btnImp">⬆ 匯入 JSON</button>
+      <input type="file" id="impIn" hidden accept=".json">
+      <button class="btn sm" id="btnShare">🔗 分享連結</button>
+    </div>
+  </div>
+
+  <div class="rtitle">AI 設定</div>
+  <div class="box">
+    <label class="field-l">GROQ API KEY（僅存於你的瀏覽器）</label>
+    <input type="password" id="apiKey" placeholder="gsk_…">
+    <div class="hint">免費申請：console.groq.com。文字用下方模型，圖像解析自動改用 Qwen 3.8 27B 多模態模型。</div>
+    <label class="field-l">文字模型</label>
+    <select id="model">
+      <option value="openai/gpt-oss-120b">openai/gpt-oss-120b（推理強・推薦）</option>
+      <option value="qwen/qwen3.8-27b">qwen/qwen3.8-27b（平衡・多模態）</option>
+      <option value="openai/gpt-oss-20b">openai/gpt-oss-20b（快速）</option>
+    </select>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" id="btnTest">測試 API</button>
+      <span class="status" id="stApi" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="rtitle">快速模板</div>
+  <div class="box"><div class="tpl" id="tplList"></div></div>
+</aside>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- data ---------- */
+const SCENARIOS=[
+ ["📈","行銷分析","資深行銷數據分析師","從活動數據與客戶回饋找出成效與優化方向"],
+ ["📑","合約書比對","企業法務合約審閱顧問","逐條比對兩份合約，標示差異與不利條款並提出修訂建議"],
+ ["⚠️","風險管理","企業風險管理師","識別營運/財務/法規風險，評估機率影響並給出緩解措施"],
+ ["🧩","流程解構","流程改善（BPM）顧問","將業務流程拆解為步驤、角色、系統與瓶頸，繪出改善方案"],
+ ["🚚","進出貨管理","供應鏈與倉儲管理專家","分析進出貨紀錄，找出異常、缺貨風險與庫存優化建議"],
+ ["💬","客訴回覆","客戶成功經理","依客訴內容生成同理且合規的回覆與內部處理建議"],
+ ["📝","會議紀錄摘要","專業會議秘書","將逐字稿整理為決議、待辦（負責人/期限）與待釐清事項"],
+ ["💰","財報分析","財務分析師（CFA）","解讀財報三表，計算關鍵比率並評估財務健康度"],
+ ["👥","招募 JD 撰寫","人資招募顧問","依職缺需求撰寫吸引人才且合法的職務說明"],
+ ["⭐","績效評估","人資績效管理專家","根據目標與事實撰寫客觀績效評語與發展建議"],
+ ["📘","SOP 撰寫","品質管理系統文件專員","將作業描述轉為標準作業程序文件（目的/範圍/步驟/紀錄）"],
+ ["🔍","市場調查","市場研究顧問","綜整資料形成市場規模、趨勢、客群與進入策略"],
+ ["⚔️","競品分析","產品策略分析師","以特色/價格/通路/口碑比較競品，找出差異化機會"],
+ ["📣","社群文案","品牌社群內容策劃","依品牌語氣產出多平台貼文與 Hashtag"],
+ ["🎯","客戶分群","CRM 數據科學家","依行為與價值分群並給各群溝通策略"],
+ ["🏭","供應商評估","採購與供應商管理專家","以品質/交期/成本/風險評分供應商並排序"],
+ ["🧪","品管報告","品質工程師","分析不良數據，找出根因（5 Why/魚骨圖）與矯正措施"],
+ ["🗓️","專案規劃","PMP 專案經理","拆解 WBS、里程碑、資源與風險，輸出專案計畫"],
+ ["🎓","教育訓練教材","企業培訓課程設計師","將專業內容轉為課程大綱、講義重點與測驗題"],
+ ["⚖️","法規合規檢核","合規稽核專員","對照法規條文檢核文件符合性並列出缺失"]
+];
+const SOURCES=["📄 上傳文件","📋 貼上文字","🖼️ 圖像/截圖","🔗 外部連結","📊 CSV/表格","🎙️ 會議逐字稿","💬 客戶對話紀錄","🗄️ 資料庫查詢結果"];
+const TECHS=[
+ ["🎭","角色設定","Role Prompting"],["🪜","思維鏈","Chain-of-Thought"],["📌","少樣本示範","Few-shot"],
+ ["🧱","結構化輸出","JSON / 表格 Schema"],["🚧","邊界與限制","Constraints & Guardrails"],["🔎","自我檢核","Self-Critique"],
+ ["🔭","退一步思考","Step-back Prompting"],["🌲","多方案比較","Tree of Thoughts"],["🧭","任務分解","Task Decomposition"],
+ ["❓","先釐清再作答","Clarify-first"],["📎","引用來源","Grounding / Citation"],["🔁","反覆精煉","Iterative Refinement"]
+];
+const TEMPLATES=[
+ {n:"合約比對（採購）",s:"合約書比對",r:"企業法務合約審閱顧問",u:"採購部主管",g:"比對合約 A 與合約 B 差異，標示對本公司不利條款並提出修訂建議",c:"遵循中華民國民法與個資法；不提供法律結論，僅供內部參考",src:[0,1],t:[0,1,3,4,5],v:"{{合約A}}, {{合約B}}, {{公司名稱}}",f:"Markdown 表格",sec:"差異對照表、風險等級、修訂建議、需律師確認事項"},
+ {n:"行銷活動成效",s:"行銷分析",r:"資深行銷數據分析師",u:"行銷經理",g:"分析活動數據找出成效、受眾洞察與下一波優化建議",c:"以 ROAS、CAC、轉換率為核心指標；金額新台幣",src:[4,1],t:[0,1,3,8],v:"{{活動數據}}, {{活動目標}}",f:"Markdown 報告",sec:"摘要、關鍵指標、受眾洞察、優化建議"},
+ {n:"進出貨異常",s:"進出貨管理",r:"供應鏈與倉儲管理專家",u:"倉儲主管",g:"從進出貨紀錄找出異常、缺貨風險與安全庫存建議",c:"標示資料缺口；不臆測未提供的數字",src:[4,0],t:[0,1,3,5,8],v:"{{進出貨紀錄}}, {{品項清單}}",f:"結構化 JSON",sec:"異常清單、缺貨風險、庫存建議"},
+ {n:"風險登錄表",s:"風險管理",r:"企業風險管理師",u:"營運長",g:"識別風險並評估機率×影響，產出風險登錄表與緩解措施",c:"採 ISO 31000 架構；等級分高/中/低",src:[0,1,3],t:[0,1,3,6,5],v:"{{專案或流程描述}}",f:"Markdown 表格",sec:"風險登錄表、熱度圖說明、優先處理項"},
+ {n:"流程拆解",s:"流程解構",r:"流程改善（BPM）顧問",u:"流程負責人",g:"將流程拆解為步驟、角色、系統、輸入輸出並找出瓶頸",c:"輸出可轉為流程圖的節點清單",src:[1,5],t:[0,8,3,7],v:"{{流程描述}}",f:"結構化 JSON",sec:"步驟清單、RACI、瓶頸、改善方案"},
+ {n:"客訴回覆",s:"客訴回覆",r:"客戶成功經理",u:"客服人員",g:"依客訴生成對外回覆與內部處理建議",c:"不承諾未授權賠償；語氣同理、不推責",src:[6,2],t:[0,2,4,9],v:"{{客訴內容}}, {{公司政策}}",f:"Email 草稿",sec:"對外回覆、內部備註、後續追蹤"}
+];
+
+/* ---------- state ---------- */
+const $=id=>document.getElementById(id);
+const S={srcs:new Set([0,1]),techs:new Set([0,1,3,4,5]),materials:[],images:[]};
+let lastGen={all:"",system:"",user:"",notes:""};
+
+/* ---------- build UI ---------- */
+$("scenChips").innerHTML=SCENARIOS.map((s,i)=>`<span class="chip" data-i="${i}">${s[0]} ${s[1]}</span>`).join("");
+$("scenChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;const s=SCENARIOS[c.dataset.i];
+  [...$("scenChips").children].forEach(x=>x.classList.remove("on"));c.classList.add("on");
+  $("scenario").value=s[1];if(!$("role").value)$("role").value=s[2];if(!$("goal").value)$("goal").value=s[3];upd();};
+$("srcChips").innerHTML=SOURCES.map((s,i)=>`<span class="chip ${S.srcs.has(i)?"on":""}" data-i="${i}">${s}</span>`).join("");
+$("srcChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;const i=+c.dataset.i;S.srcs.has(i)?S.srcs.delete(i):S.srcs.add(i);c.classList.toggle("on");upd();};
+$("techCards").innerHTML=TECHS.map((t,i)=>`<div class="card ${S.techs.has(i)?"on":""}" data-i="${i}"><div class="em">${t[0]}</div><div class="t">${t[1]}</div><div class="s">${t[2]}</div></div>`).join("");
+$("techCards").onclick=e=>{const c=e.target.closest(".card");if(!c)return;const i=+c.dataset.i;S.techs.has(i)?S.techs.delete(i):S.techs.add(i);c.classList.toggle("on");upd();};
+$("tplList").innerHTML=TEMPLATES.map((t,i)=>`<button data-i="${i}">${t.n}<small>${t.s} · ${t.f}</small></button>`).join("");
+$("tplList").onclick=e=>{const b=e.target.closest("button");if(!b)return;applyTpl(TEMPLATES[b.dataset.i]);toast("已套用模板");};
+
+function applyTpl(t){$("scenario").value=t.s;$("role").value=t.r;$("user").value=t.u;$("goal").value=t.g;$("constraints").value=t.c;$("vars").value=t.v;$("fmt").value=t.f;$("sections").value=t.sec||"";
+  S.srcs=new Set(t.src);S.techs=new Set(t.t);syncSel();upd();}
+function syncSel(){[...$("srcChips").children].forEach(c=>c.classList.toggle("on",S.srcs.has(+c.dataset.i)));
+  [...$("techCards").children].forEach(c=>c.classList.toggle("on",S.techs.has(+c.dataset.i)));
+  [...$("scenChips").children].forEach(c=>c.classList.toggle("on",SCENARIOS[c.dataset.i][1]===$("scenario").value));}
+
+/* progress */
+function upd(){const checks=[S.materials.length||S.images.length||$("rawInput").value.trim(),$("scenario").value.trim(),$("role").value.trim()&&$("goal").value.trim(),S.srcs.size,S.techs.size,$("fmt").value,lastGen.all];
+  const done=checks.filter(Boolean).length;let cur=checks.findIndex(x=>!x);
+  $("prog").innerHTML=checks.map((c,i)=>`<div class="seg ${c?"done":i===cur?"cur":""}"></div>`).join("")+`<span class="cnt">${done}/${checks.length}</span>`;}
+document.querySelectorAll("input,textarea,select").forEach(el=>el.addEventListener("input",upd));
+
+/* ---------- materials ---------- */
+function matText(){return S.materials.map(m=>`【${m.name}】\n${m.text}`).join("\n\n")+($("rawInput").value.trim()&&!/^https?:\/\//.test($("rawInput").value.trim())?"\n\n【貼上文字】\n"+$("rawInput").value.trim():"");}
+function renderFiles(){$("fileList").innerHTML=S.materials.map((m,i)=>`<span class="ftag">📄 ${m.name} <i>${m.text.length}字</i><b data-k="m${i}">✕</b></span>`).join("")+S.images.map((m,i)=>`<span class="ftag">🖼️ ${m.name}<b data-k="i${i}">✕</b></span>`).join("");
+  $("matBadge").textContent=`素材 ${matText().length} 字 · 圖 ${S.images.length}`;upd();}
+$("fileList").onclick=e=>{const k=e.target.dataset.k;if(!k)return;(k[0]==="m"?S.materials:S.images).splice(+k.slice(1),1);renderFiles();};
+$("rawInput").addEventListener("input",renderFiles);
+$("btnClearMat").onclick=()=>{S.materials=[];S.images=[];$("rawInput").value="";renderFiles();};
+const drop=$("drop");drop.onclick=()=>$("fileIn").click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")};drop.ondragleave=()=>drop.classList.remove("over");
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");handleFiles(e.dataTransfer.files)};
+$("fileIn").onchange=e=>handleFiles(e.target.files);
+async function handleFiles(files){for(const f of files){try{
+  if(f.type.startsWith("image/")){const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(f)});S.images.push({name:f.name,data:b64});}
+  else if(/\.pdf$/i.test(f.name)){const buf=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let t="";for(let p=1;p<=Math.min(pdf.numPages,60);p++){const pg=await pdf.getPage(p);const c=await pg.getTextContent();t+=c.items.map(i=>i.str).join(" ")+"\n";}S.materials.push({name:f.name,text:t.trim()});}
+  else if(/\.docx$/i.test(f.name)){const buf=await f.arrayBuffer();const r=await mammoth.extractRawText({arrayBuffer:buf});S.materials.push({name:f.name,text:r.value.trim()});}
+  else{let t=await f.text();if(/\.html?$/i.test(f.name)){const d=new DOMParser().parseFromString(t,"text/html");t=d.body.innerText;}S.materials.push({name:f.name,text:t.trim()});}
+ }catch(err){setSt("stParse","讀取失敗："+f.name+"："+err.message,"err");}}
+ renderFiles();}
+$("btnFetch").onclick=async()=>{const u=$("rawInput").value.trim();if(!/^https?:\/\//.test(u))return setSt("stParse","請在上方貼上 http(s) 網址","err");
+  setSt("stParse","<span class=spin></span>經 r.jina.ai 讀取中…");try{const r=await fetch("https://r.jina.ai/"+u);if(!r.ok)throw new Error(r.status);const t=await r.text();S.materials.push({name:u.replace(/^https?:\/\//,"").slice(0,40),text:t.slice(0,60000)});$("rawInput").value="";renderFiles();setSt("stParse","已讀取網址內容","ok");}catch(e){setSt("stParse","讀取失敗："+e.message,"err");}};
+
+/* ---------- Groq ---------- */
+const VISION="qwen/qwen3.8-27b";
+const MODEL_MIGRATE={"llama-3.3-70b-versatile":"openai/gpt-oss-120b","llama-3.1-8b-instant":"openai/gpt-oss-20b","meta-llama/llama-4-maverick-17b-128e-instruct":"qwen/qwen3.8-27b","meta-llama/llama-4-scout-17b-16e-instruct":"qwen/qwen3.8-27b","qwen/qwen3.6-27b":"qwen/qwen3.8-27b","qwen/qwen3-32b":"openai/gpt-oss-120b"};
+function fixModel(){const el=$("model");const v=MODEL_MIGRATE[el.value]||el.value;el.value=v;if(!el.value)el.value="openai/gpt-oss-120b";}
+async function groq(messages,{json=false,model,maxTokens=4000}={}){const key=$("apiKey").value.trim();if(!key)throw new Error("請先填入 Groq API Key");
+  const m=model||$("model").value;const body={model:m,messages,temperature:0.4,max_completion_tokens:maxTokens+1500};if(json)body.response_format={type:"json_object"};
+  if(m.startsWith("openai/gpt-oss")){body.reasoning_effort="low";body.include_reasoning=false;}else if(m.startsWith("qwen/")){body.reasoning_format="hidden";}
+  const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+key},body:JSON.stringify(body)});
+  const d=await r.json();if(!r.ok)throw new Error(d.error?.message||r.status);return (d.choices[0].message.content||"").replace(/<think>[\s\S]*?<\/think>\s*/g,"").trim();}
+async function describeImages(){if(!S.images.length)return "";const out=[];for(const im of S.images){const t=await groq([{role:"user",content:[{type:"text",text:"請以繁體中文完整轉錄並描述此圖像的所有文字、表格、數字與重點資訊，供企業分析使用。"},{type:"image_url",image_url:{url:im.data}}]}],{model:VISION,maxTokens:2000});out.push(`【圖像 ${im.name}】\n${t}`);}return out.join("\n\n");}
+$("btnTest").onclick=async()=>{setSt("stApi","<span class=spin></span>測試中…");try{await groq([{role:"user",content:"回覆 OK"}],{maxTokens:5});setSt("stApi","連線正常","ok");}catch(e){setSt("stApi",e.message,"err");}};
+$("apiKey").addEventListener("change",()=>localStorage.setItem("ps_key",$("apiKey").value));
+$("apiKey").value=localStorage.getItem("ps_key")||"";
+
+/* auto-fill */
+$("btnParse").onclick=async()=>{try{
+  if(/^https?:\/\//.test($("rawInput").value.trim()))await $("btnFetch").onclick();
+  setSt("stParse","<span class=spin></span>解析圖像…");const img=await describeImages();if(img)S.materials.push({name:"圖像解析",text:img}),S.images=[],renderFiles();
+  const mat=matText();if(!mat.trim())throw new Error("沒有可解析的素材");
+  setSt("stParse","<span class=spin></span>AI 解析填表中…");
+  const j=JSON.parse(await groq([{role:"system",content:"你是企業提示詞工程顧問。閱讀素材，判斷最適合的企業應用情境並輸出 JSON。"},
+   {role:"user",content:`素材：\n${mat.slice(0,20000)}\n\n可選情境：${SCENARIOS.map(s=>s[1]).join("、")}\n可選資料來源(索引)：${SOURCES.map((s,i)=>i+":"+s).join(" ")}\n可選技巧(索引)：${TECHS.map((t,i)=>i+":"+t[1]).join(" ")}\n\n輸出 JSON（繁體中文）：{"scenario":"情境名（可自訂）","role":"AI 角色","user":"使用者身分","goal":"任務目標一句話","constraints":"背景與限制","sources":[索引],"techs":[索引],"vars":"{{變數1}}, {{變數2}}","format":"Markdown 報告|結構化 JSON|Markdown 表格|條列摘要|Excel 可貼欄位（TSV）|簡報大綱|Email 草稿","sections":"必含章節，逗號分隔"}`}],{json:true}));
+  $("scenario").value=j.scenario||"";$("role").value=j.role||"";$("user").value=j.user||"";$("goal").value=j.goal||"";$("constraints").value=j.constraints||"";$("vars").value=j.vars||"";$("sections").value=j.sections||"";
+  if(j.format)$("fmt").value=j.format;if(Array.isArray(j.sources))S.srcs=new Set(j.sources.filter(i=>SOURCES[i]));if(Array.isArray(j.techs))S.techs=new Set(j.techs.filter(i=>TECHS[i]));
+  syncSel();upd();setSt("stParse","已自動填入，請檢查後產生提示詞","ok");
+ }catch(e){setSt("stParse",e.message,"err");}};
+
+/* generate */
+function spec(){return `情境：${$("scenario").value}
+AI 角色：${$("role").value}
+使用者身分：${$("user").value}
+任務目標：${$("goal").value}
+背景與限制：${$("constraints").value}
+資料來源型態：${[...S.srcs].map(i=>SOURCES[i]).join("、")}
+變數插槽：${$("vars").value||"（請自動設計）"}
+提示詞技巧：${[...S.techs].map(i=>TECHS[i][1]+"("+TECHS[i][2]+")").join("、")}
+少樣本範例：${$("fewshot").value||"（無，若技巧含少樣本請自行設計 2 組貼近情境的示範）"}
+輸出格式：${$("fmt").value}；語言：${$("lang").value}；語氣：${$("tone").value}；深度：${$("depth").value}
+必含章節：${$("sections").value||"（自動）"}`;}
+const GEN_SYS=`你是頂尖的企業提示詞工程師（Prompt Engineer）。依規格撰寫可直接部署於企業的提示詞套件，繁體中文（除非指定語言），內容具體、可執行、避免空話。
+嚴格使用以下五個標題分段輸出（Markdown）：
+## 1. System Prompt
+（完整系統提示：角色、專業背景、任務、工作流程步驟、判斷準則、限制與護欄、輸出格式規範）
+## 2. User Prompt 模板
+（給使用者填空的模板，用 {{變數}} 標示插槽，含指示語與資料區塊分隔符）
+## 3. 輸出範例骨架
+（依輸出格式給出空白骨架或 JSON Schema，讓模型輸出一致）
+## 4. 品質檢核清單
+（讓 AI 在回答前自我檢核的 5～8 項）
+## 5. 使用說明
+（適用模型、參數建議、如何填變數、常見失敗與修正、可延伸的變體）`;
+$("btnGen").onclick=async()=>{if(!$("scenario").value.trim()||!$("goal").value.trim())return setSt("stGen","請至少填寫情境與任務目標","err");
+  setSt("stGen","<span class=spin></span>撰寫提示詞套件中…");$("btnGen").disabled=true;
+  try{const mat=matText();const txt=await groq([{role:"system",content:GEN_SYS},{role:"user",content:`規格：\n${spec()}${mat?`\n\n參考素材節錄（用來讓提示詞更貼近實際資料欄位與術語，勿直接複製全文）：\n${mat.slice(0,6000)}`:""}`}],{maxTokens:6000});
+   setOut(txt);setSt("stGen","已產生，可直接編輯或下載","ok");}catch(e){setSt("stGen",e.message,"err");}$("btnGen").disabled=false;upd();};
+$("btnRefine").onclick=async()=>{if(!lastGen.all)return setSt("stGen","請先產生提示詞","err");const ask=prompt("精修方向（例：更精簡、加強 JSON 嚴謹度、加入台灣法規用語）","更精簡、更具體");if(ask===null)return;
+  setSt("stGen","<span class=spin></span>精修中…");try{const txt=await groq([{role:"system",content:GEN_SYS},{role:"user",content:`以下是現有提示詞套件，請依方向「${ask}」精修後完整重新輸出（保留五段標題）：\n\n${$("out").innerText}`}],{maxTokens:6000});setOut(txt);setSt("stGen","已精修","ok");}catch(e){setSt("stGen",e.message,"err");}};
+$("btnRun").onclick=async()=>{if(!lastGen.system)return setSt("stGen","請先產生提示詞","err");const mat=matText();if(!mat.trim())return setSt("stGen","請先在左上方提供素材","err");
+  setSt("stGen","<span class=spin></span>以素材試跑中…");const rb=$("runbox");rb.style.display="block";rb.textContent="";
+  try{const u=lastGen.user.replace(/\{\{[^}]+\}\}/g,m=>m);const res=await groq([{role:"system",content:lastGen.system},{role:"user",content:`${u}\n\n=== 實際資料 ===\n${mat.slice(0,24000)}`}],{maxTokens:4000});rb.textContent="▶ 試跑結果\n\n"+res;setSt("stGen","試跑完成","ok");}catch(e){setSt("stGen",e.message,"err");}};
+
+function setOut(txt){lastGen.all=txt;const sec=n=>{const m=txt.match(new RegExp(`##\\s*${n}\\.[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s*\\d\\.|$)`));return m?m[1].trim():"";};
+  lastGen.system=sec(1).replace(/^```\w*\n?|```$/gm,"").trim();lastGen.user=sec(2).replace(/^```\w*\n?|```$/gm,"").trim();lastGen.notes=sec(5);showTab("all");}
+function showTab(t){[...$("tabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===t));$("out").innerText=lastGen[t]||"";$("out").dataset.t=t;}
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(b)showTab(b.dataset.t);};
+$("out").addEventListener("input",()=>{lastGen[$("out").dataset.t||"all"]=$("out").innerText;});
+
+/* download */
+function header(){return `# 企業提示詞工程套件：${$("scenario").value}\n\n> 產生日期：${new Date().toLocaleString("zh-TW")}\n> 角色：${$("role").value}｜使用者：${$("user").value}\n> 技巧：${[...S.techs].map(i=>TECHS[i][1]).join("、")}\n> 輸出：${$("fmt").value}／${$("lang").value}／${$("tone").value}\n\n---\n\n`;}
+function dl(name,content,type="text/plain"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([content],{type:type+";charset=utf-8"}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+const fname=()=>(($("scenario").value||"prompt").replace(/[\\/:*?"<>|]/g,"_"))+"_提示詞";
+$("dlMd").onclick=()=>{if(!lastGen.all)return toast("尚無內容");dl(fname()+".md",header()+lastGen.all,"text/markdown");};
+$("dlTxt").onclick=()=>{if(!lastGen.all)return toast("尚無內容");dl(fname()+".txt",header().replace(/[#>*`]/g,"")+lastGen.all.replace(/```\w*/g,"").replace(/^#+\s*/gm,"").replace(/\*\*/g,""));};
+$("dlJson").onclick=()=>dl(fname()+"_設定.json",JSON.stringify(collect(),null,2),"application/json");
+$("btnCopy").onclick=async()=>{await navigator.clipboard.writeText($("out").innerText);toast("已複製");};
+
+/* presets */
+function collect(){return{scenario:$("scenario").value,role:$("role").value,user:$("user").value,goal:$("goal").value,constraints:$("constraints").value,vars:$("vars").value,fewshot:$("fewshot").value,fmt:$("fmt").value,lang:$("lang").value,tone:$("tone").value,depth:$("depth").value,sections:$("sections").value,srcs:[...S.srcs],techs:[...S.techs],model:$("model").value,gen:lastGen};}
+function restore(d){["scenario","role","user","goal","constraints","vars","fewshot","fmt","lang","tone","depth","sections","model"].forEach(k=>{if(d[k]!=null)$(k).value=d[k]});fixModel();
+  if(d.srcs)S.srcs=new Set(d.srcs);if(d.techs)S.techs=new Set(d.techs);if(d.gen){lastGen=d.gen;showTab("all");}syncSel();upd();}
+const PK="ps_presets";const getP=()=>JSON.parse(localStorage.getItem(PK)||"{}");
+function renderP(){const p=getP();$("presetSel").innerHTML='<option value="">— 選擇設定檔 —</option>'+Object.keys(p).map(k=>`<option>${k}</option>`).join("");}
+$("btnSave").onclick=()=>{const n=$("presetName").value.trim()||$("scenario").value.trim();if(!n)return toast("請輸入名稱");const p=getP();p[n]=collect();localStorage.setItem(PK,JSON.stringify(p));renderP();$("presetSel").value=n;toast("已儲存");};
+$("btnLoad").onclick=()=>{const n=$("presetSel").value;if(!n)return;restore(getP()[n]);$("presetName").value=n;toast("已載入");};
+$("btnDel").onclick=()=>{const n=$("presetSel").value;if(!n||!confirm("刪除「"+n+"」？"))return;const p=getP();delete p[n];localStorage.setItem(PK,JSON.stringify(p));renderP();toast("已刪除");};
+$("btnExp").onclick=()=>dl("prompt_studio_設定檔.json",JSON.stringify(getP(),null,2),"application/json");
+$("btnImp").onclick=()=>$("impIn").click();
+$("impIn").onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(d.scenario!==undefined){restore(d);toast("已匯入單一設定");}else{localStorage.setItem(PK,JSON.stringify({...getP(),...d}));renderP();toast("已匯入設定檔");}}catch{toast("JSON 格式錯誤")}};
+$("btnShare").onclick=async()=>{const c=collect();delete c.gen;const u=location.origin+location.pathname+"#"+btoa(unescape(encodeURIComponent(JSON.stringify(c))));await navigator.clipboard.writeText(u);toast("分享連結已複製（不含 API Key）");};
+if(location.hash.length>1){try{restore(JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1))))));toast("已載入分享設定");}catch{}}
+
+/* utils */
+function setSt(id,html,cls=""){const el=$(id);el.innerHTML=html;el.className=(id==="stApi"?"status ":"status ")+cls;}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+
+/* ---------- collapse ---------- */
+const FK="ps_fold";const fold=JSON.parse(localStorage.getItem(FK)||"{}");
+function saveFold(){localStorage.setItem(FK,JSON.stringify(fold));}
+document.querySelectorAll(".step > div:last-child, .rhead > div:last-child").forEach((box,idx)=>{
+  const h=box.querySelector("h2");const body=document.createElement("div");body.className="sec-body";
+  let n=h.nextSibling;while(n){const nx=n.nextSibling;body.appendChild(n);n=nx;}box.appendChild(body);
+  const sec=box.parentElement;sec.dataset.fk="s"+idx;
+  const sum=document.createElement("span");sum.className="sum";h.appendChild(sum);
+  h.onclick=()=>{sec.classList.toggle("col");fold[sec.dataset.fk]=sec.classList.contains("col");saveFold();updSum(sec);};
+  if(fold["s"+idx])sec.classList.add("col");
+});
+document.querySelectorAll(".rtitle").forEach((t,idx)=>{t.dataset.fk="r"+idx;t.insertAdjacentHTML("beforeend",'<span class="arr"></span>');
+  t.onclick=()=>{t.classList.toggle("col");fold[t.dataset.fk]=t.classList.contains("col");saveFold();};if(fold["r"+idx])t.classList.add("col");});
+function updSum(sec){const s=sec.querySelector(".sum");if(!s)return;const inp=sec.querySelector("input[type=text],textarea");const on=[...sec.querySelectorAll(".chip.on,.card.on")].map(x=>x.querySelector(".t")?.textContent||x.textContent.trim());
+  s.textContent=(inp&&inp.value.trim())||on.join("、")||"";}
+document.querySelectorAll(".step").forEach(updSum);
+document.addEventListener("input",e=>{const sec=e.target.closest(".step");if(sec)updSum(sec);});
+document.addEventListener("click",e=>{if(e.target.closest(".chip,.card")){const sec=e.target.closest(".step");if(sec)updSum(sec);}});
+$("expAll").onclick=()=>{document.querySelectorAll(".col").forEach(x=>{x.classList.remove("col");fold[x.dataset.fk]=false;});saveFold();};
+$("colAll").onclick=()=>{document.querySelectorAll(".step,.rhead,.rtitle").forEach(x=>{x.classList.add("col");fold[x.dataset.fk]=true;updSum(x);});saveFold();};
+renderP();renderFiles();upd();
+</script>
+</body>
+</html>

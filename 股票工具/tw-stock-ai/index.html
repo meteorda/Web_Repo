@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>台股個股資料分析與 Groq AI 洞察系統</title>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到主要內容</a>
+    <header class="topbar">
+      <button id="btnMenu" class="icon-btn only-mobile" aria-label="開關設定面板" aria-expanded="false" aria-controls="sidebar">☰</button>
+      <div class="brand">
+        <span class="logo" aria-hidden="true">◆</span>
+        <div>
+          <h1>台股個股資料分析系統</h1>
+          <p class="sub">資料清洗 · 技術指標 · Groq AI 洞察</p>
+        </div>
+      </div>
+      <div class="top-info" aria-live="polite">
+        <span id="hdrStock" class="stock-badge">尚未載入資料</span>
+        <span id="hdrSource" class="meta"></span>
+        <span id="hdrDemo" class="tag tag-demo" hidden>合成示範資料</span>
+        <span id="hdrAdjust" class="tag tag-info" hidden></span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside id="sidebar" class="sidebar" aria-label="設定區">
+        <section class="panel">
+          <h2>① 資料</h2>
+          <button id="btnDemo" class="btn btn-primary w100">載入範例資料</button>
+          <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="拖曳或選擇 CSV／PDF 檔案匯入">
+            <strong>拖曳 CSV／PDF 至此</strong>
+            <span>或按 Enter 選擇檔案</span>
+            <small>CSV ≤ 10MB；PDF ≤ 20MB、50 頁</small>
+          </div>
+          <input id="fileInput" type="file" accept=".csv,.txt,.pdf,text/csv,application/pdf" hidden />
+          <label class="fld">資料集
+            <select id="selDataset" disabled><option>（無）</option></select>
+          </label>
+          <label class="fld">股票
+            <select id="selSymbol" disabled><option>（無）</option></select>
+          </label>
+          <fieldset class="fld-row">
+            <legend>分析日期區間</legend>
+            <label>起 <input id="dateStart" type="date" disabled /></label>
+            <label>迄 <input id="dateEnd" type="date" disabled /></label>
+          </fieldset>
+          <div class="btn-row">
+            <button id="btnApplyRange" class="btn" disabled>套用區間</button>
+            <button id="btnFullRange" class="btn btn-ghost" disabled>全部期間</button>
+          </div>
+          <p id="rangeNote" class="hint"></p>
+        </section>
+
+        <section class="panel">
+          <h2>② Groq 連線</h2>
+          <p id="serverKeyNote" class="hint">檢查伺服器狀態中…</p>
+          <label class="fld">API Key（僅存於本頁記憶體，不保存）
+            <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="gsk_…" />
+          </label>
+          <button id="btnTest" class="btn w100">測試連線並取得模型</button>
+          <p id="connStatus" class="status" role="status"></p>
+          <label class="fld">主要模型
+            <select id="selPrimary" disabled><option value="">（請先測試連線）</option></select>
+          </label>
+          <label class="fld">備援模型
+            <select id="selFallback" disabled><option value="">（不使用）</option></select>
+          </label>
+          <label class="chk"><input id="chkFallback" type="checkbox" /> 允許主要模型失敗時改用備援模型</label>
+          <label class="fld">輸出長度上限（max_completion_tokens）
+            <input id="maxTokens" type="number" min="256" max="8192" step="256" value="2048" />
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2>③ 本機資料</h2>
+          <p class="hint">僅保存匯入資料集與非敏感偏好；不保存 API Key、不保存示範資料。</p>
+          <div class="btn-row">
+            <button id="btnClearCurrent" class="btn btn-ghost" disabled>清除目前資料集</button>
+            <button id="btnClearAll" class="btn btn-danger">清除全部本機資料</button>
+          </div>
+        </section>
+      </aside>
+
+      <main id="main" class="main" tabindex="-1">
+        <div id="emptyState" class="empty">
+          <h2>開始使用</h2>
+          <p>按「載入範例資料」立即體驗，或匯入證交所／券商 CSV、可擷取文字的行情 PDF。</p>
+          <button id="btnDemo2" class="btn btn-primary">載入範例資料</button>
+        </div>
+
+        <div id="content" hidden>
+          <section aria-labelledby="hSummary">
+            <h2 id="hSummary" class="sec-title">行情摘要</h2>
+            <div id="cards" class="cards"></div>
+            <p id="insufficient" class="warn" hidden></p>
+          </section>
+
+          <section class="panel" aria-labelledby="hQuality">
+            <details id="qualityBox">
+              <summary><h2 id="hQuality">資料品質摘要</h2></summary>
+              <div id="quality"></div>
+            </details>
+          </section>
+
+          <section class="panel" aria-labelledby="hCharts">
+            <div class="sec-head">
+              <h2 id="hCharts">互動圖表</h2>
+              <div class="toolbar">
+                <label class="chk"><input id="chkBB" type="checkbox" /> 布林通道</label>
+                <button id="btnZoomApply" class="btn btn-sm" disabled title="以圖表目前縮放範圍作為分析區間">縮放範圍設為區間</button>
+                <button id="btnZoomReset" class="btn btn-sm btn-ghost">重設縮放</button>
+              </div>
+            </div>
+            <div id="chartMain" class="chart" aria-label="K 線與均線圖"></div>
+            <div id="chartVol" class="chart chart-sm" aria-label="成交量圖"></div>
+            <div id="chartMacd" class="chart chart-sm" aria-label="MACD 圖"></div>
+            <div id="chartKd" class="chart chart-sm" aria-label="KD 圖"></div>
+            <div class="grid2">
+              <div>
+                <h3>漲跌平盤日數佔比</h3>
+                <div id="chartPie" class="chart chart-pie" aria-label="漲跌佔比圓餅圖"></div>
+                <p id="pieNote" class="hint"></p>
+              </div>
+              <div>
+                <h3>計算說明</h3>
+                <ul id="calcNotes" class="notes"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="hPattern">
+            <h2 id="hPattern">K 線型態與支撐壓力</h2>
+            <div class="grid2">
+              <div>
+                <h3>支撐壓力參考區</h3>
+                <div id="levels"></div>
+              </div>
+              <div>
+                <h3>型態偵測（區間內）</h3>
+                <div id="patterns" class="scroll-y"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="hTable">
+            <div class="sec-head">
+              <h2 id="hTable">資料表格</h2>
+              <div class="toolbar wrap">
+                <fieldset class="col-toggle" aria-label="顯示指標欄">
+                  <label class="chk"><input type="checkbox" data-col="ma" checked /> MA</label>
+                  <label class="chk"><input type="checkbox" data-col="rsi" /> RSI</label>
+                  <label class="chk"><input type="checkbox" data-col="macd" /> MACD</label>
+                  <label class="chk"><input type="checkbox" data-col="kd" /> KD</label>
+                  <label class="chk"><input type="checkbox" data-col="bb" /> 布林</label>
+                </fieldset>
+                <label>篩選 <input id="tblFrom" type="date" /></label>
+                <label>～ <input id="tblTo" type="date" /></label>
+                <label>每頁 <select id="tblSize"><option>20</option><option>50</option><option>100</option></select></label>
+                <button id="btnExportTable" class="btn btn-sm">匯出目前篩選 CSV</button>
+                <button id="btnExportAll" class="btn btn-sm btn-ghost">匯出清洗後全部 CSV</button>
+              </div>
+            </div>
+            <div class="table-wrap"><table id="dataTable" class="tbl"></table></div>
+            <div id="tblPager" class="pager"></div>
+          </section>
+
+          <section class="panel ai" aria-labelledby="hAI">
+            <h2 id="hAI">AI 分析</h2>
+            <fieldset class="types" id="aiTypes">
+              <legend>分析類型</legend>
+            </fieldset>
+            <label class="fld" id="customWrap" hidden>自訂問題（≤ 1000 字）
+              <textarea id="customQ" rows="3" maxlength="1000" placeholder="例如：近期量能變化與 MA20 的關係是什麼？"></textarea>
+            </label>
+            <div class="btn-row">
+              <button id="btnPreview" class="btn">查看本次傳送資料</button>
+              <button id="btnAnalyze" class="btn btn-primary">開始 AI 分析</button>
+              <button id="btnCancel" class="btn btn-danger" disabled>取消</button>
+              <button id="btnRetry" class="btn" hidden>手動重試</button>
+              <button id="btnDemoReport" class="btn btn-ghost">產生示範報告（非 AI）</button>
+            </div>
+            <p id="aiStatus" class="status" role="status" aria-live="polite"></p>
+            <div id="aiMeta" class="ai-meta" hidden></div>
+            <article id="aiReport" class="report" aria-live="polite"></article>
+            <div class="btn-row">
+              <button id="btnDocx" class="btn btn-primary" disabled>匯出 Word 報告（.docx）</button>
+              <label class="chk"><input id="chkDocxCharts" type="checkbox" checked /> 附入圖表圖片</label>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <p><strong>資料來源說明：</strong><span id="footSource">尚未載入資料。</span>示範資料為固定種子合成，非真實市場行情；匯入資料之正確性以原始來源為準。</p>
+      <p><strong>投資風險聲明：</strong><span id="footRisk"></span></p>
+    </footer>
+
+    <!-- 匯入對話框 -->
+    <dialog id="dlgImport" class="dlg" aria-labelledby="dlgImportTitle">
+      <form method="dialog" class="dlg-inner" id="importForm">
+        <header class="dlg-head">
+          <h2 id="dlgImportTitle">匯入資料</h2>
+          <button class="icon-btn" value="cancel" aria-label="關閉">✕</button>
+        </header>
+        <div class="dlg-body" id="importBody"></div>
+        <footer class="dlg-foot">
+          <button class="btn btn-ghost" value="cancel">取消</button>
+          <button type="button" id="btnImportCheck" class="btn">重新檢查</button>
+          <button type="button" id="btnImportConfirm" class="btn btn-primary" disabled>確認匯入</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <!-- 傳送資料預覽 -->
+    <dialog id="dlgPayload" class="dlg" aria-labelledby="dlgPayloadTitle">
+      <form method="dialog" class="dlg-inner">
+        <header class="dlg-head">
+          <h2 id="dlgPayloadTitle">本次傳送資料</h2>
+          <button class="icon-btn" value="close" aria-label="關閉">✕</button>
+        </header>
+        <div class="dlg-body">
+          <p id="payloadInfo" class="hint"></p>
+          <pre id="payloadPre" class="pre"></pre>
+        </div>
+        <footer class="dlg-foot"><button class="btn" value="close">關閉</button></footer>
+      </form>
+    </dialog>
+
+    <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

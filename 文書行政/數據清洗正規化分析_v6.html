@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數據清洗、正規化 及 分析</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#080b14; --bg2:#0d1322; --panel:rgba(255,255,255,.038); --panel2:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.09); --border2:rgba(255,255,255,.16);
+  --txt:#e9eef7; --muted:#8b96ac; --muted2:#5d6578;
+  --gold:#e2bd63; --gold2:#d4af37; --jade:#34d8b4; --jade2:#2dd4bf;
+  --red:#f0698a; --amber:#f0b65a; --green:#5fd99a; --blue:#6aa9f0;
+  --r:14px; --sh:0 8px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Noto Sans TC',system-ui,sans-serif; color:var(--txt); min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 12% -8%,rgba(226,189,99,.07),transparent 55%),
+    radial-gradient(1000px 600px at 88% 0%,rgba(52,216,180,.07),transparent 55%),
+    linear-gradient(160deg,var(--bg),var(--bg2));
+  background-attachment:fixed;
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== Header ===== */
+header{
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);
+  background:linear-gradient(180deg,rgba(8,11,20,.92),rgba(8,11,20,.65));
+  border-bottom:1px solid var(--border);padding:14px 22px;
+}
+.hwrap{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px;flex:1;min-width:230px}
+.logo{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:24px;
+  background:linear-gradient(135deg,rgba(226,189,99,.2),rgba(52,216,180,.16));border:1px solid var(--border2);box-shadow:inset 0 0 18px rgba(226,189,99,.12)}
+.brand h1{font-family:'Noto Serif TC';font-weight:900;font-size:21px;letter-spacing:.5px;
+  background:linear-gradient(100deg,var(--gold),#fff 55%,var(--jade));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{font-size:11.5px;color:var(--muted);margin-top:1px;letter-spacing:.4px}
+.cfg{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.cfg input,.cfg select{
+  background:var(--panel2);border:1px solid var(--border);color:var(--txt);
+  padding:9px 12px;border-radius:10px;font-size:12.5px;font-family:inherit;outline:none;transition:.2s}
+.cfg input:focus,.cfg select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(226,189,99,.12)}
+.cfg input[type=password]{width:190px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted2);box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.dot.ok{background:var(--green);box-shadow:0 0 10px var(--green)}
+.dot.bad{background:var(--red);box-shadow:0 0 10px var(--red)}
+
+/* ===== Tabs ===== */
+.tabs{max-width:1320px;margin:18px auto 0;padding:0 22px;display:flex;gap:7px;flex-wrap:wrap}
+.tab{
+  background:var(--panel);border:1px solid var(--border);color:var(--muted);
+  padding:11px 17px;border-radius:12px 12px 0 0;font-size:13.5px;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;gap:8px;transition:.18s;border-bottom:none;position:relative;top:1px}
+.tab:hover{color:var(--txt);background:var(--panel2)}
+.tab.active{color:var(--gold);background:linear-gradient(180deg,rgba(226,189,99,.12),var(--panel2));
+  border-color:var(--border2);box-shadow:0 -3px 14px rgba(226,189,99,.08)}
+.tab .n{font-size:11px;background:rgba(255,255,255,.1);padding:1px 7px;border-radius:8px;color:var(--txt)}
+
+/* ===== Main ===== */
+main{max-width:1320px;margin:0 auto;padding:0 22px 60px}
+.view{display:none;animation:fade .35s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-top:18px}
+.card.tight{padding:16px}
+.card h2{font-family:'Noto Serif TC';font-size:17px;font-weight:700;display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.card h2 .ic{font-size:19px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:14px;line-height:1.6}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:880px){.g2,.g3{grid-template-columns:1fr}}
+
+/* buttons */
+.btn{border:1px solid var(--border2);background:var(--panel2);color:var(--txt);padding:10px 16px;border-radius:10px;
+  font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1305;border-color:transparent;font-weight:700}
+.btn.gold:hover{box-shadow:0 6px 20px rgba(226,189,99,.3)}
+.btn.jade{background:linear-gradient(135deg,var(--jade),var(--jade2));color:#062019;border-color:transparent;font-weight:700}
+.btn.jade:hover{box-shadow:0 6px 20px rgba(52,216,180,.3)}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn.ghost{background:transparent}
+
+/* upload */
+.drop{border:2px dashed var(--border2);border-radius:var(--r);padding:34px 20px;text-align:center;transition:.2s;cursor:pointer;background:rgba(255,255,255,.015)}
+.drop:hover,.drop.over{border-color:var(--gold);background:rgba(226,189,99,.06)}
+.drop .big{font-size:42px;opacity:.85}
+.drop h3{font-size:15px;margin:8px 0 4px}
+.drop p{color:var(--muted);font-size:12.5px}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--txt);
+  padding:12px;font-family:'SF Mono',Consolas,monospace;font-size:12.5px;resize:vertical;min-height:120px;outline:none}
+textarea:focus{border-color:var(--jade)}
+
+/* dataset chips */
+.dslist{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.dsitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:11px;background:var(--panel2);border:1px solid var(--border);transition:.18s}
+.dsitem:hover{border-color:var(--border2)}
+.dsitem.sel{border-color:var(--gold);background:rgba(226,189,99,.07)}
+.dsitem .ic{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-size:18px;background:rgba(255,255,255,.05)}
+.dsitem .meta{flex:1;min-width:0}
+.dsitem .meta b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dsitem .meta span{font-size:11.5px;color:var(--muted)}
+
+/* table */
+.tblwrap{overflow:auto;border:1px solid var(--border);border-radius:11px;max-height:430px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+th{position:sticky;top:0;background:#121829;text-align:left;padding:10px 13px;font-weight:700;color:var(--gold);border-bottom:2px solid var(--border2);z-index:2}
+th .ty{font-size:9.5px;font-weight:400;display:block;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+td{padding:8px 13px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--txt)}
+tr:hover td{background:rgba(255,255,255,.025)}
+td.null{color:var(--red);font-style:italic;opacity:.7}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:13px 15px}
+.stat .l{font-size:11px;color:var(--muted);letter-spacing:.4px}
+.stat .v{font-size:22px;font-weight:900;font-family:'Noto Serif TC';margin-top:3px}
+.stat .v.g{color:var(--gold)} .stat .v.j{color:var(--jade)} .stat .v.r{color:var(--red)} .stat .v.b{color:var(--blue)}
+
+/* column profile */
+.colprof{display:grid;gap:11px}
+.col{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.col .top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.col .nm{font-weight:700;font-size:14px}
+.badge{font-size:10.5px;padding:3px 9px;border-radius:7px;font-weight:600;letter-spacing:.3px}
+.b-num{background:rgba(106,169,240,.16);color:var(--blue)}
+.b-cat{background:rgba(226,189,99,.16);color:var(--gold)}
+.b-date{background:rgba(52,216,180,.16);color:var(--jade)}
+.b-bool{background:rgba(240,182,90,.16);color:var(--amber)}
+.b-text{background:rgba(180,180,200,.14);color:var(--muted)}
+.col .mini{display:flex;flex-wrap:wrap;gap:7px 16px;font-size:11.5px;color:var(--muted)}
+.col .mini b{color:var(--txt);font-weight:600}
+.bar{height:6px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:9px}
+.bar>i{display:block;height:100%;border-radius:4px}
+.spark{display:flex;gap:2px;align-items:flex-end;height:34px;margin-top:9px}
+.spark>i{flex:1;background:linear-gradient(180deg,var(--jade),rgba(52,216,180,.25));border-radius:2px;min-height:2px}
+
+/* suggestion cards */
+.sug{border-left:3px solid var(--border2);background:var(--panel2);border-radius:0 11px 11px 0;padding:13px 16px;margin-top:11px}
+.sug.high{border-left-color:var(--red)} .sug.med{border-left-color:var(--amber)} .sug.low{border-left-color:var(--jade)} .sug.info{border-left-color:var(--blue)}
+.sug .h{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.sug .h .sev{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;letter-spacing:.5px}
+.sev.high{background:rgba(240,105,138,.18);color:var(--red)} .sev.med{background:rgba(240,182,90,.18);color:var(--amber)} .sev.low{background:rgba(52,216,180,.18);color:var(--jade)} .sev.info{background:rgba(106,169,240,.18);color:var(--blue)}
+.sug .h b{font-size:13.5px}
+.sug p{font-size:12.5px;color:var(--muted);line-height:1.65}
+.sug .tag{display:inline-block;font-size:10.5px;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:6px;margin-right:6px;margin-top:7px}
+
+/* chart controls */
+.ctrls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.ctrls label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.ctrls select{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:12.5px;outline:none;min-width:140px}
+.ctrls input{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:12.5px;outline:none;font-family:inherit}
+.ctrls select:focus,.ctrls input:focus{border-color:var(--jade)}
+.chartbox{position:relative;height:440px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px}
+.heatwrap{overflow:auto;border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.chip{background:var(--panel2);border:1px solid var(--border2);color:var(--txt);font-size:12px;padding:7px 13px;border-radius:20px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.chip:hover{background:rgba(226,189,99,.12);border-color:var(--gold);transform:translateY(-1px)}
+.chip.pie:hover{background:rgba(52,216,180,.12);border-color:var(--jade)}
+
+/* empty */
+.empty{text-align:center;padding:54px 20px;color:var(--muted2)}
+.empty .e{font-size:50px;opacity:.5}
+.empty p{margin-top:10px;font-size:13.5px}
+
+/* AI output */
+.ai-md{font-size:13px;line-height:1.75}
+.ai-md h3{font-family:'Noto Serif TC';color:var(--gold);font-size:15px;margin:16px 0 7px}
+.ai-md h4{color:var(--jade);font-size:13.5px;margin:13px 0 5px}
+.ai-md p{margin:7px 0;color:var(--txt)}
+.ai-md ul{margin:7px 0 7px 20px} .ai-md li{margin:4px 0;color:var(--txt)}
+.ai-md code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:12px}
+.ai-md strong{color:var(--gold)}
+.loading{display:flex;align-items:center;gap:11px;color:var(--muted);font-size:13px;padding:18px}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.15);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#161d30;border:1px solid var(--border2);padding:13px 20px;border-radius:12px;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:200;opacity:0;transition:.3s;display:flex;align-items:center;gap:9px}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{border-color:var(--green)} .toast.err{border-color:var(--red)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);background:var(--panel2);padding:5px 11px;border-radius:20px;border:1px solid var(--border)}
+.hint{font-size:11.5px;color:var(--muted2);margin-top:10px;line-height:1.6}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.flexbtn{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.quality-ring{width:96px;height:96px;position:relative;flex-shrink:0}
+.quality-ring svg{transform:rotate(-90deg)}
+.quality-ring .qv{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;font-weight:900;font-family:'Noto Serif TC'}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <div class="logo">📊</div>
+      <div>
+        <h1>數據清洗、正規化 及 分析</h1>
+        <p>多資料集載入 · 智能清洗建議 · 正規化策略 · 互動圖表 · AI 進階分析</p>
+      </div>
+    </div>
+    <div class="cfg">
+      <span class="dot" id="keyDot" title="API 狀態"></span>
+      <input type="password" id="apiKey" placeholder="Groq API Key (可逗號分隔多組)">
+      <select id="model">
+        <option value="llama-3.3-70b-versatile">llama-3.3-70b ★</option>
+        <option value="openai/gpt-oss-120b">gpt-oss-120b</option>
+        <option value="moonshotai/kimi-k2-instruct">kimi-k2</option>
+        <option value="qwen/qwen3-32b">qwen3-32b</option>
+        <option value="deepseek-r1-distill-llama-70b">deepseek-r1-70b</option>
+        <option value="llama-3.1-8b-instant">llama-3.1-8b (快)</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-v="load">📥 資料載入</div>
+  <div class="tab" data-v="profile">🔍 數據檢視</div>
+  <div class="tab" data-v="clean">🧹 數據清洗</div>
+  <div class="tab" data-v="norm">⚙️ 正規化</div>
+  <div class="tab" data-v="chart">📈 分析圖表</div>
+  <div class="tab" data-v="rel">🔗 資料關聯</div>
+  <div class="tab" data-v="adv">🚀 進階分析建議</div>
+</div>
+
+<main>
+
+<!-- ===== 1. 載入 ===== -->
+<section class="view active" id="v-load">
+  <div class="grid g2">
+    <div class="card">
+      <h2><span class="ic">📁</span>載入資料檔案</h2>
+      <p class="sub">支援 CSV / TSV / JSON / Excel / <b>SQLite（.db/.sqlite）</b> / <b>SQL 傾印檔（.sql，含 MySQL dump）</b> / <b>Access（.mdb/.accdb）</b>。可一次載入<b>多個資料集</b>，Excel 多工作表與<b>資料庫多資料表</b>會自動拆成各別資料集，於進階分析中比對彼此關聯。</p>
+      <div class="drop" id="drop">
+        <div class="big">⬆️</div>
+        <h3>拖曳檔案到此 或 點擊選擇</h3>
+        <p>.csv · .tsv · .json · .xlsx · .xls · .db · .sqlite · .sql · .mdb · .accdb （可多選）</p>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.tsv,.json,.txt,.xlsx,.xls,.db,.db3,.sqlite,.sqlite3,.sql,.mdb,.accdb" multiple hidden>
+      <div class="divider"></div>
+      <h2 style="font-size:15px"><span class="ic">📝</span>或貼上資料</h2>
+      <textarea id="pasteArea" placeholder="貼上 CSV 或 JSON 內容…&#10;例：name,age,city&#10;王小明,28,台北"></textarea>
+      <div class="flexbtn">
+        <button class="btn jade sm" onclick="loadPaste()">⊕ 解析貼上內容</button>
+        <button class="btn ghost sm" onclick="loadSample()">🎁 載入範例資料集</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="ic">🗂️</span>已載入資料集 <span id="dsCount" class="pill">0</span></h2>
+      <p class="sub">點選資料集設為「作用中」，清洗 / 正規化 / 圖表分頁皆以此為對象。</p>
+      <div class="dslist" id="dsList">
+        <div class="empty"><div class="e">📭</div><p>尚未載入任何資料集</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="previewCard" style="display:none">
+    <h2><span class="ic">👁️</span>資料預覽：<span id="pvName" style="color:var(--gold)"></span></h2>
+    <p class="sub" id="pvMeta"></p>
+    <div class="tblwrap" id="pvTable"></div>
+  </div>
+</section>
+
+<!-- ===== 2. 檢視 ===== -->
+<section class="view" id="v-profile">
+  <div id="profileEmpty" class="card"><div class="empty"><div class="e">🔍</div><p>請先載入資料並設為作用中資料集</p></div></div>
+  <div id="profileBody" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+        <div class="quality-ring" id="qRing"></div>
+        <div style="flex:1;min-width:200px">
+          <h2><span class="ic">📋</span>資料品質概況：<span id="prName" style="color:var(--gold)"></span></h2>
+          <p class="sub" id="prDesc" style="margin:0"></p>
+        </div>
+      </div>
+      <div class="stats" id="prStats" style="margin-top:18px"></div>
+    </div>
+    <div class="card">
+      <h2><span class="ic">📐</span>欄位剖析</h2>
+      <p class="sub">自動辨識型別、缺值率、唯一值、統計量與分佈。</p>
+      <div class="colprof" id="colProf"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3. 清洗 ===== -->
+<section class="view" id="v-clean">
+  <div id="cleanEmpty" class="card"><div class="empty"><div class="e">🧹</div><p>請先載入資料集</p></div></div>
+  <div id="cleanBody" style="display:none">
+    <div class="card">
+      <h2><span class="ic">🧪</span>偵測到的資料問題（規則引擎）</h2>
+      <p class="sub">本地即時掃描：缺失值、重複列、空白、型別不一致、離群值、固定值欄位等。</p>
+      <div id="cleanIssues"></div>
+      <div class="flexbtn">
+        <button class="btn sm" onclick="applyClean('trim')">✂️ 去除前後空白</button>
+        <button class="btn sm" onclick="applyClean('dedupe')">🗑️ 移除重複列</button>
+        <button class="btn sm" onclick="applyClean('dropEmptyCol')">🚫 刪除全空欄位</button>
+        <button class="btn sm" onclick="applyClean('coerceNum')">🔢 字串數值轉數值</button>
+        <button class="btn sm" onclick="applyClean('fillMean')">📊 數值缺值補中位數</button>
+        <button class="btn sm ghost" onclick="resetActive()">↺ 還原原始資料</button>
+      </div>
+      <p class="hint">⚠️ 自動修復會作用於目前作用中資料集（可隨時還原）。建議先看 AI 分析再決定。</p>
+    </div>
+    <div class="card">
+      <h2><span class="ic">🤖</span>AI 清洗建議</h2>
+      <p class="sub">由 Groq 依欄位剖析給出具體清洗步驟、優先順序與風險提醒。</p>
+      <button class="btn gold" onclick="aiClean()">✨ 產生 AI 清洗建議</button>
+      <div id="aiCleanOut"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4. 正規化 ===== -->
+<section class="view" id="v-norm">
+  <div id="normEmpty" class="card"><div class="empty"><div class="e">⚙️</div><p>請先載入資料集</p></div></div>
+  <div id="normBody" style="display:none">
+    <div class="card">
+      <h2><span class="ic">🔢</span>數值縮放 / 編碼建議（規則引擎）</h2>
+      <p class="sub">依分佈自動建議：Min-Max、Z-Score 標準化、Log 轉換、One-Hot / Label 編碼。</p>
+      <div id="normRules"></div>
+    </div>
+    <div class="card">
+      <h2><span class="ic">🗃️</span>資料庫正規化（1NF / 2NF / 3NF）</h2>
+      <p class="sub">偵測潛在的重複群組、部分相依與遞移相依，建議拆表方向。</p>
+      <div id="normDB"></div>
+    </div>
+    <div class="card">
+      <h2><span class="ic">🤖</span>AI 正規化策略</h2>
+      <p class="sub">由 Groq 綜合建議特徵工程與正規化流程，含適用模型情境。</p>
+      <button class="btn gold" onclick="aiNorm()">✨ 產生 AI 正規化策略</button>
+      <div id="aiNormOut"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5. 圖表 ===== -->
+<section class="view" id="v-chart">
+  <div id="chartEmpty" class="card"><div class="empty"><div class="e">📈</div><p>請先載入資料集</p></div></div>
+  <div id="chartBody" style="display:none">
+    <div class="card">
+      <h2><span class="ic">📈</span>互動分析圖表</h2>
+      <p class="sub" style="margin-bottom:10px">不知道選哪種？點下方<b>建議圖表</b>一鍵產生有意義的圖。看「<b>占比</b>」用圓餅圖；看「<b>某分類的數量／金額排行</b>」用長條排行；看「單一數值分佈」用直方圖。</p>
+      <div class="chips" id="chartSuggest"></div>
+      <div class="ctrls" id="chartCtrls">
+        <label>圖表類型
+          <select id="chartType">
+            <option value="bar">長條排行（依分類彙總）</option>
+            <option value="pie">圓餅圖（占比）</option>
+            <option value="line">折線圖（趨勢）</option>
+            <option value="scatter">散佈圖（相關）</option>
+            <option value="hist">直方圖（單欄分佈）</option>
+          </select>
+        </label>
+        <label id="lblX">類別 / X 軸<select id="colX"></select></label>
+        <label id="lblAgg" style="display:none">統計值<select id="aggCol"></select></label>
+        <label id="lblY" style="display:none">Y 軸<select id="colY"></select></label>
+        <label id="lblDir" style="display:none">方向<select id="barDir"><option value="y">水平（排行）</option><option value="x">垂直</option></select></label>
+        <label id="lblTrim" style="display:none;flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="trimOut" style="width:auto;accent-color:var(--jade)"> 排除極端值</label>
+        <label>圖表標題<input id="chartTitle" placeholder="（自動）"></label>
+        <button class="btn jade sm" style="align-self:flex-end" onclick="drawChart()">繪製</button>
+      </div>
+      <div class="chartbox"><canvas id="mainChart"></canvas></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h2><span class="ic">🔥</span>數值相關係數矩陣</h2>
+        <p class="sub">Pearson 相關，紅=正相關、藍=負相關。</p>
+        <div class="heatwrap" id="heatmap"></div>
+      </div>
+      <div class="card">
+        <h2><span class="ic">💡</span>自動洞察</h2>
+        <p class="sub">由資料自動萃取的重點觀察。</p>
+        <div id="insights"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 資料關聯 ===== -->
+<section class="view" id="v-rel">
+  <div class="card">
+    <h2><span class="ic">🔗</span>檔案間資料關聯觀察（分析前先看）</h2>
+    <p class="sub">自動比對所有已載入資料集，偵測<b>主鍵–外鍵</b>、<b>共享維度</b>與可 <b>JOIN</b> 的欄位。建議先確認關聯，再進行跨表分析；此結果也會餵給「進階分析建議」。</p>
+    <div id="relSummary"></div>
+    <div id="relBody"></div>
+  </div>
+  <div class="card">
+    <h2><span class="ic">🔑</span>各資料集候選主鍵</h2>
+    <p class="sub">唯一且無缺值的欄位，可作為 JOIN 的鍵。</p>
+    <div id="relKeys"></div>
+  </div>
+</section>
+
+<!-- ===== 6. 進階 ===== -->
+<section class="view" id="v-adv">
+  <div id="advEmpty" class="card"><div class="empty"><div class="e">🚀</div><p>請先載入資料集</p></div></div>
+  <div id="advBody" style="display:none">
+    <div class="card">
+      <h2><span class="ic">🚀</span>AI 進階分析建議</h2>
+      <p class="sub">
+        先觀察「🔗 資料關聯」分頁偵測到的檔案間關聯，再由 Groq 綜合所有資料集給出：<br>
+        ① <b>檔案間關聯解讀</b>（該用哪個鍵 JOIN、合併後能做什麼） ② <b>現在就能做的分析</b> ③ <b>需要補充哪些資料</b> ④ <b>後續步驟</b>。字串型數值皆已轉為數值參與統計。
+      </p>
+      <button class="btn gold" onclick="aiAdvanced()">✨ 產生進階分析建議</button>
+      <div id="aiAdvOut"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 狀態 ============ */
+let DS = [];            // {id,name,icon,cols:[{name,type}], rows:[{}], raw:[{}]}
+let activeId = null;
+let chartInst = null;
+const $ = s=>document.querySelector(s);
+const $$ = s=>[...document.querySelectorAll(s)];
+const uid = ()=>Math.random().toString(36).slice(2,9);
+
+/* ============ 工具 ============ */
+function toast(msg,type=''){const t=$('#toast');t.className='toast show '+type;t.innerHTML=(type==='ok'?'✅ ':type==='err'?'⚠️ ':'')+msg;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2600);}
+function active(){return DS.find(d=>d.id===activeId);}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function fmt(n){if(n==null||Number.isNaN(n))return '—';if(Math.abs(n)>=1000)return n.toLocaleString('en',{maximumFractionDigits:1});return Number.isInteger(n)?n:n.toFixed(3).replace(/\.?0+$/,'');}
+
+/* 型別偵測 */
+function toNumber(v){
+  if(typeof v==='number')return v;
+  if(v==null||v==='')return NaN;
+  let s=String(v).trim()
+    .replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/．/g,'.').replace(/，/g,',').replace(/　/g,'');
+  let neg=false;
+  if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}                 // 會計負號 (123)
+  s=s.replace(/^(NT|US|USD|RMB|TWD|HK|CNY|JPY|EUR|GBP)\$?/i,'');    // 貨幣前綴
+  s=s.replace(/[,\s$¥€£￥％%‰]/g,'')                                // 千分位/貨幣/百分比
+     .replace(/(元|筆|個|位|人|件|份|次|歲|分)$/,'');                 // 常見尾綴單位
+  if(/^[-－]/.test(s)){neg=true;s=s.replace(/^[-－]/,'');}
+  if(!/^\d*\.?\d+$/.test(s))return NaN;                             // 只接受純數字（含小數），含字母則非數值
+  return neg?-Number(s):Number(s);
+}
+function isNum(v){return !isNaN(toNumber(v));}
+function isDate(v){if(v==null||v==='')return false;if(/^\d{4}[-/]\d{1,2}([-/]\d{1,2})?/.test(v))return true;const d=Date.parse(v);return !isNaN(d)&&/[-/:]/.test(v)&&isNaN(Number(v));}
+function isBool(v){return /^(true|false|yes|no|是|否|y|n|0|1)$/i.test(String(v).trim());}
+function detectType(vals){
+  const nn=vals.filter(v=>v!=null&&v!=='');
+  if(!nn.length)return 'text';
+  const num=nn.filter(isNum).length, dat=nn.filter(isDate).length;
+  if(dat/nn.length>=.8)return 'date';
+  if(num/nn.length>=.85)return 'numeric';
+  const uniq=new Set(nn.map(v=>String(v).toLowerCase())).size;
+  if(uniq<=2&&nn.every(isBool))return 'bool';
+  if(uniq<=Math.max(20,nn.length*0.5)&&uniq/nn.length<0.6)return 'categorical';
+  return 'text';
+}
+const typeBadge={numeric:'b-num',categorical:'b-cat',date:'b-date',bool:'b-bool',text:'b-text'};
+const typeName={numeric:'數值',categorical:'類別',date:'日期',bool:'布林',text:'文字'};
+
+function buildCols(rows){
+  const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+  return keys.map(k=>({name:k,type:detectType(rows.map(r=>r[k]))}));
+}
+function numVals(rows,col){return rows.map(r=>toNumber(r[col])).filter(v=>!isNaN(v));}
+
+/* 統計 */
+function stats(arr){
+  const a=[...arr].sort((x,y)=>x-y),n=a.length;if(!n)return null;
+  const sum=a.reduce((s,v)=>s+v,0),mean=sum/n;
+  const q=p=>{const i=(n-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return a[lo]+(a[hi]-a[lo])*(i-lo);};
+  const sd=Math.sqrt(a.reduce((s,v)=>s+(v-mean)**2,0)/n);
+  const q1=q(.25),q3=q(.75),iqr=q3-q1;
+  const outliers=a.filter(v=>v<q1-1.5*iqr||v>q3+1.5*iqr).length;
+  return {n,min:a[0],max:a[n-1],mean,median:q(.5),sd,q1,q3,iqr,outliers,sum};
+}
+function colStats(ds,col){
+  const all=ds.rows.map(r=>r[col]);
+  const miss=all.filter(v=>v==null||v==='').length;
+  const nn=all.filter(v=>v!=null&&v!=='');
+  const uniq=new Set(nn.map(v=>String(v))).size;
+  const c=ds.cols.find(c=>c.name===col);
+  const o={col,type:c.type,total:all.length,missing:miss,missPct:all.length?miss/all.length*100:0,unique:uniq};
+  if(c.type==='numeric'){o.st=stats(numVals(ds.rows,col));}
+  else{const fr={};nn.forEach(v=>{const k=String(v);fr[k]=(fr[k]||0)+1;});o.top=Object.entries(fr).sort((a,b)=>b[1]-a[1]).slice(0,6);}
+  return o;
+}
+function pearson(x,y){const n=x.length;if(n<2)return 0;const mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let num=0,dx=0,dy=0;for(let i=0;i<n;i++){num+=(x[i]-mx)*(y[i]-my);dx+=(x[i]-mx)**2;dy+=(y[i]-my)**2;}return dx&&dy?num/Math.sqrt(dx*dy):0;}
+
+/* ===== 檔案間關聯偵測 ===== */
+function normName(s){return String(s).toLowerCase().replace(/[\s_\-（）()]/g,'');}
+function valueSet(ds,col){const s=new Set();ds.rows.forEach(r=>{let v=r[col];if(v==null||v==='')return;v=String(v).trim().toLowerCase();if(v!=='')s.add(v);});return s;}
+function isKey(ds,col){const vals=ds.rows.map(r=>r[col]);if(!vals.length)return false;if(vals.some(v=>v==null||v===''))return false;return new Set(vals.map(v=>String(v))).size===vals.length;}
+function detectRelationships(){
+  const cache={},vs=(ds,col)=>{const k=ds.id+'|'+col;return cache[k]||(cache[k]=valueSet(ds,col));};
+  const rels=[];
+  for(let i=0;i<DS.length;i++)for(let j=i+1;j<DS.length;j++){
+    const A=DS[i],B=DS[j];
+    A.cols.forEach(ca=>B.cols.forEach(cb=>{
+      const av=vs(A,ca.name),bv=vs(B,cb.name);
+      if(av.size<2||bv.size<2)return;
+      const small=av.size<=bv.size?av:bv,big=av.size<=bv.size?bv:av;
+      let inter=0;small.forEach(v=>{if(big.has(v))inter++;});
+      if(inter<2)return;
+      const contA=inter/av.size,contB=inter/bv.size,overlap=Math.max(contA,contB);
+      if(overlap<0.4)return;
+      const aKey=isKey(A,ca.name),bKey=isKey(B,cb.name);
+      const nameMatch=normName(ca.name)===normName(cb.name);
+      const anyCat=['categorical','text','date','bool'].includes(ca.type)||['categorical','text','date','bool'].includes(cb.type);
+      let kind,desc,conf=overlap;if(nameMatch)conf=Math.min(1,conf+0.15);
+      if((aKey||bKey)&&overlap>=0.5){
+        const P=aKey?{n:A.name,c:ca.name}:{n:B.name,c:cb.name},C=aKey?{n:B.name,c:cb.name}:{n:A.name,c:ca.name};
+        kind='fk';desc=`主鍵–外鍵：<b>${esc(P.n)}.${esc(P.c)}</b>（唯一鍵）被 <b>${esc(C.n)}.${esc(C.c)}</b> 參照，可用此鍵 JOIN 合併兩表做跨表分析。`;
+      }else if((nameMatch||overlap>=0.6)&&anyCat){
+        kind='dim';desc=`共享維度：<b>${esc(A.name)}.${esc(ca.name)}</b> 與 <b>${esc(B.name)}.${esc(cb.name)}</b> 取值重疊 ${(overlap*100).toFixed(0)}%，屬同一類別維度，可作為跨表分組／比較的共同依據。`;
+      }else return;
+      rels.push({Aid:A.id,Bid:B.id,A:A.name,B:B.name,ca:ca.name,cb:cb.name,kind,desc,conf,overlap,inter});
+    }));
+  }
+  rels.sort((a,b)=>b.conf-a.conf);return rels;
+}
+function relationshipSummary(){
+  if(DS.length<2)return '（目前僅單一資料集，無跨檔關聯；可考慮依某欄位拆分或外接其他資料）';
+  const rels=detectRelationships();
+  if(!rels.length)return '（未偵測到明顯跨檔關聯，鍵值格式可能不一致）';
+  return rels.slice(0,12).map(r=>`- ${r.A}.${r.ca} ←→ ${r.B}.${r.cb}（${r.kind==='fk'?'主鍵-外鍵':'共享維度'}，取值重疊 ${(r.overlap*100).toFixed(0)}%，共同值 ${r.inter} 個）`).join('\n');
+}
+
+/* ============ 載入 ============ */
+const ICONS=['📦','🗂️','📊','📁','🧾','📑','🗃️'];
+function addDS(name,rows){
+  rows=rows.filter(r=>Object.values(r).some(v=>v!=null&&v!==''));
+  if(!rows.length){toast('資料為空或無法解析','err');return;}
+  const cols=buildCols(rows);
+  const ds={id:uid(),name,icon:ICONS[DS.length%ICONS.length],cols,rows,raw:JSON.parse(JSON.stringify(rows))};
+  DS.push(ds);activeId=ds.id;
+  renderDSList();renderPreview();refreshAll();
+  toast(`已載入「${name}」：${rows.length} 列 × ${cols.length} 欄`,'ok');
+}
+function parseText(text,name){
+  text=text.trim();
+  if(text[0]==='['||text[0]==='{'){
+    try{let j=JSON.parse(text);if(!Array.isArray(j))j=j.data&&Array.isArray(j.data)?j.data:[j];addDS(name||'JSON資料',j);return;}catch(e){toast('JSON 解析失敗','err');return;}
+  }
+  const res=Papa.parse(text,{header:true,skipEmptyLines:true,dynamicTyping:false});
+  if(res.data&&res.data.length)addDS(name||'貼上資料',res.data);
+  else toast('CSV 解析失敗','err');
+}
+function loadPaste(){const t=$('#pasteArea').value;if(!t.trim()){toast('請先貼上內容','err');return;}parseText(t);$('#pasteArea').value='';}
+function handleFiles(files){
+  [...files].forEach(f=>{
+    const nm=f.name.replace(/\.[^.]+$/,''), low=f.name.toLowerCase();
+    const rd=new FileReader();
+    if(low.endsWith('.xlsx')||low.endsWith('.xls')){
+      rd.onload=e=>parseXlsx(e.target.result,nm);
+      rd.readAsArrayBuffer(f);
+    }else if(/\.(db|db3|sqlite|sqlite3)$/.test(low)){
+      rd.onload=e=>parseSQLite(e.target.result,nm);
+      rd.readAsArrayBuffer(f);
+    }else if(/\.(mdb|accdb)$/.test(low)){
+      rd.onload=e=>parseMDB(e.target.result,nm);
+      rd.readAsArrayBuffer(f);
+    }else if(low.endsWith('.sql')){
+      rd.onload=e=>parseSQLDump(e.target.result,nm);
+      rd.readAsText(f);
+    }else{
+      rd.onload=e=>{
+        const txt=e.target.result;
+        if(low.endsWith('.json'))parseText(txt,nm);
+        else{const res=Papa.parse(txt,{header:true,skipEmptyLines:true,delimiter:low.endsWith('.tsv')?'\t':''});addDS(nm,res.data);}
+      };
+      rd.readAsText(f);
+    }
+  });
+}
+function xlsxCell(v){
+  if(v instanceof Date){const p=n=>String(n).padStart(2,'0');
+    const t=v.getHours()||v.getMinutes()||v.getSeconds();
+    const base=`${v.getFullYear()}-${p(v.getMonth()+1)}-${p(v.getDate())}`;
+    return t?`${base} ${p(v.getHours())}:${p(v.getMinutes())}`:base;}
+  return v;
+}
+function parseXlsx(buf,name){
+  if(typeof XLSX==='undefined'){toast('Excel 函式庫尚未載入，請確認網路連線','err');return;}
+  try{
+    const wb=XLSX.read(buf,{type:'array',cellDates:true});
+    const sheets=wb.SheetNames;if(!sheets.length){toast('Excel 無工作表','err');return;}
+    let loaded=0;
+    sheets.forEach(sn=>{
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:'',raw:true,cellDates:true});
+      const clean=rows.map(r=>{const o={};for(const k in r)o[k]=xlsxCell(r[k]);return o;});
+      if(clean.some(r=>Object.keys(r).length)){addDS(sheets.length>1?`${name}－${sn}`:name,clean);loaded++;}
+    });
+    if(!loaded)toast('Excel 內容為空','err');
+  }catch(e){toast('Excel 解析失敗：'+e.message,'err');}
+}
+
+/* ============ 資料庫檔案支援（SQLite / SQL dump / Access）============ */
+let _sqlP=null;
+function ensureSQL(){                    // 延遲載入 sql.js（WebAssembly SQLite）
+  if(_sqlP)return _sqlP;
+  _sqlP=new Promise((res,rej)=>{
+    if(window.initSqlJs)return res();
+    const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.min.js';
+    sc.onload=()=>res();sc.onerror=()=>rej(new Error('sql.js 載入失敗，請確認網路連線'));
+    document.head.appendChild(sc);
+  }).then(()=>initSqlJs({locateFile:f=>'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/'+f}));
+  return _sqlP;
+}
+function dbExtractAll(db,name){          // 將 SQLite DB 內所有資料表逐一匯入
+  let tabs=[];
+  try{tabs=db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")[0]?.values.flat()||[];}catch(e){}
+  if(!tabs.length){toast('資料庫中沒有資料表','err');return 0;}
+  let loaded=0;
+  tabs.forEach(t=>{
+    try{
+      const r=db.exec(`SELECT * FROM "${String(t).replace(/"/g,'""')}"`)[0];
+      if(!r||!r.values.length)return;
+      const rows=r.values.map(v=>{const o={};r.columns.forEach((c,i)=>{let x=v[i];
+        if(x instanceof Uint8Array)x='[BLOB '+x.length+' bytes]';
+        o[c]=x==null?'':x;});return o;});
+      addDS(tabs.length>1?`${name}－${t}`:`${name}－${t}`,rows);loaded++;
+    }catch(e){console.warn('讀取資料表失敗',t,e);}
+  });
+  return loaded;
+}
+async function parseSQLite(buf,name){    // .db / .sqlite 二進位資料庫
+  toast('正在載入 SQLite 引擎…');
+  try{
+    const SQL=await ensureSQL();
+    const db=new SQL.Database(new Uint8Array(buf));
+    const n=dbExtractAll(db,name);db.close();
+    if(!n)toast('SQLite 檔案中無可用資料','err');
+  }catch(e){toast('SQLite 解析失敗：'+e.message,'err');}
+}
+function splitSQL(text){                 // 依引號/註解感知切割 SQL 陳述式
+  const out=[];let cur='',i=0,q=null;
+  while(i<text.length){
+    const c=text[i],c2=text.substr(i,2);
+    if(q){cur+=c;if(c===q){if(text[i+1]===q){cur+=text[++i];}else q=null;}i++;continue;}
+    if(c2==='--'){while(i<text.length&&text[i]!=='\n')i++;continue;}
+    if(c2==='/*'){const e=text.indexOf('*/',i+2);i=e<0?text.length:e+2;continue;}
+    if(c==="'"||c==='"'||c==='`'){q=c;cur+=c;i++;continue;}
+    if(c===';'){if(cur.trim())out.push(cur.trim());cur='';i++;continue;}
+    cur+=c;i++;
+  }
+  if(cur.trim())out.push(cur.trim());
+  return out;
+}
+function mysqlToSqlite(st){              // 將 MySQL 語法淨化為 SQLite 可接受
+  let t=st.replace(/`/g,'"');
+  if(/^create\s+table/i.test(t)){
+    t=t.replace(/\)\s*ENGINE\s*=[\s\S]*$/i,')')
+       .replace(/\bAUTO_INCREMENT\b/gi,'')
+       .replace(/\bUNSIGNED\b/gi,'')
+       .replace(/\bCHARACTER SET \w+/gi,'').replace(/\bCOLLATE \w+/gi,'')
+       .replace(/\bON UPDATE CURRENT_TIMESTAMP(\(\))?/gi,'')
+       .replace(/\bCOMMENT\s+'(?:[^'\\]|\\.|'')*'/gi,'')
+       .replace(/,\s*(?:UNIQUE\s+KEY|KEY|INDEX|FULLTEXT\s+KEY|SPATIAL\s+KEY)\s+"[^"]*"\s*\([^)]*\)/gi,'')
+       .replace(/\bCREATE TABLE (?!IF NOT EXISTS)/i,'CREATE TABLE IF NOT EXISTS ');
+  }
+  return t;
+}
+async function parseSQLDump(text,name){  // .sql 傾印檔（SQLite / MySQL dump 皆可）
+  toast('正在載入 SQL 引擎…');
+  let SQL;try{SQL=await ensureSQL();}catch(e){toast(e.message,'err');return;}
+  const db=new SQL.Database();
+  const skip=/^(SET|LOCK|UNLOCK|START|COMMIT|BEGIN|ROLLBACK|USE|DELIMITER|GRANT|FLUSH|ALTER\s+DATABASE|CREATE\s+DATABASE|DROP\s+DATABASE|CREATE\s+(UNIQUE\s+)?INDEX)\b/i;
+  const made=new Set();let ok=0,fail=0;
+  splitSQL(text).forEach(st=>{
+    if(skip.test(st))return;
+    st=mysqlToSqlite(st);
+    // 若 INSERT 的目標表尚未建立（CREATE 失敗或缺漏），自動補建
+    const m=st.match(/^INSERT\s+(?:IGNORE\s+)?INTO\s+("?)([\w$\u4e00-\u9fff]+)\1\s*(\(([^)]*)\))?/i);
+    if(m&&!made.has(m[2].toLowerCase())){
+      const exists=db.exec(`SELECT 1 FROM sqlite_master WHERE type='table' AND lower(name)=lower('${m[2]}')`).length;
+      if(!exists){
+        let cols;
+        if(m[4])cols=m[4].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+        else{const vm=st.match(/VALUES\s*\(([\s\S]*?)\)/i);const n=vm?splitSQL(vm[1].replace(/;/g,''))[0].split(',').length:0;cols=Array.from({length:n},(_,i)=>'col'+(i+1));}
+        if(cols&&cols.length)try{db.run(`CREATE TABLE IF NOT EXISTS "${m[2]}"(${cols.map(c=>`"${c}"`).join(',')})`);}catch(e){}
+      }
+      made.add(m[2].toLowerCase());
+    }
+    try{db.run(st);ok++;}catch(e){fail++;console.warn('SQL 略過：',e.message,st.slice(0,80));}
+  });
+  const n=dbExtractAll(db,name);db.close();
+  if(n)toast(`SQL 傾印匯入完成：${n} 個資料表（${ok} 句成功${fail?'、'+fail+' 句略過':''}）`,'ok');
+  else toast('SQL 檔中沒有可匯入的資料（INSERT）','err');
+}
+async function parseMDB(buf,name){       // .mdb / .accdb（Microsoft Access）
+  toast('正在載入 Access 讀取器…');
+  try{
+    if(!window._MDB){
+      const [bufMod,mdbMod]=await Promise.all([
+        import('https://esm.sh/buffer@6.0.3'),
+        import('https://esm.sh/mdb-reader@3.0.0?bundle')
+      ]);
+      window._MDB={Buffer:bufMod.Buffer,Reader:mdbMod.default||mdbMod.MDBReader};
+    }
+    const reader=new window._MDB.Reader(window._MDB.Buffer.from(buf));
+    const tabs=reader.getTableNames({systemTables:false,linkedTables:false});
+    if(!tabs.length){toast('Access 檔中沒有資料表','err');return;}
+    let loaded=0;
+    tabs.forEach(t=>{
+      try{
+        const data=reader.getTable(t).getData();
+        if(!data.length)return;
+        const rows=data.map(r=>{const o={};for(const k in r){let v=r[k];
+          if(v instanceof Date)v=xlsxCell(v);
+          else if(v&&typeof v==='object')v='[binary]';
+          o[k]=v==null?'':v;}return o;});
+        addDS(`${name}－${t}`,rows);loaded++;
+      }catch(e){console.warn('讀取 Access 資料表失敗',t,e);}
+    });
+    if(!loaded)toast('Access 檔內容為空','err');
+  }catch(e){toast('Access(.mdb) 解析失敗：'+e.message+'（.accdb 2016+ 加密格式可能不支援）','err');}
+}
+function loadSample(){
+  const sales=[];const prods=['筆電','滑鼠','鍵盤','螢幕','耳機'],regs=['北區','中區','南區','東區'];
+  for(let i=0;i<120;i++){const p=prods[i%5];const base={筆電:32000,滑鼠:450,鍵盤:1200,螢幕:6800,耳機:2300}[p];
+    sales.push({訂單編號:'SO'+(1000+i),日期:`2026-0${1+(i%6)}-${String(1+(i%27)).padStart(2,'0')}`,產品:p,地區:regs[i%4],客戶ID:'C'+(100+(i%40)),
+      數量:1+Math.floor(Math.random()*8),單價:base,金額:'',業務:['Amy','Ben','Cathy','',' Dan '][i%5],
+      客戶評分: i%13===0?'':(3+Math.floor(Math.random()*3))});}
+  sales.forEach(s=>s.金額='$'+(s.數量*s.單價).toLocaleString('en'));  // 故意存成字串型金額（含 $ 與千分位）
+  sales[5].數量=999;sales[8]=Object.assign({},sales[7]);
+  addDS('銷售訂單',sales);
+  const cust=[];for(let i=0;i<40;i++){cust.push({客戶ID:'C'+(100+i),姓名:'客戶'+i,地區:regs[i%4],
+    年齡: i%9===0?'':(22+Math.floor(Math.random()*40)),會員等級:['銅','銀','金','白金'][i%4],累積消費:Math.floor(Math.random()*200000)});}
+  addDS('客戶名單',cust);
+  if(DS.length>=2)setActive(DS[0].id);
+}
+function renderDSList(){
+  $('#dsCount').textContent=DS.length;
+  if(!DS.length){$('#dsList').innerHTML='<div class="empty"><div class="e">📭</div><p>尚未載入任何資料集</p></div>';return;}
+  $('#dsList').innerHTML=DS.map(d=>`
+    <div class="dsitem ${d.id===activeId?'sel':''}" onclick="setActive('${d.id}')">
+      <div class="ic">${d.icon}</div>
+      <div class="meta"><b>${esc(d.name)}</b><span>${d.rows.length} 列 · ${d.cols.length} 欄 ${d.id===activeId?'· <span style="color:var(--gold)">作用中</span>':''}</span></div>
+      <button class="btn sm ghost" onclick="event.stopPropagation();removeDS('${d.id}')">✕</button>
+    </div>`).join('');
+}
+function setActive(id){activeId=id;renderDSList();renderPreview();refreshAll();}
+function removeDS(id){DS=DS.filter(d=>d.id!==id);if(activeId===id)activeId=DS[0]?.id||null;renderDSList();renderPreview();refreshAll();}
+function resetActive(){const d=active();if(!d)return;d.rows=JSON.parse(JSON.stringify(d.raw));d.cols=buildCols(d.rows);refreshAll();renderPreview();toast('已還原原始資料','ok');}
+function renderPreview(){
+  const d=active();const c=$('#previewCard');
+  if(!d){c.style.display='none';return;}
+  c.style.display='block';$('#pvName').textContent=d.name;
+  $('#pvMeta').textContent=`${d.rows.length} 列 × ${d.cols.length} 欄（顯示前 50 列）`;
+  $('#pvTable').innerHTML=tableHTML(d,50);
+}
+function tableHTML(d,limit){
+  const cols=d.cols;
+  let h='<table><thead><tr>'+cols.map(c=>`<th>${esc(c.name)}<span class="ty">${typeName[c.type]}</span></th>`).join('')+'</tr></thead><tbody>';
+  d.rows.slice(0,limit).forEach(r=>{
+    h+='<tr>'+cols.map(c=>{const v=r[c.name];const empty=v==null||v==='';
+      return `<td class="${empty?'null':(c.type==='numeric'?'num':'')}">${empty?'(空)':esc(v)}</td>`;}).join('')+'</tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+/* ============ 分頁切換 ============ */
+$$('.tab').forEach(t=>t.onclick=()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  $$('.view').forEach(v=>v.classList.remove('active'));$('#v-'+t.dataset.v).classList.add('active');
+  if(t.dataset.v==='chart')setTimeout(()=>{if(active())drawDefault();},60);
+  if(t.dataset.v==='rel')renderRel();
+});
+function refreshAll(){renderProfile();renderClean();renderNorm();renderChartTab();renderRel();renderAdv();}
+
+/* ===== 資料關聯渲染 ===== */
+function renderRel(){
+  const sum=$('#relSummary'),wrap=$('#relBody'),keys=$('#relKeys');
+  if(!DS.length){sum.innerHTML='<div class="sug info"><div class="h"><b>尚未載入資料</b></div><p>請先在「資料載入」載入檔案。</p></div>';wrap.innerHTML='';keys.innerHTML='';return;}
+  if(DS.length<2){
+    sum.innerHTML='<div class="sug info"><div class="h"><b>需要至少 2 個資料集才能比對關聯</b></div><p>載入多個檔案，或載入含多工作表的 Excel，這裡會自動分析檔案間的主鍵–外鍵與共享維度。</p></div>';
+    wrap.innerHTML='';
+  }else{
+    const rels=detectRelationships();
+    sum.innerHTML=relGraphSVG(rels);
+    wrap.innerHTML=rels.length?rels.map(relCard).join(''):'<div class="sug med"><div class="h"><span class="sev med">中</span><b>未偵測到明顯關聯</b></div><p>各資料集欄位取值重疊度偏低。若你認為它們應相關，請檢查鍵值格式是否一致（大小寫、前後空白、ID 編碼方式），清洗後再回來觀察。</p></div>';
+  }
+  keys.innerHTML=DS.map(d=>{const kc=d.cols.filter(c=>isKey(d,c.name)).map(c=>c.name);
+    return `<div class="sug ${kc.length?'low':'info'}"><div class="h"><span class="dsicon">${d.icon}</span><b>${esc(d.name)}</b></div><p>${kc.length?'候選主鍵：'+kc.map(k=>'<code>'+esc(k)+'</code>').join('、'):'無單一欄位可作主鍵（可能需要複合鍵，或新增一個 ID 欄位）。'}</p></div>`;}).join('');
+}
+const RELPAL=['#a5d8ff','#b9f2d0','#ffd6a5','#f8c4e8','#cdbcff','#fff3a3','#9fe8e0','#ffb9c4','#d0f0a8','#ffd9f0'];
+function relCard(r){
+  const icon=r.kind==='fk'?'🔑':'📐',conf=Math.round(r.conf*100),col=r.kind==='fk'?'#ffd98a':'#a8ecd8';
+  return `<div class="sug ${r.kind==='fk'?'info':'low'}" style="border-left:3px solid ${col}">
+    <div class="h"><span style="font-size:16px">${icon}</span><b>${esc(r.A)}.${esc(r.ca)} ↔ ${esc(r.B)}.${esc(r.cb)}</b>
+      <span style="margin-left:auto;font-size:11px;color:${col};font-weight:700">信心 ${conf}%</span></div>
+    <p>${r.desc}</p>
+    <div class="bar"><i style="width:${conf}%;background:linear-gradient(90deg,${col},${r.kind==='fk'?'#ffbfa0':'#a5d8ff'})"></i></div>
+    <span class="tag" style="border-color:${col}55;color:${col}">類型：${r.kind==='fk'?'主鍵-外鍵':'共享維度'}</span><span class="tag">共同值 ${r.inter} 個</span><span class="tag">取值重疊 ${(r.overlap*100).toFixed(0)}%</span>
+  </div>`;
+}
+function relGraphSVG(rels){
+  const n=DS.length,W=Math.min(980,420+n*110),H=Math.min(560,300+n*30),cx=W/2,cy=H/2;
+  const Rx=W/2-120,Ry=H/2-52;             // 橢圓佈局：加大節點間距
+  const pc=i=>RELPAL[i%RELPAL.length];
+  const pos=DS.map((d,i)=>{const a=-Math.PI/2+i/n*2*Math.PI;return {x:cx+Rx*Math.cos(a),y:cy+Ry*Math.sin(a),d,c:pc(i)};});
+  const idx={};DS.forEach((d,i)=>idx[d.id]=i);
+  let defs='<defs>',edges='',labels='',seen={},g=0;
+  rels.forEach(r=>{const key=[r.Aid,r.Bid].sort().join('|');if(seen[key])return;seen[key]=1;
+    const p1=pos[idx[r.Aid]],p2=pos[idx[r.Bid]],id='relg'+(g++);
+    defs+=`<linearGradient id="${id}" x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${p1.c}"/><stop offset="1" stop-color="${p2.c}"/></linearGradient>`;
+    const dash=r.kind==='fk'?'':' stroke-dasharray="7 5"';
+    edges+=`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="url(#${id})" stroke-width="3" stroke-opacity=".85" stroke-linecap="round"${dash}/>`;
+    const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2,lbl=r.ca,show=lbl.length>12?lbl.slice(0,11)+'…':lbl,w=Math.max(48,show.length*7.5+18);
+    labels+=`<g><rect x="${mx-w/2}" y="${my-11}" width="${w}" height="22" rx="11" fill="${p1.c}" opacity=".92"/><text x="${mx}" y="${my+4}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#101625">${esc(show)}${r.kind==='fk'?' 🔑':''}</text></g>`;
+  });
+  defs+='</defs>';
+  const nodes=pos.map(p=>{const nm=p.d.name.length>14?p.d.name.slice(0,13)+'…':p.d.name;const w=Math.max(96,nm.length*11.5+30);
+    return `<g><rect x="${p.x-w/2}" y="${p.y-20}" width="${w}" height="40" rx="12" fill="${p.c}" fill-opacity=".16" stroke="${p.c}" stroke-width="1.6"/><circle cx="${p.x-w/2+13}" cy="${p.y}" r="4" fill="${p.c}"/><text x="${p.x+6}" y="${p.y+4.5}" text-anchor="middle" font-size="12" fill="${p.c}" font-weight="700">${esc(nm)}</text></g>`;}).join('');
+  const legend=pos.map(p=>`<span style="display:inline-flex;align-items:center;gap:5px;margin:0 8px;font-size:11px;color:${p.c}"><i style="width:9px;height:9px;border-radius:50%;background:${p.c};display:inline-block"></i>${esc(p.d.name.length>16?p.d.name.slice(0,15)+'…':p.d.name)}</span>`).join('');
+  return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 10px 8px;margin:4px 0 14px;overflow:auto">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto">${defs}${edges}${nodes}${labels}</svg>
+    <p style="text-align:center;margin-top:6px">${legend}</p>
+    <p style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:4px">━ 實線=主鍵-外鍵 🔑　┄ 虛線=共享維度　·　線色為兩端資料集漸層　·　共偵測 <b style="color:#ffd98a">${rels.length}</b> 組關聯</p></div>`;
+}
+
+/* ============ 2. 檢視 ============ */
+function renderProfile(){
+  const d=active();
+  $('#profileEmpty').style.display=d?'none':'block';
+  $('#profileBody').style.display=d?'block':'none';
+  if(!d)return;
+  $('#prName').textContent=d.name;
+  const profs=d.cols.map(c=>colStats(d,c.name));
+  const totalCells=d.rows.length*d.cols.length;
+  const missCells=profs.reduce((s,p)=>s+p.missing,0);
+  const dupRows=countDup(d);
+  const completeness=totalCells?(1-missCells/totalCells)*100:100;
+  const uniqScore=d.rows.length?(1-dupRows/d.rows.length)*100:100;
+  const score=Math.round(completeness*0.6+uniqScore*0.4);
+  $('#prDesc').textContent=`完整度 ${completeness.toFixed(1)}%　無重複度 ${uniqScore.toFixed(1)}%　共偵測 ${profs.filter(p=>p.missPct>0).length} 個含缺值欄位。`;
+  // ring
+  const col=score>=80?'var(--green)':score>=60?'var(--amber)':'var(--red)';
+  $('#qRing').innerHTML=`<svg width="96" height="96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${2*Math.PI*40}" stroke-dashoffset="${2*Math.PI*40*(1-score/100)}"/></svg><div class="qv" style="color:${col}">${score}</div>`;
+  $('#prStats').innerHTML=`
+    ${stCard('總列數',fmt(d.rows.length),'g')}
+    ${stCard('總欄數',fmt(d.cols.length),'j')}
+    ${stCard('缺失儲存格',fmt(missCells),missCells?'r':'')}
+    ${stCard('缺失率',(totalCells?missCells/totalCells*100:0).toFixed(1)+'%',missCells?'r':'')}
+    ${stCard('重複列',fmt(dupRows),dupRows?'r':'')}
+    ${stCard('數值欄位',d.cols.filter(c=>c.type==='numeric').length,'b')}`;
+  $('#colProf').innerHTML=profs.map(p=>colCard(p,d)).join('');
+}
+function stCard(l,v,cls=''){return `<div class="stat"><div class="l">${l}</div><div class="v ${cls}">${v}</div></div>`;}
+function colCard(p,d){
+  const missColor=p.missPct>30?'var(--red)':p.missPct>5?'var(--amber)':'var(--jade)';
+  let extra='';
+  if(p.type==='numeric'&&p.st){
+    const s=p.st;
+    extra=`<div class="mini" style="margin-top:9px">
+      <span>最小 <b>${fmt(s.min)}</b></span><span>最大 <b>${fmt(s.max)}</b></span>
+      <span>平均 <b>${fmt(s.mean)}</b></span><span>中位 <b>${fmt(s.median)}</b></span>
+      <span>標準差 <b>${fmt(s.sd)}</b></span>${s.outliers?`<span style="color:var(--red)">離群 <b>${s.outliers}</b></span>`:''}</div>`+spark(numVals(d.rows,p.col));
+  }else if(p.top){
+    extra=`<div class="mini" style="margin-top:9px">`+p.top.map(([k,v])=>`<span><b>${esc(k.length>10?k.slice(0,10)+'…':k)}</b> ×${v}</span>`).join('')+`</div>`;
+  }
+  return `<div class="col">
+    <div class="top"><span class="nm">${esc(p.col)}</span><span class="badge ${typeBadge[p.type]}">${typeName[p.type]}</span>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--muted)">唯一值 <b style="color:var(--txt)">${fmt(p.unique)}</b></span></div>
+    <div class="mini"><span>缺值 <b style="color:${missColor}">${p.missing}（${p.missPct.toFixed(1)}%）</b></span></div>
+    <div class="bar"><i style="width:${100-p.missPct}%;background:${missColor}"></i></div>
+    ${extra}</div>`;
+}
+function spark(vals){if(vals.length<3)return'';const s=stats(vals);const bins=20,w=(s.max-s.min)||1,h=new Array(bins).fill(0);vals.forEach(v=>{let b=Math.floor((v-s.min)/w*bins);if(b>=bins)b=bins-1;if(b<0)b=0;h[b]++;});const mx=Math.max(...h)||1;return '<div class="spark">'+h.map(c=>`<i style="height:${c/mx*100}%"></i>`).join('')+'</div>';}
+function countDup(d){const seen=new Set();let dup=0;d.rows.forEach(r=>{const k=JSON.stringify(d.cols.map(c=>r[c.name]));if(seen.has(k))dup++;else seen.add(k);});return dup;}
+
+/* ============ 3. 清洗 ============ */
+function detectIssues(d){
+  const issues=[];const profs=d.cols.map(c=>colStats(d,c.name));
+  profs.forEach(p=>{
+    if(p.missPct>0)issues.push({sev:p.missPct>30?'high':p.missPct>5?'med':'low',title:`欄位「${p.col}」有缺失值`,desc:`${p.missing} 筆缺值（${p.missPct.toFixed(1)}%）。${p.type==='numeric'?'數值型建議以中位數 / 平均數補值，或標記為缺失旗標。':'類別型建議補「未知」或依眾數填補。'}`,tags:[p.col,typeName[p.type]]});
+    if(p.unique===1)issues.push({sev:'med',title:`欄位「${p.col}」為固定值`,desc:`所有列皆相同，對分析無資訊量，建議移除或確認是否遺漏資料。`,tags:[p.col]});
+    if(p.type!=='numeric'){const ws=d.rows.filter(r=>typeof r[p.col]==='string'&&r[p.col]!==r[p.col].trim()).length;if(ws)issues.push({sev:'low',title:`欄位「${p.col}」含前後空白`,desc:`${ws} 筆有多餘空白，建議 trim 統一格式以免分組錯誤。`,tags:[p.col,'格式']});}
+    if(p.type==='numeric'&&p.st&&p.st.outliers)issues.push({sev:'med',title:`欄位「${p.col}」有離群值`,desc:`偵測到 ${p.st.outliers} 筆超出 IQR×1.5 範圍（< ${fmt(p.st.q1-1.5*p.st.iqr)} 或 > ${fmt(p.st.q3+1.5*p.st.iqr)}）。請確認是否為輸入錯誤或真實極端值。`,tags:[p.col,'離群']});
+    if(p.type==='numeric'){const dirty=d.rows.filter(r=>{const v=r[p.col];return typeof v==='string'&&v.trim()!==''&&!isNaN(toNumber(v))&&String(toNumber(v))!==v.trim();}).length;if(dirty)issues.push({sev:'med',title:`欄位「${p.col}」為字串型數值`,desc:`${dirty} 筆數值以文字儲存（含千分位、貨幣符號、全形數字或空白等）。統計分析已自動轉為數值計算；建議按「🔢 字串數值轉數值」永久套用，避免後續匯出或排序出錯。`,tags:[p.col,'型別轉換']});}
+    if(p.type==='categorical'){const caseDup=detectCaseDup(d,p.col);if(caseDup)issues.push({sev:'low',title:`欄位「${p.col}」可能有大小寫/全形不一致`,desc:`偵測到疑似同義但寫法不同的類別（如 ${caseDup}）。建議統一標準化。`,tags:[p.col]});}
+  });
+  const dup=countDup(d);if(dup)issues.push({sev:dup>d.rows.length*0.05?'high':'med',title:`偵測到 ${dup} 筆完全重複列`,desc:`重複資料會扭曲統計與模型，建議去重（保留首筆）。`,tags:['重複','整表']});
+  // type inconsistency
+  d.cols.forEach(c=>{if(c.type==='numeric'){const bad=d.rows.filter(r=>{const v=r[c.name];return v!=null&&v!==''&&!isNum(v);}).length;if(bad)issues.push({sev:'med',title:`欄位「${c.name}」型別不一致`,desc:`${bad} 筆無法轉為數值，建議檢查並清理非數字字元（如貨幣符號、文字）。`,tags:[c.name,'型別']});}});
+  return issues;
+}
+function detectCaseDup(d,col){const map={};d.rows.forEach(r=>{const v=r[col];if(v==null||v==='')return;const norm=String(v).toLowerCase().trim();(map[norm]=map[norm]||new Set()).add(String(v));});for(const k in map)if(map[k].size>1)return [...map[k]].slice(0,2).join(' / ');return null;}
+function renderClean(){
+  const d=active();$('#cleanEmpty').style.display=d?'none':'block';$('#cleanBody').style.display=d?'block':'none';if(!d)return;
+  const issues=detectIssues(d);
+  $('#cleanIssues').innerHTML=issues.length?issues.sort((a,b)=>({high:0,med:1,low:2})[a.sev]-({high:0,med:1,low:2})[b.sev]).map(sugHTML).join(''):'<div class="sug low"><div class="h"><span class="sev low">良好</span><b>未偵測到明顯問題</b></div><p>資料看起來相當乾淨 👍</p></div>';
+}
+function sugHTML(s){const sevTxt={high:'高',med:'中',low:'低',info:'資訊'}[s.sev];return `<div class="sug ${s.sev}"><div class="h"><span class="sev ${s.sev}">${sevTxt}</span><b>${esc(s.title)}</b></div><p>${esc(s.desc)}</p>${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`;}
+function applyClean(op){
+  const d=active();if(!d)return;let cnt=0;
+  if(op==='trim'){d.rows.forEach(r=>d.cols.forEach(c=>{if(typeof r[c.name]==='string'){const t=r[c.name].trim();if(t!==r[c.name]){r[c.name]=t;cnt++;}}}));toast(`已修整 ${cnt} 個儲存格`,'ok');}
+  else if(op==='dedupe'){const seen=new Set(),out=[];d.rows.forEach(r=>{const k=JSON.stringify(d.cols.map(c=>r[c.name]));if(!seen.has(k)){seen.add(k);out.push(r);}else cnt++;});d.rows=out;toast(`已移除 ${cnt} 筆重複列`,'ok');}
+  else if(op==='dropEmptyCol'){const keep=d.cols.filter(c=>d.rows.some(r=>r[c.name]!=null&&r[c.name]!==''));cnt=d.cols.length-keep.length;d.cols=keep;d.rows.forEach(r=>{Object.keys(r).forEach(k=>{if(!keep.find(c=>c.name===k))delete r[k];});});toast(`已刪除 ${cnt} 個全空欄位`,'ok');}
+  else if(op==='fillMean'){d.cols.filter(c=>c.type==='numeric').forEach(c=>{const med=stats(numVals(d.rows,c.name))?.median;if(med==null)return;d.rows.forEach(r=>{if(r[c.name]==null||r[c.name]===''){r[c.name]=med;cnt++;}});});toast(`已補 ${cnt} 個數值缺值（中位數）`,'ok');}
+  else if(op==='coerceNum'){
+    let colsHit=0;
+    d.cols.forEach(c=>{
+      const nn=d.rows.map(r=>r[c.name]).filter(v=>v!=null&&v!=='');
+      if(!nn.length)return;
+      const numable=nn.filter(v=>!isNaN(toNumber(v))).length;
+      const hasStr=nn.some(v=>typeof v==='string');
+      if(numable/nn.length>=0.85&&hasStr){colsHit++;
+        d.rows.forEach(r=>{const v=r[c.name];if(v==null||v==='')return;const num=toNumber(v);if(!isNaN(num)){if(String(v).trim()!==String(num))cnt++;r[c.name]=num;}});}
+    });
+    toast(colsHit?`已轉換 ${colsHit} 欄、修正 ${cnt} 個字串數值為數值型`:'未發現需轉換的字串數值欄位','ok');
+  }
+  d.cols=buildCols(d.rows);refreshAll();renderPreview();
+}
+
+/* ============ 4. 正規化 ============ */
+function renderNorm(){
+  const d=active();$('#normEmpty').style.display=d?'none':'block';$('#normBody').style.display=d?'block':'none';if(!d)return;
+  // scaling rules
+  let h='';
+  d.cols.forEach(c=>{
+    const p=colStats(d,c.name);
+    if(c.type==='numeric'&&p.st){
+      const s=p.st;const skew=s.sd?(s.mean-s.median)/s.sd:0;const range=s.max-s.min;
+      let rec,why,sev='info';
+      if(Math.abs(skew)>0.5||(s.min>0&&s.max/Math.max(s.min,1)>100)){rec='Log 轉換 + Z-Score';why=`分佈偏態（偏度≈${fmt(skew)}）或跨度極大，先 log 再標準化可降低長尾影響。`;sev='med';}
+      else if(range>1000){rec='Z-Score 標準化';why=`數值範圍大（${fmt(s.min)}~${fmt(s.max)}），標準化後均值0、標準差1，利於距離型模型。`;}
+      else{rec='Min-Max 縮放 [0,1]';why=`範圍適中，縮放至 0~1 適合神經網路與梯度型模型。`;}
+      h+=normCard(c.name,'數值',rec,why,sev,[`min ${fmt(s.min)}`,`max ${fmt(s.max)}`,`σ ${fmt(s.sd)}`]);
+    }else if(c.type==='categorical'){
+      const oh=p.unique<=10;
+      h+=normCard(c.name,'類別',oh?`One-Hot 編碼`:`Label / Target 編碼`,oh?`唯一值 ${p.unique} 個，數量適中，One-Hot 不會造成維度爆炸。`:`唯一值多達 ${p.unique} 個，One-Hot 會產生過多欄位，建議 Label 或 Target 編碼，或先做分組合併。`,oh?'low':'med',[`唯一值 ${p.unique}`]);
+    }else if(c.type==='bool'){
+      h+=normCard(c.name,'布林',`映射為 0/1`,`統一轉為二元整數，方便模型輸入。`,'low',[]);
+    }else if(c.type==='date'){
+      h+=normCard(c.name,'日期',`拆解特徵（年/月/日/星期/週期）`,`從日期萃取時間特徵，並可做 sin/cos 週期編碼捕捉季節性。`,'info',[]);
+    }
+  });
+  $('#normRules').innerHTML=h||'<p class="sub">無可建議的欄位。</p>';
+  // DB normalization
+  $('#normDB').innerHTML=dbNormSuggest(d);
+}
+function normCard(col,ty,rec,why,sev,tags){return `<div class="sug ${sev}"><div class="h"><span class="badge ${ty==='數值'?'b-num':ty==='類別'?'b-cat':ty==='日期'?'b-date':'b-bool'}">${ty}</span><b>${esc(col)} → ${esc(rec)}</b></div><p>${esc(why)}</p>${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`;}
+function dbNormSuggest(d){
+  let out=[];
+  // 1NF: multivalue cells
+  const multi=d.cols.filter(c=>d.rows.some(r=>typeof r[c.name]==='string'&&/[,;、，]/.test(r[c.name])&&r[c.name].split(/[,;、，]/).length>1&&c.type==='text'));
+  if(multi.length)out.push({sev:'high',title:'1NF：偵測到可能的多值欄位',desc:`欄位 ${multi.map(c=>'「'+c.name+'」').join('、')} 內含分隔符，可能違反「每格單一值」。建議拆成多列或獨立關聯表。`});
+  else out.push({sev:'low',title:'1NF：基本符合',desc:'未偵測到明顯多值儲存格，原子性大致良好。'});
+  // candidate keys / functional dependency hints
+  const profs=d.cols.map(c=>colStats(d,c.name));
+  const keyCands=profs.filter(p=>p.unique===d.rows.length&&p.missing===0).map(p=>p.col);
+  if(keyCands.length)out.push({sev:'info',title:'候選主鍵',desc:`欄位 ${keyCands.map(k=>'「'+k+'」').join('、')} 唯一且無缺值，可作為主鍵。`});
+  // 3NF: transitive dependency hint — find categorical col that determines another
+  const cats=profs.filter(p=>p.type==='categorical'||p.type==='text');
+  let trans=[];
+  cats.forEach(a=>{d.cols.forEach(b=>{if(a.col===b.name)return;const map={};let ok=a.unique>1&&a.unique<d.rows.length;if(!ok)return;for(const r of d.rows){const k=String(r[a.col]),v=String(r[b.name]);if(map[k]&&map[k]!==v){ok=false;break;}map[k]=v;}if(ok&&Object.keys(map).length>1&&Object.keys(map).length<d.rows.length*0.8)trans.push(`${a.col} → ${b.name}`);});});
+  trans=[...new Set(trans)].slice(0,5);
+  if(trans.length)out.push({sev:'med',title:'2NF/3NF：偵測到潛在函數相依',desc:`下列欄位疑似由非主鍵欄位決定，存在遞移相依，建議抽出獨立維度表：${trans.map(t=>'<code>'+t+'</code>').join('、')}。如「客戶→地區」應拆成客戶維度表。`});
+  else out.push({sev:'low',title:'2NF/3NF：未偵測到明顯遞移相依',desc:'欄位間相依關係不明顯，現有結構大致符合 3NF。'});
+  return out.map(s=>`<div class="sug ${s.sev}"><div class="h"><span class="sev ${s.sev}">${({high:'高',med:'中',low:'低',info:'資訊'})[s.sev]}</span><b>${s.title}</b></div><p>${s.desc}</p></div>`).join('');
+}
+
+/* ============ 5. 圖表 ============ */
+let SUGG=[];
+function renderChartTab(){
+  const d=active();$('#chartEmpty').style.display=d?'none':'block';$('#chartBody').style.display=d?'block':'none';if(!d)return;
+  fillColSelects();renderSuggestions();drawHeatmap();renderInsights();
+}
+function catCols(d){return d.cols.filter(c=>{if(c.type==='bool')return true;if(!['categorical','text'].includes(c.type))return false;const u=new Set(d.rows.map(r=>r[c.name]).filter(v=>v!=null&&v!=='').map(String)).size;return u>=2&&u<=15;});}
+function suggestCharts(){
+  const d=active();if(!d)return [];
+  const cats=catCols(d),measures=d.cols.filter(c=>c.type==='numeric'),out=[];
+  cats.slice(0,4).forEach(cat=>{
+    if(measures.length){
+      const m=measures[0];
+      out.push({label:`各${cat.name} ${m.name} 佔比`,icon:'🥧',t:'pie',x:cat.name,agg:m.name});
+      out.push({label:`各${cat.name} Σ${m.name} 排行`,icon:'📊',t:'bar',x:cat.name,agg:m.name,dir:'y'});
+    }else{
+      out.push({label:`各${cat.name} 筆數佔比`,icon:'🥧',t:'pie',x:cat.name,agg:'__count'});
+      out.push({label:`各${cat.name} 筆數排行`,icon:'📊',t:'bar',x:cat.name,agg:'__count',dir:'y'});
+    }
+  });
+  // 第二個數值的排行（若有）
+  if(measures.length>=2&&cats.length){const cat=cats[0],m=measures[1];out.push({label:`各${cat.name} Σ${m.name} 排行`,icon:'📊',t:'bar',x:cat.name,agg:m.name,dir:'y'});}
+  // 趨勢（有日期欄）
+  const dateCol=d.cols.find(c=>c.type==='date'),meas=measures[0];
+  if(dateCol&&meas)out.push({label:`${meas.name} 隨 ${dateCol.name} 趨勢`,icon:'📈',t:'line',x:dateCol.name,y:meas.name});
+  // 去重 + 上限
+  const seen={};return out.filter(s=>{const k=s.label;if(seen[k])return false;seen[k]=1;return true;}).slice(0,8);
+}
+function renderSuggestions(){
+  SUGG=suggestCharts();
+  $('#chartSuggest').innerHTML=SUGG.length
+    ? SUGG.map((s,i)=>`<button class="chip ${s.t==='pie'?'pie':''}" onclick="applySuggestion(${i})">${s.icon} ${esc(s.label)}</button>`).join('')
+    : '<span class="hint" style="margin:0">（此資料集無明顯的「分類×數值」組合可建議，請手動選擇欄位）</span>';
+}
+function applySuggestion(i){
+  const s=SUGG[i];if(!s)return;
+  $('#chartType').value=s.t;$('#chartType').dispatchEvent(new Event('change'));
+  $('#colX').value=s.x;
+  if(s.agg!==undefined)$('#aggCol').value=s.agg;
+  if(s.y!==undefined)$('#colY').value=s.y;
+  if(s.dir)$('#barDir').value=s.dir;
+  $('#chartTitle').value='';
+  drawChart();
+}
+function drawDefault(){
+  if(!active())return;
+  if(SUGG.length){const bar=SUGG.findIndex(s=>s.t==='bar');applySuggestion(bar>=0?bar:0);}
+  else drawChart();
+}
+function fillColSelects(){
+  const d=active();if(!d)return;
+  const opt=c=>`<option value="${esc(c.name)}">${esc(c.name)}（${typeName[c.type]}）</option>`;
+  $('#colX').innerHTML=d.cols.map(opt).join('');
+  const nums=d.cols.filter(c=>c.type==='numeric');
+  $('#colY').innerHTML=nums.map(opt).join('');
+  $('#aggCol').innerHTML='<option value="__count">計數（筆數）</option>'+nums.map(c=>`<option value="${esc(c.name)}">Σ ${esc(c.name)}（合計）</option>`).join('');
+}
+$('#chartType').onchange=()=>{const t=$('#chartType').value,show=(id,b)=>$(id).style.display=b?'flex':'none';
+  show('#lblY',t==='scatter'||t==='line');show('#lblAgg',t==='bar'||t==='pie');show('#lblDir',t==='bar');show('#lblTrim',t==='hist');
+  $('#lblX').firstChild.textContent=t==='hist'?'數值欄位':(t==='bar'||t==='pie')?'類別欄位':'X 軸';};
+function gradColors(n){
+  const stops=[[124,77,180],[63,81,150],[42,140,150],[110,185,108]];
+  const lerp=(a,b,t)=>a+(b-a)*t,out=[];
+  for(let i=0;i<n;i++){const t=n<2?0:i/(n-1)*(stops.length-1),k=Math.min(stops.length-2,Math.floor(t)),f=t-k;
+    const c=[0,1,2].map(j=>Math.round(lerp(stops[k][j],stops[k+1][j],f)));out.push(`rgb(${c[0]},${c[1]},${c[2]})`);}
+  return out;
+}
+function aggregate(d,catCol,aggCol){
+  const m={};d.rows.forEach(r=>{const k=r[catCol];if(k==null||k==='')return;const key=String(k);
+    if(aggCol==='__count')m[key]=(m[key]||0)+1;else{const n=toNumber(r[aggCol]);if(!isNaN(n))m[key]=(m[key]||0)+n;}});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function chartTitle(def){const t=$('#chartTitle').value.trim();return t||def;}
+function baseOpts(title,scales){const tick='#8b96ac';
+  const o={responsive:true,maintainAspectRatio:false,plugins:{
+    legend:{labels:{color:tick,font:{size:11}}},
+    title:{display:!!title,text:title,color:'#e2bd63',font:{size:15,family:"'Noto Serif TC'",weight:'700'},padding:{bottom:12}},
+    datalabels:{display:false},
+    tooltip:{backgroundColor:'#161d30',titleColor:'#e9eef7',bodyColor:'#cbd3e1',borderColor:'rgba(255,255,255,.15)',borderWidth:1}}};
+  if(scales)o.scales=scales;return o;
+}
+function drawChart(){
+  const d=active();if(!d)return;
+  const type=$('#chartType').value,cx=$('#colX').value,cy=$('#colY').value;
+  if(chartInst)chartInst.destroy();
+  const ctx=$('#mainChart');let cfg;
+  const GOLD='#e2bd63',JADE='#34d8b4',grid='rgba(255,255,255,.06)',tick='#8b96ac';
+  const sc=()=>({grid:{color:grid},ticks:{color:tick,font:{size:11}}});
+
+  if(type==='hist'){
+    let vals=numVals(d.rows,cx);if(!vals.length){toast('該欄位非數值','err');return;}
+    if($('#trimOut').checked){const s0=stats(vals);if(s0&&s0.iqr){const lo=s0.q1-1.5*s0.iqr,hi=s0.q3+1.5*s0.iqr;vals=vals.filter(v=>v>=lo&&v<=hi);if(!vals.length){toast('排除後無資料','err');return;}}}
+    const s=stats(vals),bins=Math.min(20,Math.max(6,Math.round(Math.sqrt(vals.length)))),w=(s.max-s.min)/bins||1;
+    const counts=new Array(bins).fill(0),labels=[];for(let i=0;i<bins;i++)labels.push(fmt(s.min+i*w));
+    vals.forEach(v=>{let b=Math.floor((v-s.min)/w);if(b>=bins)b=bins-1;if(b<0)b=0;counts[b]++;});
+    cfg={type:'bar',data:{labels,datasets:[{label:cx,data:counts,backgroundColor:'rgba(52,216,180,.55)',borderColor:JADE,borderWidth:1}]},
+      options:baseOpts(chartTitle(cx+' 數值分佈'),{x:sc(),y:sc()})};
+  }
+  else if(type==='bar'){
+    const agg=$('#aggCol').value,ent=aggregate(d,cx,agg).slice(0,20);
+    if(!ent.length){toast('無可彙總資料','err');return;}
+    const labels=ent.map(e=>e[0]),data=ent.map(e=>e[1]),dir=$('#barDir').value,colors=gradColors(labels.length);
+    const aggName=agg==='__count'?'筆數':'Σ'+agg;
+    const o=baseOpts(chartTitle(`各${cx} ${aggName} 排行`),{x:sc(),y:sc()});
+    o.indexAxis=dir;o.plugins.legend.display=false;
+    o.plugins.datalabels={display:true,anchor:'end',align:dir==='y'?'right':'top',color:'#cbd3e1',font:{size:10.5,weight:'600'},formatter:v=>fmt(v),clamp:true};
+    o.layout={padding:dir==='y'?{right:52}:{top:20}};
+    cfg={type:'bar',data:{labels,datasets:[{label:aggName,data,backgroundColor:colors,borderWidth:0,borderRadius:4}]},options:o};
+  }
+  else if(type==='pie'){
+    const agg=$('#aggCol').value,ent=aggregate(d,cx,agg).slice(0,15);
+    if(!ent.length){toast('無可彙總資料','err');return;}
+    const labels=ent.map(e=>e[0]),data=ent.map(e=>e[1]);
+    const pal=labels.map((_,i)=>`hsl(${(i*53)%360} 62% 60%)`);
+    const aggName=agg==='__count'?'筆數佔比':agg+' 佔比';
+    const o=baseOpts(chartTitle(`各${cx} ${aggName}`),null);
+    o.plugins.legend={position:'right',labels:{color:tick,font:{size:11},boxWidth:14,padding:9}};
+    o.plugins.datalabels={
+      display:c=>{const a=c.dataset.data,sum=a.reduce((x,y)=>x+y,0);return a[c.dataIndex]/sum>=0.03;},
+      color:'#fff',font:{size:11,weight:'700',family:"'Noto Sans TC'"},textStrokeColor:'rgba(0,0,0,.65)',textStrokeWidth:3,textAlign:'center',
+      formatter:(v,c)=>{const sum=c.dataset.data.reduce((x,y)=>x+y,0);return c.chart.data.labels[c.dataIndex]+'\n'+(v/sum*100).toFixed(1)+'%';}};
+    o.layout={padding:10};
+    cfg={type:'pie',data:{labels,datasets:[{data,backgroundColor:pal,borderColor:'#0d1322',borderWidth:2}]},options:o};
+  }
+  else if(type==='line'){
+    const rows=[...d.rows].filter(r=>r[cx]!=null&&r[cx]!==''&&r[cy]!=null&&r[cy]!=='');
+    rows.sort((a,b)=>{const av=isNum(a[cx])?toNumber(a[cx]):Date.parse(a[cx]),bv=isNum(b[cx])?toNumber(b[cx]):Date.parse(b[cx]);return av-bv;});
+    cfg={type:'line',data:{labels:rows.map(r=>String(r[cx])),datasets:[{label:cy,data:rows.map(r=>toNumber(r[cy])),borderColor:JADE,backgroundColor:'rgba(52,216,180,.12)',fill:true,tension:.25,pointRadius:2}]},
+      options:baseOpts(chartTitle(`${cy} 趨勢（依 ${cx}）`),{x:sc(),y:sc()})};
+  }
+  else if(type==='scatter'){
+    const pts=d.rows.filter(r=>isNum(r[cx])&&isNum(r[cy])).map(r=>({x:toNumber(r[cx]),y:toNumber(r[cy])}));
+    cfg={type:'scatter',data:{datasets:[{label:`${cx} vs ${cy}`,data:pts,backgroundColor:'rgba(226,189,99,.6)',borderColor:GOLD}]},
+      options:baseOpts(chartTitle(`${cx} vs ${cy}`),{x:sc(),y:sc()})};
+  }
+  chartInst=new Chart(ctx,cfg);
+}
+function drawHeatmap(){
+  const d=active();const nums=d.cols.filter(c=>c.type==='numeric').map(c=>c.name);
+  if(nums.length<2){$('#heatmap').innerHTML='<p class="sub" style="margin:0">需至少 2 個數值欄位才能計算相關矩陣。</p>';return;}
+  const data=nums.map(c=>numVals(d.rows,c));const n=Math.min(...data.map(a=>a.length));
+  const M=nums.map((_,i)=>nums.map((_,j)=>pearson(data[i].slice(0,n),data[j].slice(0,n))));
+  const cell=v=>{const a=Math.abs(v);const c=v>=0?`rgba(240,105,138,${a*0.85+0.05})`:`rgba(106,169,240,${a*0.85+0.05})`;return c;};
+  let h='<table style="border-collapse:separate;border-spacing:3px"><tr><td></td>'+nums.map(c=>`<td style="font-size:10.5px;color:var(--muted);padding:4px;writing-mode:vertical-rl;max-height:90px">${esc(c)}</td>`).join('')+'</tr>';
+  nums.forEach((c,i)=>{h+=`<tr><td style="font-size:11px;color:var(--muted);padding:4px;text-align:right">${esc(c)}</td>`+M[i].map(v=>`<td style="background:${cell(v)};width:46px;height:38px;text-align:center;font-size:10.5px;border-radius:5px;color:#fff;font-weight:600">${v.toFixed(2)}</td>`).join('')+'</tr>';});
+  $('#heatmap').innerHTML=h+'</table>';
+}
+function renderInsights(){
+  const d=active();const ins=[];const profs=d.cols.map(c=>colStats(d,c.name));
+  const nums=d.cols.filter(c=>c.type==='numeric').map(c=>c.name);
+  if(nums.length>=2){const data=nums.map(c=>numVals(d.rows,c));const n=Math.min(...data.map(a=>a.length));let best=null;
+    for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){const r=pearson(data[i].slice(0,n),data[j].slice(0,n));if(!best||Math.abs(r)>Math.abs(best.r))best={a:nums[i],b:nums[j],r};}
+    if(best&&Math.abs(best.r)>0.5)ins.push({sev:'info',t:`強相關：${best.a} ↔ ${best.b}`,d:`相關係數 ${best.r.toFixed(2)}，${best.r>0?'正向':'負向'}關聯明顯，可進一步做迴歸分析或因果探討。`});}
+  profs.filter(p=>p.type==='numeric'&&p.st).forEach(p=>{const skew=p.st.sd?(p.st.mean-p.st.median)/p.st.sd:0;if(Math.abs(skew)>0.6)ins.push({sev:'med',t:`「${p.col}」分佈偏態`,d:`平均(${fmt(p.st.mean)})與中位數(${fmt(p.st.median)})差距大，建議用中位數描述或做轉換。`});});
+  profs.filter(p=>p.type!=='numeric'&&p.top&&p.top.length).forEach(p=>{const dom=p.top[0];const pct=dom[1]/(p.total-p.missing)*100;if(pct>70)ins.push({sev:'low',t:`「${p.col}」高度集中`,d:`「${dom[0]}」占 ${pct.toFixed(0)}%，類別不平衡，分群或建模時需留意。`});});
+  const hiMiss=profs.filter(p=>p.missPct>30);if(hiMiss.length)ins.push({sev:'high',t:'高缺值欄位',d:`${hiMiss.map(p=>p.col).join('、')} 缺值超過 30%，分析前須處理或考慮捨棄。`});
+  $('#insights').innerHTML=ins.length?ins.map(i=>`<div class="sug ${i.sev}"><div class="h"><b>${esc(i.t)}</b></div><p>${esc(i.d)}</p></div>`).join(''):'<p class="sub" style="margin:0">暫無顯著洞察。</p>';
+}
+
+/* ============ 6. 進階 ============ */
+function renderAdv(){const d=active();$('#advEmpty').style.display=d?'none':'block';$('#advBody').style.display=d?'block':'none';}
+
+/* ============ Groq ============ */
+$('#apiKey').addEventListener('input',e=>{localStorage.setItem('groq_key',e.target.value);updateKeyDot();});
+$('#model').addEventListener('change',e=>localStorage.setItem('groq_model',e.target.value));
+function updateKeyDot(){$('#keyDot').className='dot '+($('#apiKey').value.trim()?'ok':'bad');}
+(function initKey(){const k=localStorage.getItem('groq_key');if(k)$('#apiKey').value=k;const m=localStorage.getItem('groq_model');if(m)$('#model').value=m;updateKeyDot();})();
+try{if(window.ChartDataLabels&&window.Chart){Chart.register(window.ChartDataLabels);}}catch(e){}
+
+const FALLBACK=['llama-3.3-70b-versatile','openai/gpt-oss-120b','llama-3.1-8b-instant'];
+async function callGroq(sys,user,maxTok=2200){
+  const raw=$('#apiKey').value.trim();if(!raw)throw new Error('請先輸入 Groq API Key');
+  const keys=raw.split(',').map(k=>k.trim()).filter(Boolean);
+  const models=[$('#model').value,...FALLBACK.filter(m=>m!==$('#model').value)];
+  let lastErr;
+  for(const model of models){
+    for(const key of keys){
+      try{
+        const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+          body:JSON.stringify({model,temperature:0.45,max_tokens:maxTok,messages:[{role:'system',content:sys},{role:'user',content:user}]})});
+        if(res.status===429){lastErr=new Error('rate limit');continue;}
+        if(res.status===401){throw new Error('API Key 無效');}
+        if(!res.ok){lastErr=new Error('HTTP '+res.status);continue;}
+        const data=await res.json();return data.choices[0].message.content;
+      }catch(e){lastErr=e;}
+    }
+  }
+  throw lastErr||new Error('呼叫失敗');
+}
+function profileSummary(d){
+  const profs=d.cols.map(c=>colStats(d,c.name));
+  return `資料集「${d.name}」共 ${d.rows.length} 列、${d.cols.length} 欄。\n欄位剖析：\n`+profs.map(p=>{
+    let s=`- ${p.col}（${typeName[p.type]}）缺值${p.missPct.toFixed(0)}%、唯一值${p.unique}`;
+    if(p.st)s+=`、範圍${fmt(p.st.min)}~${fmt(p.st.max)}、平均${fmt(p.st.mean)}、中位${fmt(p.st.median)}、離群${p.st.outliers}`;
+    else if(p.top)s+=`、主要值[${p.top.slice(0,4).map(t=>t[0]).join(',')}]`;
+    return s;}).join('\n');
+}
+function mdToHTML(md){
+  let h=esc(md)
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^#### (.+)$/gm,'<h4>$1</h4>').replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code>$1</code>');
+  const lines=h.split('\n');let out='',inUl=false;
+  for(let l of lines){
+    if(/^\s*[-*]\s+/.test(l)){if(!inUl){out+='<ul>';inUl=true;}out+='<li>'+l.replace(/^\s*[-*]\s+/,'')+'</li>';}
+    else{if(inUl){out+='</ul>';inUl=false;}if(/^<h[34]>/.test(l))out+=l;else if(l.trim())out+='<p>'+l+'</p>';}
+  }
+  if(inUl)out+='</ul>';return out;
+}
+async function runAI(btnSel,outSel,sys,user,tok){
+  const d=active();if(!d){toast('請先載入資料','err');return;}
+  const out=$(outSel);out.innerHTML='<div class="loading"><div class="spin"></div>AI 分析中…（模型回退中可能稍候）</div>';
+  try{const res=await callGroq(sys,user,tok);out.innerHTML='<div class="ai-md card tight" style="margin-top:14px;background:var(--bg)">'+mdToHTML(res)+'</div>';}
+  catch(e){out.innerHTML=`<div class="sug high" style="margin-top:14px"><div class="h"><b>分析失敗</b></div><p>${esc(e.message)}</p></div>`;toast(e.message,'err');}
+}
+function aiClean(){const d=active();runAI('','#aiCleanOut',
+  '你是資深資料工程師。針對使用者提供的欄位剖析，輸出具體、可執行的「資料清洗」建議。用繁體中文、Markdown。結構：### 清洗優先清單（依嚴重度排序，每項含問題/建議做法/風險）、### 自動可修復項、### 需人工確認項。務必具體到欄位名稱與方法。',
+  profileSummary(d)+'\n\n請給出資料清洗建議。',2400);}
+function aiNorm(){const d=active();runAI('','#aiNormOut',
+  '你是機器學習特徵工程專家。針對欄位剖析，輸出「正規化與特徵工程策略」。繁體中文、Markdown。結構：### 數值欄位處理（每欄建議縮放/轉換方法與原因）、### 類別欄位編碼、### 資料庫正規化(1NF/2NF/3NF)拆表建議、### 建議的整體前處理流水線(pipeline 步驟)。具體到欄位。',
+  profileSummary(d)+'\n\n請給出正規化與特徵工程策略。',2600);}
+function aiAdvanced(){
+  if(!active()){toast('請先載入資料','err');return;}
+  const all=DS.map(profileSummary).join('\n\n────────\n\n');
+  const rel=relationshipSummary();
+  runAI('','#aiAdvOut',
+  '你是資料科學顧問。你會先「觀察」使用者提供的多個資料集之間的關聯，再給出分析規劃。所有字串型數值都已視為數值處理。繁體中文、Markdown。務必依序輸出四大段：### ① 檔案間關聯解讀（解讀偵測到的主鍵-外鍵與共享維度代表的業務意義，指出該用哪個鍵 JOIN、合併後能做什麼跨表分析）、### ② 現在就能做的分析（4-6 種，每種含：分析名稱、方法/演算法、需要欄位、能回答的商業問題）、### ③ 建議補充的資料（還缺哪些欄位或外部資料能解鎖更深入分析，及原因）、### ④ 後續步驟建議（具體可落地的下一步）。',
+  `【偵測到的檔案間關聯】\n${rel}\n\n【各資料集剖析（字串數值已轉為數值統計）】\n\n`+all+'\n\n請先解讀關聯，再給出進階分析建議。',3200);}
+
+/* ============ 拖放 ============ */
+const drop=$('#drop'),fi=$('#fileInput');
+drop.onclick=()=>fi.click();fi.onchange=()=>handleFiles(fi.files);
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');handleFiles(e.dataTransfer.files);};
+$('#chartType').dispatchEvent(new Event('change'));
+</script>
+</body>
+</html>

@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 PDF自動切割工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .main-container {
+            display: flex;
+            width: 100%;
+            max-width: 1920px; /* 擴大最大寬度以容納預覽區 */
+            gap: 20px;
+        }
+
+        .preview-panel {
+            flex: 1.5;
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: calc(100vh - 40px);
+            position: sticky;
+            top: 20px;
+        }
+
+        .preview-panel h2 {
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        #preview-canvas-container {
+            width: 100%;
+            flex-grow: 1;
+            overflow: auto;
+            background: #111;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .preview-nav {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .preview-nav button {
+            background: linear-gradient(135deg, #555 0%, #333 100%);
+            color: #fff;
+            border: 1px solid #666;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .preview-nav button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, #666 0%, #444 100%);
+        }
+         .preview-nav button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .container {
+            flex: 1;
+            max-width: 600px;
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            align-self: flex-start; /* 確保不會被拉伸 */
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+            background: #1e1e1e;
+        }
+        
+        .upload-area {
+            border: 3px dashed #00d4ff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(145deg, #2a2a2a, #1e1e1e);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 30px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .upload-area:hover {
+            border-color: #00ffff;
+            background: linear-gradient(145deg, #333333, #2a2a2a);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.2), inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .upload-area.dragover {
+            border-color: #00ffff;
+            background: linear-gradient(145deg, #333333, #2a2a2a);
+            box-shadow: 0 0 30px rgba(0,255,255,0.3), inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(0,212,255,0.5);
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .upload-hint {
+            color: #b0b0b0;
+            font-size: 0.8rem;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,212,255,0.3);
+            border: 1px solid rgba(0,212,255,0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,212,255,0.4), 0 0 20px rgba(0,212,255,0.2);
+            background: linear-gradient(135deg, #00ffff 0%, #00d4ff 100%);
+        }
+        
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress-container {
+            display: none;
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333333;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ffff);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0,212,255,0.5);
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #b0b0b0;
+        }
+        
+        .results-panel {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-self: flex-start; /* 確保不會被拉伸 */
+        }
+
+        .results {
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 30px;
+            display: none;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+
+        .chapter-item {
+            background: linear-gradient(145deg, #2a2a2a, #1e1e1e);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chapter-item-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1;
+            margin-bottom: 10px;
+            flex-basis: 100%;
+        }
+
+        .chapter-item-buttons {
+            display: flex;
+            gap: 10px;
+            flex-basis: 100%;
+            justify-content: flex-end;
+        }
+
+        .chapter-item input {
+            background: #333;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+
+        .chapter-item input[type="text"] {
+            width: 50%;
+            flex-grow: 1;
+            color: #ffc700; /* 改為黃色字體 */
+        }
+        .chapter-item input[type="number"] {
+            width: 60px;
+        }
+
+        .small-btn {
+            background: linear-gradient(135deg, #555 0%, #333 100%);
+            color: #fff;
+            border: 1px solid #666;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        .small-btn.preview-btn {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+        .small-btn.delete-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+        }
+        .small-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .add-chapter-form {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .add-chapter-form input {
+             background: #333;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        
+        .error {
+            background: linear-gradient(145deg, #4d1f1f, #331a1a);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff4757;
+            border: 1px solid rgba(255,71,87,0.3);
+            box-shadow: 0 4px 15px rgba(255,71,87,0.1);
+            text-align: left;
+        }
+        .error h3 { margin-bottom: 10px; }
+        .error p { margin-bottom: 5px; }
+        .error ul { margin-left: 20px; }
+        .error small { opacity: 0.7; }
+        
+        .success {
+            background: linear-gradient(145deg, #1f4d2e, #1a3326);
+            color: #5dff5d;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #00cc66;
+            border: 1px solid rgba(0,204,102,0.3);
+            box-shadow: 0 4px 15px rgba(0,204,102,0.1);
+        }
+
+        .info {
+            background: linear-gradient(145deg, #1f2d4d, #1a2633);
+            color: #8cb2ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #4d7cff;
+            border: 1px solid rgba(77,124,255,0.3);
+            box-shadow: 0 4px 15px rgba(77,124,255,0.1);
+        }
+        
+        /* Collapsible Section Styles */
+        .collapsible-section {
+            margin-bottom: 30px; 
+            background: linear-gradient(145deg, #2a2a2a, #1e1e1e); 
+            border-radius: 15px; 
+            border-left: 4px solid #00d4ff; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 25px;
+        }
+
+        .collapse-icon {
+            font-size: 1.2rem;
+            color: #00d4ff;
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible-content {
+            max-height: 1000px;
+            padding: 0 25px 25px 25px;
+            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+            overflow: hidden;
+        }
+
+        .collapsible-section.collapsed .collapsible-content {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .collapsible-section.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        /* 自定義滾動條樣式 */
+        .results::-webkit-scrollbar,
+        #summaryContent::-webkit-scrollbar,
+        #preview-canvas-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .results::-webkit-scrollbar-track,
+        #summaryContent::-webkit-scrollbar-track,
+        #preview-canvas-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        
+        .results::-webkit-scrollbar-thumb,
+        #summaryContent::-webkit-scrollbar-thumb,
+        #preview-canvas-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border-radius: 4px;
+        }
+        
+        .results::-webkit-scrollbar-thumb:hover,
+        #summaryContent::-webkit-scrollbar-thumb:hover,
+        #preview-canvas-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #00ffff, #00d4ff);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1280px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .container, .results-panel, .preview-panel {
+                max-width: 100%;
+                height: auto; /* Allow height to adjust */
+                position: static; /* Remove sticky positioning */
+            }
+            .preview-panel {
+                 min-height: 500px;
+            }
+            .results {
+                max-height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- PDF 預覽區域 -->
+        <div class="preview-panel" id="previewPanel">
+            <h2>📄 PDF 預覽</h2>
+            <div id="preview-canvas-container">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+            <div class="preview-nav">
+                <button id="previewPrevBtn" disabled>上一頁</button>
+                <span id="previewPageNum">0</span> / <span id="previewPageCount">0</span>
+                <button id="previewNextBtn" disabled>下一頁</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <h1>📚 PDF自動切割工具</h1>
+                <p>上傳 PDF 文件，自動按章節分割並下載</p>
+            </div>
+            
+            <div class="content">
+                <!-- AI 設定區域 -->
+                <div id="aiSettingsContainer" class="collapsible-section collapsed">
+                    <div id="aiSettingsHeader" class="collapsible-header">
+                        <h3 style="margin: 0; color: #ffffff; font-weight: 600; font-size: 1.3rem;">🤖 AI 智能分析設定</h3>
+                        <span class="collapse-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <label style="display: block; margin-bottom: 15px; color: #ffffff; cursor: pointer; font-size: 1.1rem; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <input type="checkbox" id="useGeminiAPI" style="margin-right: 10px; accent-color: #00d4ff; transform: scale(1.2);">
+                            使用 Gemini AI 進行精確章節檢測（需要 API Key）
+                        </label>
+                        <div id="geminiSettings" style="display: none; margin-top: 20px;">
+                            <div style="display: flex; gap: 12px; margin-bottom: 15px;">
+                                <input type="password" id="geminiApiKey" placeholder="輸入你的 Gemini API Key" 
+                                       style="flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #333333; color: #ffffff; font-size: 1rem;">
+                                <button type="button" id="testApiBtn" class="btn" style="padding: 12px 24px; font-size: 1rem;">
+                                    🔍 測試連接
+                                </button>
+                            </div>
+                            <div id="apiStatus" style="margin-bottom: 15px;"></div>
+                            <div style="background: rgba(0,212,255,0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,212,255,0.2);">
+                                <p style="font-size: 0.95rem; color: #b0b0b0; line-height: 1.6; margin: 0;">
+                                    💡 使用 Gemini AI 可以更準確地識別章節標題和結構<br>
+                                    🔒 API Key 僅在本次使用，不會被儲存<br>
+                                    🆓 免費取得 API Key：<a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #00d4ff; text-decoration: none; font-weight: 500;">Google AI Studio</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <!-- PDF 上傳區域 -->
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #ffffff; font-weight: 600; font-size: 1.3rem;">📄 PDF 文件上傳</h3>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">點擊選擇 PDF 文件或拖拽到此處</div>
+                        <div class="upload-hint">支援 PDF 格式，最大 50MB</div>
+                        <input type="file" id="fileInput" accept=".pdf" />
+                    </div>
+                </div>
+                
+                <!-- 單頁摘要區域 -->
+                <div id="summarySection" style="display: none; margin-bottom: 30px; padding: 25px; background: linear-gradient(145deg, #2a2a2a, #1e1e1e); border-radius: 15px; border-left: 4px solid #00cc66; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #ffffff; font-weight: 600; font-size: 1.3rem;">📄 單頁摘要分析</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="generateSummaryBtn" class="btn" style="padding: 8px 20px; font-size: 0.9rem;">
+                                🤖 生成本頁摘要
+                            </button>
+                             <button id="downloadSummaryBtn" class="btn" style="padding: 8px 20px; font-size: 0.9rem; display: none; background: linear-gradient(135deg, #00cc66 0%, #00994d 100%);">
+                                📥 下載摘要
+                            </button>
+                        </div>
+                    </div>
+                    <div id="summaryContent" style="max-height: 300px; overflow-y: auto; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                        <div id="summaryText" style="color: #e0e0e0; line-height: 1.6; font-size: 0.95rem;">
+                            <div style="text-align: center; color: #888; padding: 20px;">
+                                點擊「生成本頁摘要」按鈕來分析目前預覽頁面的內容
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(0,204,102,0.1); border-radius: 8px; border: 1px solid rgba(0,204,102,0.2);">
+                        <p style="font-size: 0.9rem; color: #b0b0b0; line-height: 1.5; margin: 0;">
+                            💡 AI 摘要功能需要 Gemini API Key，將分析您目前正在預覽的頁面內容。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 格式轉換與下載 -->
+                <div id="conversionSection" style="display: none; margin-bottom: 30px; padding: 25px; background: linear-gradient(145deg, #2a2a2a, #1e1e1e); border-radius: 15px; border-left: 4px solid #ff8c00; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3);">
+                    <h3 style="color: #ffffff; font-weight: 600; font-size: 1.3rem; margin-bottom: 20px;">🖼️ 格式轉換與下載</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <button id="downloadPageJpgBtn" class="btn" style="background: linear-gradient(135deg, #ff8c00 0%, #d97500 100%);">下載本頁為 JPG</button>
+                        <button id="downloadAllJpgBtn" class="btn" style="background: linear-gradient(135deg, #ffaf4d 0%, #ff8c00 100%);">打包下載所有頁面 (JPG)</button>
+                        <p style="font-size: 0.9rem; color: #b0b0b0; line-height: 1.5; margin: 10px 0 0 0; text-align: center;">
+                            * PDF 轉 Word 功能因技術複雜性，建議使用專業轉換軟體。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">正在處理...</div>
+                </div>
+                
+                <div id="errorMessage"></div>
+                <div id="successMessage"></div>
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <div class="results" id="results">
+                <h2 style="margin-bottom: 20px; color: #ffffff; font-weight: 600;">📖 發現的章節 (可編輯)</h2>
+                <div id="chapterList"></div>
+                 <!-- 手動新增章節表單 -->
+                <div class="add-chapter-form" id="addChapterForm">
+                    <h3 style="margin-bottom: 15px; color: #ffffff;">手動新增章節</h3>
+                    <input type="text" id="newChapterTitle" placeholder="章節標題">
+                    <input type="number" id="newChapterStart" placeholder="開始頁">
+                    <input type="number" id="newChapterEnd" placeholder="結束頁">
+                    <button id="addChapterBtn" class="small-btn" style="background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);">新增</button>
+                </div>
+                <button class="btn" id="downloadAllBtn" style="margin-top: 20px;">
+                    📥 下載所有章節
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const results = document.getElementById('results');
+        const chapterList = document.getElementById('chapterList');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const useGeminiAPI = document.getElementById('useGeminiAPI');
+        const geminiSettings = document.getElementById('geminiSettings');
+        const geminiApiKey = document.getElementById('geminiApiKey');
+        const testApiBtn = document.getElementById('testApiBtn');
+        const apiStatus = document.getElementById('apiStatus');
+        const summarySection = document.getElementById('summarySection');
+        const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+        const summaryText = document.getElementById('summaryText');
+        const downloadSummaryBtn = document.getElementById('downloadSummaryBtn');
+        const addChapterForm = document.getElementById('addChapterForm');
+        const addChapterBtn = document.getElementById('addChapterBtn');
+        const newChapterTitle = document.getElementById('newChapterTitle');
+        const newChapterStart = document.getElementById('newChapterStart');
+        const newChapterEnd = document.getElementById('newChapterEnd');
+        // Preview Panel Elements
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const previewPageNum = document.getElementById('previewPageNum');
+        const previewPageCount = document.getElementById('previewPageCount');
+        const previewPrevBtn = document.getElementById('previewPrevBtn');
+        const previewNextBtn = document.getElementById('previewNextBtn');
+        // Collapsible AI Section
+        const aiSettingsContainer = document.getElementById('aiSettingsContainer');
+        const aiSettingsHeader = document.getElementById('aiSettingsHeader');
+        // Conversion Elements
+        const conversionSection = document.getElementById('conversionSection');
+        const downloadPageJpgBtn = document.getElementById('downloadPageJpgBtn');
+        const downloadAllJpgBtn = document.getElementById('downloadAllJpgBtn');
+
+
+        // --- Global State ---
+        let currentPdfDoc = null; // This will hold the editable pdf-lib document
+        let originalPdfBuffer = null;
+        let chapters = [];
+        let isApiValidated = false;
+        let pdfPageTexts = [];
+        let currentFileName = 'document';
+        let previewState = {
+            pdf: null, // This will hold the previewable pdf.js document
+            currentPage: 1,
+            totalPages: 0,
+            isRendering: false,
+            pendingPage: null,
+            scale: 1.5
+        };
+
+        // Set PDF.js worker source globally
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // --- Event Listeners ---
+        aiSettingsHeader.addEventListener('click', () => {
+            aiSettingsContainer.classList.toggle('collapsed');
+        });
+        useGeminiAPI.addEventListener('change', (e) => {
+            geminiSettings.style.display = e.target.checked ? 'block' : 'none';
+            if (!e.target.checked) { isApiValidated = false; apiStatus.innerHTML = ''; }
+            updateSummaryButtonState();
+        });
+        geminiApiKey.addEventListener('input', () => { 
+            isApiValidated = false; 
+            apiStatus.innerHTML = ''; 
+            updateSummaryButtonState();
+        });
+        testApiBtn.addEventListener('click', testGeminiAPI);
+        generateSummaryBtn.addEventListener('click', generateDocumentSummary);
+        downloadSummaryBtn.addEventListener('click', downloadSummary);
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); });
+        addChapterBtn.addEventListener('click', addChapter);
+        downloadAllBtn.addEventListener('click', downloadAllChapters);
+        previewPrevBtn.addEventListener('click', () => {
+            if (previewState.currentPage <= 1) return;
+            previewState.currentPage--;
+            renderPreviewPage(previewState.currentPage);
+        });
+        previewNextBtn.addEventListener('click', () => {
+            if (previewState.currentPage >= previewState.totalPages) return;
+            previewState.currentPage++;
+            renderPreviewPage(previewState.currentPage);
+        });
+        downloadPageJpgBtn.addEventListener('click', () => downloadPageAsJpg(previewState.currentPage));
+        downloadAllJpgBtn.addEventListener('click', downloadAllAsJpgZip);
+
+        // --- UI Functions ---
+        function showError(message) {
+            errorMessage.innerHTML = `<div class="error">${message}</div>`;
+            successMessage.innerHTML = '';
+        }
+        function showSuccess(message) {
+            successMessage.innerHTML = `<div class="success">✅ ${message}</div>`;
+            errorMessage.innerHTML = '';
+        }
+        function showInfo(message) {
+            successMessage.innerHTML = `<div class="info">ℹ️ ${message}</div>`;
+            errorMessage.innerHTML = '';
+        }
+        function updateProgress(percent, text) {
+            progressFill.style.width = percent + '%';
+            progressText.textContent = text;
+        }
+        function showApiStatus(message, type) {
+            let statusClass = '';
+            let icon = 'ℹ️';
+            let customStyle = '';
+
+            if (type === 'success') {
+                statusClass = 'success';
+                icon = '✅';
+            } else if (type === 'error') {
+                statusClass = 'error';
+                icon = '❌';
+            } else if (type === 'info') {
+                customStyle = 'background: linear-gradient(145deg, #2a2a3a, #1e1e2e); color: #a0a0ff; border-left: 4px solid #4d4dff; padding: 10px; border-radius: 5px; font-size: 0.9rem;';
+            }
+            
+            apiStatus.innerHTML = `<div class="${statusClass}" style="padding: 10px; border-radius: 5px; font-size: 0.9rem; ${customStyle}">${icon} ${message}</div>`;
+        }
+        
+        function updateSummaryButtonState() {
+            let reason = '';
+            if (pdfPageTexts.length === 0) {
+                reason = '請先上傳 PDF 文件。';
+            } else if (!useGeminiAPI.checked) {
+                reason = '請先勾選使用 Gemini AI。';
+            } else if (!isApiValidated) {
+                reason = '請先輸入並成功驗證您的 API Key。';
+            }
+
+            if (reason) {
+                generateSummaryBtn.disabled = true;
+                generateSummaryBtn.title = reason;
+            } else {
+                generateSummaryBtn.disabled = false;
+                generateSummaryBtn.title = '點擊以生成文件摘要';
+            }
+        }
+
+
+        // --- Main File Handling Logic ---
+        async function handleFile(file) {
+            currentFileName = file.name.replace(/\.pdf$/i, '');
+            if (!file.type.includes('pdf')) {
+                showError('請選擇 PDF 文件');
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                showError('文件大小不能超過 50MB');
+                return;
+            }
+            
+            progressContainer.style.display = 'block';
+            results.style.display = 'none';
+            errorMessage.innerHTML = '';
+            successMessage.innerHTML = '';
+            currentPdfDoc = null; // Reset editable doc
+            downloadSummaryBtn.style.display = 'none';
+            summaryText.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">點擊「生成摘要」按鈕來分析文件內容</div>';
+            
+            // Reset preview
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            previewPageNum.textContent = '0';
+            previewPageCount.textContent = '0';
+            previewPrevBtn.disabled = true;
+            previewNextBtn.disabled = true;
+
+            try {
+                updateProgress(10, '正在讀取 PDF 文件...');
+                originalPdfBuffer = await file.arrayBuffer();
+
+                // Step 1: Try to load for previewing first (more robust)
+                try {
+                    updateProgress(12, '正在載入預覽...');
+                    const loadingTask = pdfjsLib.getDocument({data: new Uint8Array(originalPdfBuffer)});
+                    previewState.pdf = await loadingTask.promise;
+                    previewState.totalPages = previewState.pdf.numPages;
+                    previewState.currentPage = 1;
+                    renderPreviewPage(1);
+                } catch (e) {
+                    console.error('PDF.js 載入失敗:', e);
+                    throw new Error('無法預覽此 PDF 文件，它可能已損壞或格式不受支援。');
+                }
+
+                // Step 2: Try to load for editing (might fail if protected)
+                try {
+                    updateProgress(15, '正在準備文件編輯...');
+                    currentPdfDoc = await PDFLib.PDFDocument.load(originalPdfBuffer);
+                } catch (e) {
+                    console.warn('pdf-lib 載入失敗，分割下載功能可能無法使用:', e);
+                    showInfo('文件已載入預覽。<br><b>注意：文件可能無法編輯，分割下載功能可能因此無法使用。</b>');
+                    currentPdfDoc = null;
+                }
+                
+                // Step 3: Extract text (uses previewState.pdf which should be loaded)
+                updateProgress(20, '正在提取文本內容...');
+                try {
+                    pdfPageTexts = await extractPDFText(previewState.pdf);
+                } catch(e) {
+                    console.error('文本提取失敗:', e);
+                    throw new Error('無法從文件中提取文本內容。');
+                }
+                
+                // Step 4: Analyze chapters
+                updateProgress(40, '正在分析章節結構...');
+                await findChapters();
+                
+                updateProgress(100, '處理完成！');
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    summarySection.style.display = 'block';
+                    conversionSection.style.display = 'block';
+                    updateSummaryButtonState();
+                    displayResults();
+                }, 500);
+            } catch (error) {
+                console.error('處理文件時出錯:', error);
+                showError(`處理文件時出錯：${error.message || '請確保文件格式正確'}`);
+                progressContainer.style.display = 'none';
+            }
+        }
+        
+        // --- Preview Logic ---
+        function renderPreviewPage(num) {
+            if (!previewState.pdf) return;
+            if (previewState.isRendering) {
+                previewState.pendingPage = num;
+                return;
+            }
+            previewState.isRendering = true;
+            previewState.pdf.getPage(num).then(page => {
+                const viewport = page.getViewport({ scale: previewState.scale });
+                previewCanvas.height = viewport.height;
+                previewCanvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: previewCtx,
+                    viewport: viewport
+                };
+
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(() => {
+                    previewState.isRendering = false;
+                    if (previewState.pendingPage !== null) {
+                        renderPreviewPage(previewState.pendingPage);
+                        previewState.pendingPage = null;
+                    }
+                });
+            });
+            
+            previewPageNum.textContent = num;
+            previewPageCount.textContent = previewState.totalPages;
+            previewPrevBtn.disabled = (num <= 1);
+            previewNextBtn.disabled = (num >= previewState.totalPages);
+        }
+
+        function setPreviewToPage(pageNum) {
+            if (!previewState.pdf || pageNum < 1 || pageNum > previewState.totalPages) return;
+            previewState.currentPage = pageNum;
+            renderPreviewPage(pageNum);
+        }
+
+
+        // --- Chapter Detection Logic ---
+        async function findChapters() {
+            const pageCount = previewState.pdf.numPages;
+            chapters = [];
+            updateProgress(40, '正在分析每一頁內容...');
+            
+            try {
+                const foundChapters = [];
+                for (let pageNum = 0; pageNum < pageCount; pageNum++) {
+                    updateProgress(40 + (pageNum / pageCount) * 40, `正在分析第 ${pageNum + 1} 頁...`);
+                    const textContent = pdfPageTexts[pageNum]?.text || '';
+                    if (textContent.trim()) {
+                        const chapterInfo = detectChapterOnPage(textContent, pageNum + 1);
+                        if (chapterInfo) foundChapters.push(chapterInfo);
+                    }
+                }
+                
+                const uniqueChapters = removeDuplicateChapters(foundChapters).sort((a, b) => a.pageNumber - b.pageNumber);
+
+                if (uniqueChapters.length > 0) {
+                    const realChapters = uniqueChapters.filter(ch => !ch.isEndMarker);
+                    const endMarkers = uniqueChapters.filter(ch => ch.isEndMarker);
+                    let endPage = pageCount;
+                    if (endMarkers.length > 0) {
+                        endPage = Math.min(...endMarkers.map(m => m.pageNumber)) - 1;
+                    }
+
+                    realChapters.sort((a, b) => (a.chapterNumber || a.pageNumber) - (b.chapterNumber || b.pageNumber));
+
+                    for (let i = 0; i < realChapters.length; i++) {
+                        const current = realChapters[i];
+                        const next = realChapters[i + 1];
+                        const chapterEndPage = next ? next.pageNumber - 1 : endPage;
+                        if (chapterEndPage >= current.pageNumber) {
+                            chapters.push({
+                                id: Date.now() + i,
+                                title: current.title,
+                                startPage: current.pageNumber,
+                                endPage: chapterEndPage
+                            });
+                        }
+                    }
+                    if (chapters.length === 0) throw new Error('未找到有效的章節範圍');
+                } else {
+                    throw new Error('未找到章節標記');
+                }
+            } catch (error) {
+                console.log('自動檢測失敗:', error.message);
+                if (useGeminiAPI.checked && isApiValidated) {
+                    await geminiChapterDetection(pageCount);
+                } else {
+                    showError('自動檢測失敗。請嘗試使用 AI 檢測或手動新增章節。');
+                    chapters = []; // Clear chapters to allow manual adding
+                }
+            }
+        }
+
+        const chineseNumMap = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+        const chineseUnitMap = { '十': 10, '百': 100 };
+
+        function chineseNumToArabic(chineseStr) {
+            if (/^\d+$/.test(chineseStr)) return parseInt(chineseStr, 10);
+            
+            let result = 0;
+            let section = 0;
+            let number = 0;
+
+            for (let i = 0; i < chineseStr.length; i++) {
+                const char = chineseStr[i];
+                if (chineseNumMap[char] !== undefined) {
+                    number = chineseNumMap[char];
+                } else if (chineseUnitMap[char] !== undefined) {
+                    const unit = chineseUnitMap[char];
+                    if (number === 0 && unit === 10 && i === 0) { // Special case for "十" at the beginning, e.g., "十一"
+                        number = 1;
+                    }
+                    section += number * unit;
+                    number = 0;
+                }
+            }
+            result = section + number;
+            return result;
+        }
+
+        function detectChapterOnPage(textContent, pageNumber) {
+            const chapterPatterns = [
+                { type: 'eng_num', regex: /^(?:CHAPTER|Chapter)\s*(\d+)\s*[:\.\-\s]?(.*)$/im },
+                { type: 'chn_num_ar', regex: /^第\s*(\d+)\s*章\s*[:\.\-\s]?(.*)$/im },
+                { type: 'chn_num_ch', regex: /^第\s*([一二三四五六七八九十百]+)\s*章\s*[:\.\-\s]?(.*)$/im },
+                { type: 'num_dot', regex: /^(\d+)\.\s+(.*)$/m }
+            ];
+            const endMarkers = ['INDEX', 'REFERENCES', 'REFERENCE', 'BIBLIOGRAPHY', 'APPENDIX', 'COLOPHON', 'ABOUT THE AUTHORS'];
+            
+            const lines = textContent.split(/[\n\r]+/).filter(line => line.trim());
+            const topLines = lines.slice(0, 5); // Check only top few lines for performance
+            
+            // Check for end markers first.
+            for (const marker of endMarkers) {
+                // 改為更寬鬆的 startsWith 判斷，以捕捉 "INDEX A-Z" 這類標題
+                if (topLines.some(line => line.trim().toUpperCase().startsWith(marker))) {
+                     return { title: marker, pageNumber, chapterNumber: Infinity, isEndMarker: true };
+                }
+            }
+
+            // Check for chapter titles
+            for (const line of topLines) {
+                const trimmedLine = line.trim();
+                
+                for (const pattern of chapterPatterns) {
+                    const match = pattern.regex.exec(trimmedLine);
+                    if (!match) continue;
+
+                    let num, title;
+                    const subtitle = (match[2] || '').trim().substring(0, 50);
+
+                    switch (pattern.type) {
+                        case 'eng_num':
+                            num = parseInt(match[1]);
+                            title = `Chapter ${num}` + (subtitle ? `: ${subtitle}` : '');
+                            break;
+                        case 'chn_num_ar':
+                            num = parseInt(match[1]);
+                            title = `第 ${num} 章` + (subtitle ? `: ${subtitle}` : '');
+                            break;
+                        case 'chn_num_ch':
+                            const chineseNumeral = match[1];
+                            num = chineseNumToArabic(chineseNumeral);
+                            title = `第 ${chineseNumeral} 章` + (subtitle ? `: ${subtitle}` : '');
+                            break;
+                        case 'num_dot':
+                             // Heuristics to avoid matching normal lists
+                            if (match[2].length > 100 || match[2].split(' ').length > 15) continue;
+                            num = parseInt(match[1]);
+                             if (num <= 0 || num > 200) continue; // Assume less than 200 chapters to avoid false positives
+                            title = `${num}. ${subtitle}`;
+                            break;
+                    }
+                    
+                    if (num !== undefined && !isNaN(num) && num > 0) {
+                        return { title, pageNumber, chapterNumber: num, isEndMarker: false };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function removeDuplicateChapters(chapters) {
+            const seen = new Map();
+            chapters.forEach(ch => {
+                const key = `${ch.pageNumber}-${ch.chapterNumber}`;
+                if (!seen.has(key)) seen.set(key, ch);
+            });
+            return Array.from(seen.values());
+        }
+
+        // --- Text Extraction ---
+        async function extractPDFText(pdfDoc) {
+            const pageTexts = [];
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ').replace(/\s+/g, ' ').trim();
+                pageTexts.push({ pageNumber: i, text: pageText });
+            }
+            return pageTexts;
+        }
+        
+        // --- Gemini API & Summary ---
+        async function testGeminiAPI() {
+            const apiKey = geminiApiKey.value.trim();
+            if (!apiKey) {
+                showApiStatus('請先輸入 API Key', 'error');
+                return;
+            }
+            
+            testApiBtn.disabled = true;
+            testApiBtn.textContent = '🔄 測試中...';
+            showApiStatus('正在驗證 API Key...', 'info');
+            errorMessage.innerHTML = '';
+
+            try {
+                const response = await callGeminiAPI('請回答：你好');
+                if (response && response.length > 0) {
+                    isApiValidated = true;
+                    showApiStatus('API Key 驗證成功！可以開始使用 AI 分析功能', 'success');
+                } else {
+                    throw new Error('API 回應為空');
+                }
+            } catch (error) {
+                isApiValidated = false;
+                let userFriendlyMessage = '<h3>❌ API 金鑰驗證失敗</h3>';
+                
+                if (error.message.includes('403')) {
+                    userFriendlyMessage += `<p>這通常表示您的 API 金鑰無效或權限不足。請檢查以下幾點：</p>
+                        <ul>
+                            <li>確認您已完整複製並貼上正確的 API 金鑰。</li>
+                            <li>前往您的 Google AI Studio / Google Cloud Console。</li>
+                            <li>確認「Generative Language API」或「Gemini API」已經啟用。</li>
+                            <li>確認您的專案已綁定有效的付款帳戶。</li>
+                            <li>如果您的金鑰有設定應用程式限制（例如 HTTP 參照網址），請確保它允許來自目前頁面的請求，或暫時移除限制來測試。</li>
+                        </ul>`;
+                } else if (error.message.includes('400')) {
+                     userFriendlyMessage += `<p>請求格式錯誤。這可能是程式碼的問題，但更可能是 API 金鑰尚未完全啟用或設定不正確所導致。</p>`;
+                } else if (error.message.includes('429')) {
+                    userFriendlyMessage += `<p>API 請求頻率過高。請稍候幾分鐘再試。</p>`;
+                } else if (error.message.includes('network') || error instanceof TypeError) {
+                    userFriendlyMessage += `<p>網路連線失敗。請檢查：</p>
+                        <ul>
+                            <li>您的網路連線是否正常。</li>
+                            <li>瀏覽器是否有安裝廣告攔截器 (Ad Blocker) 或隱私相關的擴充功能，它們可能會阻擋對 Google API 的請求。請嘗試暫時停用它們。</li>
+                            <li>如果您是直接從本機開啟此 HTML 檔案 (file://)，某些瀏覽器可能會因安全性原則而阻擋請求。</li>
+                        </ul>`;
+                } else {
+                    userFriendlyMessage += `<p>發生了未預期的錯誤。</p>`;
+                }
+                userFriendlyMessage += `<p><small>詳細錯誤訊息: ${error.message}</small></p>`;
+                
+                showError(userFriendlyMessage);
+                apiStatus.innerHTML = '';
+                console.error('API 測試失敗:', error);
+            } finally {
+                testApiBtn.disabled = false;
+                testApiBtn.textContent = '🔍 測試連接';
+                updateSummaryButtonState();
+            }
+        }
+        async function generateDocumentSummary() {
+            if (generateSummaryBtn.disabled) return;
+
+            const currentPageNum = previewState.currentPage;
+            if (!pdfPageTexts[currentPageNum - 1] || !pdfPageTexts[currentPageNum - 1].text.trim()) {
+                showError(`第 ${currentPageNum} 頁沒有可供分析的文字內容。`);
+                return;
+            }
+
+            try {
+                generateSummaryBtn.disabled = true;
+                generateSummaryBtn.textContent = '🔄 分析中...';
+                downloadSummaryBtn.style.display = 'none';
+                summaryText.innerHTML = `<div style="text-align: center; color: #00d4ff; padding: 20px;">🤖 AI 正在分析第 ${currentPageNum} 頁的內容，請稍候...</div>`;
+
+                const pageContent = pdfPageTexts[currentPageNum - 1].text;
+
+                const summaryPrompt = `這是一份PDF文件的第 ${currentPageNum} 頁內容。請為這一頁的內容提供一個簡潔但詳細的摘要。請專注於本頁的核心概念、關鍵數據或主要論點。\n\n頁面內容如下：\n"""\n${pageContent}\n"""\n\n請用繁體中文回答，並以條列式或段落形式呈現摘要。`;
+                
+                const response = await callGeminiAPI(summaryPrompt);
+                const formattedSummary = formatSummaryResponse(response);
+                summaryText.innerHTML = formattedSummary;
+                downloadSummaryBtn.style.display = 'inline-block';
+
+            } catch (error) {
+                console.error('生成摘要失敗:', error);
+                summaryText.innerHTML = `<div style="color: #ff6b6b; padding: 20px; text-align: center;">
+                    ❌ 摘要生成失敗<br>
+                    <span style="font-size: 0.9rem; opacity: 0.8;">${error.message}</span>
+                </div>`;
+                 downloadSummaryBtn.style.display = 'none';
+            } finally {
+                generateSummaryBtn.disabled = false;
+                generateSummaryBtn.textContent = '🤖 生成本頁摘要';
+                updateSummaryButtonState(); 
+            }
+        }
+        function formatSummaryResponse(response) {
+             let formatted = response
+                .replace(/## (.*)/g, '<h4 style="color: #00d4ff; margin: 20px 0 10px 0; font-size: 1.1rem; font-weight: 600;">$1</h4>')
+                .replace(/### (.*)/g, '<h5 style="color: #00cc66; margin: 15px 0 8px 0; font-size: 1rem; font-weight: 500;">$1</h5>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffffff;">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color: #e0e0e0;">$1</em>')
+                .replace(/\n\n/g, '</p><p style="margin: 10px 0; line-height: 1.6;">')
+                .replace(/\n/g, '<br>');
+            
+            return `<div style="color: #e0e0e0;"><p style="margin: 10px 0; line-height: 1.6;">${formatted}</p></div>`;
+        }
+        async function callGeminiAPI(prompt) {
+             const apiKey = geminiApiKey.value.trim();
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            
+            const requestBody = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.2, topK: 1, topP: 1, maxOutputTokens: 8192, },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+                ]
+            };
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    if (data.error) errorMessage += `: ${data.error.message || data.error.code}`;
+                    throw new Error(errorMessage);
+                }
+                if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    return data.candidates[0].content.parts[0].text;
+                } else if (data.candidates?.[0]?.finishReason) {
+                    throw new Error(`API 回應被過濾: ${data.candidates[0].finishReason}`);
+                } else {
+                    throw new Error('API 回應格式異常');
+                }
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('網路連接失敗，請檢查網路狀態');
+                }
+                throw error;
+            }
+        }
+        async function geminiChapterDetection(pageCount) { /* ... existing code ... */ }
+        async function intelligentChapterDetection(pageCount) { /* ... existing code ... */ }
+
+        // --- Results & Manual Editing ---
+        function displayResults() {
+            chapterList.innerHTML = '';
+
+            if (chapters.length === 0 && !previewState.pdf) {
+                 showError('請先上傳一個PDF文件。');
+                 return;
+            }
+            if (chapters.length > 0 && successMessage.textContent.trim() === '' && !successMessage.innerHTML.includes('info')) {
+                 showSuccess(`成功找到 ${chapters.length} 個章節！您現在可以編輯或預覽。`);
+            } else if (chapters.length === 0) {
+                 showSuccess('未偵測到章節，請手動新增。');
+            }
+
+            chapters.forEach((chapter, index) => {
+                const item = document.createElement('div');
+                item.className = 'chapter-item';
+                item.innerHTML = `
+                    <div class="chapter-item-inputs">
+                        <input type="text" value="${chapter.title}" data-id="${chapter.id}" data-field="title" placeholder="章節標題">
+                        <label>頁:</label>
+                        <input type="number" value="${chapter.startPage}" data-id="${chapter.id}" data-field="startPage" min="1">
+                        <span>-</span>
+                        <input type="number" value="${chapter.endPage}" data-id="${chapter.id}" data-field="endPage" min="1">
+                    </div>
+                    <div class="chapter-item-buttons">
+                        <button class="small-btn preview-btn" onclick="setPreviewToPage(${chapter.startPage})">預覽</button>
+                        <button class="small-btn" onclick="downloadChapter(${index})">下載</button>
+                        <button class="small-btn delete-btn" onclick="deleteChapter(${index})">刪除</button>
+                    </div>
+                `;
+                chapterList.appendChild(item);
+            });
+
+            // Add event listeners for live editing
+            chapterList.querySelectorAll('input[data-id]').forEach(input => {
+                input.addEventListener('change', (e) => updateChapter(e.target));
+            });
+            
+            results.style.display = 'block';
+        }
+
+        function addChapter() {
+            const title = newChapterTitle.value || `手動章節 ${chapters.length + 1}`;
+            const start = parseInt(newChapterStart.value);
+            const end = parseInt(newChapterEnd.value);
+
+            if (!previewState.pdf) {
+                showError('請先上傳 PDF 文件才能新增章節。');
+                return;
+            }
+            if (!start || !end || start > end || start < 1 || end > previewState.totalPages) {
+                showError('請輸入有效的頁碼範圍。');
+                return;
+            }
+
+            chapters.push({ id: Date.now(), title, startPage: start, endPage: end });
+            chapters.sort((a, b) => a.startPage - b.startPage);
+            displayResults();
+            newChapterTitle.value = '';
+            newChapterStart.value = '';
+            newChapterEnd.value = '';
+        }
+
+        function updateChapter(inputElement) {
+            const id = parseInt(inputElement.dataset.id);
+            const field = inputElement.dataset.field;
+            const value = (field === 'title') ? inputElement.value : parseInt(inputElement.value);
+
+            const chapterIndex = chapters.findIndex(c => c.id === id);
+            if (chapterIndex > -1) {
+                chapters[chapterIndex][field] = value;
+            }
+        }
+
+        function deleteChapter(index) {
+            chapters.splice(index, 1);
+            displayResults();
+        }
+
+        // --- Download Logic ---
+        function downloadSummary() {
+            const summaryHtml = summaryText.innerHTML;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = summaryHtml.replace(/<br\s*\/?>/gi, '\n');
+            const summaryPlainText = tempDiv.textContent || tempDiv.innerText || "";
+
+            if (!summaryPlainText.trim() || summaryPlainText.includes('點擊「生成摘要」')) {
+                showError('沒有可下載的摘要內容。');
+                return;
+            }
+
+            const blob = new Blob([summaryPlainText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '文件摘要.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function downloadChapter(index) {
+             if (currentPdfDoc) {
+                await downloadChapterNative(index);
+             } else {
+                await downloadChapterAsImage(index);
+             }
+        }
+
+        async function downloadChapterNative(index) {
+            try {
+                const chapter = chapters[index];
+                const newPdf = await PDFLib.PDFDocument.create();
+                const pagesToCopy = Array.from({length: chapter.endPage - chapter.startPage + 1}, (_, i) => chapter.startPage - 1 + i);
+                const copiedPages = await newPdf.copyPages(currentPdfDoc, pagesToCopy);
+                copiedPages.forEach(page => newPdf.addPage(page));
+                
+                const pdfBytes = await newPdf.save();
+                
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${chapter.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('下載章節時出錯:', error);
+                showError('下載章節時出錯');
+            }
+        }
+
+        async function downloadChapterAsImage(index) {
+            if (!previewState.pdf) {
+                showError('預覽文件不存在，無法下載。');
+                return;
+            }
+            const chapter = chapters[index];
+            const originalSuccessMessage = successMessage.innerHTML;
+            progressContainer.style.display = 'block';
+            showInfo(`正以影像模式準備下載章節 "${chapter.title}"... 這可能需要一些時間。`);
+
+            try {
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+                const pageRange = Array.from({length: chapter.endPage - chapter.startPage + 1}, (_, i) => chapter.startPage + i);
+                
+                const scale = 1.5; 
+
+                for (const [i, pageNum] of pageRange.entries()) {
+                    updateProgress( (i / pageRange.length) * 100, `正在處理影像頁: ${i+1} / ${pageRange.length}`);
+                    const page = await previewState.pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: scale });
+
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = viewport.width;
+                    tempCanvas.height = viewport.height;
+
+                    await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+
+                    const jpgImageBytes = await new Promise(resolve => {
+                        tempCanvas.toBlob(blob => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(new Uint8Array(reader.result));
+                            reader.readAsArrayBuffer(blob);
+                        }, 'image/jpeg', 0.9);
+                    });
+                    
+                    const jpgImage = await newPdfDoc.embedJpg(jpgImageBytes);
+
+                    const newPage = newPdfDoc.addPage([viewport.width, viewport.height]);
+                    newPage.drawImage(jpgImage, {
+                        x: 0,
+                        y: 0,
+                        width: viewport.width,
+                        height: viewport.height,
+                    });
+                }
+                updateProgress(100, '正在儲存 PDF...');
+                const pdfBytes = await newPdfDoc.save();
+                
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${chapter.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_影像版.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                if (originalSuccessMessage.includes('info')) {
+                    showSuccess(`章節 "${chapter.title}" 已成功下載為影像版 PDF。`);
+                } else {
+                    successMessage.innerHTML = originalSuccessMessage;
+                }
+
+            } catch (error) {
+                console.error('影像模式下載失敗:', error);
+                showError('以影像模式下載章節時發生錯誤。');
+            } finally {
+                progressContainer.style.display = 'none';
+            }
+        }
+
+
+        async function downloadAllChapters() {
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.textContent = '正在準備下載...';
+            try {
+                for (let i = 0; i < chapters.length; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await downloadChapter(i); 
+                }
+                showSuccess('所有章節下載完成！');
+            } catch (error) {
+                showError('批量下載時出錯');
+            } finally {
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.textContent = '📥 下載所有章節';
+            }
+        }
+        
+        async function downloadPageAsJpg(pageNum) {
+            if (!previewState.pdf) {
+                showError('預覽文件不存在，無法下載。');
+                return;
+            }
+            
+            showInfo(`正在準備下載第 ${pageNum} 頁...`);
+            
+            try {
+                const scale = 2.0; // Higher scale for better quality
+                const page = await previewState.pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: scale });
+
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = viewport.width;
+                tempCanvas.height = viewport.height;
+
+                await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+                
+                const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.95);
+                
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = `${currentFileName}_page_${pageNum}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showSuccess(`第 ${pageNum} 頁已成功下載為 JPG。`);
+
+            } catch (error) {
+                console.error('JPG 下載失敗:', error);
+                showError('下載 JPG 圖片時發生錯誤。');
+            }
+        }
+
+        async function downloadAllAsJpgZip() {
+            if (!previewState.pdf) {
+                showError('預覽文件不存在，無法下載。');
+                return;
+            }
+
+            const zip = new JSZip();
+            progressContainer.style.display = 'block';
+            
+            try {
+                const scale = 1.5; // A balance between quality and performance
+                for (let i = 1; i <= previewState.totalPages; i++) {
+                    updateProgress((i / previewState.totalPages) * 100, `正在轉換第 ${i} 頁...`);
+                    const page = await previewState.pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: scale });
+
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = viewport.width;
+                    tempCanvas.height = viewport.height;
+
+                    await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+
+                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    zip.file(`page_${i}.jpg`, blob);
+                }
+
+                updateProgress(100, '正在生成 ZIP 檔案...');
+                const content = await zip.generateAsync({ type: "blob" });
+
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(content);
+                a.download = `${currentFileName}_all_pages.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showSuccess('所有頁面已成功打包下載！');
+
+            } catch (error) {
+                console.error('ZIP 打包失敗:', error);
+                showError('打包所有頁面為 ZIP 時發生錯誤。');
+            } finally {
+                progressContainer.style.display = 'none';
+            }
+        }
+
+    </script>
+</body>
+</html>
+

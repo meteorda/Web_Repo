@@ -1,0 +1,3526 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SWOT 分析工具 - 專業版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js" 
+            onerror="this.onerror=null; this.src='https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --bg-grad-start: #2e3440;
+            --bg-grad-end: #1e222a;
+            --text-main: #eceff4;
+            --text-light: #d8dee9;
+            --header-bg: rgba(20, 24, 30, 0.8);
+            --card-bg: rgba(30, 35, 43, 0.8);
+            --input-bg: rgba(13, 17, 23, 0.7);
+            --border-main: #4c566a;
+            --border-light: rgba(129, 161, 193, 0.2);
+            --primary: #d1b48c;
+            --primary-light: rgba(209, 180, 140, 0.6);
+            --primary-dark: #b99867;
+            --primary-focus-shadow: rgba(209, 180, 140, 0.2);
+            --success: #8fbc8f;
+            --success-dark: #79a879;
+            --danger: #bf616a;
+            --danger-dark: #a94b54;
+            --info: #81a1c1;
+            --warning: #d08770;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(145deg, var(--bg-grad-start), var(--bg-grad-end));
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-main);
+            transition: background 0.5s, color 0.5s;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-grad-end);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 10px;
+            border: 2px solid var(--bg-grad-end);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            background: transparent;
+            border-radius: 25px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--header-bg);
+            backdrop-filter: blur(20px);
+            color: var(--text-main);
+            padding: 25px 30px;
+            text-align: center;
+            border-radius: 25px;
+            border: 1px solid var(--primary-light);
+            box-shadow: 0 20px 60px var(--shadow-color);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: var(--primary);
+            text-shadow: none;
+            font-weight: 800;
+        }
+
+        .header .version-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: var(--bg-grad-start);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            box-shadow: 0 4px 15px rgba(143, 188, 143, 0.3);
+            font-weight: 700;
+        }
+
+        .header .pro-badge {
+            background: linear-gradient(45deg, var(--warning), #c97558);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            color: var(--text-light);
+            margin-top: 10px;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--primary-light);
+            border-radius: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            color: var(--bg-grad-start);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--primary-focus-shadow);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            padding: 0;
+            min-height: 600px;
+        }
+
+        .input-section, .chart-section, .table-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            border: 1px solid var(--border-light);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .section-title:hover {
+            color: var(--primary-dark);
+            background: rgba(209, 180, 140, 0.05);
+            padding-left: 10px;
+            border-radius: 10px;
+        }
+
+        .section-title .title-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .collapse-icon {
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+            color: var(--primary);
+        }
+
+        .section-title.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-title .badge {
+            font-size: 0.5em;
+            background: linear-gradient(45deg, var(--warning), #c97558);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--bg-grad-start);
+            font-weight: 700;
+        }
+
+        .collapsible-section {
+            max-height: 10000px;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
+            opacity: 1;
+            margin-top: 20px;
+        }
+
+        .collapsible-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        /* 競爭對手比較 */
+        .competitor-section {
+            background: var(--input-bg);
+            border: 1px solid var(--primary-light);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .competitor-list {
+            margin-top: 15px;
+        }
+
+        .competitor-item {
+            background: rgba(46, 52, 64, 0.8);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .competitor-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .competitor-info {
+            flex: 1;
+        }
+
+        .competitor-name {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .competitor-score {
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+
+        .add-competitor-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: var(--bg-grad-start);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .add-competitor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--primary-focus-shadow);
+        }
+
+        /* 情境分析卡片 */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .scenario-card {
+            background: var(--input-bg);
+            border: 2px solid var(--border-light);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .scenario-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px var(--primary-focus-shadow);
+        }
+
+        .scenario-card.best {
+            border-color: var(--success);
+        }
+
+        .scenario-card.worst {
+            border-color: var(--danger);
+        }
+
+        .scenario-card.likely {
+            border-color: var(--info);
+        }
+
+        .scenario-card h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scenario-card .scenario-icon {
+            font-size: 1.5em;
+        }
+
+        .scenario-card p {
+            color: var(--text-light);
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .scenario-probability {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(209, 180, 140, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* 趨勢預測時間軸 */
+        .trend-timeline {
+            position: relative;
+            padding: 30px 0;
+        }
+
+        .trend-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .trend-item::before {
+            content: '';
+            position: absolute;
+            left: 60px;
+            top: 40px;
+            bottom: -30px;
+            width: 2px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .trend-item:last-child::before {
+            display: none;
+        }
+
+        .trend-date {
+            width: 100px;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1em;
+            flex-shrink: 0;
+        }
+
+        .trend-marker {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 15px var(--primary-focus-shadow);
+            z-index: 1;
+        }
+
+        .trend-content {
+            flex: 1;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .trend-content h5 {
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .trend-content p {
+            color: var(--text-light);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .trend-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .trend-tag.opportunity {
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .trend-tag.threat {
+            background: linear-gradient(45deg, var(--danger), var(--danger-dark));
+            color: var(--text-main);
+        }
+
+        .trend-tag.milestone {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: var(--bg-grad-start);
+        }
+
+        /* 互動式儀表板 */
+        .dashboard-container {
+            background: var(--input-bg);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+        }
+
+        .dashboard-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 20px;
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid var(--border-main);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-focus-shadow);
+        }
+
+        .filter-btn {
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-main);
+            border-radius: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary);
+            color: var(--bg-grad-start);
+            border-color: var(--primary);
+        }
+
+        .draggable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .draggable-item {
+            background: rgba(46, 52, 64, 0.8);
+            border: 2px dashed var(--border-light);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: move;
+            transition: all 0.3s ease;
+        }
+
+        .draggable-item:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px var(--primary-focus-shadow);
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.5;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .item-category {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9em;
+        }
+
+        .item-priority {
+            display: flex;
+            gap: 3px;
+        }
+
+        .star {
+            color: var(--warning);
+            font-size: 14px;
+        }
+
+        .star.empty {
+            color: var(--border-main);
+        }
+
+        .item-content {
+            color: var(--text-main);
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .item-description {
+            color: var(--text-light);
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .item-action-btn {
+            flex: 1;
+            padding: 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+        }
+
+        .item-action-btn:hover {
+            background: var(--primary);
+            color: var(--bg-grad-start);
+            border-color: var(--primary);
+        }
+
+        /* 比較雷達圖 */
+        .comparison-radar-container {
+            background: var(--input-bg);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+        }
+
+        .radar-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-label {
+            color: var(--text-light);
+            font-size: 0.9em;
+        }
+
+        /* 評分卡片 */
+        .score-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .score-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .score-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px var(--primary-focus-shadow);
+        }
+
+        .score-label {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .score-value {
+            color: var(--primary);
+            font-size: 2.5em;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .score-max {
+            color: var(--text-light);
+            font-size: 0.8em;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-main);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: width 0.5s ease;
+        }
+
+        /* 模態對話框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--primary-light);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px var(--shadow-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: scale(1.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-main);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-focus-shadow);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--primary-focus-shadow);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-main);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-main);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .priority-btn {
+            flex: 1;
+            padding: 12px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-main);
+            border-radius: 8px;
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .priority-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .priority-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--bg-grad-start);
+            transform: scale(1.05);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(46, 52, 64, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-content {
+            text-align: center;
+            color: var(--text-main);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-content h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .loading-content p {
+            font-size: 1em;
+            color: var(--text-light);
+        }
+
+        #statusMessages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+        }
+
+        .status {
+            padding: 18px 24px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 8px 25px var(--shadow-color);
+            animation: slideIn 0.3s ease;
+            font-weight: 600;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .status.success {
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .status.error {
+            background: linear-gradient(45deg, var(--danger), var(--danger-dark));
+            color: var(--text-main);
+        }
+
+        .status.info {
+            background: linear-gradient(45deg, var(--info), #6b8aaf);
+            color: var(--text-main);
+        }
+
+        /* API 設定區 */
+        .api-section {
+            background: var(--input-bg);
+            border: 1px solid var(--primary-light);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .api-section h3 {
+            color: var(--text-main);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .api-input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        /* 圖片上傳區域樣式 */
+        #imagePreview img {
+            transition: transform 0.3s ease;
+        }
+
+        #imagePreview img:hover {
+            transform: scale(1.02);
+        }
+
+        #imageAnalysisResult::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #imageAnalysisResult::-webkit-scrollbar-track {
+            background: var(--bg-grad-end);
+            border-radius: 4px;
+        }
+
+        #imageAnalysisResult::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 4px;
+        }
+
+        #imageAnalysisResult::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .image-upload-zone {
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-zone:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(129, 161, 193, 0.3);
+        }
+
+        .api-input-group input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 1px solid var(--border-main);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(13, 17, 23, 0.8);
+            color: var(--text-main);
+        }
+
+        .api-input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-focus-shadow);
+        }
+
+        .toggle-visibility {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-light);
+        }
+
+        .api-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .api-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn {
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(143, 188, 143, 0.4);
+        }
+
+        .clear-btn {
+            background: linear-gradient(45deg, var(--danger), var(--danger-dark));
+            color: var(--text-main);
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(191, 97, 106, 0.4);
+        }
+
+        .help-btn {
+            background: linear-gradient(45deg, var(--info), #6b8aaf);
+            color: var(--text-main);
+        }
+
+        .help-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(129, 161, 193, 0.4);
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: var(--bg-grad-start);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--primary-focus-shadow);
+        }
+
+        .api-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-pending {
+            background: rgba(76, 86, 106, 0.15);
+            color: var(--text-light);
+            border: 1px solid rgba(76, 86, 106, 0.5);
+        }
+
+        .status-success {
+            background: rgba(143, 188, 143, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(143, 188, 143, 0.5);
+        }
+
+        .status-error {
+            background: rgba(191, 97, 106, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(191, 97, 106, 0.5);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: var(--bg-grad-start);
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 15px var(--primary-focus-shadow);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(209, 180, 140, 0.4);
+        }
+
+        .generate-btn:disabled {
+            background: linear-gradient(45deg, var(--border-main), #3b4252);
+            cursor: not-allowed;
+            transform: none;
+            color: var(--text-light);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 1400px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>處理中...</h3>
+            <p id="loadingStatus">正在分析資料</p>
+        </div>
+    </div>
+
+    <div id="statusMessages"></div>
+
+    <!-- 新增競爭對手模態框 -->
+    <div id="competitorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🏢 新增競爭對手</h3>
+                <button class="modal-close" onclick="closeCompetitorModal()">✕</button>
+            </div>
+            <div class="form-group">
+                <label>競爭對手名稱</label>
+                <input type="text" id="competitorName" placeholder="例如：競爭公司 A">
+            </div>
+            <div class="form-group">
+                <label>公司簡介</label>
+                <textarea id="competitorDesc" placeholder="簡要描述該競爭對手的業務、產品或特色..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="addCompetitor()">新增</button>
+                <button class="btn btn-secondary" onclick="closeCompetitorModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯項目對話框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ 編輯 SWOT 項目</h3>
+                <button class="modal-close" onclick="closeEditModal()">✕</button>
+            </div>
+            <div class="form-group">
+                <label>類別</label>
+                <select id="editCategory" style="width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--border-main); border-radius: 8px; color: var(--text-main);">
+                    <option value="S">優勢 (Strengths)</option>
+                    <option value="W">劣勢 (Weaknesses)</option>
+                    <option value="O">機會 (Opportunities)</option>
+                    <option value="T">威脅 (Threats)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>項目名稱</label>
+                <input type="text" id="editItem" placeholder="例如：技術領先">
+            </div>
+            <div class="form-group">
+                <label>詳細描述</label>
+                <textarea id="editDescription" placeholder="提供詳細的說明..." rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>優先級 (1-5)</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="priority-btn" data-priority="1" onclick="selectPriority(1)">1</button>
+                    <button class="priority-btn" data-priority="2" onclick="selectPriority(2)">2</button>
+                    <button class="priority-btn" data-priority="3" onclick="selectPriority(3)">3</button>
+                    <button class="priority-btn" data-priority="4" onclick="selectPriority(4)">4</button>
+                    <button class="priority-btn active" data-priority="5" onclick="selectPriority(5)">5</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveEditedItem()">💾 儲存</button>
+                <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎯 AI SWOT 分析工具<span class="version-badge pro-badge">專業版 v3.8 Groq</span></h1>
+            <p>智能商業策略分析 | 競爭對手比較 | 情境模擬 | 趨勢預測 | 互動式儀表板 | 圖片識別</p>
+            <div class="control-panel">
+                <button class="control-btn" onclick="toggleAllMainSections(true)">📖 全部展開</button>
+                <button class="control-btn" onclick="toggleAllMainSections(false)">📕 全部收起</button>
+                <button class="control-btn" onclick="showCompetitorModal()">🏢 新增競爭對手</button>
+                <button class="control-btn" onclick="generateScenarios()">🎲 情境模擬</button>
+                <button class="control-btn" onclick="generateTrendPrediction()">📈 趨勢預測</button>
+                <button class="control-btn" onclick="downloadPresentation()" style="background: linear-gradient(45deg, var(--success), var(--success-dark)); color: var(--bg-grad-start); font-weight: 700;">📥 下載簡報</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左欄：輸入與競爭對手 -->
+            <div class="input-section">
+                <h2 class="section-title" onclick="toggleSection('inputContent')">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>📝 資料輸入</span>
+                    </span>
+                </h2>
+                
+                <div id="inputContent" class="collapsible-section">
+                    <!-- API Key 設定 -->
+                    <div class="api-section">
+                        <h3>🔑 Groq API 設定</h3>
+                        <div class="api-input-group">
+                            <input type="password" id="apiKey" placeholder="請輸入您的 Groq API Key (gsk_...)">
+                            <button class="toggle-visibility" onclick="toggleApiKeyVisibility()">👁️</button>
+                        </div>
+                        <div class="api-input-group" style="margin-top: 10px;">
+                            <select id="modelSelect" style="width: 100%; padding: 12px 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text-light); border: 1px solid rgba(255,255,255,0.15); font-size: 14px;">
+                                <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile（推薦）</option>
+                                <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+                                <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
+                                <option value="moonshotai/kimi-k2-instruct">moonshotai/kimi-k2-instruct</option>
+                                <option value="llama-3.1-8b-instant">llama-3.1-8b-instant（最快）</option>
+                            </select>
+                        </div>
+                        <div class="api-buttons">
+                            <button class="api-btn test-btn" onclick="testApiKey()">✓ 測試</button>
+                            <button class="api-btn clear-btn" onclick="clearApiKey()">✗ 清除</button>
+                            <button class="api-btn help-btn" onclick="showApiHelp()">? 說明</button>
+                            <button class="api-btn save-btn" onclick="saveApiKey()">💾 儲存</button>
+                        </div>
+                        <div id="apiStatus" class="api-status status-pending">⏳ 尚未設定</div>
+                    </div>
+
+                    <!-- 分析主題 -->
+                    <div class="form-group">
+                        <label for="analysisSubject">📌 分析主題 (您的公司/產品)</label>
+                        <input type="text" id="analysisSubject" placeholder="例如：公司名稱、產品名稱等">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additionalNotes">📄 補充說明</label>
+                        <textarea id="additionalNotes" placeholder="提供額外的背景資訊或特殊需求..."></textarea>
+                    </div>
+
+                    <!-- 文件上傳功能 -->
+                    <div class="form-group" style="padding: 15px; background: var(--input-bg); border-radius: 12px; border: 1px dashed var(--primary-light);">
+                        <label style="display: block; margin-bottom: 10px; color: var(--primary); font-weight: 600;">
+                            📎 上傳參考文件 (可選)
+                        </label>
+                        <input type="file" id="docUpload" accept=".txt,.pdf,.doc,.docx" 
+                               style="display: block; width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--border-main); border-radius: 8px; color: var(--text-main); cursor: pointer;"
+                               onchange="handleDocUpload(event)">
+                        <div id="uploadedDocInfo" style="margin-top: 10px; font-size: 0.9em; color: var(--success);"></div>
+                    </div>
+
+                    <!-- 圖片識別分析功能 NEW -->
+                    <div class="form-group" style="padding: 15px; background: linear-gradient(135deg, rgba(129, 161, 193, 0.1), rgba(143, 188, 143, 0.1)); border-radius: 12px; border: 2px dashed var(--info);">
+                        <label style="display: block; margin-bottom: 10px; color: var(--info); font-weight: 600;">
+                            📸 AI 圖片識別分析 <span style="background: linear-gradient(45deg, var(--info), #6b8aaf); color: white; font-size: 0.7em; padding: 2px 8px; border-radius: 10px; margin-left: 5px;">NEW</span>
+                        </label>
+                        <p style="font-size: 0.85em; color: var(--text-light); margin-bottom: 10px; line-height: 1.5;">
+                            上傳產品圖片，AI 將自動識別特徵並生成 SWOT 分析建議
+                        </p>
+                        <input type="file" id="imageUpload" accept="image/jpeg,image/png,image/jpg,image/webp" 
+                               style="display: block; width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--border-main); border-radius: 8px; color: var(--text-main); cursor: pointer;"
+                               onchange="handleImageUpload(event)">
+                        
+                        <!-- 圖片預覽區 -->
+                        <div id="imagePreview" style="margin-top: 15px; display: none;">
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <img id="previewImg" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid var(--border-main);">
+                            </div>
+                            <button class="btn btn-primary" onclick="analyzeImage()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, var(--info), #6b8aaf); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+                                🤖 AI 分析圖片
+                            </button>
+                        </div>
+                        
+                        <div id="imageAnalysisResult" style="margin-top: 10px; font-size: 0.9em;"></div>
+                    </div>
+
+                    <button class="generate-btn" onclick="generateSwotAnalysis()">🚀 生成 SWOT 分析</button>
+                </div>
+
+                <!-- 競爭對手管理 -->
+                <h2 class="section-title" onclick="toggleSection('competitorContent')" style="margin-top: 30px;">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>🏢 競爭對手</span>
+                    </span>
+                    <span class="badge">NEW</span>
+                </h2>
+                
+                <div id="competitorContent" class="collapsible-section">
+                    <div class="competitor-section">
+                        <!-- 使用說明 -->
+                        <div style="margin-bottom: 15px; padding: 12px; background: rgba(129, 161, 193, 0.1); border-radius: 10px; border: 1px solid rgba(129, 161, 193, 0.3);">
+                            <p style="color: var(--info); margin: 0; font-size: 0.9em; line-height: 1.6;">
+                                💡 <strong>使用提示：</strong>新增競爭對手後，雷達圖將自動更新顯示主公司與競爭對手的比較分析
+                            </p>
+                        </div>
+                        
+                        <!-- 新增競爭對手快速輸入區 -->
+                        <div style="margin-bottom: 20px; padding: 15px; background: var(--input-bg); border-radius: 12px; border: 1px solid var(--primary-light);">
+                            <h4 style="color: var(--primary); margin-bottom: 15px; font-weight: 600;">快速新增競爭對手</h4>
+                            <div class="form-group">
+                                <input type="text" id="quickCompetitorName" placeholder="競爭對手名稱" style="width: 100%; padding: 10px; margin-bottom: 10px; background: var(--card-bg); border: 1px solid var(--border-main); border-radius: 8px; color: var(--text-main);">
+                            </div>
+                            <div class="form-group">
+                                <textarea id="quickCompetitorDesc" placeholder="簡要描述該競爭對手的業務、產品或特色..." rows="3" style="width: 100%; padding: 10px; margin-bottom: 10px; background: var(--card-bg); border: 1px solid var(--border-main); border-radius: 8px; color: var(--text-main); resize: vertical;"></textarea>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button class="btn btn-primary" onclick="addQuickCompetitor()" style="flex: 1;">➕ 新增並分析</button>
+                                <label for="competitorDocUpload" class="btn btn-secondary" style="flex: 1; margin: 0; text-align: center; cursor: pointer;">
+                                    📄 上傳文件
+                                    <input type="file" id="competitorDocUpload" accept=".txt,.pdf,.doc,.docx" style="display: none;" onchange="handleCompetitorDocUpload(event)">
+                                </label>
+                            </div>
+                            <div id="competitorUploadInfo" style="margin-top: 10px; font-size: 0.9em; color: var(--success);"></div>
+                        </div>
+                        
+                        <div id="competitorList" class="competitor-list">
+                            <p style="text-align: center; color: var(--text-light); padding: 20px;">
+                                尚未新增競爭對手<br>
+                                點擊上方「🏢 新增競爭對手」開始比較
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中欄：視覺化與比較 -->
+            <div class="chart-section">
+                <h2 class="section-title" onclick="toggleSection('chartContent')">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>📊 視覺化分析</span>
+                    </span>
+                </h2>
+                
+                <div id="chartContent" class="collapsible-section">
+                    <!-- 比較雷達圖 -->
+                    <div class="comparison-radar-container">
+                        <canvas id="comparisonRadarChart"></canvas>
+                        <div id="radarLegend" class="radar-legend"></div>
+                    </div>
+                    
+                    <!-- 雷達圖說明 -->
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(129, 161, 193, 0.05); border-radius: 10px; border: 1px solid rgba(129, 161, 193, 0.2);">
+                        <p style="color: var(--text-light); margin: 0; font-size: 0.85em; line-height: 1.6;">
+                            💡 <strong style="color: var(--info);">雷達圖解讀：</strong><br>
+                            • <strong>優勢/機會</strong>：分數越高越好<br>
+                            • <strong>劣勢控制度</strong>：劣勢越少，控制度越高（30 = 完美控制）<br>
+                            • <strong>威脅防禦度</strong>：威脅越少，防禦度越高（30 = 完美防禦）<br>
+                            • <strong>所有維度</strong>：圖形越大越好 ✅
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 競爭優勢評分 -->
+                <h2 class="section-title" onclick="toggleSection('scoreContent')" style="margin-top: 30px;">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>🎯 競爭優勢評分</span>
+                    </span>
+                    <span class="badge">NEW</span>
+                </h2>
+                
+                <div id="scoreContent" class="collapsible-section">
+                    <div id="scoreCards" class="score-cards">
+                        <div class="chart-placeholder" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                            <p>生成 SWOT 分析後將顯示量化評分</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 情境模擬 -->
+                <h2 class="section-title" onclick="toggleSection('scenarioContent')" style="margin-top: 30px;">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>🎲 情境模擬分析</span>
+                    </span>
+                    <span class="badge">NEW</span>
+                </h2>
+                
+                <div id="scenarioContent" class="collapsible-section">
+                    <div id="scenarioGrid" class="scenario-grid">
+                        <div class="chart-placeholder" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                            <p style="font-size: 1.1em; color: var(--primary); margin-bottom: 10px;">📋 使用說明</p>
+                            <p style="color: var(--text-light);">1️⃣ 先在左側「資料輸入」生成主要 SWOT 分析<br>
+                            2️⃣ 再點擊上方「🎲 情境模擬」按鈕生成分析</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右欄：趨勢與儀表板 -->
+            <div class="table-section">
+                <h2 class="section-title" onclick="toggleSection('trendContent')">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>📈 趨勢預測</span>
+                    </span>
+                    <span class="badge">NEW</span>
+                </h2>
+                
+                <div id="trendContent" class="collapsible-section">
+                    <div id="trendTimeline" class="trend-timeline">
+                        <div class="chart-placeholder" style="text-align: center; padding: 40px;">
+                            <p style="font-size: 1.1em; color: var(--primary); margin-bottom: 10px;">📋 使用說明</p>
+                            <p style="color: var(--text-light);">1️⃣ 先在左側「資料輸入」生成主要 SWOT 分析<br>
+                            2️⃣ 再點擊上方「📈 趨勢預測」按鈕生成分析<br>
+                            <span style="color: var(--info); font-size: 0.9em;">⏰ 預測範圍：從今天起未來 6 個月</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 互動式儀表板 -->
+                <h2 class="section-title" onclick="toggleSection('dashboardContent')" style="margin-top: 30px;">
+                    <span class="title-left">
+                        <span class="collapse-icon">▼</span>
+                        <span>📊 互動式儀表板</span>
+                    </span>
+                    <span class="badge">NEW</span>
+                </h2>
+                
+                <div id="dashboardContent" class="collapsible-section">
+                    <div class="dashboard-container">
+                        <div class="dashboard-controls">
+                            <input type="text" id="searchBox" class="search-box" placeholder="🔍 搜尋 SWOT 項目..." onkeyup="filterDashboard()">
+                            <button class="filter-btn" onclick="filterCategory('all')">全部</button>
+                            <button class="filter-btn" onclick="filterCategory('S')">優勢</button>
+                            <button class="filter-btn" onclick="filterCategory('W')">劣勢</button>
+                            <button class="filter-btn" onclick="filterCategory('O')">機會</button>
+                            <button class="filter-btn" onclick="filterCategory('T')">威脅</button>
+                        </div>
+                        <div id="draggableGrid" class="draggable-grid">
+                            <div class="chart-placeholder" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                                <p>生成 SWOT 分析後可在此拖拽編輯項目</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域錯誤處理
+        window.addEventListener('error', function(e) {
+            console.error('全域錯誤:', e.error || e.message);
+            e.preventDefault();
+        });
+
+        // 全域變數
+        let groqApiKey = '';
+        let currentSwotData = {};
+        let competitors = [];
+        let comparisonRadarChart = null;
+        let currentFilter = 'all';
+        let sortableInstance = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedApiKey();
+            initializeCharts();
+            
+            // 檢查 PptxGenJS 是否載入
+            setTimeout(() => {
+                if (typeof PptxGenJS === 'undefined') {
+                    console.warn('PptxGenJS 未正確載入，簡報下載功能可能無法使用');
+                } else {
+                    console.log('✅ PptxGenJS 載入成功');
+                }
+            }, 1000);
+            
+            setTimeout(() => {
+                if (typeof mermaid !== 'undefined') {
+                    try {
+                        mermaid.initialize({ 
+                            startOnLoad: true,
+                            theme: 'dark',
+                            themeVariables: {
+                                darkMode: true,
+                                background: '#2e3440',
+                                primaryColor: '#d1b48c',
+                                primaryTextColor: '#eceff4',
+                                primaryBorderColor: '#d1b48c',
+                                lineColor: '#d1b48c',
+                                secondaryColor: '#1e222a',
+                                tertiaryColor: '#0d1117'
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Mermaid 初始化錯誤:', error);
+                    }
+                }
+            }, 100);
+        });
+
+        // API Key 管理
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('apiKey');
+            const button = event.target;
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        async function testApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                updateApiStatus('❌ 請先輸入 API Key', 'status-error');
+                return;
+            }
+
+            updateApiStatus('🔄 測試中...', 'status-pending');
+            
+            try {
+                const model = document.getElementById('modelSelect').value;
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [{ role: 'user', content: '測試連接，請回覆 OK' }],
+                        max_tokens: 10
+                    })
+                });
+
+                if (response.ok) {
+                    groqApiKey = apiKey;
+                    updateApiStatus('✅ API Key 有效', 'status-success');
+                    showStatus('✅ API Key 測試成功！', 'success');
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    updateApiStatus('❌ API Key 無效', 'status-error');
+                    showStatus(`❌ 測試失敗：${err.error?.message || response.status}`, 'error');
+                }
+            } catch (error) {
+                updateApiStatus('❌ 連接失敗', 'status-error');
+                showStatus('❌ 無法連接到 Groq API', 'error');
+            }
+        }
+
+        function clearApiKey() {
+            if (confirm('確定要清除 API Key 嗎？')) {
+                document.getElementById('apiKey').value = '';
+                groqApiKey = '';
+                localStorage.removeItem('groqApiKey');
+                updateApiStatus('⏳ 尚未設定', 'status-pending');
+                showStatus('🧹 API Key 已清除', 'info');
+            }
+        }
+
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showStatus('❌ 請先輸入 API Key', 'error');
+                return;
+            }
+            localStorage.setItem('groqApiKey', apiKey);
+            localStorage.setItem('groqModel', document.getElementById('modelSelect').value);
+            groqApiKey = apiKey;
+            showStatus('💾 API Key 已儲存', 'success');
+        }
+
+        function loadSavedApiKey() {
+            const savedKey = localStorage.getItem('groqApiKey');
+            const savedModel = localStorage.getItem('groqModel');
+            if (savedModel) {
+                const sel = document.getElementById('modelSelect');
+                if (sel && [...sel.options].some(o => o.value === savedModel)) {
+                    sel.value = savedModel;
+                }
+            }
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                groqApiKey = savedKey;
+                updateApiStatus('✅ 已載入儲存的 Key', 'status-success');
+            }
+        }
+
+        function updateApiStatus(message, statusClass) {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = 'api-status ' + statusClass;
+        }
+
+        function showApiHelp() {
+            const helpText = `🔑 如何取得 Groq API Key：
+
+1. 前往 Groq Console
+   https://console.groq.com/keys
+
+2. 登入您的帳號（可用 Google 登入）
+
+3. 點擊「Create API Key」
+
+4. 複製產生的 API Key（gsk_ 開頭）
+
+5. 貼到上方輸入框，選擇模型後按「測試」
+
+💡 提示：
+• API Key 只會儲存在您的瀏覽器中
+• 請妥善保管您的 API Key
+• Groq 免費額度有每分鐘/每日請求限制 (TPM/TPD)
+• 若遇到速率限制，工具會自動降級到其他模型重試`;
+            alert(helpText);
+        }
+
+        // SWOT 分析生成
+        async function generateSwotAnalysis() {
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定並測試 API Key', 'error');
+                return;
+            }
+
+            const subject = document.getElementById('analysisSubject').value.trim();
+            const notes = document.getElementById('additionalNotes').value.trim();
+
+            if (!subject) {
+                showStatus('❌ 請輸入分析主題', 'error');
+                return;
+            }
+
+            showLoading(true, '正在生成 SWOT 分析...');
+
+            try {
+                // v3.8: 檢查內容是否超過 TPM 預算，過長則自動壓縮
+                let safeNotes = notes;
+                const inputBudget = MAX_TPM - 4096 - 1000; // 扣除輸出與提示餘裕
+                if (notes && estimateTokens(notes) > inputBudget) {
+                    showLoading(true, '📦 資料過長，正在自動分段壓縮（免費層 TPM 限制）...');
+                    safeNotes = await compressLongContent(notes, (cur, total, etaSec) => {
+                        showLoading(true, `📦 壓縮中 ${cur}/${total} 段` + (etaSec > 0 ? `（預估還需 ${etaSec} 秒）` : '') + '...');
+                    });
+                    showLoading(true, '正在生成 SWOT 分析...');
+                }
+
+                let combinedContent = `分析主題: ${subject}\n\n`;
+                if (safeNotes) {
+                    combinedContent += `補充說明: ${safeNotes}\n\n`;
+                }
+
+                const swotPrompt = `請根據以下資料進行全面的 SWOT 分析，並為每個項目提供 1-5 的重要性評分：
+
+${combinedContent}
+
+請以 JSON 格式回傳，包含以下結構：
+{
+    "company": "${subject}",
+    "strengths": [
+        {"item": "優勢項目", "description": "詳細說明", "priority": 5},
+        ...
+    ],
+    "weaknesses": [
+        {"item": "劣勢項目", "description": "詳細說明", "priority": 3},
+        ...
+    ],
+    "opportunities": [
+        {"item": "機會項目", "description": "詳細說明", "priority": 4},
+        ...
+    ],
+    "threats": [
+        {"item": "威脅項目", "description": "詳細說明", "priority": 3},
+        ...
+    ]
+}
+
+評分標準：
+5 = 極重要/極緊急
+4 = 很重要
+3 = 中等重要
+2 = 次要
+1 = 較不重要
+
+每個類別請提供 4-6 個項目。`;
+
+                const swotResponse = await callGroqAPI(swotPrompt);
+                const swotData = parseSwotJson(swotResponse);
+                currentSwotData = swotData;
+
+                // 更新視覺化
+                updateComparisonRadar();
+                updateScoreCards(swotData);
+                updateDashboard(swotData);
+
+                showLoading(false);
+                showStatus('✅ SWOT 分析完成！', 'success');
+
+            } catch (error) {
+                showLoading(false);
+                console.error('SWOT 分析錯誤:', error);
+                let hint = '';
+                if (error.tooLarge) hint = '（提示：請減少補充說明/上傳文件內容，或稍後再試）';
+                else if (error.rateLimited) hint = '（提示：已達 TPM/TPD 速率限制，請等待約 1 分鐘後重試）';
+                showStatus(`❌ 分析失敗: ${error.message} ${hint}`, 'error');
+            }
+        }
+
+        // ===== v3.8: Token 預算管理 =====
+        // Groq 免費層各模型 TPM（tokens per minute）上限（保守值）
+        const MODEL_TPM = {
+            'llama-3.3-70b-versatile': 12000,
+            'moonshotai/kimi-k2-instruct': 10000,
+            'openai/gpt-oss-120b': 8000,
+            'openai/gpt-oss-20b': 8000,
+            'llama-3.1-8b-instant': 6000
+        };
+        const MAX_TPM = Math.max(...Object.values(MODEL_TPM));
+
+        // 估算 token 數：CJK 字元約 1.1 token/字，其餘約 3.5 字元/token
+        function estimateTokens(text) {
+            if (!text) return 0;
+            let cjk = 0, other = 0;
+            for (let i = 0; i < text.length; i++) {
+                const c = text.charCodeAt(i);
+                if ((c >= 0x3000 && c <= 0x9fff) || (c >= 0xf900 && c <= 0xfaff) || (c >= 0xff00 && c <= 0xffef)) cjk++;
+                else other++;
+            }
+            return Math.ceil(cjk * 1.1 + other / 3.5);
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // 底層 Groq 請求（單模型、可自訂 maxTokens / JSON 模式）
+        async function groqRequest(model, prompt, opts = {}) {
+            const maxTokens = opts.maxTokens || 4096;
+            const jsonMode = opts.json !== false;
+            const body = {
+                model: model,
+                messages: [
+                    { role: 'system', content: opts.system || '你是一位專業的企業策略顧問，擅長 SWOT 分析。請嚴格依照使用者要求的 JSON 格式回傳，只輸出 JSON，不要加任何說明文字或 Markdown 標記。' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: opts.temperature ?? 0.7,
+                max_tokens: maxTokens
+            };
+            if (jsonMode) body.response_format = { type: 'json_object' };
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${groqApiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                const msg = err.error?.message || `API 請求失敗 (${response.status})`;
+                const e = new Error(msg);
+                e.status = response.status;
+                e.tooLarge = response.status === 413 || /request too large|reduce your message size/i.test(msg);
+                e.rateLimited = response.status === 429;
+                throw e;
+            }
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // Groq API 呼叫（v3.8：TPM 預算過濾 + 智慧排序 + 降級備援）
+        async function callGroqAPI(prompt, opts = {}) {
+            const selected = document.getElementById('modelSelect').value;
+            const maxTokens = opts.maxTokens || 4096;
+            // 本次請求所需 token 預算 = 輸入 + 輸出 + 系統提示餘裕
+            const needed = estimateTokens(prompt) + maxTokens + 400;
+
+            let chain = [selected, 'llama-3.3-70b-versatile', 'moonshotai/kimi-k2-instruct', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant']
+                .filter((m, i, arr) => arr.indexOf(m) === i);
+
+            // 過濾掉 TPM 不足以承載本次請求的模型
+            const capable = chain.filter(m => (MODEL_TPM[m] || MAX_TPM) >= needed);
+            if (capable.length === 0) {
+                const e = new Error(`請求過大（約 ${needed.toLocaleString()} tokens），超過所有模型的 TPM 上限（最大 ${MAX_TPM.toLocaleString()}）`);
+                e.tooLarge = true;
+                throw e;
+            }
+            // 若使用者選的模型撐不住，改以 TPM 由大到小排序
+            if (!capable.includes(selected)) {
+                capable.sort((a, b) => (MODEL_TPM[b] || 0) - (MODEL_TPM[a] || 0));
+            }
+
+            let lastError = null;
+            for (const model of capable) {
+                try {
+                    return await groqRequest(model, prompt, opts);
+                } catch (error) {
+                    lastError = error;
+                    if (error.rateLimited || error.tooLarge) continue; // 換下一個模型
+                    // 其他錯誤也嘗試降級
+                }
+            }
+            throw lastError || new Error('所有模型皆無法使用');
+        }
+
+        // ===== v3.8: 超長內容自動分段壓縮（map-reduce）=====
+        async function compressLongContent(text, onProgress) {
+            const CHUNK_BUDGET = 3200;   // 每段輸入約 3200 tokens
+            const SUMMARY_TOKENS = 700;  // 每段摘要輸出上限
+
+            // 極端過長時先硬截斷（保留頭尾）
+            if (estimateTokens(text) > 60000) {
+                const keep = Math.floor(text.length * 0.6);
+                text = text.slice(0, Math.floor(keep * 0.7)) + '\n\n…（中段內容過長已略）…\n\n' + text.slice(-Math.floor(keep * 0.3));
+            }
+
+            // 依段落切塊
+            const paras = text.split(/\n+/);
+            const chunks = [];
+            let buf = '';
+            for (const p of paras) {
+                if (buf && estimateTokens(buf + '\n' + p) > CHUNK_BUDGET) {
+                    chunks.push(buf); buf = p;
+                } else {
+                    buf = buf ? buf + '\n' + p : p;
+                }
+                // 單一超長段落再切
+                while (estimateTokens(buf) > CHUNK_BUDGET) {
+                    const cut = Math.floor(buf.length * CHUNK_BUDGET / estimateTokens(buf));
+                    chunks.push(buf.slice(0, cut)); buf = buf.slice(cut);
+                }
+            }
+            if (buf) chunks.push(buf);
+
+            // 挑 TPM 最大的模型做壓縮，並依 TPM 計算段間等待時間
+            const model = 'llama-3.3-70b-versatile';
+            const perReq = CHUNK_BUDGET + SUMMARY_TOKENS + 400;
+            const delayMs = Math.ceil(60000 * perReq / (MODEL_TPM[model] || 12000)) + 1500;
+
+            const summaries = [];
+            for (let i = 0; i < chunks.length; i++) {
+                if (onProgress) onProgress(i + 1, chunks.length, i < chunks.length - 1 ? Math.round((chunks.length - 1 - i) * delayMs / 1000) : 0);
+                let summary;
+                try {
+                    summary = await groqRequest(model, '請將以下資料濃縮為重點摘要，保留：具體數據、公司/產品名稱、市場資訊、優勢劣勢相關事實。以條列式輸出，300 字內：\n\n' + chunks[i], {
+                        maxTokens: SUMMARY_TOKENS, json: false, temperature: 0.3,
+                        system: '你是專業的商業文件摘要助手，輸出精簡條列重點。'
+                    });
+                } catch (err) {
+                    if (err.rateLimited) {
+                        await sleep(25000); i--; continue; // TPM 未重置，等待後重試同一段
+                    }
+                    summary = chunks[i].slice(0, 400); // 摘要失敗時退回截斷
+                }
+                summaries.push(summary.trim());
+                if (i < chunks.length - 1) await sleep(delayMs);
+            }
+            return '【以下為原始文件之自動壓縮摘要】\n' + summaries.join('\n\n');
+        }
+
+        // JSON 解析
+        function parseSwotJson(text) {
+            try {
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+            } catch (error) {
+                console.error('JSON 解析錯誤:', error);
+            }
+            return {
+                company: '',
+                strengths: [],
+                weaknesses: [],
+                opportunities: [],
+                threats: []
+            };
+        }
+
+        // 競爭對手管理
+        function showCompetitorModal() {
+            document.getElementById('competitorModal').classList.add('active');
+        }
+
+        function closeCompetitorModal() {
+            document.getElementById('competitorModal').classList.remove('active');
+            document.getElementById('competitorName').value = '';
+            document.getElementById('competitorDesc').value = '';
+        }
+
+        async function addCompetitor() {
+            const name = document.getElementById('competitorName').value.trim();
+            const desc = document.getElementById('competitorDesc').value.trim();
+
+            if (!name) {
+                showStatus('❌ 請輸入競爭對手名稱', 'error');
+                return;
+            }
+
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定 API Key', 'error');
+                return;
+            }
+
+            closeCompetitorModal();
+            showLoading(true, `正在分析 ${name}...`);
+
+            try {
+                const prompt = `請針對以下競爭對手進行 SWOT 分析：
+
+競爭對手：${name}
+${desc ? `描述：${desc}` : ''}
+
+請以 JSON 格式回傳 SWOT 分析結果，格式與之前相同。`;
+
+                const response = await callGroqAPI(prompt);
+                const swotData = parseSwotJson(response);
+                swotData.company = name;
+
+                competitors.push(swotData);
+                updateCompetitorList();
+                updateComparisonRadar();
+
+                showLoading(false);
+                showStatus(`✅ 已新增競爭對手: ${name}`, 'success');
+
+            } catch (error) {
+                showLoading(false);
+                showStatus(`❌ 新增失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function updateCompetitorList() {
+            const listContainer = document.getElementById('competitorList');
+            
+            if (competitors.length === 0) {
+                listContainer.innerHTML = `
+                    <p style="text-align: center; color: var(--text-light); padding: 20px;">
+                        尚未新增競爭對手<br>
+                        點擊上方「🏢 新增競爭對手」開始比較
+                    </p>
+                `;
+                return;
+            }
+
+            let html = '';
+            competitors.forEach((comp, index) => {
+                const totalScore = calculateTotalScore(comp);
+                html += `
+                    <div class="competitor-item">
+                        <div class="competitor-info">
+                            <div class="competitor-name">${comp.company}</div>
+                            <div class="competitor-score">
+                                總分: ${totalScore.toFixed(1)} / 100
+                            </div>
+                        </div>
+                        <button class="clear-btn api-btn" onclick="removeCompetitor(${index})" style="padding: 8px 15px;">移除</button>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        function removeCompetitor(index) {
+            if (confirm(`確定要移除 ${competitors[index].company} 嗎？`)) {
+                competitors.splice(index, 1);
+                updateCompetitorList();
+                updateComparisonRadar();
+                showStatus('✅ 已移除競爭對手', 'success');
+            }
+        }
+
+        function calculateTotalScore(swotData) {
+            if (!swotData) return 0;
+            
+            const sScore = swotData.strengths?.reduce((sum, s) => sum + (s.priority || 3), 0) || 0;
+            const wScore = swotData.weaknesses?.reduce((sum, w) => sum + (w.priority || 3), 0) || 0;
+            const oScore = swotData.opportunities?.reduce((sum, o) => sum + (o.priority || 3), 0) || 0;
+            const tScore = swotData.threats?.reduce((sum, t) => sum + (t.priority || 3), 0) || 0;
+            
+            // 優化總分計算公式
+            // 正面分數（優勢 + 機會）- 負面分數（劣勢 + 威脅）
+            // 映射到 0-100 的範圍
+            const positiveScore = sScore + oScore;
+            const negativeScore = wScore + tScore;
+            
+            // 計算淨分數
+            const netScore = positiveScore - negativeScore;
+            
+            // 將淨分數映射到 0-100 範圍
+            // 假設每個維度最多 30 分（約10個項目，每個優先級3）
+            // 最大正分：60，最小負分：-60，範圍：-60 到 60
+            // 映射公式：((netScore + 60) / 120) * 100
+            const normalizedScore = ((netScore + 60) / 120) * 100;
+            
+            // 確保分數在 0-100 範圍內
+            return Math.max(0, Math.min(100, normalizedScore));
+        }
+
+        // 初始化圖表
+        function initializeCharts() {
+            const ctx = document.getElementById('comparisonRadarChart').getContext('2d');
+            
+            comparisonRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['優勢總分', '劣勢控制度', '機會總分', '威脅防禦度', '整體競爭力', '策略完整度'],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 30,
+                            ticks: {
+                                color: '#d8dee9',
+                                backdropColor: 'transparent'
+                            },
+                            grid: {
+                                color: '#4c566a'
+                            },
+                            pointLabels: {
+                                color: '#eceff4',
+                                font: {
+                                    size: 18,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#eceff4'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateComparisonRadar() {
+            if (!comparisonRadarChart) return;
+
+            const colors = [
+                { bg: 'rgba(209, 180, 140, 0.2)', border: 'rgba(209, 180, 140, 1)' },
+                { bg: 'rgba(143, 188, 143, 0.2)', border: 'rgba(143, 188, 143, 1)' },
+                { bg: 'rgba(129, 161, 193, 0.2)', border: 'rgba(129, 161, 193, 1)' },
+                { bg: 'rgba(208, 135, 112, 0.2)', border: 'rgba(208, 135, 112, 1)' },
+                { bg: 'rgba(191, 97, 106, 0.2)', border: 'rgba(191, 97, 106, 1)' }
+            ];
+
+            const datasets = [];
+            const legendItems = [];
+
+            // 添加主公司
+            if (currentSwotData.company) {
+                const data = calculateRadarData(currentSwotData);
+                datasets.push({
+                    label: currentSwotData.company,
+                    data: data,
+                    backgroundColor: colors[0].bg,
+                    borderColor: colors[0].border,
+                    borderWidth: 2,
+                    pointBackgroundColor: colors[0].border,
+                    pointBorderColor: '#eceff4',
+                    pointHoverBackgroundColor: '#eceff4',
+                    pointHoverBorderColor: colors[0].border
+                });
+                legendItems.push({ label: currentSwotData.company, color: colors[0].border });
+            }
+
+            // 添加競爭對手
+            competitors.forEach((comp, index) => {
+                const colorIndex = (index + 1) % colors.length;
+                const data = calculateRadarData(comp);
+                datasets.push({
+                    label: comp.company,
+                    data: data,
+                    backgroundColor: colors[colorIndex].bg,
+                    borderColor: colors[colorIndex].border,
+                    borderWidth: 2,
+                    pointBackgroundColor: colors[colorIndex].border,
+                    pointBorderColor: '#eceff4',
+                    pointHoverBackgroundColor: '#eceff4',
+                    pointHoverBorderColor: colors[colorIndex].border
+                });
+                legendItems.push({ label: comp.company, color: colors[colorIndex].border });
+            });
+
+            comparisonRadarChart.data.datasets = datasets;
+            comparisonRadarChart.update();
+
+            // 更新圖例
+            updateRadarLegend(legendItems);
+        }
+
+        function calculateRadarData(swotData) {
+            const sScore = swotData.strengths?.reduce((sum, s) => sum + (s.priority || 3), 0) || 0;
+            const wScore = swotData.weaknesses?.reduce((sum, w) => sum + (w.priority || 3), 0) || 0;
+            const oScore = swotData.opportunities?.reduce((sum, o) => sum + (o.priority || 3), 0) || 0;
+            const tScore = swotData.threats?.reduce((sum, t) => sum + (t.priority || 3), 0) || 0;
+            
+            // 將劣勢和威脅轉換為「控制度」概念
+            // 劣勢控制度 = 30 - 劣勢分數（劣勢越少，控制度越高）
+            // 威脅防禦度 = 30 - 威脅分數（威脅越少，防禦度越高）
+            // 這樣在雷達圖上，所有維度都是「越高越好」，視覺更直觀
+            const wControl = Math.max(0, 30 - wScore);  // 劣勢控制度
+            const tDefense = Math.max(0, 30 - tScore);  // 威脅防禦度
+            
+            // 優化整體競爭力計算公式
+            const positiveScore = sScore + oScore;  // 正面分數
+            const negativeScore = wScore + tScore;  // 負面分數
+            const netScore = positiveScore - negativeScore;  // 淨分數
+            
+            const avgPositive = positiveScore / 2;  // 優勢和機會的平均
+            const competitiveness = Math.max(0, Math.min(30, (netScore * 0.4) + (avgPositive * 0.6)));
+            
+            // 策略完整度：四個維度的項目總數
+            const completeness = (swotData.strengths?.length || 0) + 
+                               (swotData.weaknesses?.length || 0) + 
+                               (swotData.opportunities?.length || 0) + 
+                               (swotData.threats?.length || 0);
+            
+            // 返回順序：優勢、劣勢控制度、機會、威脅防禦度、競爭力、完整度
+            return [sScore, wControl, oScore, tDefense, competitiveness, Math.min(30, completeness)];
+        }
+
+        function updateRadarLegend(items) {
+            const legendContainer = document.getElementById('radarLegend');
+            let html = '';
+            
+            items.forEach(item => {
+                html += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${item.color};"></div>
+                        <span class="legend-label">${item.label}</span>
+                    </div>
+                `;
+            });
+            
+            legendContainer.innerHTML = html;
+        }
+
+        // 評分卡片更新
+        function updateScoreCards(swotData) {
+            const container = document.getElementById('scoreCards');
+            
+            const sScore = swotData.strengths?.reduce((sum, s) => sum + (s.priority || 3), 0) || 0;
+            const wScore = swotData.weaknesses?.reduce((sum, w) => sum + (w.priority || 3), 0) || 0;
+            const oScore = swotData.opportunities?.reduce((sum, o) => sum + (o.priority || 3), 0) || 0;
+            const tScore = swotData.threats?.reduce((sum, t) => sum + (t.priority || 3), 0) || 0;
+            
+            const totalScore = calculateTotalScore(swotData);
+            
+            const cards = [
+                { label: '優勢總分', value: sScore, max: 30, color: '#8fbc8f' },
+                { label: '機會總分', value: oScore, max: 30, color: '#81a1c1' },
+                { label: '劣勢總分', value: wScore, max: 30, color: '#bf616a' },
+                { label: '威脅總分', value: tScore, max: 30, color: '#d08770' },
+                { label: '綜合評分', value: Math.max(0, totalScore), max: 100, color: '#d1b48c' }
+            ];
+            
+            let html = '';
+            cards.forEach(card => {
+                const percentage = (card.value / card.max) * 100;
+                html += `
+                    <div class="score-card">
+                        <div class="score-label">${card.label}</div>
+                        <div class="score-value">${card.value.toFixed(1)}</div>
+                        <div class="score-max">/ ${card.max}</div>
+                        <div class="score-bar">
+                            <div class="score-bar-fill" style="width: ${percentage}%; background: ${card.color};"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 情境模擬分析
+        async function generateScenarios() {
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定 API Key', 'error');
+                return;
+            }
+
+            if (!currentSwotData.company) {
+                showStatus('❌ 請先在左側「資料輸入」區生成主要 SWOT 分析', 'error');
+                alert('📋 操作提示\n\n請先完成以下步驟：\n1️⃣ 在左側「資料輸入」區填寫分析主題\n2️⃣ 點擊「🚀 生成 SWOT 分析」按鈕\n3️⃣ 等待分析完成後，再使用情境模擬功能');
+                return;
+            }
+
+            showLoading(true, '正在生成情境模擬...');
+
+            try {
+                const swotSummary = `
+優勢: ${currentSwotData.strengths?.map(s => s.item).join(', ')}
+劣勢: ${currentSwotData.weaknesses?.map(w => w.item).join(', ')}
+機會: ${currentSwotData.opportunities?.map(o => o.item).join(', ')}
+威脅: ${currentSwotData.threats?.map(t => t.item).join(', ')}
+                `;
+
+                const prompt = `基於以下 SWOT 分析，請生成三種情境模擬：
+
+公司：${currentSwotData.company}
+${swotSummary}
+
+請以 JSON 格式回傳：
+{
+    "best": {
+        "title": "最佳情境",
+        "description": "詳細描述最理想的發展情況",
+        "probability": "發生機率",
+        "strategies": ["建議策略1", "建議策略2"]
+    },
+    "worst": {
+        "title": "最壞情境",
+        "description": "詳細描述最不利的情況",
+        "probability": "發生機率",
+        "countermeasures": ["因應措施1", "因應措施2"]
+    },
+    "likely": {
+        "title": "最可能情境",
+        "description": "詳細描述最有可能發生的情況",
+        "probability": "發生機率",
+        "actions": ["行動方案1", "行動方案2"]
+    }
+}`;
+
+                const response = await callGroqAPI(prompt);
+                const scenarios = parseScenarioJson(response);
+                
+                displayScenarios(scenarios);
+                
+                showLoading(false);
+                showStatus('✅ 情境模擬完成！', 'success');
+
+            } catch (error) {
+                showLoading(false);
+                showStatus(`❌ 生成失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function parseScenarioJson(text) {
+            try {
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+            } catch (error) {
+                console.error('JSON 解析錯誤:', error);
+            }
+            return {
+                best: { title: '最佳情境', description: '', probability: '', strategies: [] },
+                worst: { title: '最壞情境', description: '', probability: '', countermeasures: [] },
+                likely: { title: '最可能情境', description: '', probability: '', actions: [] }
+            };
+        }
+
+        function displayScenarios(scenarios) {
+            const container = document.getElementById('scenarioGrid');
+            
+            const cards = [
+                { 
+                    key: 'best', 
+                    icon: '🌟', 
+                    class: 'best', 
+                    data: scenarios.best,
+                    items: scenarios.best.strategies || []
+                },
+                { 
+                    key: 'worst', 
+                    icon: '⚠️', 
+                    class: 'worst', 
+                    data: scenarios.worst,
+                    items: scenarios.worst.countermeasures || []
+                },
+                { 
+                    key: 'likely', 
+                    icon: '🎯', 
+                    class: 'likely', 
+                    data: scenarios.likely,
+                    items: scenarios.likely.actions || []
+                }
+            ];
+            
+            let html = '';
+            cards.forEach(card => {
+                html += `
+                    <div class="scenario-card ${card.class}">
+                        <h4>
+                            <span class="scenario-icon">${card.icon}</span>
+                            ${card.data.title}
+                        </h4>
+                        <p>${card.data.description}</p>
+                        ${card.items.length > 0 ? `
+                            <div style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                ${card.items.map(item => `• ${item}`).join('<br>')}
+                            </div>
+                        ` : ''}
+                        <div class="scenario-probability">
+                            機率: ${card.data.probability}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 趨勢預測分析
+        async function generateTrendPrediction() {
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定 API Key', 'error');
+                return;
+            }
+
+            if (!currentSwotData.company) {
+                showStatus('❌ 請先在左側「資料輸入」區生成主要 SWOT 分析', 'error');
+                alert('📋 操作提示\n\n請先完成以下步驟：\n1️⃣ 在左側「資料輸入」區填寫分析主題\n2️⃣ 點擊「🚀 生成 SWOT 分析」按鈕\n3️⃣ 等待分析完成後，再使用趨勢預測功能');
+                return;
+            }
+
+            showLoading(true, '正在生成趨勢預測...');
+
+            try {
+                // 獲取今天的日期和未來6個月的日期範圍
+                const today = new Date();
+                const endDate = new Date(today);
+                endDate.setMonth(endDate.getMonth() + 6);
+                
+                const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+                const endDateStr = `${endDate.getFullYear()}年${endDate.getMonth() + 1}月${endDate.getDate()}日`;
+                
+                const swotSummary = `
+優勢: ${currentSwotData.strengths?.map(s => s.item).join(', ')}
+劣勢: ${currentSwotData.weaknesses?.map(w => w.item).join(', ')}
+機會: ${currentSwotData.opportunities?.map(o => o.item).join(', ')}
+威脅: ${currentSwotData.threats?.map(t => t.item).join(', ')}
+                `;
+
+                const prompt = `基於以下 SWOT 分析，請預測從今天開始未來 6 個月的發展趨勢：
+
+公司：${currentSwotData.company}
+${swotSummary}
+
+【重要】預測時間範圍：
+- 開始日期：${todayStr} (今天)
+- 結束日期：${endDateStr} (6個月後)
+
+請以 JSON 格式回傳 6-8 個關鍵時間點的預測，日期必須在上述範圍內：
+[
+    {
+        "date": "2025年11月",
+        "title": "事件標題",
+        "description": "詳細描述",
+        "type": "opportunity/threat/milestone",
+        "impact": "high/medium/low"
+    }
+]
+
+要求：
+1. 日期格式：YYYY年MM月 (例如：2025年11月)
+2. 時間順序：由近到遠排列
+3. 包含內容：
+   - 機會窗口識別（利用優勢抓住機會）
+   - 威脅升級預警（注意劣勢可能帶來的威脅）
+   - 關鍵里程碑（重要的發展節點）
+   - 時機把握建議（最佳行動時間點）
+4. 類型分布：建議包含 opportunity、threat、milestone 三種類型
+5. 影響程度：high/medium/low 要有合理分布`;
+
+                const response = await callGroqAPI(prompt);
+                const trends = parseTrendJson(response);
+                
+                displayTrendTimeline(trends);
+                
+                showLoading(false);
+                showStatus('✅ 趨勢預測完成！', 'success');
+
+            } catch (error) {
+                showLoading(false);
+                showStatus(`❌ 生成失敗: ${error.message}`, 'error');
+            }
+        }
+
+        function parseTrendJson(text) {
+            try {
+                const jsonMatch = text.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+            } catch (error) {
+                console.error('JSON 解析錯誤:', error);
+            }
+            return [];
+        }
+
+        function displayTrendTimeline(trends) {
+            const container = document.getElementById('trendTimeline');
+            
+            if (trends.length === 0) {
+                container.innerHTML = '<div class="chart-placeholder"><p>無趨勢資料</p></div>';
+                return;
+            }
+            
+            // 計算日期範圍
+            const today = new Date();
+            const endDate = new Date(today);
+            endDate.setMonth(endDate.getMonth() + 6);
+            
+            const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            const endDateStr = `${endDate.getFullYear()}年${endDate.getMonth() + 1}月${endDate.getDate()}日`;
+            
+            let html = `
+                <div style="text-align: center; padding: 15px; margin-bottom: 20px; background: rgba(129, 161, 193, 0.1); border-radius: 12px; border: 1px solid rgba(129, 161, 193, 0.3);">
+                    <p style="color: var(--info); margin: 0; font-size: 1em; font-weight: 600;">
+                        📅 預測時間範圍：${todayStr} → ${endDateStr}
+                    </p>
+                </div>
+            `;
+            
+            trends.forEach(trend => {
+                const tagClass = trend.type === 'opportunity' ? 'opportunity' : 
+                               trend.type === 'threat' ? 'threat' : 'milestone';
+                const tagLabel = trend.type === 'opportunity' ? '機會窗口' : 
+                               trend.type === 'threat' ? '威脅預警' : '關鍵里程碑';
+                
+                // 添加影響程度標籤
+                const impactLabel = trend.impact === 'high' ? '高影響' : 
+                                  trend.impact === 'medium' ? '中影響' : '低影響';
+                const impactClass = trend.impact === 'high' ? 'high-impact' : 
+                                  trend.impact === 'medium' ? 'medium-impact' : 'low-impact';
+                
+                html += `
+                    <div class="trend-item">
+                        <div class="trend-date">${trend.date}</div>
+                        <div class="trend-marker"></div>
+                        <div class="trend-content">
+                            <h5>${trend.title}</h5>
+                            <p>${trend.description}</p>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <span class="trend-tag ${tagClass}">${tagLabel}</span>
+                                <span class="trend-tag ${impactClass}" style="background: rgba(129, 161, 193, 0.2); color: var(--info);">${impactLabel}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 互動式儀表板
+        function updateDashboard(swotData) {
+            const container = document.getElementById('draggableGrid');
+            
+            const allItems = [
+                ...(swotData.strengths || []).map(s => ({...s, category: 'S', categoryName: '優勢'})),
+                ...(swotData.weaknesses || []).map(w => ({...w, category: 'W', categoryName: '劣勢'})),
+                ...(swotData.opportunities || []).map(o => ({...o, category: 'O', categoryName: '機會'})),
+                ...(swotData.threats || []).map(t => ({...t, category: 'T', categoryName: '威脅'}))
+            ];
+            
+            let html = '';
+            allItems.forEach((item, index) => {
+                html += createDraggableItem(item, index);
+            });
+            
+            container.innerHTML = html;
+            
+            // 初始化拖拽
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+            
+            sortableInstance = Sortable.create(container, {
+                animation: 150,
+                ghostClass: 'dragging',
+                onEnd: function(evt) {
+                    showStatus('✅ 項目順序已更新', 'success');
+                }
+            });
+        }
+
+        function createDraggableItem(item, index) {
+            const categoryColors = {
+                'S': '#8fbc8f',
+                'W': '#bf616a',
+                'O': '#81a1c1',
+                'T': '#d08770'
+            };
+            
+            const color = categoryColors[item.category];
+            const stars = renderStarsHtml(item.priority || 3);
+            
+            return `
+                <div class="draggable-item" data-category="${item.category}" data-index="${index}">
+                    <div class="item-header">
+                        <span class="item-category" style="color: ${color};">${item.categoryName}</span>
+                        <div class="item-priority">${stars}</div>
+                    </div>
+                    <div class="item-content">${item.item}</div>
+                    <div class="item-description">${item.description || ''}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn" onclick="editDashboardItem(${index})">✏️ 編輯</button>
+                        <button class="item-action-btn" onclick="deleteDashboardItem(${index})">🗑️ 刪除</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStarsHtml(priority) {
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                html += `<span class="star ${i <= priority ? '' : 'empty'}">★</span>`;
+            }
+            return html;
+        }
+
+        function filterDashboard() {
+            const searchText = document.getElementById('searchBox').value.toLowerCase();
+            const items = document.querySelectorAll('.draggable-item');
+            
+            items.forEach(item => {
+                const content = item.querySelector('.item-content').textContent.toLowerCase();
+                const description = item.querySelector('.item-description').textContent.toLowerCase();
+                const matchesSearch = content.includes(searchText) || description.includes(searchText);
+                const matchesCategory = currentFilter === 'all' || item.dataset.category === currentFilter;
+                
+                item.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
+            });
+        }
+
+        function filterCategory(category) {
+            currentFilter = category;
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            filterDashboard();
+        }
+
+        function editDashboardItem(index) {
+            // 獲取所有項目
+            const allItems = [
+                ...(currentSwotData.strengths || []).map(s => ({...s, category: 'S', categoryName: '優勢'})),
+                ...(currentSwotData.weaknesses || []).map(w => ({...w, category: 'W', categoryName: '劣勢'})),
+                ...(currentSwotData.opportunities || []).map(o => ({...o, category: 'O', categoryName: '機會'})),
+                ...(currentSwotData.threats || []).map(t => ({...t, category: 'T', categoryName: '威脅'}))
+            ];
+            
+            const item = allItems[index];
+            if (!item) {
+                showStatus('❌ 找不到項目', 'error');
+                return;
+            }
+            
+            // 填充編輯表單
+            document.getElementById('editCategory').value = item.category;
+            document.getElementById('editItem').value = item.item || '';
+            document.getElementById('editDescription').value = item.description || '';
+            
+            // 設置優先級
+            const priority = item.priority || 3;
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.priority) === priority) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 儲存當前編輯的索引
+            window.currentEditIndex = index;
+            
+            // 顯示對話框
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            window.currentEditIndex = null;
+        }
+
+        function selectPriority(priority) {
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function saveEditedItem() {
+            const index = window.currentEditIndex;
+            if (index === null || index === undefined) return;
+            
+            // 獲取編輯後的值
+            const category = document.getElementById('editCategory').value;
+            const item = document.getElementById('editItem').value.trim();
+            const description = document.getElementById('editDescription').value.trim();
+            const priority = parseInt(document.querySelector('.priority-btn.active').dataset.priority);
+            
+            if (!item) {
+                showStatus('❌ 請輸入項目名稱', 'error');
+                return;
+            }
+            
+            // 創建更新的項目
+            const updatedItem = {
+                item: item,
+                description: description,
+                priority: priority
+            };
+            
+            // 根據類別更新到對應的數組
+            const categoryMap = {
+                'S': 'strengths',
+                'W': 'weaknesses',
+                'O': 'opportunities',
+                'T': 'threats'
+            };
+            
+            // 找到原始項目並更新
+            let currentIndex = 0;
+            let found = false;
+            
+            for (const [key, arrayName] of Object.entries(categoryMap)) {
+                const array = currentSwotData[arrayName] || [];
+                for (let i = 0; i < array.length; i++) {
+                    if (currentIndex === index) {
+                        // 如果類別改變，需要移動到新類別
+                        if (key !== category) {
+                            // 從原類別刪除
+                            currentSwotData[arrayName].splice(i, 1);
+                            // 添加到新類別
+                            const newArrayName = categoryMap[category];
+                            if (!currentSwotData[newArrayName]) {
+                                currentSwotData[newArrayName] = [];
+                            }
+                            currentSwotData[newArrayName].push(updatedItem);
+                        } else {
+                            // 同類別，直接更新
+                            currentSwotData[arrayName][i] = updatedItem;
+                        }
+                        found = true;
+                        break;
+                    }
+                    currentIndex++;
+                }
+                if (found) break;
+            }
+            
+            // 更新顯示
+            updateDashboard(currentSwotData);
+            updateComparisonRadar();
+            updateScoreCards(currentSwotData);
+            
+            closeEditModal();
+            showStatus('✅ 項目已更新', 'success');
+        }
+
+        function deleteDashboardItem(index) {
+            if (!confirm('確定要刪除此項目嗎？')) {
+                return;
+            }
+            
+            // 找到並刪除項目
+            let currentIndex = 0;
+            let found = false;
+            
+            const categoryMap = {
+                'strengths': 'S',
+                'weaknesses': 'W',
+                'opportunities': 'O',
+                'threats': 'T'
+            };
+            
+            for (const [arrayName, category] of Object.entries(categoryMap)) {
+                const array = currentSwotData[arrayName] || [];
+                for (let i = 0; i < array.length; i++) {
+                    if (currentIndex === index) {
+                        currentSwotData[arrayName].splice(i, 1);
+                        found = true;
+                        break;
+                    }
+                    currentIndex++;
+                }
+                if (found) break;
+            }
+            
+            if (found) {
+                // 更新顯示
+                updateDashboard(currentSwotData);
+                updateComparisonRadar();
+                updateScoreCards(currentSwotData);
+                showStatus('🗑️ 項目已刪除', 'success');
+            }
+        }
+
+        // 摺疊功能
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const header = section.previousElementSibling;
+            
+            if (section && header) {
+                section.classList.toggle('collapsed');
+                header.classList.toggle('collapsed');
+            }
+        }
+
+        function toggleAllMainSections(expand) {
+            const sections = ['inputContent', 'competitorContent', 'chartContent', 'scoreContent', 
+                            'scenarioContent', 'trendContent', 'dashboardContent'];
+            sections.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                const header = section?.previousElementSibling;
+                
+                if (section && header) {
+                    if (expand) {
+                        section.classList.remove('collapsed');
+                        header.classList.remove('collapsed');
+                    } else {
+                        section.classList.add('collapsed');
+                        header.classList.add('collapsed');
+                    }
+                }
+            });
+        }
+
+        // 工具函數
+        function showLoading(show, statusText = '正在處理...') {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'flex' : 'none';
+            if (show) {
+                document.getElementById('loadingStatus').textContent = statusText;
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessages');
+            const statusHtml = `<div class="status ${type}">${message}</div>`;
+            statusDiv.innerHTML = statusHtml;
+            
+            setTimeout(() => {
+                if (type !== 'error') {
+                    statusDiv.innerHTML = '';
+                }
+            }, 5000);
+        }
+
+        // 全局變數儲存上傳的文件內容
+        let uploadedDocContent = '';
+        let competitorUploadedContent = '';
+
+        // 處理主要文件上傳
+        async function handleDocUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const infoDiv = document.getElementById('uploadedDocInfo');
+            infoDiv.innerHTML = '<span style="color: var(--info);">⏳ 正在讀取文件...</span>';
+
+            try {
+                const content = await readFileContent(file);
+                uploadedDocContent = content;
+                
+                const additionalNotes = document.getElementById('additionalNotes');
+                if (additionalNotes.value) {
+                    additionalNotes.value += '\n\n【參考文件內容】\n' + content;
+                } else {
+                    additionalNotes.value = '【參考文件內容】\n' + content;
+                }
+                
+                infoDiv.innerHTML = `<span style="color: var(--success);">✅ 已上傳: ${file.name} (${(file.size / 1024).toFixed(2)} KB)</span>`;
+                showStatus('✅ 文件上傳成功！', 'success');
+            } catch (error) {
+                infoDiv.innerHTML = `<span style="color: var(--danger);">❌ 讀取失敗: ${error.message}</span>`;
+                showStatus('❌ 文件讀取失敗', 'error');
+            }
+        }
+
+        // 處理競爭對手文件上傳
+        async function handleCompetitorDocUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const infoDiv = document.getElementById('competitorUploadInfo');
+            infoDiv.innerHTML = '<span style="color: var(--info);">⏳ 正在讀取文件...</span>';
+
+            try {
+                const content = await readFileContent(file);
+                competitorUploadedContent = content;
+                
+                // 自動填入快速輸入區
+                const nameInput = document.getElementById('quickCompetitorName');
+                const descInput = document.getElementById('quickCompetitorDesc');
+                
+                // 嘗試從文件名提取公司名
+                const fileName = file.name.replace(/\.(txt|pdf|doc|docx)$/i, '');
+                if (!nameInput.value) {
+                    nameInput.value = fileName;
+                }
+                
+                if (descInput.value) {
+                    descInput.value += '\n\n【文件內容】\n' + content.substring(0, 500) + '...';
+                } else {
+                    descInput.value = '【文件內容】\n' + content.substring(0, 500) + '...';
+                }
+                
+                infoDiv.innerHTML = `<span style="color: var(--success);">✅ 已上傳: ${file.name} (${(file.size / 1024).toFixed(2)} KB)</span>`;
+                showStatus('✅ 競爭對手文件上傳成功！', 'success');
+            } catch (error) {
+                infoDiv.innerHTML = `<span style="color: var(--danger);">❌ 讀取失敗: ${error.message}</span>`;
+                showStatus('❌ 文件讀取失敗', 'error');
+            }
+        }
+
+        // 讀取文件內容
+        async function readFileContent(file) {
+            const fileType = file.name.split('.').pop().toLowerCase();
+            
+            if (fileType === 'txt') {
+                return await readTextFile(file);
+            } else if (fileType === 'pdf') {
+                return await readPdfFile(file);
+            } else if (fileType === 'doc' || fileType === 'docx') {
+                return await readDocxFile(file);
+            } else {
+                throw new Error('不支援的文件格式');
+            }
+        }
+
+        // 讀取文字檔
+        function readTextFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('讀取文字檔失敗'));
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        // 讀取PDF檔
+        async function readPdfFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                
+                return fullText;
+            } catch (error) {
+                throw new Error('讀取PDF失敗: ' + error.message);
+            }
+        }
+
+        // 讀取Word檔
+        async function readDocxFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                return result.value;
+            } catch (error) {
+                throw new Error('讀取Word文件失敗: ' + error.message);
+            }
+        }
+
+        // 快速新增競爭對手 - 調用API生成完整SWOT
+        async function addQuickCompetitor() {
+            const name = document.getElementById('quickCompetitorName').value.trim();
+            const desc = document.getElementById('quickCompetitorDesc').value.trim();
+            
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定並測試 API Key', 'error');
+                return;
+            }
+            
+            if (!name) {
+                showStatus('❌ 請輸入競爭對手名稱', 'error');
+                return;
+            }
+            
+            if (!desc) {
+                showStatus('❌ 請輸入競爭對手描述', 'error');
+                return;
+            }
+            
+            showLoading(true, `正在分析 ${name}...`);
+            
+            try {
+                // 調用API生成完整SWOT分析
+                const prompt = `請針對以下競爭對手進行全面的 SWOT 分析，並為每個項目提供 1-5 的重要性評分：
+
+競爭對手：${name}
+描述：${desc}
+
+請以 JSON 格式回傳，包含以下結構：
+{
+    "company": "${name}",
+    "strengths": [
+        {"item": "優勢項目", "description": "詳細說明", "priority": 5},
+        ...
+    ],
+    "weaknesses": [
+        {"item": "劣勢項目", "description": "詳細說明", "priority": 4},
+        ...
+    ],
+    "opportunities": [
+        {"item": "機會項目", "description": "詳細說明", "priority": 5},
+        ...
+    ],
+    "threats": [
+        {"item": "威脅項目", "description": "詳細說明", "priority": 3},
+        ...
+    ]
+}
+
+請確保每個類別至少有 3-5 個項目，並提供深入的分析。`;
+
+                const response = await callGroqAPI(prompt);
+                const swotData = parseSwotJson(response);
+                swotData.company = name;
+                
+                // 添加到競爭對手列表
+                competitors.push(swotData);
+                
+                // 更新顯示
+                updateCompetitorList();
+                updateComparisonRadar();
+                
+                // 清空輸入框
+                document.getElementById('quickCompetitorName').value = '';
+                document.getElementById('quickCompetitorDesc').value = '';
+                document.getElementById('competitorUploadInfo').innerHTML = '';
+                competitorUploadedContent = '';
+                
+                showLoading(false);
+                showStatus(`✅ 已新增競爭對手: ${name}`, 'success');
+                
+            } catch (error) {
+                showLoading(false);
+                showStatus(`❌ 新增失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 更新競爭對手列表顯示 - 統一版本
+        function updateCompetitorList() {
+            const listDiv = document.getElementById('competitorList');
+            
+            if (!competitors || competitors.length === 0) {
+                listDiv.innerHTML = `
+                    <p style="text-align: center; color: var(--text-light); padding: 20px;">
+                        尚未新增競爭對手<br>
+                        使用上方快速輸入或點擊「🏢 新增競爭對手」開始比較
+                    </p>
+                `;
+                return;
+            }
+            
+            let html = '';
+            competitors.forEach((comp, index) => {
+                const totalScore = calculateTotalScore(comp);
+                const companyName = comp.company || comp.name || '未命名競爭對手';
+                const hasSwotData = comp.strengths || comp.weaknesses || comp.opportunities || comp.threats;
+                
+                html += `
+                    <div class="competitor-item" style="margin-bottom: 15px; padding: 15px; background: var(--input-bg); border-radius: 12px; border: 1px solid var(--border-main);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <h4 style="color: var(--primary); margin: 0 0 5px 0; font-weight: 600;">${companyName}</h4>
+                                ${hasSwotData ? `<div style="color: var(--success); font-size: 0.9em;">總分: ${totalScore.toFixed(1)} / 100</div>` : ''}
+                            </div>
+                            <button onclick="removeCompetitor(${index})" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                🗑️ 移除
+                            </button>
+                        </div>
+                        ${comp.description ? `<p style="color: var(--text-light); margin: 0; font-size: 0.9em; line-height: 1.6;">${comp.description}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            listDiv.innerHTML = html;
+        }
+
+        // 刪除競爭對手
+        function removeCompetitor(index) {
+            if (confirm('確定要刪除此競爭對手嗎？')) {
+                competitors.splice(index, 1);
+                updateCompetitorList();
+                updateComparisonRadar();
+                showStatus('🗑️ 已刪除競爭對手', 'success');
+            }
+        }
+
+        // 全局變數儲存圖片資料
+        let uploadedImageData = null;
+        let imageAnalysisText = '';
+
+        // 處理圖片上傳
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 檢查文件大小 (限制 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showStatus('❌ 圖片大小不能超過 5MB', 'error');
+                return;
+            }
+
+            // 顯示預覽
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImageData = e.target.result;
+                document.getElementById('previewImg').src = uploadedImageData;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('imageAnalysisResult').innerHTML = 
+                    '<p style="color: var(--info);">✨ 圖片已上傳，點擊「AI 分析圖片」開始分析</p>';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // AI 分析圖片
+        async function analyzeImage() {
+            if (!groqApiKey) {
+                showStatus('❌ 請先設定並測試 API Key', 'error');
+                return;
+            }
+
+            if (!uploadedImageData) {
+                showStatus('❌ 請先上傳圖片', 'error');
+                return;
+            }
+
+            showLoading(true, '正在分析圖片...');
+            const resultDiv = document.getElementById('imageAnalysisResult');
+
+            try {
+                // Groq Vision（Llama 4）使用完整 data URL
+                const prompt = `請仔細分析這張產品/場景圖片，並提供以下資訊：
+
+1. **圖片內容描述**：詳細描述你看到的產品、場景或物品的特徵
+2. **文字識別 (OCR)**：如果圖片中有任何文字、標籤、品牌名稱等，請全部列出
+3. **產品特點**：識別出的主要特徵、功能、設計元素
+4. **SWOT 分析建議**：
+   - 可能的優勢 (Strengths)
+   - 可能的劣勢 (Weaknesses)
+   - 潛在機會 (Opportunities)
+   - 可能威脅 (Threats)
+
+請以清晰、結構化的方式回答，每個部分用標題分隔。`;
+
+                const response = await fetch(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${groqApiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                            messages: [{
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: prompt },
+                                    { type: 'image_url', image_url: { url: uploadedImageData } }
+                                ]
+                            }],
+                            temperature: 0.6,
+                            max_tokens: 2048
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error?.message || `API 請求失敗: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const analysisText = data.choices[0].message.content;
+                
+                // 儲存分析結果
+                imageAnalysisText = analysisText;
+
+                // 顯示分析結果
+                displayImageAnalysis(analysisText);
+
+                // 自動填入到補充說明
+                const additionalNotes = document.getElementById('additionalNotes');
+                if (additionalNotes.value) {
+                    additionalNotes.value += '\n\n【AI 圖片分析結果】\n' + analysisText;
+                } else {
+                    additionalNotes.value = '【AI 圖片分析結果】\n' + analysisText;
+                }
+
+                showLoading(false);
+                showStatus('✅ 圖片分析完成！結果已自動填入補充說明', 'success');
+
+            } catch (error) {
+                showLoading(false);
+                console.error('圖片分析錯誤:', error);
+                resultDiv.innerHTML = `<p style="color: var(--danger);">❌ 分析失敗: ${error.message}</p>`;
+                showStatus('❌ 圖片分析失敗', 'error');
+            }
+        }
+
+        // 顯示圖片分析結果
+        function displayImageAnalysis(text) {
+            const resultDiv = document.getElementById('imageAnalysisResult');
+            
+            // 將分析結果格式化顯示
+            const formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--primary);">$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/###(.*?)(<br>|$)/g, '<h4 style="color: var(--info); margin-top: 15px; margin-bottom: 8px;">$1</h4>')
+                .replace(/##(.*?)(<br>|$)/g, '<h3 style="color: var(--primary); margin-top: 15px; margin-bottom: 8px;">$1</h3>');
+
+            resultDiv.innerHTML = `
+                <div style="background: var(--card-bg); padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid var(--border-main); max-height: 400px; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="color: var(--success); margin: 0;">✅ AI 分析結果</h4>
+                        <button onclick="copyAnalysisResult()" style="padding: 5px 10px; background: var(--primary); border: none; border-radius: 6px; color: var(--bg-grad-start); cursor: pointer; font-size: 0.85em;">
+                            📋 複製
+                        </button>
+                    </div>
+                    <div style="color: var(--text-light); font-size: 0.95em; line-height: 1.8;">
+                        ${formattedText}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 複製分析結果
+        function copyAnalysisResult() {
+            navigator.clipboard.writeText(imageAnalysisText).then(() => {
+                showStatus('✅ 分析結果已複製到剪貼簿', 'success');
+            }).catch(err => {
+                showStatus('❌ 複製失敗', 'error');
+            });
+        }
+    
+
+        // 下載簡報功能
+        async function downloadPresentation() {
+            // 檢查 PptxGenJS 是否載入
+            if (typeof PptxGenJS === 'undefined') {
+                showStatus('❌ 簡報功能尚未載入，請重新整理頁面', 'error');
+                alert('簡報生成庫尚未載入完成，請稍後再試或重新整理頁面。');
+                return;
+            }
+            
+            if (!currentSwotData.company) {
+                showStatus('❌ 請先生成 SWOT 分析', 'error');
+                alert('請先在左側「資料輸入」區生成主要 SWOT 分析，才能下載簡報。');
+                return;
+            }
+
+            showLoading(true, '正在生成簡報...');
+
+            try {
+                const pptx = new PptxGenJS();
+                
+                // 設定簡報屬性
+                pptx.author = 'AI SWOT 分析工具';
+                pptx.company = currentSwotData.company || '未命名公司';
+                pptx.subject = 'SWOT 分析報告';
+                pptx.title = `${currentSwotData.company} - SWOT 分析報告`;
+
+                // 定義顏色主題
+                const colors = {
+                    primary: 'd1b48c',
+                    bg: '2e3440',
+                    text: 'eceff4',
+                    strength: '8fbc8f',
+                    weakness: 'bf616a',
+                    opportunity: '81a1c1',
+                    threat: 'd08770'
+                };
+
+                // 第1頁：封面
+                const slide1 = pptx.addSlide();
+                slide1.background = { color: colors.bg };
+                slide1.addText('🎯 SWOT 分析報告', {
+                    x: 0.5, y: 1.5, w: 9, h: 1.5,
+                    fontSize: 48, bold: true, color: colors.primary, align: 'center'
+                });
+                slide1.addText(currentSwotData.company || '未命名公司', {
+                    x: 0.5, y: 3, w: 9, h: 1,
+                    fontSize: 36, color: colors.text, align: 'center'
+                });
+                const today = new Date();
+                const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+                slide1.addText(dateStr, {
+                    x: 0.5, y: 4.5, w: 9, h: 0.5,
+                    fontSize: 20, color: colors.text, align: 'center'
+                });
+                slide1.addText('由 AI SWOT 分析工具自動生成', {
+                    x: 0.5, y: 5.2, w: 9, h: 0.3,
+                    fontSize: 14, color: colors.text, align: 'center', italic: true
+                });
+
+                // 第2頁：SWOT 概覽
+                const slide2 = pptx.addSlide();
+                slide2.background = { color: colors.bg };
+                slide2.addText('📊 SWOT 分析概覽', {
+                    x: 0.5, y: 0.5, w: 9, h: 0.7,
+                    fontSize: 32, bold: true, color: colors.primary
+                });
+
+                const quadrants = [
+                    { title: '優勢 (S)', data: currentSwotData.strengths, color: colors.strength, x: 0.5, y: 1.5 },
+                    { title: '劣勢 (W)', data: currentSwotData.weaknesses, color: colors.weakness, x: 5.25, y: 1.5 },
+                    { title: '機會 (O)', data: currentSwotData.opportunities, color: colors.opportunity, x: 0.5, y: 3.75 },
+                    { title: '威脅 (T)', data: currentSwotData.threats, color: colors.threat, x: 5.25, y: 3.75 }
+                ];
+
+                quadrants.forEach(q => {
+                    slide2.addText(q.title, {
+                        x: q.x, y: q.y, w: 4.5, h: 0.5,
+                        fontSize: 20, bold: true, color: q.color, fill: { color: '1e222a' }, align: 'center'
+                    });
+                    const items = (q.data || []).slice(0, 5);
+                    let text = items.map((item, idx) => `${idx + 1}. ${item.item}`).join('\n');
+                    if (items.length === 0) text = '（無資料）';
+                    slide2.addText(text, {
+                        x: q.x + 0.2, y: q.y + 0.6, w: 4.1, h: 1.9,
+                        fontSize: 12, color: colors.text, valign: 'top'
+                    });
+                });
+
+                // 第3-6頁：詳細頁面
+                ['strengths', 'weaknesses', 'opportunities', 'threats'].forEach((key, idx) => {
+                    const titles = ['優勢 (Strengths)', '劣勢 (Weaknesses)', '機會 (Opportunities)', '威脅 (Threats)'];
+                    const themeColors = [colors.strength, colors.weakness, colors.opportunity, colors.threat];
+                    
+                    const slide = pptx.addSlide();
+                    slide.background = { color: colors.bg };
+                    slide.addText(titles[idx], {
+                        x: 0.5, y: 0.5, w: 9, h: 0.7,
+                        fontSize: 32, bold: true, color: themeColors[idx]
+                    });
+
+                    const items = currentSwotData[key] || [];
+                    if (items.length === 0) {
+                        slide.addText('目前沒有相關資料', {
+                            x: 1, y: 2.5, w: 8, h: 1,
+                            fontSize: 18, color: colors.text, align: 'center'
+                        });
+                    } else {
+                        let yPos = 1.5;
+                        items.slice(0, 6).forEach((item, i) => {
+                            slide.addText(`${i + 1}. ${item.item}`, {
+                                x: 0.8, y: yPos, w: 8.4, h: 0.4,
+                                fontSize: 16, bold: true, color: themeColors[idx]
+                            });
+                            if (item.description) {
+                                slide.addText(item.description, {
+                                    x: 1.2, y: yPos + 0.4, w: 8, h: 0.5,
+                                    fontSize: 12, color: colors.text
+                                });
+                            }
+                            const stars = '★'.repeat(item.priority || 3) + '☆'.repeat(5 - (item.priority || 3));
+                            slide.addText(`優先級: ${stars}`, {
+                                x: 1.2, y: yPos + 0.85, w: 3, h: 0.3,
+                                fontSize: 10, color: colors.primary
+                            });
+                            yPos += 1.3;
+                        });
+                    }
+                });
+
+                // 第7頁：量化評分
+                const slide7 = pptx.addSlide();
+                slide7.background = { color: colors.bg };
+                slide7.addText('📈 量化評分分析', {
+                    x: 0.5, y: 0.5, w: 9, h: 0.7,
+                    fontSize: 32, bold: true, color: colors.primary
+                });
+
+                const scores = {
+                    strength: (currentSwotData.strengths || []).reduce((sum, s) => sum + (s.priority || 3), 0),
+                    weakness: (currentSwotData.weaknesses || []).reduce((sum, w) => sum + (w.priority || 3), 0),
+                    opportunity: (currentSwotData.opportunities || []).reduce((sum, o) => sum + (o.priority || 3), 0),
+                    threat: (currentSwotData.threats || []).reduce((sum, t) => sum + (t.priority || 3), 0)
+                };
+
+                const scoreData = [
+                    { label: '優勢總分', value: scores.strength, color: colors.strength, y: 2 },
+                    { label: '劣勢總分', value: scores.weakness, color: colors.weakness, y: 2.8 },
+                    { label: '機會總分', value: scores.opportunity, color: colors.opportunity, y: 3.6 },
+                    { label: '威脅總分', value: scores.threat, color: colors.threat, y: 4.4 }
+                ];
+
+                scoreData.forEach(item => {
+                    slide7.addText(item.label, {
+                        x: 1, y: item.y, w: 3, h: 0.5,
+                        fontSize: 18, color: colors.text, bold: true
+                    });
+                    slide7.addText(`${item.value.toFixed(1)} / 30`, {
+                        x: 4.5, y: item.y, w: 2, h: 0.5,
+                        fontSize: 24, color: item.color, bold: true, align: 'center'
+                    });
+                    const barWidth = (item.value / 30) * 3;
+                    slide7.addShape(pptx.ShapeType.rect, {
+                        x: 7, y: item.y + 0.1, w: barWidth, h: 0.3,
+                        fill: { color: item.color }
+                    });
+                });
+
+                const competitiveness = ((scores.strength + scores.opportunity) - (scores.weakness + scores.threat)) / 2;
+                slide7.addText('綜合競爭力', {
+                    x: 1, y: 5.3, w: 3, h: 0.6,
+                    fontSize: 20, color: colors.primary, bold: true
+                });
+                slide7.addText(`${competitiveness.toFixed(1)} / 100`, {
+                    x: 4.5, y: 5.3, w: 2, h: 0.6,
+                    fontSize: 28, color: colors.primary, bold: true, align: 'center'
+                });
+
+                // 第8頁：競爭對手比較（如果有）
+                if (competitors && competitors.length > 0) {
+                    const slide8 = pptx.addSlide();
+                    slide8.background = { color: colors.bg };
+                    slide8.addText('🏢 競爭對手比較', {
+                        x: 0.5, y: 0.5, w: 9, h: 0.7,
+                        fontSize: 32, bold: true, color: colors.primary
+                    });
+
+                    slide8.addText('主公司：' + currentSwotData.company, {
+                        x: 0.8, y: 1.5, w: 8.4, h: 0.4,
+                        fontSize: 16, bold: true, color: colors.primary
+                    });
+
+                    let yPos = 2.1;
+                    competitors.slice(0, 4).forEach((comp, idx) => {
+                        const compName = comp.company || comp.name || '未命名競爭對手';
+                        const compScore = calculateTotalScore(comp);
+                        
+                        slide8.addText(`${idx + 1}. ${compName}`, {
+                            x: 0.8, y: yPos, w: 5, h: 0.4,
+                            fontSize: 14, bold: true, color: colors.text
+                        });
+                        
+                        slide8.addText(`總分: ${compScore.toFixed(1)}`, {
+                            x: 6, y: yPos, w: 3, h: 0.4,
+                            fontSize: 14, color: colors.opportunity, align: 'right'
+                        });
+                        
+                        yPos += 0.6;
+                    });
+
+                    if (competitors.length > 4) {
+                        slide8.addText(`...以及其他 ${competitors.length - 4} 家競爭對手`, {
+                            x: 0.8, y: yPos, w: 8.4, h: 0.4,
+                            fontSize: 12, color: colors.text, italic: true
+                        });
+                    }
+                }
+
+                // 第9頁：情境模擬（如果有資料）
+                const scenarioContainer = document.getElementById('scenarioGrid');
+                if (scenarioContainer && !scenarioContainer.querySelector('.chart-placeholder')) {
+                    const slide9 = pptx.addSlide();
+                    slide9.background = { color: colors.bg };
+                    slide9.addText('🎲 情境模擬分析', {
+                        x: 0.5, y: 0.5, w: 9, h: 0.7,
+                        fontSize: 32, bold: true, color: colors.primary
+                    });
+
+                    const scenarios = [
+                        { title: '🌟 最佳情境', y: 1.5, color: colors.strength },
+                        { title: '⚠️ 最壞情境', y: 3.0, color: colors.weakness },
+                        { title: '📊 最可能情境', y: 4.5, color: colors.opportunity }
+                    ];
+
+                    scenarios.forEach(scenario => {
+                        slide9.addText(scenario.title, {
+                            x: 0.8, y: scenario.y, w: 8.4, h: 0.4,
+                            fontSize: 16, bold: true, color: scenario.color
+                        });
+                        slide9.addText('詳見完整報告以獲取更多資訊', {
+                            x: 1.2, y: scenario.y + 0.5, w: 7.6, h: 0.4,
+                            fontSize: 12, color: colors.text, italic: true
+                        });
+                    });
+                }
+
+                // 第10頁：趨勢預測（如果有資料）
+                const trendContainer = document.getElementById('trendTimeline');
+                const trendItems = trendContainer ? trendContainer.querySelectorAll('.trend-item') : [];
+                if (trendItems.length > 0) {
+                    const slide10 = pptx.addSlide();
+                    slide10.background = { color: colors.bg };
+                    slide10.addText('📈 趨勢預測', {
+                        x: 0.5, y: 0.5, w: 9, h: 0.7,
+                        fontSize: 32, bold: true, color: colors.primary
+                    });
+
+                    const today = new Date();
+                    const endDate = new Date(today);
+                    endDate.setMonth(endDate.getMonth() + 6);
+                    const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月`;
+                    const endDateStr = `${endDate.getFullYear()}年${endDate.getMonth() + 1}月`;
+
+                    slide10.addText(`預測期間：${todayStr} - ${endDateStr}`, {
+                        x: 0.8, y: 1.3, w: 8.4, h: 0.4,
+                        fontSize: 14, color: colors.info, italic: true
+                    });
+
+                    let yPos = 2.0;
+                    Array.from(trendItems).slice(0, 5).forEach((item, idx) => {
+                        const dateText = item.querySelector('.trend-date')?.textContent || '';
+                        const titleText = item.querySelector('.trend-content h5')?.textContent || '';
+                        
+                        slide10.addText(`${dateText}: ${titleText}`, {
+                            x: 0.8, y: yPos, w: 8.4, h: 0.35,
+                            fontSize: 12, color: colors.text
+                        });
+                        
+                        yPos += 0.5;
+                    });
+
+                    if (trendItems.length > 5) {
+                        slide10.addText(`...以及其他 ${trendItems.length - 5} 個預測事件`, {
+                            x: 0.8, y: yPos, w: 8.4, h: 0.4,
+                            fontSize: 11, color: colors.text, italic: true
+                        });
+                    }
+                }
+
+                // 最後一頁：結論
+                const slideEnd = pptx.addSlide();
+                slideEnd.background = { color: colors.bg };
+                slideEnd.addText('💡 結論與建議', {
+                    x: 0.5, y: 0.5, w: 9, h: 0.7,
+                    fontSize: 32, bold: true, color: colors.primary
+                });
+
+                const conclusions = [
+                    `✓ 已識別 ${(currentSwotData.strengths || []).length} 項優勢、${(currentSwotData.weaknesses || []).length} 項劣勢`,
+                    `✓ 發現 ${(currentSwotData.opportunities || []).length} 個機會、${(currentSwotData.threats || []).length} 個威脅`,
+                    competitors && competitors.length > 0 ? `✓ 分析了 ${competitors.length} 家競爭對手` : null,
+                    `✓ 建議優先強化核心優勢，把握市場機會`,
+                    `✓ 需要關注並改善關鍵劣勢，防範潛在威脅`,
+                    `✓ 定期更新 SWOT 分析，保持策略靈活性`
+                ].filter(Boolean);
+
+                let yPos = 2;
+                conclusions.forEach(text => {
+                    slideEnd.addText(text, {
+                        x: 1.5, y: yPos, w: 7, h: 0.5,
+                        fontSize: 16, color: colors.text
+                    });
+                    yPos += 0.7;
+                });
+
+                slideEnd.addText('感謝使用 AI SWOT 分析工具！', {
+                    x: 0.5, y: 5.5, w: 9, h: 0.5,
+                    fontSize: 18, color: colors.primary, align: 'center', italic: true
+                });
+
+                // 生成檔案名稱
+                const fileName = `${currentSwotData.company}_SWOT分析報告_${dateStr.replace(/[年月日]/g, '')}.pptx`;
+
+                // 下載
+                await pptx.writeFile({ fileName: fileName });
+
+                showLoading(false);
+                showStatus('✅ 簡報下載成功！', 'success');
+
+            } catch (error) {
+                showLoading(false);
+                console.error('簡報生成錯誤:', error);
+                showStatus(`❌ 簡報生成失敗: ${error.message}`, 'error');
+            }
+        }
+    
+    </script>
+</body>
+</html>

@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍳 AI料理王</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <!-- PDF 匯出 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== 設計系統：米紙廚房（米色）× 金釉 × 印泥紅 ===== */
+        :root {
+            --paper:     #F3ECDD;   /* 頁面底：米 */
+            --paper-2:   #FBF7EF;   /* 卡片：淺米 */
+            --paper-3:   #EBE1CD;   /* 次階面：深米 */
+            --ink:       #2A2118;   /* 墨 */
+            --ink-soft:  #6F6151;
+            --ink-faint: #9A8B77;
+            --gold:      #C0862A;   /* 金釉：主要動作 */
+            --gold-soft: #E0A63E;
+            --gold-deep: #96661A;
+            --seal:      #B23A2E;   /* 印泥紅 */
+            --scallion:  #6E8B3D;   /* 蔥綠 */
+            --line:      rgba(42, 33, 24, 0.14);
+            --theme-orange: var(--gold);
+            --theme-orange-dark: var(--gold-deep);
+            --r: 6px;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+
+        /* 啟動預設畫面比例 75% */
+        html { zoom: 0.75; }
+
+        .zoom-bar {
+            position: fixed; right: 14px; bottom: 14px; z-index: 60;
+            display: flex; align-items: center; gap: 2px;
+            padding: 4px 6px;
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            box-shadow: 0 8px 22px rgba(42,33,24,0.16);
+        }
+        .zoom-bar button {
+            width: 28px; height: 28px; line-height: 1;
+            border: 0; border-radius: 50%; cursor: pointer;
+            background: transparent; color: var(--ink);
+            font-size: 1rem; font-weight: 700;
+            transition: background .2s ease;
+        }
+        .zoom-bar button:hover { background: rgba(192,134,42,0.16); }
+        .zoom-bar button:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 1px; }
+        #zoom-level {
+            min-width: 46px; text-align: center;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+            color: var(--ink-soft); cursor: pointer; user-select: none;
+        }
+
+        body, body.text-gray-200 {
+            font-family: 'Noto Sans TC', system-ui, sans-serif;
+            color: var(--ink);
+            background-color: var(--paper);
+            background-image:
+                radial-gradient(900px 540px at 10% -10%, rgba(192,134,42,0.13), transparent 62%),
+                radial-gradient(720px 500px at 94% 2%, rgba(178,58,46,0.09), transparent 62%),
+                repeating-linear-gradient(112deg, rgba(42,33,24,0.016) 0 1px, transparent 1px 7px);
+            background-attachment: fixed;
+        }
+
+        /* Tailwind 深色前景改寫為墨色 */
+        body .text-white, body .text-gray-100, body .text-gray-200 { color: var(--ink); }
+        body .text-red-400 { color: var(--seal); }
+        body .bg-white { background-color: var(--ink); }
+        body .text-black { color: var(--paper-2); }
+        body .bg-black { background-color: var(--paper-3); }
+
+        .display { font-family: 'Noto Serif TC', 'Noto Sans TC', serif; letter-spacing: 0.02em; }
+        .eyebrow {
+            font-size: 0.7rem; letter-spacing: 0.42em; text-transform: uppercase;
+            color: var(--gold-deep); font-weight: 600;
+        }
+        .rule-gold {
+            height: 1px; border: 0; margin: 1.1rem auto 0;
+            background: linear-gradient(90deg, transparent, var(--gold-deep) 22%, var(--gold) 50%, var(--gold-deep) 78%, transparent);
+            opacity: 0.65;
+        }
+
+        /* 印章 */
+        .seal {
+            font-family: 'Noto Serif TC', serif;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 46px; height: 46px; flex-shrink: 0;
+            color: #FBF7EF; background: var(--seal);
+            border: 2px solid rgba(251,247,239,0.6); border-radius: 3px;
+            font-weight: 700; font-size: 0.85rem; line-height: 1.15; text-align: center;
+            transform: rotate(-5deg);
+            box-shadow: 0 6px 16px rgba(178,58,46,0.25);
+        }
+
+        /* ===== 卡片 ===== */
+        .card {
+            background: var(--paper-2);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            box-shadow: 0 18px 44px rgba(42,33,24,0.10), 0 1px 0 rgba(255,255,255,0.7) inset;
+            transition: border-color .3s ease, box-shadow .3s ease;
+        }
+        .card:hover { border-color: rgba(192,134,42,0.42); }
+
+        /* 米紙菜單卡（結果區） */
+        .card.paper {
+            background-image:
+                radial-gradient(circle at 18% 22%, rgba(42,33,24,0.035) 0 1px, transparent 1px),
+                radial-gradient(circle at 72% 68%, rgba(42,33,24,0.028) 0 1px, transparent 1px);
+            background-size: 18px 18px, 24px 24px;
+        }
+        .card.paper::before {
+            content: ''; display: block; height: 3px; margin: -1.5rem -1.5rem 1.25rem;
+            border-radius: var(--r) var(--r) 0 0;
+            background: linear-gradient(90deg, var(--seal), var(--gold) 55%, var(--gold-deep));
+        }
+        .paper h3, .paper h4 { font-family: 'Noto Serif TC', serif; }
+        .paper .text-theme-orange { color: var(--seal); }
+
+        /* ===== 按鈕 ===== */
+        .btn {
+            padding: 0.7rem 1.4rem;
+            border-radius: var(--r);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            transition: transform .18s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .btn:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 2px; }
+        .btn-primary {
+            background: linear-gradient(180deg, #E0A63E, var(--gold) 55%, var(--gold-deep));
+            color: #2A1E0B;
+            box-shadow: 0 8px 18px rgba(192,134,42,0.28);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(192,134,42,0.38); }
+        .btn-primary:disabled {
+            background: var(--paper-3); color: var(--ink-faint); cursor: not-allowed;
+            transform: none; box-shadow: none;
+        }
+        .btn-secondary {
+            background: rgba(42,33,24,0.04);
+            border-color: rgba(42,33,24,0.18);
+            color: var(--ink);
+        }
+        .btn-secondary:hover { background: rgba(42,33,24,0.09); border-color: rgba(192,134,42,0.5); }
+        .btn-danger { background: var(--seal); color: #FBF7EF; }
+        .btn-danger:hover { background: #9A3026; }
+
+        /* ===== 表單 ===== */
+        .input-field, .select-field {
+            background-color: #FFFDF8;
+            border: 1px solid rgba(42,33,24,0.18);
+            color: var(--ink);
+            border-radius: var(--r);
+            padding: 0.7rem 0.85rem;
+            width: 100%;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .input-field::placeholder { color: var(--ink-faint); }
+        .input-field:focus, .select-field:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(192,134,42,0.18);
+        }
+        input[type="file"].input-field { padding: 0.55rem; }
+        input[type="file"]::file-selector-button {
+            margin-right: 0.9rem; padding: 0.45rem 1rem;
+            border: 1px solid rgba(192,134,42,0.45); border-radius: 999px;
+            background: rgba(192,134,42,0.12); color: var(--gold-deep);
+            font-weight: 600; font-size: 0.8rem; cursor: pointer;
+        }
+        input[type="file"]::file-selector-button:hover { background: rgba(192,134,42,0.22); }
+        input[type="checkbox"] { accent-color: var(--gold); width: 1rem; height: 1rem; }
+        label { color: var(--ink); }
+
+        /* 內容區塊（材料／作法） */
+        .note-block {
+            background: rgba(42,33,24,0.035);
+            border: 1px solid rgba(42,33,24,0.09);
+            border-left: 3px solid var(--gold);
+            border-radius: var(--r);
+            padding: 1rem 1.1rem;
+            line-height: 1.9;
+        }
+
+        /* ===== 菜單列（推薦菜色）===== */
+        .dish-suggestion-item {
+            cursor: pointer;
+            padding: 0.8rem 0.9rem;
+            border-left: 3px solid transparent;
+            border-bottom: 1px dashed rgba(42,33,24,0.2);
+            transition: background-color .2s ease, border-color .2s ease, padding-left .2s ease;
+        }
+        .dish-suggestion-item h4 { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; }
+        .dish-suggestion-item:hover { background-color: rgba(42,33,24,0.045); padding-left: 1.15rem; }
+        .dish-suggestion-item.selected {
+            background-color: var(--paper-3);
+            border-left-color: var(--seal);
+            border-bottom-color: transparent;
+        }
+        body .dish-suggestion-item.selected h4 { color: var(--seal); }
+
+        /* ===== 狀態 ===== */
+        .loader {
+            border: 3px solid rgba(192,134,42,0.2);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .api-status {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 11px; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em;
+            border: 1px solid transparent; white-space: nowrap;
+            transition: all .3s ease;
+        }
+        .api-status.offline    { background: rgba(178,58,46,0.10);  border-color: rgba(178,58,46,0.32);  color: #9A3026; }
+        .api-status.connecting { background: rgba(192,134,42,0.12); border-color: rgba(192,134,42,0.35); color: var(--gold-deep); }
+        .api-status.online     { background: rgba(110,139,61,0.12); border-color: rgba(110,139,61,0.38); color: #4F6A26; }
+        .api-status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
+        .api-status.offline .api-status-dot    { background: var(--seal); }
+        .api-status.connecting .api-status-dot { background: var(--gold); }
+        .api-status.online .api-status-dot     { background: var(--scallion); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+        body .text-theme-orange { color: var(--gold-deep); }
+        body .text-theme-muted  { color: var(--ink-soft); }
+        body .border-theme      { border-color: var(--line); }
+        h1, h2, h3 { font-family: 'Noto Serif TC', 'Noto Sans TC', serif; }
+
+        /* 摺疊區 */
+        .collapsible-toggle h2 { letter-spacing: 0.04em; }
+        .collapsible-toggle:hover .collapsible-toggle-icon { color: var(--gold-deep); }
+        .collapsible-toggle-icon { transition: transform .3s ease, color .2s ease; color: var(--ink-faint); }
+        .collapsible-toggle-icon.rotate-180 { transform: rotate(-180deg); }
+        .collapsible-content { max-height: 1200px; overflow: hidden; transition: max-height .5s ease-in-out; }
+        .collapsible-content.collapsed { max-height: 0; }
+
+        /* 捲軸 */
+        ::-webkit-scrollbar { width: 9px; height: 9px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(192,134,42,0.4); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(192,134,42,0.6); }
+
+        /* 彈窗 */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background-color: rgba(42,33,24,0.55);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 50; backdrop-filter: blur(6px);
+            transition: opacity .3s ease-in-out;
+        }
+        .modal-overlay.hidden { pointer-events: none; opacity: 0; }
+
+        /* 快門動畫 */
+        #shutter-overlay { pointer-events: none; overflow: hidden; --shutter-duration: 0.6s; }
+        .shutter-circle {
+            position: absolute; inset: 0;
+            background: var(--paper-2);
+            clip-path: circle(150% at 50% 50%);
+            transition: clip-path var(--shutter-duration) cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        #shutter-overlay.animate .shutter-circle { clip-path: circle(0% at 50% 50%); }
+
+        /* PDF 預覽 */
+        #pdf-preview-modal .card { width: 90vw; height: 90vh; max-width: 1200px; }
+        #pdf-canvas-container {
+            width: 100%; height: 100%; overflow: auto;
+            background-color: var(--paper-3);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            display: flex; justify-content: center;
+        }
+        #pdf-canvas { max-width: 100%; height: auto; }
+
+        /* 生成圖片 */
+        #generated-image { border-radius: var(--r); box-shadow: 0 14px 30px rgba(42,33,24,0.18); }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div id="app" class="min-h-screen p-4 sm:p-6 lg:p-8">
+        <header class="max-w-7xl mx-auto text-center mb-10 pt-6">
+            <p class="eyebrow">Groq &middot; Gemini &nbsp;智慧食譜</p>
+            <h1 class="display text-4xl sm:text-6xl font-black mt-3" style="color: var(--ink);">AI&nbsp;料理王</h1>
+            <hr class="rule-gold w-40">
+            <p class="text-sm sm:text-base mt-4" style="color:var(--ink-soft);">從冰箱裡的食材，到一道能上桌的菜。</p>
+        </header>
+
+        <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <!-- Left Panel: Controls -->
+            <section id="controls-panel" class="card p-6 flex flex-col gap-6">
+                
+                <!-- API Settings Collapsible -->
+                <div class="collapsible-section border-b border-theme pb-6">
+                    <div class="collapsible-toggle flex justify-between items-center cursor-pointer">
+                        <h2 class="text-xl font-bold text-white">🔑 API 設定</h2>
+                        <div class="flex items-center gap-4">
+                            <div id="api-status-indicator" class="api-status offline">
+                               <div class="api-status-dot"></div>
+                               <span id="api-status-text">未連線</span>
+                           </div>
+                           <svg class="collapsible-toggle-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="collapsible-content mt-4 space-y-4">
+                        <!-- Groq API Key -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Groq API 金鑰 <span class="text-theme-muted">（圖像解析・文字整理）</span></label>
+                            <input type="password" id="groq-key-input" class="input-field mb-2" placeholder="gsk_...">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="toggle-groq-key-btn" class="btn btn-secondary text-sm py-2">👁️ 顯示</button>
+                                <button id="test-groq-key-btn" class="btn btn-primary text-sm py-2">🔗 測試</button>
+                                <button id="clear-groq-key-btn" class="btn btn-danger text-sm py-2">🗑️ 清空</button>
+                            </div>
+                        </div>
+                        <!-- Gemini API Key -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Gemini API 金鑰 <span class="text-theme-muted">（僅圖像生成）</span></label>
+                            <input type="password" id="api-key-input" class="input-field mb-2" placeholder="AIza...">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="toggle-api-key-btn" class="btn btn-secondary text-sm py-2">👁️ 顯示</button>
+                                <button id="test-api-key-btn" class="btn btn-primary text-sm py-2">🔗 測試</button>
+                                <button id="clear-api-key-btn" class="btn btn-danger text-sm py-2">🗑️ 清空</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ingredient Selection Collapsible -->
+                <div class="collapsible-section border-b border-theme pb-6">
+                    <div class="collapsible-toggle flex justify-between items-center cursor-pointer">
+                        <h2 class="text-2xl font-bold text-white">食材選擇</h2>
+                        <svg class="collapsible-toggle-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="collapsible-content mt-4 space-y-4">
+                        <div>
+                            <label for="cuisine-style-select" class="block mb-2 font-medium">料理風格</label>
+                            <select id="cuisine-style-select" class="select-field"></select>
+                        </div>
+                        <div>
+                            <label for="main-ingredient-select" class="block mb-2 font-medium">主要食材</label>
+                            <select id="main-ingredient-select" class="select-field"></select>
+                            <input type="text" id="custom-main-ingredient-input" class="input-field mt-2 text-sm" placeholder="或自行輸入，用「,」隔開（最多3個）">
+                        </div>
+                        <div>
+                            <label class="block mb-2 font-medium">調味食材 (可複選)</label>
+                            <div id="flavor-ingredients-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2 text-sm">
+                                <!-- Flavor checkboxes will be injected here -->
+                            </div>
+                            <input type="text" id="custom-flavor-ingredient-input" class="input-field mt-2 text-sm" placeholder="或自行輸入，用「,」隔開（最多3個）">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recipe Generator Collapsible -->
+                <div class="collapsible-section">
+                     <div class="collapsible-toggle flex justify-between items-center cursor-pointer">
+                        <h2 class="text-2xl font-bold text-white">料理生成器</h2>
+                        <svg class="collapsible-toggle-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="collapsible-content mt-4">
+                         <div>
+                            <label for="recipe-upload" class="block mb-2 font-medium">或上傳食譜檔 (.txt, .pdf, 圖片)</label>
+                            <input type="file" id="recipe-upload" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp" class="input-field">
+                             <div id="file-status" class="text-sm mt-2 text-theme-muted hidden">
+                                <span id="file-name"></span>
+                                <button id="clear-file-btn" class="ml-2 text-red-400 hover:text-red-300">[清除]</button>
+                            </div>
+                         </div>
+                        <button id="generate-recommendation-btn" class="btn btn-primary w-full mt-4">產生推薦菜單</button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Right Panel: Result -->
+            <section id="recommendation-result" class="card paper p-6 hidden flex flex-col">
+                <div id="loader" class="hidden mx-auto my-4 loader"></div>
+                <div id="result-content" class="hidden flex-grow flex flex-col min-h-0">
+                    
+                    <!-- Dish Suggestions -->
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="seal">本日<br>推薦</span>
+                            <div>
+                                <p class="eyebrow" style="color: var(--seal); font-size:0.62rem;">Today's Menu</p>
+                                <h3 class="text-2xl font-bold display">為您推薦的菜單</h3>
+                            </div>
+                        </div>
+                        <div id="dish-suggestions" class="space-y-3">
+                            <!-- Dish items will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Content Part -->
+                    <div id="selected-dish-details" class="flex-grow overflow-y-auto mt-6 pt-6 border-t border-theme pr-2 space-y-8 hidden">
+                        
+                        <div>
+                            <h4 class="text-xl font-semibold text-gray-100 mb-2">所需材料</h4>
+                            <ul id="ingredients-list" class="list-disc list-inside text-theme-muted note-block"></ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-xl font-semibold text-gray-100 mb-2">料理方法</h4>
+                            <div id="method-steps" class="text-theme-muted whitespace-pre-wrap note-block space-y-2"></div>
+                        </div>
+
+
+                        <!-- Image Generation -->
+                        <div id="image-generation-section" class="relative">
+                             <!-- Shutter Animation Overlay -->
+                             <div id="shutter-overlay" class="absolute inset-0 rounded-lg z-10 hidden">
+                               <div class="shutter-circle"></div>
+                             </div>
+                             <h4 class="text-xl font-semibold text-gray-100 mb-2">AI 料理擬真圖</h4>
+                             <p class="text-theme-muted mb-4 text-sm">點擊按鈕，AI 將為您生成這道菜的擬真照片。</p>
+                             
+                             <div class="mb-4">
+                                <label for="image-model-select" class="block text-sm font-medium text-theme-muted mb-1">圖像生成模型</label>
+                                <select id="image-model-select" class="input-field text-sm">
+                                    <option value="gemini-3.1-flash-lite-image" selected>Gemini 3.1 Flash Lite Image</option>
+                                </select>
+                            </div>
+
+                             <div class="grid grid-cols-2 gap-2">
+                                 <button id="generate-image-btn" class="btn btn-primary w-full">產生預覽圖</button>
+                                 <button id="download-pdf-btn" class="btn btn-secondary w-full">📄 下載 PDF 食譜</button>
+                             </div>
+                             <div id="image-loader" class="hidden mx-auto my-4 loader"></div>
+                             <div id="generated-image-container" class="relative group mt-4 hidden">
+                                <img id="generated-image" src="" alt="AI Generated Preview" class="rounded-lg w-full h-auto object-cover" style="aspect-ratio: 16/9;">
+                                <div id="image-actions" class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button id="preview-image-btn" class="btn btn-secondary !p-2" title="放大預覽">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></svg>
+                                    </button>
+                                    <a id="download-image-btn" href="#" download="ai-dish.png" class="btn btn-secondary !p-2" title="下載圖片">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 畫面比例 -->
+    <div class="zoom-bar" role="group" aria-label="畫面比例">
+        <button id="zoom-out-btn" title="縮小" aria-label="縮小">−</button>
+        <span id="zoom-level" title="點擊回到 75%">75%</span>
+        <button id="zoom-in-btn" title="放大" aria-label="放大">+</button>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="image-preview-modal" class="modal-overlay hidden p-4">
+        <div class="relative w-full max-w-6xl aspect-video bg-black rounded-lg flex items-center justify-center">
+            <img id="modal-image" src="" class="max-w-full max-h-full object-contain rounded-lg">
+            <button id="close-modal-btn" class="absolute -top-3 -right-3 bg-white text-black rounded-full p-2 leading-none hover:bg-gray-200 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="modal-overlay hidden p-4">
+        <div class="card p-4 flex flex-col gap-4 relative">
+             <h3 id="pdf-modal-title" class="text-lg font-bold text-center text-theme-orange flex-shrink-0"></h3>
+             <div id="pdf-canvas-container" class="flex-grow min-h-0">
+                 <canvas id="pdf-canvas"></canvas>
+             </div>
+             <div class="flex-shrink-0 flex justify-center items-center gap-4">
+                 <button id="pdf-prev-btn" class="btn btn-secondary">上一頁</button>
+                 <span id="pdf-page-indicator" class="text-theme-muted">
+                     第 <span id="pdf-page-num">0</span> / <span id="pdf-page-count">0</span> 頁
+                 </span>
+                 <button id="pdf-next-btn" class="btn btn-secondary">下一頁</button>
+             </div>
+             <button id="pdf-close-btn" class="absolute -top-3 -right-3 bg-white text-black rounded-full p-2 leading-none hover:bg-gray-200 transition">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+             </button>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alert-modal" class="modal-overlay hidden p-4">
+        <div class="card max-w-sm w-full p-6 text-center">
+             <h3 id="alert-modal-title" class="text-xl font-bold mb-4 text-theme-orange"></h3>
+             <p id="alert-modal-text" class="text-theme-muted mb-6"></p>
+             <button id="alert-modal-ok-btn" class="btn btn-primary w-24 mx-auto">了解</button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden p-4">
+        <div class="card max-w-sm w-full p-6 text-center">
+             <h3 id="confirm-modal-title" class="text-xl font-bold mb-4 text-white"></h3>
+             <p id="confirm-modal-text" class="text-theme-muted mb-6"></p>
+             <div class="flex justify-center gap-4">
+                 <button id="confirm-modal-cancel-btn" class="btn btn-secondary w-24">取消</button>
+                 <button id="confirm-modal-ok-btn" class="btn btn-danger w-24">確定</button>
+             </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let apiKey = '';      // Gemini 金鑰（僅圖像生成）
+        let groqKey = '';     // Groq 金鑰（圖像解析 + 文字整理）
+        let uploadedFileContent = '';
+        let uploadedFile = null;
+        let uploadedPdfBuffer = null;
+        let pdfPageTexts = [];
+
+        // Groq 端點與模型 fallback 鏈
+        const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+        const GROQ_MODELS_URL = 'https://api.groq.com/openai/v1/models';
+        // 2026/08 現行模型（llama-3.x / llama-4-scout / qwen3-32b 已於 2026-08-16 停用）
+        let GROQ_TEXT_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+        let GROQ_VISION_MODELS = ['qwen/qwen3.6-27b'];
+        // 偏好順序：驗證金鑰後會依帳號實際可用模型自動過濾重排
+        const TEXT_PREFERENCE = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b', 'moonshotai/kimi-k2-instruct-0905', 'llama-3.3-70b-versatile'];
+        const VISION_PREFERENCE = ['qwen/qwen3.6-27b', 'meta-llama/llama-4-maverick-17b-128e-instruct'];
+        const VISION_HINTS = ['qwen3.6', 'vl', 'vision', 'scout', 'maverick', 'gemma-3'];
+
+        const INGREDIENT_DATA = {
+            "中式": {
+                main: ["豬肉", "雞肉", "牛肉", "羊肉", "魚", "蝦", "豆腐", "雞蛋", "蔬菜"],
+                flavors: ["青蔥", "蒜", "薑", "辣椒", "醬油", "米酒", "醋", "糖", "麻油", "花椒", "八角", "香菜"]
+            },
+            "西式": {
+                main: ["牛肉", "雞肉", "豬肉", "羊肉", "魚", "蝦", "義大利麵", "馬鈴薯", "雞蛋"],
+                flavors: ["洋蔥", "蒜", "迷迭香", "百里香", "羅勒", "起司", "奶油", "番茄", "橄欖油", "黑胡椒", "芥末", "檸檬"]
+            },
+            "甜點": {
+                main: ["水果", "巧克力", "麵粉", "雞蛋", "牛奶", "奶油", "起司"],
+                flavors: ["糖", "香草", "肉桂", "檸檬", "蜂蜜", "堅果", "可可粉", "抹茶粉"]
+            }
+        };
+
+        // --- DOM Elements ---
+        const generateBtn = document.getElementById('generate-recommendation-btn');
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        const loader = document.getElementById('loader');
+        const imageLoader = document.getElementById('image-loader');
+        const resultContent = document.getElementById('result-content');
+        const recommendationResult = document.getElementById('recommendation-result');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const testApiKeyBtn = document.getElementById('test-api-key-btn');
+        const groqKeyInput = document.getElementById('groq-key-input');
+        const testGroqKeyBtn = document.getElementById('test-groq-key-btn');
+        
+        // Modals
+        const previewModal = document.getElementById('image-preview-modal');
+        const pdfPreviewModal = document.getElementById('pdf-preview-modal');
+        const alertModal = document.getElementById('alert-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+        
+        // PDF Preview Elements
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfCtx = pdfCanvas.getContext('2d');
+        const pdfPrevBtn = document.getElementById('pdf-prev-btn');
+        const pdfNextBtn = document.getElementById('pdf-next-btn');
+        const pdfPageNum = document.getElementById('pdf-page-num');
+        const pdfPageCount = document.getElementById('pdf-page-count');
+
+
+        let currentDish = {};
+        let pdfPreviewState = {
+            pdf: null,
+            currentPage: 1,
+            totalPages: 0,
+            isRendering: false,
+            pendingPage: null,
+            scale: 1.5
+        };
+        
+        // Setup PDF.js worker（CDN 載入失敗時不中斷其餘功能）
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+        }
+
+        // --- Modal Functions ---
+        function showAlert(title, text) {
+            document.getElementById('alert-modal-title').textContent = title;
+            document.getElementById('alert-modal-text').textContent = text;
+            alertModal.classList.remove('hidden');
+        }
+
+        function showConfirm(title, text, onOk) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-text').textContent = text;
+            confirmModal.classList.remove('hidden');
+
+            const okBtn = document.getElementById('confirm-modal-ok-btn');
+            const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+            newOkBtn.addEventListener('click', () => {
+                onOk();
+                confirmModal.classList.add('hidden');
+            });
+
+            cancelBtn.onclick = () => confirmModal.classList.add('hidden');
+        }
+
+        // --- API Key Management ---
+        function refreshApiStatus() {
+            if (groqKey && apiKey)      setApiStatus('online', 'Groq + Gemini 已連線');
+            else if (groqKey)           setApiStatus('online', 'Groq 已連線');
+            else if (apiKey)            setApiStatus('connecting', '僅 Gemini（缺 Groq）');
+            else                        setApiStatus('offline', '未連線');
+        }
+
+        // 依 /v1/models 回傳的實際清單過濾模型鏈，避免呼叫到已下架模型
+        function applyAvailableModels(data) {
+            const ids = (data?.data || [])
+                .filter(m => !/whisper|tts|guard|embed/i.test(m.id || ''))
+                .map(m => m.id);
+            if (!ids.length) return;
+            const pick = (pref, extraFilter) => {
+                const hit = pref.filter(m => ids.includes(m));
+                const rest = ids.filter(m => !hit.includes(m) && (!extraFilter || extraFilter(m)));
+                return [...hit, ...rest].slice(0, 4);
+            };
+            const text = pick(TEXT_PREFERENCE);
+            const vision = pick(VISION_PREFERENCE, m => VISION_HINTS.some(h => m.toLowerCase().includes(h)));
+            if (text.length) GROQ_TEXT_MODELS = text;
+            if (vision.length) GROQ_VISION_MODELS = vision;
+            console.log('Groq 可用文字模型:', GROQ_TEXT_MODELS, '｜視覺模型:', GROQ_VISION_MODELS);
+        }
+
+        // 畫面比例（啟動 75%）
+        const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5];
+        const DEFAULT_ZOOM = 0.75;
+        let currentZoom = DEFAULT_ZOOM;
+
+        function applyZoom(z) {
+            currentZoom = Math.min(1.5, Math.max(0.5, z));
+            document.documentElement.style.zoom = currentZoom;
+            document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+            try { localStorage.setItem('cookking-zoom', String(currentZoom)); } catch (e) {}
+        }
+
+        function initZoom() {
+            let saved = DEFAULT_ZOOM;
+            try {
+                const v = parseFloat(localStorage.getItem('cookking-zoom'));
+                if (v >= 0.5 && v <= 1.5) saved = v;
+            } catch (e) {}
+            applyZoom(saved);
+            document.getElementById('zoom-in-btn').addEventListener('click', () => {
+                applyZoom(ZOOM_STEPS.find(z => z > currentZoom + 0.001) || 1.5);
+            });
+            document.getElementById('zoom-out-btn').addEventListener('click', () => {
+                applyZoom([...ZOOM_STEPS].reverse().find(z => z < currentZoom - 0.001) || 0.5);
+            });
+            document.getElementById('zoom-level').addEventListener('click', () => applyZoom(DEFAULT_ZOOM));
+        }
+
+        async function verifyGroqKey() {
+            const key = groqKeyInput.value.trim();
+            if (!key) { showAlert('輸入錯誤', 'Groq API 金鑰不能為空。'); return; }
+            setApiStatus('connecting', 'Groq 測試中...');
+            testGroqKeyBtn.disabled = true;
+            testGroqKeyBtn.textContent = '測試中...';
+            try {
+                const response = await fetch(GROQ_MODELS_URL, {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error?.message || `狀態碼 ${response.status}`);
+                }
+                const data = await response.json().catch(() => ({}));
+                applyAvailableModels(data);
+                groqKey = key;
+                refreshApiStatus();
+            } catch (error) {
+                console.error("Groq Key Verification Failed:", error);
+                setApiStatus('offline', 'Groq 金鑰無效');
+                showAlert('驗證失敗', `Groq 驗證失敗: ${error.message}`);
+            } finally {
+                testGroqKeyBtn.disabled = false;
+                testGroqKeyBtn.textContent = '🔗 測試';
+            }
+        }
+
+        async function verifyApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (!key) { showAlert('輸入錯誤', 'Gemini API 金鑰不能為空。'); return; }
+            setApiStatus('connecting', 'Gemini 測試中...');
+            testApiKeyBtn.disabled = true;
+            testApiKeyBtn.textContent = '測試中...';
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=1`);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || '無效的 API 金鑰或網路問題。');
+                }
+                apiKey = key;
+                refreshApiStatus();
+            } catch (error) {
+                console.error("Gemini Key Verification Failed:", error);
+                setApiStatus('offline', 'Gemini 金鑰無效');
+                showAlert('驗證失敗', `Gemini 驗證失敗: ${error.message}`);
+            } finally {
+                testApiKeyBtn.disabled = false;
+                testApiKeyBtn.textContent = '🔗 測試';
+            }
+        }
+
+        // --- Groq 呼叫層（含 429/TPM 退避 + 模型 fallback 鏈）---
+        async function groqChat(messages, { models = GROQ_TEXT_MODELS, jsonMode = false, temperature = 0.7, maxTokens = 4096 } = {}) {
+            if (!groqKey) throw new Error('尚未設定 Groq API 金鑰');
+            let lastError = null;
+            for (const model of models) {
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    try {
+                        const body = { model, messages, temperature, max_tokens: maxTokens };
+                        if (jsonMode) body.response_format = { type: 'json_object' };
+                        const response = await fetch(GROQ_CHAT_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${groqKey}`
+                            },
+                            body: JSON.stringify(body)
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            const text = data.choices?.[0]?.message?.content;
+                            if (!text) throw new Error('Groq 回應內容為空');
+                            return text;
+                        }
+                        const errData = await response.json().catch(() => ({}));
+                        const errMsg = errData.error?.message || `狀態碼 ${response.status}`;
+                        // 429 / 503：退避重試；TPD 或模型層級錯誤：換下一個模型
+                        if (response.status === 429 || response.status === 503) {
+                            if (/tokens per day|TPD|rate_limit_exceeded.*day/i.test(errMsg)) {
+                                lastError = new Error(errMsg);
+                                break; // 當日額度耗盡 → 換模型
+                            }
+                            if (attempt < 2) {
+                                const delay = Math.pow(2, attempt) * 1500 + Math.random() * 1000;
+                                console.log(`Groq ${model} 限流 (${response.status})，${Math.round(delay/1000)}s 後重試...`);
+                                await new Promise(r => setTimeout(r, delay));
+                                continue;
+                            }
+                        }
+                        // 模型已下架 / 無權限：直接換下一個，且不覆蓋更有意義的錯誤
+                        if (/does not exist|model_not_found|decommissioned|deprecated/i.test(errMsg)) {
+                            console.warn(`Groq 模型 ${model} 已不可用：${errMsg}`);
+                            if (!lastError) lastError = new Error(`模型 ${model} 已下架，請按「🔗 測試」重新偵測可用模型`);
+                            break;
+                        }
+                        lastError = new Error(errMsg);
+                        break; // 其他錯誤 → 換模型
+                    } catch (error) {
+                        lastError = error;
+                        if (attempt < 2) {
+                            await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1500));
+                            continue;
+                        }
+                    }
+                }
+                console.warn(`Groq 模型 ${model} 失敗，嘗試下一個模型...`);
+            }
+            throw lastError || new Error('所有 Groq 模型皆呼叫失敗');
+        }
+
+        // Groq Vision：解析食譜圖片為文字
+        async function groqAnalyzeImage(base64DataUrl) {
+            const messages = [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: '請仔細辨識這張食譜圖片中的所有文字內容，包含菜名、材料份量與烹飪步驟。以繁體中文完整輸出辨識結果，保留原有結構，不要加入額外評論。' },
+                    { type: 'image_url', image_url: { url: base64DataUrl } }
+                ]
+            }];
+            return await groqChat(messages, { models: GROQ_VISION_MODELS, temperature: 0.2, maxTokens: 4096 });
+        }
+        
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return await response.json();
+                    if (response.status === 503 || response.status === 429) {
+                        if (i < retries - 1) {
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            console.log(`API overloaded (status ${response.status}). Retrying in ${Math.round(delay/1000)}s...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                    }
+                    let errorDetails = '';
+                    try {
+                        const errorData = await response.json();
+                        errorDetails = errorData.error?.message || JSON.stringify(errorData);
+                    } catch (e) {
+                        errorDetails = await response.text();
+                    }
+                    throw new Error(`API 請求失敗，狀態碼: ${response.status}. 詳情: ${errorDetails}`);
+
+                } catch (error) {
+                    if (i < retries - 1) {
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        console.log(`Fetch error: ${error.message}. Retrying in ${Math.round(delay/1000)}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+        }
+
+        // --- File Handling ---
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            clearFileUpload();
+            uploadedFile = file;
+            const fileStatus = document.getElementById('file-status');
+            const fileNameEl = document.getElementById('file-name');
+            fileNameEl.textContent = `已載入: ${uploadedFile.name}`;
+            fileStatus.classList.remove('hidden');
+            
+            if (file.type.startsWith("image/")) {
+                // 圖片 → Groq Vision 解析
+                if (!groqKey) {
+                    showAlert('提醒', '解析食譜圖片需要 Groq API 金鑰，請先設定並測試連線。');
+                    clearFileUpload();
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    fileNameEl.textContent = `🔍 Groq 解析圖片中: ${file.name}`;
+                    try {
+                        uploadedFileContent = await groqAnalyzeImage(e.target.result);
+                        fileNameEl.textContent = `已解析: ${file.name}`;
+                    } catch (error) {
+                        console.error("Groq 圖片解析失敗:", error);
+                        showAlert('解析失敗', `圖片解析失敗: ${error.message}`);
+                        clearFileUpload();
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === "application/pdf") {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    uploadedPdfBuffer = e.target.result;
+                    const typedarray = new Uint8Array(uploadedPdfBuffer);
+                    try {
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let allText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            const pageText = content.items.map(item => item.str).join(' ');
+                            pdfPageTexts.push({ pageNumber: i, text: pageText });
+                            allText += pageText + ' ';
+                        }
+                        uploadedFileContent = allText.trim();
+                    } catch (error) {
+                        console.error("Error parsing PDF:", error);
+                        showAlert('讀取失敗', `讀取 PDF 檔案失敗: ${error.message}`);
+                        clearFileUpload();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedFileContent = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+
+        function clearFileUpload() {
+            uploadedFileContent = '';
+            uploadedFile = null;
+            uploadedPdfBuffer = null;
+            pdfPageTexts = [];
+            pdfPreviewState.pdf = null;
+            document.getElementById('recipe-upload').value = '';
+            document.getElementById('file-status').classList.add('hidden');
+        }
+        
+        // --- Event Listeners & UI ---
+        function setupEventListeners() {
+            testApiKeyBtn.addEventListener('click', verifyApiKey);
+            testGroqKeyBtn.addEventListener('click', verifyGroqKey);
+            document.getElementById('toggle-groq-key-btn').addEventListener('click', () => {
+                 const btn = document.getElementById('toggle-groq-key-btn');
+                 if (groqKeyInput.type === 'password') {
+                     groqKeyInput.type = 'text';
+                     btn.textContent = '👁️ 隱藏';
+                 } else {
+                     groqKeyInput.type = 'password';
+                     btn.textContent = '👁️ 顯示';
+                 }
+            });
+            document.getElementById('clear-groq-key-btn').addEventListener('click', () => {
+                showConfirm('清除 Groq 金鑰', '您確定要清除已儲存的 Groq API 金鑰嗎？', () => {
+                     groqKeyInput.value = '';
+                     groqKey = '';
+                     refreshApiStatus();
+                });
+            });
+            document.getElementById('toggle-api-key-btn').addEventListener('click', () => {
+                 const btn = document.getElementById('toggle-api-key-btn');
+                 if (apiKeyInput.type === 'password') {
+                     apiKeyInput.type = 'text';
+                     btn.textContent = '👁️ 隱藏';
+                 } else {
+                     apiKeyInput.type = 'password';
+                     btn.textContent = '👁️ 顯示';
+                 }
+            });
+            document.getElementById('clear-api-key-btn').addEventListener('click', () => {
+                showConfirm('清除 Gemini 金鑰', '您確定要清除已儲存的 Gemini API 金鑰嗎？', () => {
+                     apiKeyInput.value = '';
+                     apiKey = '';
+                     refreshApiStatus();
+                });
+            });
+
+            generateBtn.addEventListener('click', getRecommendation);
+            generateImageBtn.addEventListener('click', triggerShutterAnimation);
+            document.getElementById('download-pdf-btn').addEventListener('click', downloadRecipePdf);
+            
+            document.getElementById('cuisine-style-select').addEventListener('change', updateIngredientSelectors);
+            document.getElementById('recipe-upload').addEventListener('change', handleFileUpload);
+            document.getElementById('clear-file-btn').addEventListener('click', clearFileUpload);
+            
+            // Modal listeners
+            document.getElementById('close-modal-btn').addEventListener('click', () => previewModal.classList.add('hidden'));
+            previewModal.addEventListener('click', (e) => {
+                if (e.target === previewModal) previewModal.classList.add('hidden');
+            });
+            document.getElementById('preview-image-btn').addEventListener('click', () => {
+                const imgSrc = document.getElementById('generated-image').src;
+                if (imgSrc) {
+                    document.getElementById('modal-image').src = imgSrc;
+                    previewModal.classList.remove('hidden');
+                }
+            });
+            document.getElementById('alert-modal-ok-btn').addEventListener('click', () => alertModal.classList.add('hidden'));
+            
+            // PDF Preview Modal listeners
+            document.getElementById('pdf-close-btn').addEventListener('click', () => pdfPreviewModal.classList.add('hidden'));
+            pdfPrevBtn.addEventListener('click', () => {
+                if (pdfPreviewState.currentPage <= 1) return;
+                pdfPreviewState.currentPage--;
+                renderPdfPage(pdfPreviewState.currentPage);
+            });
+            pdfNextBtn.addEventListener('click', () => {
+                if (pdfPreviewState.currentPage >= pdfPreviewState.totalPages) return;
+                pdfPreviewState.currentPage++;
+                renderPdfPage(pdfPreviewState.currentPage);
+            });
+        }
+        
+        function setupCollapsibleSections() {
+            document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+                const content = toggle.nextElementSibling;
+                const icon = toggle.querySelector('.collapsible-toggle-icon');
+                toggle.addEventListener('click', () => {
+                    content.classList.toggle('collapsed');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+        }
+        
+        function updateIngredientSelectors() {
+            const cuisine = document.getElementById('cuisine-style-select').value;
+            const mainSelect = document.getElementById('main-ingredient-select');
+            const flavorContainer = document.getElementById('flavor-ingredients-container');
+
+            mainSelect.innerHTML = '';
+            INGREDIENT_DATA[cuisine].main.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item; option.textContent = item;
+                mainSelect.appendChild(option);
+            });
+
+            flavorContainer.innerHTML = '';
+            INGREDIENT_DATA[cuisine].flavors.forEach(item => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center space-x-2 cursor-pointer';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox'; checkbox.value = item;
+                checkbox.className = 'rounded';
+                label.appendChild(checkbox);
+                const span = document.createElement('span');
+                span.textContent = item;
+                label.appendChild(span);
+                flavorContainer.appendChild(label);
+            });
+        }
+        
+        // --- Main Logic Functions ---
+        function setApiStatus(status, message) {
+            const indicator = document.getElementById('api-status-indicator');
+            const text = document.getElementById('api-status-text');
+            indicator.className = 'api-status ' + status;
+            text.textContent = message;
+        }
+        
+        async function getRecommendation() {
+            if (!groqKey) { showAlert('提醒', '請先輸入並驗證您的 Groq API 金鑰'); return; }
+            
+            const cuisine = document.getElementById('cuisine-style-select').value;
+            
+            // Get main ingredients from select and custom input
+            const mainIngredientSelect = document.getElementById('main-ingredient-select').value;
+            const customMainInput = document.getElementById('custom-main-ingredient-input').value.trim();
+            const customMainIngredients = customMainInput ? customMainInput.split(',').map(item => item.trim()).filter(Boolean).slice(0, 3) : [];
+            const allMainIngredients = [mainIngredientSelect, ...customMainIngredients].filter(Boolean);
+
+
+            // Get flavor ingredients from checkboxes and custom input
+            const flavorCheckboxes = document.querySelectorAll('#flavor-ingredients-container input:checked');
+            const selectedFlavors = Array.from(flavorCheckboxes).map(cb => cb.value);
+            const customFlavorInput = document.getElementById('custom-flavor-ingredient-input').value.trim();
+            const customFlavors = customFlavorInput ? customFlavorInput.split(',').map(item => item.trim()).filter(Boolean).slice(0, 3) : [];
+            const allFlavors = [...new Set([...selectedFlavors, ...customFlavors])];
+
+
+            if (allMainIngredients.length === 0) { 
+                showAlert('提醒', "請至少選擇或輸入一個主要食材！"); 
+                return; 
+            }
+            
+            loader.classList.remove('hidden');
+            recommendationResult.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+            generateBtn.disabled = true;
+            generateBtn.textContent = '分析中...';
+            
+            let systemPrompt, userQuery;
+
+            if (uploadedFileContent) {
+                systemPrompt = `你是一位頂級 AI 料理王。請分析使用者提供的食譜文字內容。你的回應必須是一個 JSON 物件，格式為 {"dishes": [...]}。dishes 陣列中每道菜必須包含 "dishName" (菜名), "description" (一段吸引人的簡短描述), "ingredients" (一個包含所有材料和份量的字串陣列), "method" (一個包含詳細烹飪步驟的字串陣列)。如果食譜內容有標示頁碼 (--- PAGE X ---)，你還必須包含 "pageNumber" (一個整數，代表這道菜食譜所在的原始頁碼)。你必須從使用者提供的有頁碼標記的文本中，正確識別出頁碼。如果文本中找不到任何與指定食材相關的食譜，請返回 {"dishes": []}。只輸出 JSON，不要有任何其他文字。全部使用繁體中文。`;
+                
+                let queryText = uploadedFileContent;
+                if (uploadedFile && uploadedFile.type === 'application/pdf' && pdfPageTexts.length > 0) {
+                    queryText = pdfPageTexts.map(p => `--- PAGE ${p.pageNumber} ---\n${p.text}`).join('\n\n');
+                }
+                const flavorPromptPart = allFlavors.length > 0 ? ` 如果食譜中還用到了下列調味食材，請優先推薦：「${allFlavors.join('」、「')}」。` : '';
+                userQuery = `這是食譜內容: """${queryText}"""\n\n請根據以上內容，找出${cuisine}風格的菜色。這些菜色需要包含以下主要食材中的至少一種：「${allMainIngredients.join('」、「')}」。${flavorPromptPart}`;
+
+            } else {
+                systemPrompt = `你是一位頂級 AI 料理王。根據使用者選擇的料理風格和食材，推薦 3 道菜。你的回應必須是一個 JSON 物件，格式為 {"dishes": [...]}。dishes 陣列中每道菜包含 "dishName" (菜名), "description" (一段吸引人的簡短描述), "ingredients" (一個包含所有材料和份量的字串陣列), 和 "method" (一個包含詳細烹飪步驟的字串陣列)。只輸出 JSON，不要有任何其他文字。全部使用繁體中文。`;
+                userQuery = `料理風格: ${cuisine}。主要食材: ${allMainIngredients.join('、')}。調味食材: ${allFlavors.join('、')}。`;
+            }
+            
+            try {
+                let jsonText = await groqChat([
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userQuery }
+                ], { jsonMode: true, temperature: 0.7, maxTokens: 4096 });
+
+                jsonText = jsonText.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '').replace(/[\x00-\x1F\x7F-\x9F]/g, "");
+                const parsed = JSON.parse(jsonText);
+                const data = Array.isArray(parsed) ? parsed : (parsed.dishes || []);
+                if (Array.isArray(data) && data.length > 0) {
+                    displayDishSuggestions(data);
+                } else {
+                    displayNoResults();
+                }
+                refreshApiStatus();
+            } catch (error) {
+                console.error("Groq API 呼叫失敗:", error);
+                showAlert('發生錯誤', "無法獲取建議，請稍後再試。錯誤：" + error.message);
+                setApiStatus('offline', 'Groq 連線失敗');
+            } finally {
+                loader.classList.add('hidden');
+                generateBtn.disabled = false;
+                generateBtn.textContent = '產生推薦菜單';
+            }
+        }
+
+        function displayNoResults() {
+            const container = document.getElementById('dish-suggestions');
+            container.innerHTML = `<div class="text-center note-block">
+                                     <p class="text-theme-muted">抱歉，在您上傳的食譜中找不到相關資料。</p>
+                                   </div>`;
+            document.getElementById('selected-dish-details').classList.add('hidden');
+            resultContent.classList.remove('hidden');
+            const controlsPanel = document.getElementById('controls-panel');
+            recommendationResult.style.height = `${controlsPanel.offsetHeight}px`;
+        }
+        
+        function displayDishSuggestions(dishes) {
+            const container = document.getElementById('dish-suggestions');
+            container.innerHTML = '';
+            document.getElementById('selected-dish-details').classList.add('hidden');
+            
+            dishes.forEach((dish) => {
+                const div = document.createElement('div');
+                div.className = 'dish-suggestion-item';
+                
+                let previewButtonHtml = '';
+                if (uploadedFile && uploadedFile.type === 'application/pdf' && dish.pageNumber) {
+                    previewButtonHtml = `<button class="btn btn-secondary btn-sm py-1 px-3 text-xs mt-2 preview-pdf-btn" data-page="${dish.pageNumber}">預覽食譜</button>`;
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                           <h4 class="font-semibold text-white">${dish.dishName}</h4>
+                           <p class="text-sm text-theme-muted">${dish.description}</p>
+                        </div>
+                        ${previewButtonHtml}
+                    </div>`;
+
+                div.addEventListener('click', (e) => {
+                    const button = e.target.closest('.preview-pdf-btn');
+                    if (button) {
+                        const page = parseInt(button.dataset.page, 10);
+                        if (page) openPdfPreview(page);
+                    } else {
+                        document.querySelectorAll('.dish-suggestion-item').forEach(el => el.classList.remove('selected'));
+                        div.classList.add('selected');
+                        selectDish(dish);
+                    }
+                });
+                container.appendChild(div);
+            });
+
+            resultContent.classList.remove('hidden');
+            const controlsPanel = document.getElementById('controls-panel');
+            recommendationResult.style.height = `${controlsPanel.offsetHeight}px`;
+        }
+
+        function selectDish(dish) {
+            currentDish = dish;
+            const ingredientsList = document.getElementById('ingredients-list');
+            const methodSteps = document.getElementById('method-steps');
+            
+            ingredientsList.innerHTML = '';
+            if (Array.isArray(dish.ingredients) && dish.ingredients.length > 0) {
+                dish.ingredients.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    ingredientsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = uploadedFile ? "詳細材料請參考原始食譜文件。" : "未提供材料資訊。";
+                ingredientsList.appendChild(li);
+            }
+
+            methodSteps.innerHTML = '';
+            if (Array.isArray(dish.method) && dish.method.length > 0) {
+                dish.method.forEach((step, index) => {
+                    const p = document.createElement('p');
+                    p.textContent = `${index + 1}. ${step}`;
+                    methodSteps.appendChild(p);
+                });
+            } else {
+                const p = document.createElement('p');
+                p.textContent = uploadedFile ? "詳細作法請參考原始食譜文件。" : "未提供作法資訊。";
+                methodSteps.appendChild(p);
+            }
+
+            document.getElementById('selected-dish-details').classList.remove('hidden');
+            document.getElementById('generated-image-container').classList.add('hidden');
+        }
+        
+        // --- PDF Preview Logic ---
+        async function openPdfPreview(startPage = 1) {
+            if (!uploadedPdfBuffer) {
+                showAlert('錯誤', '沒有找到已上傳的 PDF 檔案。');
+                return;
+            }
+            pdfPreviewModal.classList.remove('hidden');
+            document.getElementById('pdf-modal-title').textContent = `預覽: ${uploadedFile.name}`;
+
+            try {
+                if (!pdfPreviewState.pdf) {
+                    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(uploadedPdfBuffer) });
+                    pdfPreviewState.pdf = await loadingTask.promise;
+                    pdfPreviewState.totalPages = pdfPreviewState.pdf.numPages;
+                }
+                pdfPreviewState.currentPage = startPage;
+                renderPdfPage(pdfPreviewState.currentPage);
+            } catch (error) {
+                console.error("Error opening PDF preview:", error);
+                showAlert('預覽失敗', '無法開啟 PDF 檔案進行預覽。');
+                pdfPreviewModal.classList.add('hidden');
+            }
+        }
+
+        function renderPdfPage(num) {
+            if (!pdfPreviewState.pdf || num < 1 || num > pdfPreviewState.totalPages) return;
+            if (pdfPreviewState.isRendering) {
+                pdfPreviewState.pendingPage = num;
+                return;
+            }
+            pdfPreviewState.isRendering = true;
+
+            pdfPreviewState.pdf.getPage(num).then(page => {
+                const viewport = page.getViewport({ scale: pdfPreviewState.scale });
+                pdfCanvas.height = viewport.height;
+                pdfCanvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: pdfCtx,
+                    viewport: viewport
+                };
+
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(() => {
+                    pdfPreviewState.isRendering = false;
+                    if (pdfPreviewState.pendingPage !== null) {
+                        const pending = pdfPreviewState.pendingPage;
+                        pdfPreviewState.pendingPage = null;
+                        renderPdfPage(pending);
+                    }
+                });
+            });
+
+            pdfPageNum.textContent = num;
+            pdfPageCount.textContent = pdfPreviewState.totalPages;
+            pdfPrevBtn.disabled = (num <= 1);
+            pdfNextBtn.disabled = (num >= pdfPreviewState.totalPages);
+        }
+
+        // --- Image Generation ---
+        function triggerShutterAnimation() {
+            if (!currentDish.dishName) { showAlert("提醒", "請先從上方選擇一道菜！"); return; }
+            const shutterOverlay = document.getElementById('shutter-overlay');
+            if (!shutterOverlay) { generateImage(); return; }
+
+            const shutterCircle = shutterOverlay.querySelector('.shutter-circle');
+            shutterCircle.style.transition = 'clip-path 0s';
+            shutterCircle.style.clipPath = 'circle(150% at 50% 50%)';
+            shutterOverlay.classList.remove('hidden');
+            
+            requestAnimationFrame(() => {
+                shutterCircle.style.transition = 'clip-path var(--shutter-duration) cubic-bezier(0.77, 0, 0.175, 1)';
+                shutterOverlay.classList.add('animate');
+            });
+
+            setTimeout(() => { generateImage(); }, 300);
+
+            setTimeout(() => {
+                shutterCircle.style.clipPath = 'circle(150% at 50% 50%)';
+                setTimeout(() => {
+                    shutterOverlay.classList.add('hidden');
+                    shutterOverlay.classList.remove('animate');
+                }, 600);
+            }, 600);
+        }
+
+        async function generateImage() {
+            if (!apiKey) {
+                showAlert('提醒', '圖像生成需要 Gemini API 金鑰，請先設定並測試連線');
+                return;
+            }
+            if (!currentDish.dishName) {
+                showAlert("提醒", "請先從上方選擇一道菜！");
+                return;
+            }
+
+            imageLoader.classList.remove('hidden');
+            generateImageBtn.disabled = true;
+            generateImageBtn.textContent = '圖片生成中...';
+            document.getElementById('generated-image-container').classList.add('hidden');
+            
+            const fullPrompt = `Create a photorealistic, professional-quality photograph of a delicious-looking dish: "${currentDish.dishName}". Description: "${currentDish.description}". The style should be professional food photography with beautiful lighting, sharp focus, and an appetizing presentation. hyper-realistic, 8K, 16:9 aspect ratio. IMPORTANT: The image MUST include the dish name rendered as elegant Traditional Chinese text overlay: 「${currentDish.dishName}」. Place the Traditional Chinese title prominently and legibly (e.g. top or bottom of the frame) in a refined serif or calligraphy style that complements the food photography. The Chinese characters must be accurate, correctly written Traditional Chinese, exactly matching: ${currentDish.dishName}`;
+            
+            const selectedModel = document.getElementById('image-model-select').value; // gemini-3.1-flash-lite-image
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+            const requestBody = {
+                contents: [{ parts: [{ text: fullPrompt }] }],
+                generationConfig: { responseModalities: ['IMAGE'] }
+            };
+
+            try {
+                const result = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const imagePart = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
+                    const imageBase64 = imagePart.inlineData.data;
+                    const imageUrl = `data:image/png;base64,${imageBase64}`;
+
+                    document.getElementById('generated-image').src = imageUrl;
+                    document.getElementById('download-image-btn').href = imageUrl;
+                    document.getElementById('generated-image-container').classList.remove('hidden');
+                } else {
+                    throw new Error(result.candidates?.[0]?.finishReason || "API 未返回有效的圖像數據");
+                }
+
+            } catch (error) {
+                console.error("Image Generation Failed:", error);
+                showAlert('生成失敗', `圖片生成失敗: ${error.message}`);
+            } finally {
+                imageLoader.classList.add('hidden');
+                generateImageBtn.disabled = false;
+                generateImageBtn.textContent = '產生預覽圖';
+            }
+        }
+        
+        // --- PDF 食譜匯出（含圖像與料理方式）---
+        async function downloadRecipePdf() {
+            if (!currentDish.dishName) { showAlert('提醒', '請先從上方選擇一道菜！'); return; }
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                showAlert('錯誤', 'PDF 元件載入失敗，請確認網路連線後重新整理頁面。');
+                return;
+            }
+
+            const pdfBtn = document.getElementById('download-pdf-btn');
+            pdfBtn.disabled = true;
+            pdfBtn.textContent = 'PDF 產生中...';
+
+            // 建立列印版面（離屏渲染）
+            const imgEl = document.getElementById('generated-image');
+            const hasImage = imgEl.src && imgEl.src.startsWith('data:image');
+            const ingredients = Array.isArray(currentDish.ingredients) ? currentDish.ingredients : [];
+            const method = Array.isArray(currentDish.method) ? currentDish.method : [];
+
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#F7F1E5;color:#221A13;font-family:"Noto Serif TC","Noto Sans TC",serif;padding:52px;box-sizing:border-box;';
+            wrap.innerHTML = `
+                <div style="display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid rgba(34,26,19,0.2);padding-bottom:18px;margin-bottom:26px;">
+                    <div style="width:52px;height:52px;flex-shrink:0;background:#B23A2E;color:#FBF3E6;border:2px solid rgba(251,243,230,0.6);border-radius:3px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:700;line-height:1.2;">食譜<br>卡</div>
+                    <div>
+                        <div style="font-size:11px;letter-spacing:5px;color:#B8801F;font-weight:700;">AI 料理王 &middot; RECIPE CARD</div>
+                        <h1 style="font-size:34px;font-weight:900;margin:6px 0 4px;color:#221A13;">${currentDish.dishName}</h1>
+                        <p style="font-size:13px;color:#6E5F4E;margin:0;font-family:'Noto Sans TC',sans-serif;">${currentDish.description || ''}</p>
+                    </div>
+                </div>
+                ${hasImage ? `<img src="${imgEl.src}" style="width:100%;border-radius:8px;margin-bottom:26px;display:block;">` : ''}
+                <h2 style="font-size:19px;color:#221A13;border-left:4px solid #E3A93C;padding-left:12px;margin:0 0 12px;">所需材料</h2>
+                <ul style="font-size:14px;line-height:1.95;margin:0 0 26px;padding-left:26px;font-family:'Noto Sans TC',sans-serif;color:#3A3026;">
+                    ${ingredients.length ? ingredients.map(i => `<li>${i}</li>`).join('') : '<li>詳細材料請參考原始食譜。</li>'}
+                </ul>
+                <h2 style="font-size:19px;color:#221A13;border-left:4px solid #B23A2E;padding-left:12px;margin:0 0 12px;">料理方法</h2>
+                <ol style="font-size:14px;line-height:1.95;margin:0;padding-left:26px;font-family:'Noto Sans TC',sans-serif;color:#3A3026;">
+                    ${method.length ? method.map(s => `<li style="margin-bottom:8px;">${s}</li>`).join('') : '<li>詳細作法請參考原始食譜。</li>'}
+                </ol>
+                <div style="margin-top:34px;padding-top:14px;border-top:1px solid rgba(34,26,19,0.15);font-size:10px;letter-spacing:2px;color:#8B7B68;text-align:center;font-family:'Noto Sans TC',sans-serif;">由 AI 料理王 生成 &middot; ${new Date().toLocaleDateString('zh-TW')}</div>
+            `;
+
+            document.body.appendChild(wrap);
+
+            try {
+                const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#F7F1E5' });
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageW = 210, pageH = 297;
+                const imgW = pageW;
+                const imgH = canvas.height * imgW / canvas.width;
+
+                // 多頁切割
+                const pageCanvasH = canvas.width * (pageH / pageW);
+                let renderedH = 0, pageIndex = 0;
+                while (renderedH < canvas.height) {
+                    const sliceH = Math.min(pageCanvasH, canvas.height - renderedH);
+                    const slice = document.createElement('canvas');
+                    slice.width = canvas.width;
+                    slice.height = sliceH;
+                    slice.getContext('2d').drawImage(canvas, 0, renderedH, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+                    if (pageIndex > 0) pdf.addPage();
+                    pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, imgW, sliceH * imgW / canvas.width);
+                    renderedH += sliceH;
+                    pageIndex++;
+                }
+                pdf.save(`${currentDish.dishName}_食譜.pdf`);
+            } catch (error) {
+                console.error("PDF 匯出失敗:", error);
+                showAlert('匯出失敗', `PDF 產生失敗: ${error.message}`);
+            } finally {
+                document.body.removeChild(wrap);
+                pdfBtn.disabled = false;
+                pdfBtn.textContent = '📄 下載 PDF 食譜';
+            }
+        }
+
+        // --- Initializer ---
+        function init() {
+            apiKeyInput.value = '';
+            groqKeyInput.value = '';
+            setupCollapsibleSections();
+            const cuisineSelect = document.getElementById('cuisine-style-select');
+            for(const style in INGREDIENT_DATA) {
+                const option = document.createElement('option');
+                option.value = style;
+                option.textContent = style;
+                cuisineSelect.appendChild(option);
+            }
+            updateIngredientSelectors();
+            setupEventListeners();
+            initZoom();
+            setApiStatus('offline', '等待金鑰');
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
