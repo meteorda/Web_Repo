@@ -1,0 +1,2840 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotebookLM 提示詞產生器 V5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Serif+TC:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Comfortaa:wght@400;500;600;700&family=M+PLUS+Rounded+1c:wght@400;500;700&family=Kosugi+Maru&family=Varela+Round&family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#12100d;--bg1:#1e1b17;--bg-s:rgba(30,27,23,.88);--bg-g:rgba(45,38,30,.55);--bg-gh:rgba(55,48,38,.65);
+  --bdr:rgba(180,150,120,.15);--bdr-a:rgba(200,170,130,.5);--bdr-gl:rgba(190,160,120,.35);
+  --t1:#f5f0e8;--t2:#d4c8b8;--t3:#9a8a78;--t4:#6a5e50;
+  --ac:#b8956a;--ac2:#caa87e;--ac3:#a68458;--ag:rgba(184,149,106,.35);--ag2:rgba(184,149,106,.6);
+  --cy:#d4a96a;--cg:rgba(212,169,106,.3);
+  --ok:#00e5a0;--okg:rgba(0,229,160,.3);--warn:#ffb547;--err:#ff4d6a;--eg:rgba(255,77,106,.2);
+  --pur:#a78bfa;--gold:#ffd700;--ora:#ff8c42;--orag:rgba(255,140,66,.3);
+  --r:16px;--rs:10px;--rx:6px;--blur:blur(24px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit','Noto Sans TC',sans-serif;background:var(--bg0);color:var(--t2);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(184,149,106,.06)0%,transparent 60%),radial-gradient(ellipse 60% 50% at 80% 90%,rgba(212,169,106,.04)0%,transparent 60%);pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);animation:of 20s ease-in-out infinite}
+.o1{width:400px;height:400px;background:rgba(184,149,106,.07);top:-100px;left:-100px}
+.o2{width:300px;height:300px;background:rgba(212,169,106,.05);bottom:-80px;right:-80px;animation-delay:-7s;animation-duration:25s}
+@keyframes of{0%,100%{transform:translate(0,0)scale(1)}50%{transform:translate(-20px,30px)scale(.95)}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(184,149,106,.25);border-radius:4px}
+
+/* HEADER */
+.hd{position:sticky;top:0;z-index:100;background:rgba(6,8,15,.75);backdrop-filter:var(--blur);border-bottom:1px solid var(--bdr);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hd-brand{display:flex;align-items:center;gap:12px}
+.hd-logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--cy));display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px var(--ag);transform:perspective(200px)rotateY(-5deg);transition:transform .3s}
+.hd-logo:hover{transform:perspective(200px)rotateY(5deg)scale(1.05)}
+.hd-t{font-size:18px;font-weight:700;background:linear-gradient(135deg,#f5f0e8,#caa87e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hd-s{font-size:10px;color:var(--t4);letter-spacing:.5px;margin-top:1px}
+.hd-center{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hd-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* MODE SWITCH */
+.msw{display:flex;background:rgba(10,15,30,.6);border:1px solid var(--bdr);border-radius:28px;padding:3px;gap:2px}
+.mbtn{padding:7px 16px;border:none;border-radius:24px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .3s;color:var(--t4);background:transparent;display:flex;align-items:center;gap:6px}
+.mbtn:hover{color:var(--t1)}
+.mbtn.act-s{background:linear-gradient(135deg,rgba(184,149,106,.25),rgba(0,212,255,.15));color:#fff;box-shadow:0 2px 12px var(--ag)}
+.mbtn.act-i{background:linear-gradient(135deg,rgba(255,140,66,.25),rgba(255,215,0,.15));color:#fff;box-shadow:0 2px 12px var(--orag)}
+.mbtn .badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;background:rgba(255,140,66,.25);color:var(--ora)}
+
+/* BUTTONS */
+.btn{padding:7px 16px;border:none;border-radius:var(--rs);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:5px;position:relative;white-space:nowrap}
+.btn-p{background:linear-gradient(135deg,var(--ac3),var(--ac));color:#fff;box-shadow:0 3px 12px var(--ag)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--ag2)}
+.btn-g{background:var(--bg-g);color:var(--t2);border:1px solid var(--bdr);backdrop-filter:blur(12px)}
+.btn-g:hover{background:var(--bg-gh);border-color:var(--bdr-a)}
+.btn-d{background:var(--eg);color:var(--err);border:1px solid rgba(255,77,106,.25)}
+.btn-gen{background:linear-gradient(135deg,#00c48c,#00e5a0,#00d4ff);color:#1e1b17;font-size:13px;font-weight:700;padding:9px 22px;border-radius:12px;box-shadow:0 4px 16px var(--okg)}
+.btn-gen:hover{transform:translateY(-2px)scale(1.02);box-shadow:0 8px 28px rgba(0,229,160,.4)}
+.btn-sm{padding:4px 10px;font-size:10px}
+.btn-xs{padding:3px 8px;font-size:9px;border-radius:6px}
+.density-btn{background:rgba(10,15,30,.4);border:1px solid var(--bdr);color:var(--t3);transition:all .2s}
+.density-btn:hover{border-color:var(--bdr-a);color:var(--t1)}
+.density-btn.sel{border-color:var(--ac);background:rgba(77,139,255,.15);color:var(--ac2)}
+.aud-sec{display:flex;gap:6px;align-items:center}
+.aud-sec-num{min-width:20px;height:20px;border-radius:50%;background:var(--ac);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.poster-styles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:380px;overflow-y:auto;padding:2px}
+.pst-card{border:2px solid var(--bdr);border-radius:10px;padding:6px;cursor:pointer;transition:all .2s;text-align:center;background:rgba(10,15,30,.3)}
+.pst-card:hover{border-color:var(--bdr-a);transform:translateY(-2px)}
+.pst-card.sel{border-color:var(--ac);box-shadow:0 0 12px rgba(77,139,255,.3)}
+.pst-prev{width:100%;height:80px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:3px;position:relative;overflow:hidden}
+.pst-name{font-size:10px;font-weight:700;color:var(--t1);margin-bottom:1px}
+.pst-desc{font-size:8px;color:var(--t4);line-height:1.3}
+
+.pstr-img-row{display:flex;gap:4px;align-items:center}
+.pstr-cht.sel{border-color:var(--ac);background:rgba(77,139,255,.15);color:var(--ac2)}
+.pstr-char-row{display:flex;gap:4px;align-items:center}
+
+/* TOOLBAR ROW */
+.toolbar{padding:6px 16px;background:rgba(6,8,15,.5);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.toolbar.hidden{display:none}
+.tb-sep{width:1px;height:20px;background:var(--bdr);margin:0 4px}
+
+/* LAYOUT */
+.ml{display:grid;grid-template-columns:310px 1fr 370px;min-height:calc(100vh - 100px);position:relative;z-index:1}
+.pl,.pr{background:var(--bg-s);backdrop-filter:var(--blur);overflow-y:auto;max-height:calc(100vh - 100px);padding:16px}
+.pl{border-right:1px solid var(--bdr)}.pr{border-left:1px solid var(--bdr)}
+.ps{margin-bottom:20px}
+.pst{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--t4);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.pst .i{width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,var(--ac),var(--cy));box-shadow:0 0 6px var(--ag)}
+.pst .io{width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,var(--ora),var(--gold));box-shadow:0 0 6px var(--orag)}
+
+/* FORM */
+.fg{margin-bottom:12px}.fl{display:block;font-size:10px;font-weight:500;color:var(--t3);margin-bottom:4px;letter-spacing:.2px}
+.fi,.fs,.ft{width:100%;padding:7px 11px;background:rgba(10,15,30,.6);border:1px solid var(--bdr);border-radius:var(--rx);color:var(--t1);font-family:inherit;font-size:12px;transition:all .2s}
+.fi:focus,.fs:focus,.ft:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ag)}
+.ft{resize:vertical;min-height:50px;line-height:1.4}
+.fs{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237e8fac' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.cg{display:flex;align-items:center;gap:6px}
+.csw{width:32px;height:32px;border-radius:var(--rx);border:2px solid var(--bdr);cursor:pointer;position:relative;overflow:hidden;flex-shrink:0;transition:border-color .2s}
+.csw:hover{border-color:var(--bdr-a)}
+.csw input[type="color"]{position:absolute;inset:-6px;width:calc(100%+12px);height:calc(100%+12px);border:none;cursor:pointer;background:none}
+.cg input[type="text"]{flex:1}
+.sp{display:flex;flex-wrap:wrap;gap:5px}
+.spl{padding:5px 11px;background:rgba(10,15,30,.5);border:1px solid var(--bdr);border-radius:18px;font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.spl:hover{border-color:var(--bdr-a);color:var(--t1)}
+.spl.sel{border-color:var(--ac);color:#fff;box-shadow:0 0 12px var(--ag)}
+.spl span{position:relative;z-index:1}
+.il{display:flex;align-items:center;gap:6px}.il .fl{margin-bottom:0;white-space:nowrap}
+.ni{width:56px;text-align:center}
+.dv{height:1px;background:linear-gradient(90deg,transparent,var(--bdr),transparent);margin:14px 0}
+
+/* PAGE TABS */
+.pts{padding:8px 16px;background:rgba(6,8,15,.6);backdrop-filter:blur(16px);border-bottom:1px solid var(--bdr);display:flex;gap:5px;align-items:center;overflow-x:auto}
+.pts.hidden{display:none}
+.pt{display:inline-flex;align-items:center;gap:4px;padding:6px 13px;background:var(--bg-g);border:1px solid var(--bdr);border-radius:20px;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;transition:all .25s;flex-shrink:0;user-select:none}
+.pt:hover{border-color:var(--bdr-a);color:var(--t1)}
+.pt.active{background:linear-gradient(135deg,rgba(77,139,255,.2),rgba(0,212,255,.15));border-color:var(--ac);color:#fff;box-shadow:0 2px 10px var(--ag)}
+.pt.drag-over{border-color:var(--ok);box-shadow:0 0 12px var(--okg)}
+.pt .rx{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;opacity:0;transition:opacity .2s;background:rgba(255,77,106,.3);color:var(--err)}
+.pt:hover .rx{opacity:1}
+.atb{width:28px;height:28px;border-radius:50%;border:1px dashed var(--t4);background:transparent;color:var(--t4);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .25s}
+.atb:hover{border-color:var(--ac);color:var(--ac)}
+
+/* INFOGRAPHIC BAR */
+.ib{padding:8px 16px;background:linear-gradient(90deg,rgba(255,140,66,.06),transparent);border-bottom:1px solid rgba(255,140,66,.12);display:flex;align-items:center;gap:10px}
+.ib.hidden{display:none}
+.ib .ibg{display:flex;align-items:center;gap:6px;padding:5px 14px;background:linear-gradient(135deg,rgba(255,140,66,.15),rgba(255,215,0,.1));border:1px solid rgba(255,140,66,.25);border-radius:20px;font-size:11px;font-weight:600;color:var(--ora)}
+.ib .ih{font-size:10px;color:var(--t4)}
+
+/* CANVAS */
+.pc{display:flex;flex-direction:column;overflow:hidden}
+.cv{flex:1;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:auto;background:radial-gradient(ellipse at center,rgba(77,139,255,.03)0%,transparent 70%)}
+.cv::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(77,139,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,139,255,.03) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+.sc{background:#fff;border-radius:var(--r);position:relative;overflow:hidden;cursor:default;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 20px 60px rgba(0,0,0,.5),0 0 100px rgba(184,149,106,.06);transition:box-shadow .4s}
+.sc:hover{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 28px 80px rgba(0,0,0,.5),0 0 140px rgba(184,149,106,.1)}
+.sc.ms{width:740px;height:416px}.sc.mi{width:420px;height:640px}
+
+/* ALIGNMENT GUIDES */
+.guide{position:absolute;pointer-events:none;z-index:999}
+.guide-h{left:0;right:0;height:1px;background:rgba(255,77,106,.6);box-shadow:0 0 6px rgba(255,77,106,.4)}
+.guide-v{top:0;bottom:0;width:1px;background:rgba(255,77,106,.6);box-shadow:0 0 6px rgba(255,77,106,.4)}
+
+/* DRAG ELEMENTS */
+.de{position:absolute;cursor:move;user-select:none;border:2px solid transparent;border-radius:4px;transition:border-color .15s,box-shadow .15s;padding:3px 8px;min-width:30px;min-height:20px;z-index:5}
+.de:hover{border-color:rgba(77,139,255,.4);box-shadow:0 0 12px rgba(77,139,255,.1)}
+.de.active{border-color:var(--ac);box-shadow:0 0 0 3px var(--ag),0 0 20px rgba(77,139,255,.15)}
+.de .ct{position:absolute;top:-24px;left:0;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:500;background:linear-gradient(135deg,var(--ac3),var(--cy));color:#fff;padding:2px 7px;border-radius:4px;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;transform:translateY(4px);pointer-events:none;box-shadow:0 2px 6px var(--ag)}
+.de:hover .ct,.de.active .ct{opacity:1;transform:translateY(0)}
+.de.vertical-text{writing-mode:vertical-rl;text-orientation:upright;letter-spacing:2px}
+
+/* ELEMENT LIST */
+.ell{display:flex;flex-direction:column;gap:5px}
+.eli{background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:var(--rx);padding:8px 10px;cursor:pointer;transition:all .2s}
+.eli:hover{border-color:var(--bdr-a);background:rgba(15,22,40,.5)}
+.eli.sel{border-color:var(--ac);background:rgba(184,149,106,.06)}
+.elh{display:flex;align-items:center;margin-bottom:2px;gap:4px}
+.elh .elt{flex-shrink:0}
+.elh .elc{flex:1;text-align:right;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--t4)}
+.elt{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:2px 6px;border-radius:4px}
+.et-t{background:rgba(77,139,255,.15);color:var(--ac2)}.et-s{background:rgba(167,139,250,.15);color:var(--pur)}
+.et-x{background:rgba(255,255,255,.06);color:var(--t3)}.et-c{background:rgba(0,212,255,.12);color:var(--cy)}
+.et-p{background:rgba(255,181,71,.15);color:var(--warn)}.et-n{background:rgba(0,229,160,.12);color:var(--ok)}
+.elc{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--t4)}
+.elv{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* CHART GRID */
+.ckg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.cko{padding:6px 3px;background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:var(--rx);text-align:center;font-size:9px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .2s}
+.cko:hover{border-color:var(--bdr-a);color:var(--t1);transform:translateY(-1px)}
+.cko.ck-sel{border-color:var(--ac);background:rgba(77,139,255,.12);color:var(--ac2)}
+.cko .ci{font-size:16px;display:block;margin-bottom:1px}
+
+/* ADD ELEMENT */
+.aeg{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.aeb{padding:8px 6px;background:rgba(10,15,30,.3);border:1px dashed rgba(100,140,255,.15);border-radius:var(--rx);color:var(--t4);font-size:10px;font-family:inherit;font-weight:500;cursor:pointer;transition:all .25s;text-align:center}
+.aeb:hover{border-color:var(--ac);color:var(--ac2);background:rgba(77,139,255,.05);transform:translateY(-1px)}
+.aeb .ic{font-size:16px;display:block;margin-bottom:2px}
+
+/* RANGE */
+input[type="range"]{-webkit-appearance:none;width:100%;height:3px;background:var(--bdr);border-radius:2px;outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:linear-gradient(135deg,var(--ac),var(--cy));border-radius:50%;cursor:pointer;box-shadow:0 2px 6px var(--ag)}
+.rr{display:flex;align-items:center;gap:8px}.rr input[type="range"]{flex:1}
+.rv{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--ac2);min-width:34px;text-align:right}
+
+/* TEMPLATE/THEME SELECTORS */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.tpl-card{padding:10px 8px;background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:var(--rs);text-align:center;cursor:pointer;transition:all .25s}
+.tpl-card:hover{border-color:var(--bdr-a);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.tpl-card .tpl-icon{font-size:22px;display:block;margin-bottom:4px}
+.tpl-card .tpl-name{font-size:10px;font-weight:600;color:var(--t2)}
+.tpl-card .tpl-desc{font-size:9px;color:var(--t4);margin-top:2px}
+.tpl-card.tpl-mck{border-color:rgba(77,139,255,.3);background:linear-gradient(135deg,rgba(77,139,255,.08),rgba(10,15,30,.4))}
+
+.theme-row{display:flex;gap:6px;flex-wrap:wrap}
+.theme-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:16px;cursor:pointer;transition:all .25s;font-size:10px;font-weight:500;color:var(--t3)}
+.theme-chip:hover{border-color:var(--bdr-a);color:var(--t1);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.theme-chip.sel{border-color:var(--ac);color:var(--t1);box-shadow:0 0 12px var(--ag)}
+.theme-dots{display:flex;gap:2px}
+.theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.12)}
+
+/* CHARACTER BUILDER */
+.char-builder{background:rgba(10,15,30,.3);border:1px solid var(--bdr);border-radius:var(--rs);padding:12px;margin-top:8px}
+.char-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.char-chip{padding:4px 10px;background:rgba(10,15,30,.5);border:1px solid var(--bdr);border-radius:14px;font-size:10px;color:var(--t3);cursor:pointer;transition:all .2s}
+.char-chip:hover{border-color:var(--bdr-a);color:var(--t1)}
+.char-chip.sel{border-color:var(--warn);color:var(--warn);background:rgba(255,181,71,.06)}
+.char-output{font-size:11px;color:var(--ac2);padding:6px 10px;background:rgba(77,139,255,.05);border-radius:var(--rx);margin-top:6px;min-height:24px;font-family:'JetBrains Mono',monospace;word-break:break-all}
+
+/* SAVE/LOAD */
+.save-list{display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto}
+.save-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:var(--rx);font-size:11px;color:var(--t2);cursor:pointer;transition:all .2s}
+.save-item:hover{border-color:var(--bdr-a)}
+.save-item .si-del{color:var(--err);cursor:pointer;font-size:10px;opacity:.5;transition:opacity .2s}
+.save-item .si-del:hover{opacity:1}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(12px);z-index:1000;display:none;align-items:center;justify-content:center}
+.mo.show{display:flex}
+.md{background:var(--bg1);border:1px solid var(--bdr);border-radius:20px;width:92%;max-width:860px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 32px 100px rgba(0,0,0,.6);animation:mi .3s}
+@keyframes mi{from{opacity:0;transform:scale(.95)translateY(20px)}to{opacity:1;transform:scale(1)translateY(0)}}
+.mdh{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center}
+.mdh h2{font-size:16px;font-weight:700;background:linear-gradient(135deg,#f5f0e8,#caa87e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.mdc{width:30px;height:30px;border-radius:50%;border:1px solid var(--bdr);background:var(--bg-g);color:var(--t3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mdc:hover{border-color:var(--err);color:var(--err)}
+.mdb{padding:20px;overflow-y:auto;flex:1}
+.ota{width:100%;min-height:350px;background:rgba(10,15,30,.8);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;resize:vertical;white-space:pre-wrap}
+.mdf{padding:14px 20px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.mdf-left{display:flex;gap:6px;align-items:center}
+
+/* TOGGLE SWITCH */
+.tgl{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3)}
+.tgl-sw{width:36px;height:20px;background:var(--bdr);border-radius:10px;position:relative;cursor:pointer;transition:background .2s}
+.tgl-sw.on{background:var(--ac)}
+.tgl-sw::after{content:'';width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tgl-sw.on::after{left:18px}
+
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 20px;background:linear-gradient(135deg,#b8956a,#caa87e);color:#1e1b17;font-weight:600;border-radius:var(--rs);font-size:12px;box-shadow:0 6px 24px rgba(184,149,106,.3);z-index:2000;transform:translateY(80px);opacity:0;transition:all .35s}
+.toast.show{transform:translateY(0);opacity:1}
+.pb{position:absolute;bottom:8px;right:12px;font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(0,0,0,.15);pointer-events:none}
+
+/* SECTION LAYOUT */
+.sl{display:flex;gap:4px;flex-wrap:wrap}
+.slo{padding:5px 10px;background:rgba(10,15,30,.4);border:1px solid var(--bdr);border-radius:14px;font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .2s}
+.slo:hover{border-color:var(--bdr-a);color:var(--t1)}
+.slo.sel{border-color:var(--ora);color:var(--ora);background:rgba(255,140,66,.08)}
+
+/* Kbd shortcut hints */
+.kbd{font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:3px;color:var(--t4);margin-left:4px}
+
+/* FONT SELECTOR */
+.font-sel{width:100%;padding:7px 11px;background:rgba(10,15,30,.6);border:1px solid var(--bdr);border-radius:var(--rx);color:var(--t1);font-size:12px;transition:all .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237e8fac' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;font-family:inherit}
+.font-sel:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ag)}
+.font-sel option{background:var(--bg1);color:var(--t1);padding:4px}
+.font-preview{display:flex;align-items:center;gap:8px;margin-top:6px;padding:8px 12px;background:rgba(10,15,30,.3);border:1px solid var(--bdr);border-radius:var(--rx);min-height:36px}
+.font-preview-text{font-size:16px;color:var(--t1);letter-spacing:.3px}
+.font-preview-label{font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace}
+
+/* CHART ROW */
+.chart-row{display:flex;gap:4px;align-items:center;margin-bottom:5px;padding:6px 8px;background:rgba(10,15,30,.3);border:1px solid var(--bdr);border-radius:var(--rx)}
+.chart-row select{flex:1}
+.chart-row input{width:70px}
+.chart-row .cr-del{width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,77,106,.15);color:var(--err);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.chart-row .cr-del:hover{background:rgba(255,77,106,.3)}
+
+/* ELEMENT LIST BADGES */
+.el-badge{font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px}
+.el-lock{background:rgba(255,181,71,.15);color:var(--warn)}
+.el-grp{background:rgba(167,139,250,.15);color:var(--pur)}
+/* LOCKED ELEMENT */
+.de.locked{border-style:dashed!important;opacity:.85}
+.de.locked .ct{background:linear-gradient(135deg,var(--warn),var(--ora))!important}
+</style>
+
+<body>
+<div class="orb o1"></div><div class="orb o2"></div>
+
+<header class="hd">
+  <div class="hd-brand">
+    <div class="hd-logo">🎨</div>
+    <div><div class="hd-t">圖像提示詞產生器</div><div class="hd-s">IMAGE PROMPT PREMIUM — 模板·版面·匯出</div></div>
+  </div>
+  <div class="hd-right">
+    <button class="btn btn-g btn-sm" onclick="undo()" title="復原">↩ 復原</button>
+    <button class="btn btn-g btn-sm" onclick="redo()" title="重做">↪ 重做</button>
+    <button class="btn btn-g btn-sm" onclick="openSaveLoad()">💾 存檔</button>
+    <button class="btn btn-g btn-sm" onclick="resetAll()">🗑️ 重置</button>
+    <button class="btn btn-g btn-sm" onclick="exportJSON()">📦 匯出</button>
+    <button class="btn btn-g btn-sm" onclick="importJSON()">📂 匯入</button>
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleImportJSON(event)">
+    <button class="btn btn-gen" onclick="generatePrompt()">✨ 產生提示詞</button>
+    <select class="fs" id="uiLangSel" onchange="setUILang(this.value)" style="width:auto;padding:4px 8px;font-size:11px;margin-left:6px;background:rgba(10,15,30,.5);border:1px solid var(--bdr);border-radius:6px;color:var(--t1);font-weight:600">
+      <option value="zh-TW" selected>繁中</option><option value="zh-CN">简中</option><option value="en">EN</option><option value="ja">JP</option><option value="ko">KR</option>
+    </select>
+  </div>
+</header>
+
+<div class="ml">
+<aside class="pl" id="panelLeft">
+    <!-- Templates -->
+    <div class="ps">
+      <div class="pst"><span class="i"></span>圖像風格</div>
+      <div class="tpl-grid" id="tplGrid"></div>
+      <div style="margin-top:6px">
+        <input type="file" id="styleUpload" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="analyzeStyleImage(this)">
+        <button class="btn btn-g btn-xs" onclick="document.getElementById('styleUpload').click()" style="width:100%;padding:8px;font-size:10px">🎨 上傳圖片自訂風格 (PNG/JPG)</button>
+        <div id="stylePreview" style="display:none;margin-top:6px"></div>
+      </div>
+    </div>
+    <div class="dv"></div>
+
+    <!-- Color Themes -->
+    <div class="ps">
+      <div class="pst"><span class="i"></span>色彩主題包 <span style="font-size:8px;color:var(--t4);text-transform:none;letter-spacing:0;font-weight:400">背景+標題+圖表配色</span></div>
+      <div class="theme-row" id="themeRow"></div>
+    </div>
+    <div class="dv"></div>
+
+    <!-- Global Settings -->
+    <div class="ps">
+      <div class="pst"><span class="i"></span>全域設定</div>
+      <div class="fg"><label class="fl">背景色</label><div class="cg"><div class="csw" id="gSw" style="background:#fff"><input type="color" id="gBgC" value="#ffffff" onchange="updGBg(this.value)"></div><input type="text" class="fi" id="gBgH" value="#ffffff" onchange="updGBg(this.value)"></div></div>
+      <div class="fg"><label class="fl">全域字型</label><div id="gFontSel"></div><div class="font-preview" id="gFontPrev"><span class="font-preview-text" id="gFontPrevTxt" style="font-family:'Noto Sans TC'">Aa 文字預覽 123</span><span class="font-preview-label" id="gFontPrevLbl">Noto Sans TC</span></div></div>
+      <div class="fg"><label class="fl">📏 內容密度</label>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <button class="btn btn-xs density-btn" id="dLow" onclick="setDensity('低')">低密度</button>
+          <button class="btn btn-xs density-btn sel" id="dMid" onclick="setDensity('中')">中密度</button>
+          <button class="btn btn-xs density-btn" id="dHigh" onclick="setDensity('高')">高密度</button>
+        </div>
+        <div style="font-size:8px;color:var(--t4);margin-top:2px" id="densityHint">每頁標準資訊量</div>
+      </div>
+      <div class="fg">
+        <button class="btn btn-g btn-xs" onclick="invertColors()" style="width:100%">🔄 深淺配色反轉</button>
+      </div>
+      <div class="fg"><label class="fl">備註 / 要求</label><textarea class="ft" id="gNotes">所有簡報都不要出現檔案名稱, 所有中文字必須像印刷品一樣清晰(crisp sharp arrow-edged text)，字體粗體加粗(font-weight:bold)，禁止任何模糊或羽化效果，文字以純色色塊呈現不帶陰影不帶漸層不帶光暈，每個漢字筆畫清楚可辨識，中文標題字體大小不低於36px，副標題不低於24px，內文不低於18px，文字區域背景必須為純色確保對比度，render text as vector-sharp glyphs</textarea>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn btn-g btn-xs" onclick="appendNote('所有中文字必須像印刷品一樣清晰(crisp sharp arrow-edged text)，字體粗體加粗(font-weight:bold)，禁止任何模糊或羽化效果，文字以純色色塊呈現不帶陰影不帶漸層不帶光暈，每個漢字筆畫清楚可辨識，中文標題字體大小不低於36px，副標題不低於24px，內文不低於18px，文字區域背景必須為純色確保對比度，render text as vector-sharp glyphs')">🔤 中文防模糊</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('所有文字使用純色填充，不要漸層、不要陰影、不要外框效果、不要模糊濾鏡(no blur no shadow no gradient on text)')">🚫 純色文字</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('文字與背景之間必須有足夠的對比度，文字區域使用純色背景色塊，確保可讀性')">🔲 高對比</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('所有文字內容盡量減少字數，用簡短關鍵詞代替長句，每個文字區塊不超過10個字')">✂️ 精簡文字</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('簡報畫面上不要顯示字型名稱(如Font:Noto Sans TC)和排版參數，只顯示實際內容文字')">🚫 隱藏參數</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('所有簡報都不要出現檔案名稱')">📛 隱藏檔名</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('每頁都要有頁碼')">🔢 顯示頁碼</button>
+          <button class="btn btn-g btn-xs" onclick="appendNote('使用繁體中文，不要出現簡體字')">🇹🇼 繁體中文</button>
+        </div>
+      </div>
+      <!-- Logo 設定 -->
+      <div class="fg" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--bdr)">
+        <label class="fl">🏷️ Logo（每頁套用）</label>
+        <div style="display:flex;gap:4px;align-items:center;margin-top:4px">
+          <div class="tgl-sw" id="logoTgl" onclick="toggleLogo(this)" style="flex-shrink:0"></div>
+          <span style="font-size:9px;color:var(--t4)">請先在 NotebookLM 匯入 Logo 圖檔</span>
+        </div>
+        <div id="logoOpts" style="display:none;margin-top:6px">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <label class="fl" style="min-width:36px">檔名</label>
+            <input type="text" class="fi" id="logoFile" value="logo.png" oninput="S.logo.file=this.value" style="flex:1" placeholder="logo.png">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <label class="fl" style="min-width:36px">位置</label>
+            <select class="fs" id="logoPos" onchange="S.logo.pos=this.value" style="flex:1">
+              <option value="右上角">右上角</option>
+              <option value="左上角">左上角</option>
+              <option value="右下角">右下角</option>
+              <option value="左下角">左下角</option>
+              <option value="上方居中">上方居中</option>
+              <option value="下方居中">下方居中</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <label class="fl" style="min-width:36px">大小</label>
+            <select class="fs" id="logoSize" onchange="S.logo.size=this.value" style="flex:1">
+              <option value="小(寬度約5%)">小 (角落)</option>
+              <option value="中(寬度約10%)">中 (標示)</option>
+              <option value="大(寬度約20%)">大 (醒目)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label class="fl" style="min-width:36px">透明</label>
+            <select class="fs" id="logoAlpha" onchange="S.logo.alpha=this.value" style="flex:1">
+              <option value="不透明">不透明</option>
+              <option value="半透明(opacity:0.5)">半透明</option>
+              <option value="淡浮水印(opacity:0.15)">淡浮水印</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv"></div>
+
+    <!-- Infographic options -->
+    <div class="ps" id="iSec">
+      <div class="pst"><span class="io"></span>資訊圖表設定</div>
+      <div class="fg"><label class="fl" style="font-size:12px;font-weight:600">🎯 提示詞模式</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="promptModeGrid">
+          <div class="pst-card sel" onclick="setPromptMode('file',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">📄 依據檔案</div>
+            <div style="font-size:8px;color:var(--t4)">上傳文件→摘要→創作</div>
+          </div>
+          <div class="pst-card" onclick="setPromptMode('direct',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">🎨 直接繪製</div>
+            <div style="font-size:8px;color:var(--t4)">依元件描述直接產生</div>
+          </div>
+          <div class="pst-card" onclick="setPromptMode('vision',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">📸 解析圖像</div>
+            <div style="font-size:8px;color:var(--t4)">AI讀圖→分析→再創作</div>
+          </div>
+        </div>
+        <!-- Vision mode panel -->
+        <div id="visionPanel" style="display:none;margin-top:8px">
+          <div class="fg">
+            <label class="fl" style="font-size:11px">🔑 Groq API Key</label>
+            <div style="display:flex;gap:4px">
+              <input type="password" class="fi" id="groqKey" placeholder="gsk_..." style="flex:1;font-size:11px">
+              <button class="btn btn-g btn-xs" onclick="toggleKeyVis()" style="flex-shrink:0">👁</button>
+            </div>
+            <div style="font-size:8px;color:var(--t4);margin-top:2px"><a href="https://console.groq.com/keys" target="_blank" style="color:var(--ac)">免費取得 Groq API Key →</a></div>
+          </div>
+          <div class="fg">
+            <label class="fl" style="font-size:11px">📸 上傳圖像分析</label>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn btn-g btn-xs" onclick="document.getElementById('visionUpload').click()" style="flex:1;padding:8px">🖼️ 選擇圖像 (JPG/PNG)</button>
+              <input type="file" id="visionUpload" accept="image/*" style="display:none" onchange="previewVisionImg(event)">
+            </div>
+            <div id="visionPreview" style="margin-top:6px;display:none">
+              <img id="visionImg" style="max-width:100%;max-height:120px;border-radius:8px;border:1px solid var(--bdr)">
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl" style="font-size:11px">📝 分析指令（選填）</label>
+            <input type="text" class="fi" id="visionInstruct" placeholder="例：請分析這張圖的構圖、角色、場景、色調" style="font-size:11px">
+          </div>
+          <button class="btn btn-p btn-sm" onclick="analyzeWithGroq()" id="visionBtn" style="width:100%;margin-top:4px">🔍 開始 AI 分析圖像</button>
+          <div id="visionStatus" style="font-size:10px;color:var(--t4);margin-top:4px;display:none"></div>
+          <div id="visionResult" style="display:none;margin-top:6px">
+            <label class="fl" style="font-size:11px">📋 AI 分析結果</label>
+            <textarea class="ft" id="visionTxt" rows="5" style="font-size:11px" readonly></textarea>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <button class="btn btn-g btn-xs" onclick="applyVisionToElements()" style="flex:1">🔄 重新偵測版型並套用</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dv"></div>
+      <div class="fg"><label class="fl">📐 版型規格</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="iLayouts">
+          <div class="pst-card" onclick="applyLayout('single',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">🖼️ 單頁滿版</div>
+            <div style="font-size:8px;color:var(--t4)">一張完整構圖的圖像</div>
+          </div>
+          <div class="pst-card" onclick="applyLayout('panel4',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">🔲 4分格 (2×2)</div>
+            <div style="font-size:8px;color:var(--t4)">四格均分，各自獨立場景</div>
+          </div>
+          <div class="pst-card sel" onclick="applyLayout('panel7',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">📰 7分格 (主視覺+2×3)</div>
+            <div style="font-size:8px;color:var(--t4)">上方主視覺+下方六格說明</div>
+          </div>
+          <div class="pst-card" onclick="applyLayout('panel9',this)" style="padding:8px;cursor:pointer">
+            <div style="font-size:11px;font-weight:700">📊 9分格 (3×3)</div>
+            <div style="font-size:8px;color:var(--t4)">九宮格均分配置</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">🎭 角色一致性</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);cursor:pointer">
+          <input type="checkbox" id="charConsist" checked style="accent-color:var(--ac)">
+          <span>確保角色外觀一致，每格有不同動作與表情</span>
+        </label>
+        <input type="text" class="fi" id="charDesc" placeholder="主角外觀特徵（例：黑色短髮、圓臉、穿藍色西裝白襯衫、30歲亞洲男性、戴黑框眼鏡）" style="margin-top:4px;font-size:11px">
+      </div>
+      <div class="fg"><label class="fl">📌 主標題</label>
+        <input type="text" class="fi" id="iTitle" placeholder="手動輸入，或留空讓 AI 依檔案摘要產生" oninput="S.infographic.title=this.value">
+        <div style="font-size:8px;color:var(--t4);margin-top:2px">📄 檔案模式下留空 → AI 自動從上傳資料摘要出主標題</div>
+      </div>
+      <div class="fg"><label class="fl">尺寸比例</label><select class="fs" id="iRatio" onchange="chgIR(this.value)"><option value="wide" selected>橫幅 16:9</option><option value="square">正方形 1:1</option><option value="portrait">直式 9:16</option><option value="a4portrait">A4 直式</option><option value="a4landscape">A4 橫式</option><option value="ultra">超寬 21:9</option></select></div>
+    </div>
+
+    <!-- Chart Grid -->
+    <div class="ps" id="ckSec">
+      <div class="pst"><span class="i"></span>圖表快選</div>
+      <div class="ckg" id="ckG"></div>
+    </div>
+    <div class="dv"></div>
+
+    <!-- Character Builder -->
+    <div class="ps">
+      <div class="pst"><span class="i"></span>人物描述產生器</div>
+      <div class="char-builder" id="charBuilder">
+        <label class="fl">性別</label>
+        <div class="char-row" data-group="gender"></div>
+        <label class="fl">髮型</label>
+        <div class="char-row" data-group="hair"></div>
+        <label class="fl">服裝</label>
+        <div class="char-row" data-group="outfit"></div>
+        <label class="fl">風格</label>
+        <div class="char-row" data-group="style"></div>
+        <div class="char-output" id="charOutput">點選上方選項組合人物描述</div>
+        <button class="btn btn-p btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="insertCharacter()">➕ 插入到當前頁</button>
+      </div>
+    </div>
+    <div class="dv"></div>
+
+    <!-- Add Elements -->
+    <div class="ps">
+      <div class="pst"><span class="i"></span>新增元素</div>
+      <div class="aeg">
+        <button class="aeb" onclick="addEl('title')"><span class="ic">𝐇</span>主標題</button>
+        <button class="aeb" onclick="addEl('subtitle')"><span class="ic">𝐡</span>次標題</button>
+        <button class="aeb" onclick="addEl('text')"><span class="ic">¶</span>文字</button>
+        <button class="aeb" onclick="addEl('chart')"><span class="ic">📊</span>圖表</button>
+        <button class="aeb" onclick="addEl('image')"><span class="ic">🖼️</span>插圖</button>
+        <button class="aeb" onclick="addEl('character')"><span class="ic">👤</span>人物</button>
+        <button class="aeb" onclick="addEl('note')"><span class="ic">📝</span>備註</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="pc">
+    <div class="ib"><div class="ibg">🗞️ 資訊圖表模式</div><span class="ih">單頁長圖 · 拖拉定位</span></div>
+    <div class="cv"><div class="sc" id="sCanvas" style="width:700px;height:394px"></div></div>
+  </main>
+
+  <aside class="pr">
+<div id="iRP" >
+      <div class="ps"><div class="pst"><span class="io"></span>資訊圖表描述</div>
+        <div class="fg"><label class="fl">📖 圖像說明 / 故事劇情</label><textarea class="ft" id="iDesc" placeholder="描述整張圖像的情境、故事劇情、場景氛圍，或額外的畫面要求（例：主角在雨中奔跑，背景是霓虹燈閃爍的東京街頭，夜晚氛圍）" rows="3" oninput="S.infographic.desc=this.value"></textarea></div>
+      </div><div class="dv"></div>
+    </div>
+    <div class="dv"></div>
+<div class="ps"><div class="pst"><span class="i"></span>元素列表</div><div class="ell" id="elList"></div></div>
+    <div class="dv"></div>
+    <div class="ps" id="elEd" style="display:none">
+      <div class="pst"><span class="i"></span>元素編輯</div>
+      <div class="fg"><label class="fl">內容文字</label><input type="text" class="fi" id="eTxt" oninput="updET(this.value)"></div>
+      <div class="fg"><label class="fl">字體大小</label><div class="rr"><input type="range" id="eFs" min="8" max="72" value="28" oninput="updEFs(this.value)"><span class="rv" id="eFsV">28px</span></div></div>
+      <div class="fg"><label class="fl">文字顏色</label><div class="cg"><div class="csw" id="eSw" style="background:#333"><input type="color" id="eClr" value="#333333" onchange="updEClr(this.value)"></div><input type="text" class="fi" id="eClrH" value="#333333" onchange="updEClr(this.value)"></div></div>
+      <div class="fg"><label class="fl">字型</label><div id="eFontSel"></div><div class="font-preview" id="eFontPrev"><span class="font-preview-text" id="eFontPrevTxt">Aa 文字 123</span><span class="font-preview-label" id="eFontPrevLbl"></span></div></div>
+      <div class="fg"><label class="fl">文字方向</label>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-g btn-xs" id="eHorzBtn" onclick="setTextDir('horizontal')" style="flex:1">↔ 橫書</button>
+          <button class="btn btn-g btn-xs" id="eVertBtn" onclick="setTextDir('vertical')" style="flex:1">↕ 直書</button>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">座標</label><div class="il"><label class="fl">X</label><input type="number" class="fi ni" id="ePX" onchange="updEPos()"><label class="fl">Y</label><input type="number" class="fi ni" id="ePY" onchange="updEPos()"></div></div>
+      <div class="fg"><label class="fl">圖層 / 鎖定 / 群組</label>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-g btn-xs" onclick="moveElLayer(-1)">⬆ 上移</button>
+          <button class="btn btn-g btn-xs" onclick="moveElLayer(1)">⬇ 下移</button>
+          <button class="btn btn-g btn-xs" id="eLockBtn" onclick="toggleLock()">🔓 鎖定</button>
+          <button class="btn btn-g btn-xs" onclick="setGroup()">🔗 群組</button>
+          <button class="btn btn-g btn-xs" onclick="clearGroup()">✂ 解除</button>
+        </div>
+        <div class="il" style="margin-top:6px"><label class="fl">群組名稱</label><input type="text" class="fi" id="eGroup" style="width:80px" onchange="updEGroup(this.value)" placeholder="無"><span class="fl" id="eGroupInfo" style="color:var(--t4)"></span></div>
+      </div>
+      <button class="btn btn-d btn-sm" onclick="delEl()" style="margin-top:6px">🗑 刪除</button>
+    </div>
+  
+  </aside>
+</div>
+
+<div class="mo" id="oModal">
+  <div class="md">
+    <div class="mdh"><h2>📋 產生的提示詞</h2><button class="mdc" onclick="clsM()">✕</button></div>
+    <div class="mdb"><textarea class="ota" id="oTxt" readonly></textarea></div>
+    <div class="mdf">
+      <div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-g" onclick="clsM()">關閉</button>
+        <button class="btn btn-p" onclick="cpOut()">📋 複製</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mo" id="slModal">
+  <div class="md" style="max-width:500px">
+    <div class="mdh"><h2>💾 儲存 / 載入模板</h2><button class="mdc" onclick="clsSL()">✕</button></div>
+    <div class="mdb">
+      <div class="fg"><label class="fl">新增儲存名稱</label><div class="il"><input type="text" class="fi" id="saveName" placeholder="我的模板"><button class="btn btn-p btn-sm" onclick="saveTemplate()" style="flex-shrink:0">儲存</button></div></div>
+      <div class="dv"></div>
+      <label class="fl">已儲存的模板</label>
+      <div class="save-list" id="saveList"></div>
+    </div>
+    <div class="mdf"><div></div><button class="btn btn-g" onclick="clsSL()">關閉</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let uiLang='zh-TW';
+// ==================== DATA ====================
+const FONTS=[
+  {g:'中文字體',fonts:[
+    {v:'Noto Sans TC',l:'Noto Sans TC (思源黑體)'},
+    {v:'Noto Serif TC',l:'Noto Serif TC (思源宋體)'},
+    {v:'Microsoft JhengHei',l:'微軟正黑體'},
+    {v:'PMingLiU',l:'新細明體'},
+    {v:'DFKai-SB',l:'標楷體'},
+  ]},
+  {g:'圓角字體',fonts:[
+    {v:'M PLUS Rounded 1c',l:'M+ 圓體'},
+    {v:'Kosugi Maru',l:'小杉圓體'},
+    {v:'Nunito',l:'Nunito (圓角)'},
+    {v:'Quicksand',l:'Quicksand (圓角)'},
+    {v:'Comfortaa',l:'Comfortaa (圓角)'},
+    {v:'Varela Round',l:'Varela Round'},
+  ]},
+  {g:'英文無襯線',fonts:[
+    {v:'Inter',l:'Inter'},
+    {v:'Outfit',l:'Outfit'},
+    {v:'Poppins',l:'Poppins'},
+    {v:'Montserrat',l:'Montserrat'},
+    {v:'Raleway',l:'Raleway'},
+    {v:'Oswald',l:'Oswald'},
+    {v:'DM Sans',l:'DM Sans'},
+  ]},
+  {g:'英文襯線',fonts:[
+    {v:'Playfair Display',l:'Playfair Display'},
+    {v:'Lora',l:'Lora'},
+    {v:'Georgia',l:'Georgia'},
+    {v:'Times New Roman',l:'Times New Roman'},
+  ]},
+];
+
+const CK=[{i:'📶',l:'階梯圖'},{i:'🌸',l:'花瓣圖'},{i:'🔄',l:'循環圖'},{i:'📋',l:'分類清單'},{i:'📊',l:'SWOT'},{i:'➡️',l:'流程圖'},{i:'🧠',l:'心智圖'},{i:'🔺',l:'金字塔'},{i:'⏱️',l:'時間軸'},{i:'⚖️',l:'比較圖'},{i:'🔲',l:'矩陣圖'},{i:'📉',l:'漏斗圖'},{i:'🥧',l:'圓餅圖'},{i:'📊',l:'長條圖'},{i:'🕸️',l:'雷達圖'},{i:'⭕',l:'維恩圖'},{i:'🧩',l:'功能區塊'},{i:'🌤️',l:'天氣預報'}];
+
+
+const TEMPLATES=[
+  {icon:'🎨',name:'3D 皮克斯風',desc:'圓潤立體卡通角色',style:'3D皮克斯風',bg:'#ffffff',
+   proStyle:{titleClr:'#FF6B35',subClr:'#004E89',titleFont:'Montserrat',subFont:'DM Sans',
+   notes:'3D Pixar/Disney風格渲染。角色圓潤可愛，大眼睛，光滑皮膚質感。場景柔和光照，色彩飽和明亮。背景模糊虛化(bokeh)，前景清晰銳利。材質質感真實(布料/金屬/毛髮)。Octane render質感，8K超高畫質'}},
+  {icon:'🖼️',name:'油畫藝術風',desc:'經典油畫筆觸質感',style:'復古風格',bg:'#f5f0eb',
+   proStyle:{titleClr:'#5c4f42',subClr:'#8a7e74',titleFont:'Playfair Display',subFont:'Lora',
+   notes:'經典油畫風格(Oil Painting Style)。visible brush strokes, rich impasto texture。色調溫暖復古(warm vintage palette)。光影明暗對比強烈(chiaroscuro)。如同大師級古典油畫作品，畫布紋理可見。參考風格：文藝復興/印象派/巴洛克'}},
+  {icon:'✏️',name:'手繪插畫風',desc:'溫暖水彩手繪感',style:'手繪風格',bg:'#fffbf0',
+   proStyle:{titleClr:'#D04A02',subClr:'#5C3D2E',titleFont:'Quicksand',subFont:'Nunito',
+   notes:'手繪插畫風格(Hand-drawn Illustration)。水彩暈染效果(watercolor wash)、鉛筆線條質感(pencil sketch lines)。色調溫暖柔和，邊緣不規則有手繪感。適合故事書/繪本/editorial illustration風格。紙張紋理背景(paper texture)'}},
+  {icon:'🌟',name:'日系動漫風',desc:'精緻日式賽璐璐畫風',style:'插圖式圖表',bg:'#fefcf3',
+   proStyle:{titleClr:'#2D4A7A',subClr:'#6B8BB5',titleFont:'M PLUS Rounded 1c',subFont:'Noto Sans TC',
+   notes:'日系動漫/賽璐璐風格(Anime/Cel-shading Style)。清晰的線條輪廓(clean lineart)，平塗上色+漸層陰影。大眼睛、精緻五官。背景精緻(detailed anime background)。參考風格：新海誠/吉卜力/京都動畫。色彩鮮豔明亮，光線效果(lens flare/bokeh)'}},
+  {icon:'📷',name:'寫實攝影風',desc:'如同專業攝影照片',style:'極簡風格',bg:'#ffffff',
+   proStyle:{titleClr:'#1A1A1A',subClr:'#555555',titleFont:'Inter',subFont:'Inter',
+   notes:'超寫實攝影風格(Photorealistic Photography)。如同Canon EOS R5/Sony A7R IV拍攝。自然光線(natural lighting)、淺景深(shallow depth of field, f/1.8)。8K超高解析度，RAW照片質感。皮膚毛孔/布料纖維等細節清晰可見。專業攝影棚燈光或golden hour自然光'}},
+  {icon:'🔮',name:'賽博龐克風',desc:'霓虹燈未來都市',style:'科技感',bg:'#0a0a1a',
+   proStyle:{titleClr:'#00FFD4',subClr:'#FF006E',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'賽博龐克風格(Cyberpunk/Neon Style)。深色背景搭配霓虹發光效果(neon glow)。色彩：電光藍#00FFD4、品紅#FF006E、紫#8338EC。潮濕街道反射霓虹(wet street reflections)。全息投影(hologram)、數位故障效果(glitch)。未來都市場景(futuristic cityscape)'}},
+  {icon:'🍃',name:'扁平設計風',desc:'簡潔向量幾何構圖',style:'扁平設計',bg:'#ffffff',
+   proStyle:{titleClr:'#2D3436',subClr:'#636E72',titleFont:'Inter',subFont:'Inter',
+   notes:'現代扁平設計風格(Flat Design/Vector Art)。純色色塊無漸層(solid colors, no gradients)。幾何化簡潔圖形(geometric shapes)。清晰邊緣無陰影(crisp edges, no shadows)。等距視角(isometric)或正面視角。配色鮮明對比(bold color palette)。適合infographic/icon/UI插畫'}},
+  {icon:'🌸',name:'Q版可愛風',desc:'SD比例萌系角色',style:'Q版插畫',bg:'#FFF5F5',
+   proStyle:{titleClr:'#E91E63',subClr:'#F48FB1',titleFont:'M PLUS Rounded 1c',subFont:'Nunito',
+   notes:'Q版/SD可愛風格(Chibi/Super Deformed Style)。角色頭身比2-3頭身。超大頭、圓臉、大眼、小嘴。表情誇張可愛(cute exaggerated expressions)。色彩粉嫩柔和(pastel colors)。線條簡潔俐落(clean outlines)。適合貼圖/公仔/可愛角色設計'}},
+  {icon:'🏛️',name:'古典雕塑風',desc:'大理石質感文藝復興',style:'極簡風格',bg:'#F5F5F0',
+   proStyle:{titleClr:'#2C2C2C',subClr:'#6B6B6B',titleFont:'Playfair Display',subFont:'Lora',
+   notes:'古典雕塑/大理石風格(Classical Marble Sculpture Style)。白色大理石質感(white marble texture with veins)。文藝復興雕塑姿態(Renaissance sculpture poses)。柔和側光(soft directional lighting)。背景極簡、淺灰或白色。高度細節的肌肉/衣褶紋理。參考：米開朗基羅/貝尼尼/羅丹風格'}},
+  {icon:'🌈',name:'漸層玻璃風',desc:'透明毛玻璃光影',style:'科技感',bg:'#1A1A2E',
+   proStyle:{titleClr:'#FFFFFF',subClr:'#A0A0D0',titleFont:'Inter',subFont:'Inter',
+   notes:'玻璃擬態風格(Glassmorphism Style)。半透明毛玻璃效果(frosted glass, backdrop-filter:blur)。多彩漸層背景(multi-color gradient background)。物件帶有透明玻璃質感和折射光線。柔和發光邊緣(soft glow edges)。圓角元素(border-radius)。配色：紫→藍→粉漸層(purple→blue→pink gradient)'}},
+  {icon:'🎭',name:'復古海報風',desc:'60年代美式插畫',style:'復古風格',bg:'#FDF5E6',
+   proStyle:{titleClr:'#B22222',subClr:'#DAA520',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'復古海報/年代插畫風格(Vintage Retro Poster Style)。參考50-70年代美式廣告插畫。有限色彩調色盤(limited color palette, 4-6色)。半色調網點效果(halftone dots)。復古紙張舊化質感(aged paper texture)。粗體排版(bold typography)。Pop Art/Art Deco元素。色調偏暖復古(warm vintage tones)'}},
+  {icon:'🔷',name:'等距透視風',desc:'2.5D軸測投影場景',style:'扁平設計',bg:'#FFFFFF',
+   proStyle:{titleClr:'#1B2A4A',subClr:'#4A6FA5',titleFont:'Montserrat',subFont:'DM Sans',
+   notes:'等距/軸測投影風格(Isometric 2.5D Style)。30度角等距透視(isometric perspective at 30°)。幾何化建築/物件(geometric buildings and objects)。扁平色彩+簡單陰影(flat colors with simple shadows)。乾淨邊緣(clean edges)。適合場景/建築/城市/工廠/辦公室俯瞰圖。無透視消失點(no vanishing point)'}},
+  {icon:'✨',name:'奇幻魔法風',desc:'魔幻粒子光效',style:'科技感',bg:'#0B1426',
+   proStyle:{titleClr:'#FFFFFF',subClr:'#4FC3F7',titleFont:'Playfair Display',subFont:'DM Sans',
+   notes:'奇幻魔法風格(Fantasy/Magical Style)。魔法粒子特效(magical particle effects, sparkles, glowing orbs)。飄浮元素(floating elements/runes)。場景光線夢幻(ethereal lighting, god rays)。配色：深紫#2D1B69+金色#FFD700+青藍#4FC3F7。如同奇幻電影場景(Lord of the Rings/Harry Potter aesthetic)'}},
+  {icon:'📐',name:'極簡留白風',desc:'大量留白高級感',style:'極簡風格',bg:'#FFFFFF',
+   proStyle:{titleClr:'#1A1A1A',subClr:'#999999',titleFont:'Inter',subFont:'Inter',
+   notes:'極簡主義風格(Minimalist Style)。大量留白(extensive whitespace, 60%+ empty space)。極少元素(minimal elements)。無多餘裝飾(no unnecessary decoration)。黑白灰為主+單一強調色。細線條(thin lines, 1px)。高級感排版(premium layout)。參考Apple/Muji/無印良品美學'}},
+  {icon:'🎪',name:'普普藝術風',desc:'波普彩色漫畫風',style:'插圖式圖表',bg:'#FFEB3B',
+   proStyle:{titleClr:'#D50000',subClr:'#1A237E',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'普普藝術風格(Pop Art Style)。參考Andy Warhol/Roy Lichtenstein。高飽和鮮豔對比色(bold primary colors: red, blue, yellow)。漫畫網點效果(Ben-Day dots/halftone)。粗黑輪廓線(thick black outlines)。漫畫對話泡泡(comic speech bubbles)。重複圖案(repetitive patterns)。大膽排版(bold typography)'}},
+  {icon:'🌿',name:'自然水墨風',desc:'中國水墨山水意境',style:'手繪風格',bg:'#F5F1EB',
+   proStyle:{titleClr:'#2C2C2C',subClr:'#6B6B5A',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'中國水墨/東方風格(Chinese Ink Wash Painting Style)。水墨暈染效果(ink wash gradients)。留白意境(negative space as artistic expression)。墨色層次：濃墨/淡墨/枯筆(varying ink densities)。宣紙紋理背景(xuan paper texture)。山水/花鳥/竹石等中國畫元素。印章紅色點綴(red seal stamp accent)'}},
+  // ──── 台灣節慶風格 ────
+  {icon:'🧧',name:'農曆新年風',desc:'紅金喜慶春節氛圍',style:'插圖式圖表',bg:'#B22222',
+   proStyle:{titleClr:'#FFD700',subClr:'#FFF5E1',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'農曆新年/春節風格(Chinese New Year/Lunar New Year Style)。主色調：中國紅#B22222+金色#FFD700+暗紅#8B0000。春聯對聯書法字(spring couplets calligraphy)。剪紙窗花(paper-cutting art, jiǎnzhǐ)。紅燈籠(red lanterns)、鞭炮(firecrackers)、福字(fu character)、紅包(red envelopes)。金色祥雲紋(golden auspicious clouds)。龍鳳呈祥/舞獅/年獸等元素。背景可搭配煙火(fireworks)、梅花(plum blossoms)。金邊裝飾框(gold ornamental borders)'}},
+  {icon:'🏮',name:'元宵燈節風',desc:'花燈璀璨鬧元宵',style:'插圖式圖表',bg:'#1A0A2E',
+   proStyle:{titleClr:'#FFD700',subClr:'#FF6B6B',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'元宵節/台灣燈會風格(Lantern Festival Style)。夜空深藍紫背景(deep night sky #1A0A2E)。各式花燈發光效果(glowing lanterns: 兔子燈/蓮花燈/龍燈)。天燈升空(sky lanterns floating upward, 平溪天燈)。猜燈謎元素(riddle tags on lanterns)。湯圓(tangyuan sweet dumplings)。色彩繽紛的LED燈光(colorful LED illumination)。月圓(full moon)。台灣燈會主燈造型。暖光溫馨氛圍(warm glowing atmosphere)'}},
+  {icon:'🐉',name:'端午龍舟風',desc:'龍舟競渡粽香飄',style:'插圖式圖表',bg:'#006B3F',
+   proStyle:{titleClr:'#FFD700',subClr:'#FFFFFF',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'端午節風格(Dragon Boat Festival Style)。龍舟競賽場景(dragon boat racing on river)。粽子(zongzi rice dumplings wrapped in bamboo leaves)。艾草菖蒲(mugwort and calamus)。香包(fragrance sachets)。五色線(five-color threads)。雄黃酒。河面波浪水花(river waves and splashes)。主色：翠綠#006B3F+金色#FFD700+紅色。龍舟雕刻細節(dragon head carved details)。屈原傳說意象。陽光水面反射(sunlight river reflections)'}},
+  {icon:'🌕',name:'中秋月圓風',desc:'月圓人團圓賞月',style:'插圖式圖表',bg:'#0D1B2A',
+   proStyle:{titleClr:'#FFE4B5',subClr:'#DEB887',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'中秋節風格(Mid-Autumn Festival/Moon Festival Style)。超大滿月(giant full moon, 月亮特寫)。月餅(mooncakes with patterns)。玉兔搗藥(jade rabbit on the moon)。柚子(pomelo)。烤肉場景(BBQ gathering, 台灣特色)。提燈籠的小孩(children with lanterns)。桂花飄香(osmanthus flowers)。夜空繁星(starry night sky)。色調：深藍夜空#0D1B2A+月光金#FFE4B5+暖橘。家人團圓溫馨氛圍(family reunion warm atmosphere)'}},
+  {icon:'👻',name:'中元普渡風',desc:'神秘莊嚴普渡祭典',style:'插圖式圖表',bg:'#1A1A2E',
+   proStyle:{titleClr:'#E8D44D',subClr:'#C0C0C0',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'中元節/盂蘭盆節風格(Ghost Festival/Zhongyuan Style)。神秘莊嚴氛圍(mysterious solemn atmosphere)。普渡供品桌(offering table with food, incense, candles)。放水燈(floating water lanterns on river)。搶孤(climbing greased poles)。大士爺紙紮(paper effigies)。線香煙霧繚繞(incense smoke wisps)。色調：深紫藍#1A1A2E+金黃#E8D44D+銀灰。燭光搖曳(flickering candlelight)。蓮花元素(lotus motifs)。基隆中元祭/頭城搶孤意象'}},
+  {icon:'🎑',name:'七夕情人風',desc:'浪漫星空牛郎織女',style:'插圖式圖表',bg:'#1B1040',
+   proStyle:{titleClr:'#FFB6C1',subClr:'#DDA0DD',titleFont:'Playfair Display',subFont:'Noto Sans TC',
+   notes:'七夕情人節風格(Qixi/Chinese Valentine Style)。浪漫星空銀河(romantic starry sky with Milky Way)。牛郎織女鵲橋相會(Cowherd and Weaver Girl on magpie bridge)。愛心元素(heart shapes)。玫瑰花(roses)。星座連線(constellation lines)。色調：深紫#1B1040+粉紅#FFB6C1+薰衣草紫#DDA0DD+金色星光。浪漫光暈效果(romantic bokeh/glow)。絲帶飄逸(flowing ribbons)'}},
+  {icon:'🎋',name:'清明春遊風',desc:'春暖花開踏青掃墓',style:'手繪風格',bg:'#F0F7ED',
+   proStyle:{titleClr:'#2D5F2D',subClr:'#5A8F5A',titleFont:'Noto Sans TC',subFont:'Noto Sans TC',
+   notes:'清明節風格(Qingming/Tomb Sweeping Day Style)。春天新綠色調(fresh spring green palette)。柳樹發芽(willow trees with new buds)。春雨綿綿(gentle spring rain, misty atmosphere)。潤餅(spring rolls/run bing, 台灣清明潤餅)。山坡墓園掃墓場景(hillside cemetery visit)。春遊踏青(spring outing)。風箏(kites)。油菜花田(rapeseed flower fields, yellow)。水彩/水墨淡雅風格(soft watercolor/ink wash feel)。薄霧意境(misty ethereal mood)'}},
+  {icon:'🎃',name:'萬聖節風',desc:'搞怪南瓜不給糖就搗蛋',style:'插圖式圖表',bg:'#1A0F0A',
+   proStyle:{titleClr:'#FF6F00',subClr:'#9C27B0',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'萬聖節風格(Halloween Style)。南瓜燈(Jack-o-lantern, carved pumpkins with glowing eyes)。蝙蝠(bats)、蜘蛛網(spider webs)、黑貓(black cats)、幽靈(ghosts)。枯樹剪影(dead tree silhouettes)。月光(moonlight)。Trick or treat 變裝(costumes: 巫婆/吸血鬼/木乃伊/骷髏)。糖果(candies)。色調：暗橘#FF6F00+紫#9C27B0+黑+螢光綠(neon green)。恐怖可愛風(spooky but cute)。霧氣效果(fog/mist)'}},
+  {icon:'🎄',name:'聖誕節風',desc:'溫馨聖誕冬日暖意',style:'3D皮克斯風',bg:'#1B2E1B',
+   proStyle:{titleClr:'#FF0000',subClr:'#FFFFFF',titleFont:'Montserrat',subFont:'DM Sans',
+   notes:'聖誕節風格(Christmas Style)。聖誕樹(Christmas tree with ornaments, star topper, lights)。聖誕老人(Santa Claus)。馴鹿雪橇(reindeer and sleigh)。禮物盒(gift boxes with ribbons)。雪花(snowflakes)。薑餅人(gingerbread man)。聖誕花圈(wreath with holly)。壁爐襪子(fireplace stockings)。色調：紅#FF0000+綠#1B6B1B+金#FFD700+白雪。溫暖燈光(warm cozy lighting)。積雪效果(snow covering)。Merry Christmas字樣'}},
+  {icon:'🧨',name:'台灣廟會風',desc:'熱鬧遶境陣頭文化',style:'插圖式圖表',bg:'#8B0000',
+   proStyle:{titleClr:'#FFD700',subClr:'#FFF8DC',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'台灣廟會/遶境風格(Taiwanese Temple Festival Style)。媽祖遶境(Mazu pilgrimage procession)。電音三太子(Electronic Neon Gods/San Tai Zi)。八家將/官將首(Ba Jia Jiang ritual performers, painted faces)。神轎(deity palanquin)。鞭炮煙火(firecrackers and fireworks)。陣頭表演(temple performance troupes)。紅色廟宇屋簷(red temple eaves with dragon carvings)。金紙銀紙(joss paper)。LED花車(LED decorated floats)。色調：大紅#8B0000+金#FFD700+黑。熱鬧喧囂氛圍(lively bustling atmosphere)。霓虹燈管(neon tube lights)'}},
+  {icon:'🫘',name:'冬至湯圓風',desc:'溫暖圓滿冬至進補',style:'插圖式圖表',bg:'#FFF5E6',
+   proStyle:{titleClr:'#8B4513',subClr:'#D2691E',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'冬至風格(Winter Solstice/Dongzhi Style)。湯圓(tangyuan glutinous rice balls, 紅白湯圓 in sweet soup)。薑母鴨/羊肉爐/麻油雞等進補食材(winter tonic foods)。圓滿團圓意象(reunion/wholeness symbolism)。溫暖色調(warm cozy tones: 暖棕#8B4513+奶油白+紅)。熱氣蒸騰(steam rising from hot food)。圍爐場景(family gathered around hot pot)。冬天暖陽(winter warm sunlight)。毛衣/圍巾等冬季元素(winter clothing elements)'}},
+  // ──── 漫畫風格 ────
+  {icon:'🌀',name:'宮崎駿風',desc:'吉卜力水彩田園奇幻',style:'手繪風格',bg:'#E8F4E8',
+   proStyle:{titleClr:'#2D5A27',subClr:'#5A8F5A',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'宮崎駿/吉卜力工作室風格(Studio Ghibli/Hayao Miyazaki Style)。水彩畫般的柔和色調(soft watercolor palette)。廣闊天空與積雲(vast sky with cumulus clouds, 天空の城/千と千尋)。翠綠田園風景(lush green pastoral landscapes)。歐風小鎮建築(European-style village buildings)。飛行器/飛行場景(flying scenes/aircraft)。森林精靈/自然生物(forest spirits, Totoro-like creatures, Kodama)。少女/少年主角(young protagonist)。風吹草動的動態感(wind-blown grass and hair)。溫暖懷舊光線(warm nostalgic lighting)。手繪背景精緻細膩(detailed hand-painted backgrounds)'}},
+  {icon:'💥',name:'鳥山明風',desc:'龍珠戰鬥熱血漫畫',style:'插圖式圖表',bg:'#FFF8E1',
+   proStyle:{titleClr:'#FF6F00',subClr:'#1565C0',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'鳥山明風格(Akira Toriyama Style, Dragon Ball/Dr. Slump)。乾淨俐落的線條(clean crisp lineart)。圓潤可愛但充滿力量的角色設計(round yet powerful character designs)。動態戰鬥姿勢(dynamic fighting poses, 氣功波/龜派氣功)。速度線與衝擊波(speed lines and impact effects)。鮮豔飽和的配色(vivid saturated colors)。荒野/岩石戰鬥場景(barren rocky battle landscapes)。肌肉線條明確(defined muscle anatomy)。誇張表情(exaggerated facial expressions)。漫畫分格效果(manga panel layout)。能量光環(aura/ki energy glow)'}},
+  {icon:'🏙️',name:'北条司風',desc:'都會寫實硬派劇畫',style:'極簡風格',bg:'#F5F5F5',
+   proStyle:{titleClr:'#1A1A1A',subClr:'#4A4A4A',titleFont:'Inter',subFont:'Inter',
+   notes:'北条司風格(Tsukasa Hojo Style, City Hunter/Cat\'s Eye)。寫實比例人物(realistic body proportions, 7-8頭身)。都會夜景(urban nightscape, 新宿/東京 cityscape)。俐落西裝/時尚服裝(sharp suits and fashionable outfits)。硬派帥氣男主角(handsome tough male protagonist)。美麗性感女角(beautiful glamorous female characters)。槍械/動作場景(firearms/action scenes)。80-90年代日本都會氛圍(80s-90s Japanese urban atmosphere)。細緻陰影網點(detailed screentone shading)。電影般構圖(cinematic composition)。霓虹燈光(neon city lights)'}},
+  {icon:'🐉',name:'黃玉郎風',desc:'港漫武俠氣勢磅礴',style:'插圖式圖表',bg:'#1A0A00',
+   proStyle:{titleClr:'#FFD700',subClr:'#FF4500',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'黃玉郎/港漫風格(Wong Yuk-long Hong Kong Manhua Style, 天子傳奇/龍虎門/神兵玄奇)。濃墨重彩的上色(heavy saturated coloring, rich deep tones)。誇張肌肉線條(exaggerated muscular anatomy)。武俠氣功特效(martial arts chi/qi energy effects, 光芒四射)。古裝武俠場景(ancient Chinese martial arts setting)。磅礴氣勢(epic grandiose atmosphere)。飛沙走石的戰鬥(debris and dust in combat)。金色/紅色/黑色為主色調(gold/red/black palette)。精緻盔甲/兵器(detailed armor and weapons)。中國龍/鳳/麒麟等神獸(Chinese mythical beasts)。漫畫式爆炸線(manga-style explosion lines)'}},
+  {icon:'⚔️',name:'馬榮成風',desc:'風雲水墨武俠寫實',style:'手繪風格',bg:'#0A0A14',
+   proStyle:{titleClr:'#C0C0C0',subClr:'#6A9BC3',titleFont:'Noto Serif TC',subFont:'Noto Sans TC',
+   notes:'馬榮成風格(Ma Wing-shing Style, 風雲/中華英雄)。電腦上色的精緻寫實港漫(digitally colored photorealistic HK manhua)。水墨暈染結合數位特效(ink wash combined with digital effects)。冷色調為主(cool color palette: 銀灰/冰藍/暗紫)。角色面部精緻寫實(detailed realistic facial features)。飄逸長髮/披風(flowing long hair and capes)。武俠招式名稱特效字(stylized technique name text effects)。山水雲霧場景(misty mountain landscapes)。劍光/刀氣(sword aura/blade energy trails)。史詩級構圖(epic cinematic composition)'}},
+  {icon:'🦸',name:'美漫超英風',desc:'DC/Marvel 超級英雄',style:'插圖式圖表',bg:'#1A1A2E',
+   proStyle:{titleClr:'#FFD700',subClr:'#FFFFFF',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'美式超級英雄漫畫風格(American Superhero Comic Style, DC/Marvel)。強壯肌肉體型(muscular heroic body type)。緊身戰衣/披風(tight suits and flowing capes)。動態飛行/戰鬥姿勢(dynamic flying/fighting poses)。戲劇性光影(dramatic lighting and shadows)。都市天際線背景(city skyline backdrop)。漫畫網點/色塊上色(comic book coloring with halftone dots)。粗黑輪廓線(bold black outlines)。onomatopoeia音效字(POW! BAM! CRASH!)。分鏡式構圖(panel-style composition)。英雄式低角度仰拍(heroic low-angle shot)'}},
+  {icon:'🗡️',name:'伊藤潤二風',desc:'恐怖驚悚黑白漫畫',style:'極簡風格',bg:'#0A0A0A',
+   proStyle:{titleClr:'#FFFFFF',subClr:'#888888',titleFont:'Oswald',subFont:'Inter',
+   notes:'伊藤潤二恐怖漫畫風格(Junji Ito Horror Manga Style)。黑白為主(black and white artwork)。極度精緻的交叉影線(intricate crosshatching)。扭曲恐怖的人體變形(grotesque body horror distortions, 螺旋/漩渦 uzumaki spirals)。驚恐表情特寫(extreme close-up of terrified facial expressions)。不安的構圖(unsettling asymmetric composition)。密集線條營造壓迫感(dense linework creating claustrophobia)。日常場景中的異常(uncanny in mundane settings)。毛髮/眼球/牙齒的恐怖細節(disturbing detail on hair/eyes/teeth)'}},
+  {icon:'🌊',name:'尾田榮一郎風',desc:'海賊王冒險熱血',style:'插圖式圖表',bg:'#E3F2FD',
+   proStyle:{titleClr:'#D32F2F',subClr:'#1565C0',titleFont:'Oswald',subFont:'DM Sans',
+   notes:'尾田榮一郎風格(Eiichiro Oda Style, ONE PIECE/海賊王)。誇張的身體比例(exaggerated body proportions, 超長腿/大頭)。極度豐富的表情(wildly expressive faces, 搞笑/熱血/感動)。密集的場景細節(incredibly detailed backgrounds and crowds)。海洋冒險場景(ocean adventure scenes, 海賊船/島嶼)。動態戰鬥姿勢與特效(dynamic battle poses with effects)。色彩鮮豔活潑(bright vivid colors)。自由奔放的線條(loose energetic linework)。漫畫式音效字(manga onomatopoeia)。友情/夢想主題(themes of friendship and dreams)'}},
+  {icon:'🎭',name:'手塚治虫風',desc:'漫畫之神經典圓潤',style:'插圖式圖表',bg:'#FFFDE7',
+   proStyle:{titleClr:'#1A1A1A',subClr:'#5D4037',titleFont:'M PLUS Rounded 1c',subFont:'Noto Sans TC',
+   notes:'手塚治虫風格(Osamu Tezuka Style, 原子小金剛/怪醫黑傑克/火之鳥)。圓潤可愛的角色設計(round cute character designs, 大眼睛)。簡潔流暢的線條(clean flowing lineart)。迪士尼影響的造型(Disney-influenced character shapes)。電影式分鏡(cinematic panel layouts, 變焦/特寫/蒙太奇)。黑白為基底+局部重點色(B&W base with selective color accents)。復古昭和風格(retro Showa-era aesthetic)。戲劇性的光影對比(dramatic light and shadow)。哲學深度的故事氛圍(philosophical narrative atmosphere)'}},
+  {icon:'🌸',name:'CLAMP風',desc:'華麗唯美少女漫畫',style:'插圖式圖表',bg:'#FFF0F5',
+   proStyle:{titleClr:'#8B008B',subClr:'#DB7093',titleFont:'Playfair Display',subFont:'Noto Sans TC',
+   notes:'CLAMP風格(CLAMP Style, 庫洛魔法使/X/xxxHOLiC/翼)。極度纖細修長的身體比例(extremely elongated slender proportions, 10+頭身)。華麗裝飾性服裝(ornate decorative costumes with ribbons/lace/feathers)。飄逸的頭髮和衣物(flowing ethereal hair and fabrics)。花瓣/羽毛散落效果(scattered petals and feathers)。精緻的眼睛繪製(elaborately drawn eyes with reflections)。對稱性構圖(symmetrical composition)。哥德式/Art Nouveau裝飾邊框(Gothic/Art Nouveau ornamental borders)。粉紫色調為主(pink and purple palette)。魔法陣/符文(magic circles and runes)'}},
+  {icon:'📺',name:'新海誠風',desc:'光影絢麗寫實動畫',style:'插圖式圖表',bg:'#1A237E',
+   proStyle:{titleClr:'#FFFFFF',subClr:'#90CAF9',titleFont:'Inter',subFont:'Noto Sans TC',
+   notes:'新海誠風格(Makoto Shinkai Style, 你的名字/天氣之子/鈴芽之旅)。超精緻的光線表現(hyper-detailed lighting, 逆光/God rays/lens flare)。璀璨星空(brilliant starry sky, 銀河/流星/彗星)。都市與自然的交融(urban meets nature)。黃昏魔幻時刻(golden hour/magic hour twilight)。雨滴/水面反射(raindrops and water reflections)。電車/鐵軌/天橋等日常場景(trains/railways/pedestrian bridges)。雲朵的立體層次(volumetric detailed clouds)。色彩飽和度極高(highly saturated colors)。青春感/思念感(youthful nostalgia atmosphere)'}},
+];
+
+
+const THEMES=[
+  {name:'莫蘭迪',colors:['#b5a999','#c4b7a6','#9ca8b8','#a3b5a6','#d4c5b9'],bg:'#f5f0eb',style:'手繪風格',
+   titleClr:'#5c4f42',subClr:'#8a7e74',chartReq:'圖表配色使用莫蘭迪色系(灰棕 #b5a999、灰藍 #9ca8b8、灰綠 #a3b5a6)，低飽和柔和色調'},
+  {name:'賽博龐克',colors:['#ff006e','#00f5d4','#8338ec','#ffbe0b','#3a86ff'],bg:'#0a0a1a',style:'科技感',
+   titleClr:'#00f5d4',subClr:'#ff006e',chartReq:'圖表配色使用霓虹色系(青 #00f5d4、洋紅 #ff006e、紫 #8338ec、金 #ffbe0b)，深色背景搭配高對比螢光色'},
+  {name:'日系清新',colors:['#ffa5ab','#a0d2db','#ffd6ba','#b5e2a0','#d4a5ff'],bg:'#fefcf3',style:'插圖式圖表',
+   titleClr:'#e8756d',subClr:'#7bb5c4',chartReq:'圖表配色使用日系粉嫩色(櫻粉 #ffa5ab、水藍 #a0d2db、蜜桃 #ffd6ba、嫩綠 #b5e2a0)，清新柔和風格'},
+  {name:'商務藍',colors:['#003366','#336699','#6699cc','#99ccff','#cce5ff'],bg:'#ffffff',style:'3D光質感',
+   titleClr:'#003366',subClr:'#336699',chartReq:'圖表配色使用商務藍色階(深藍 #003366、中藍 #336699、天藍 #6699cc、淺藍 #99ccff)，專業穩重風格'},
+  {name:'暖陽金',colors:['#ff8c42','#ffd166','#06d6a0','#118ab2','#073b4c'],bg:'#fffbf0',style:'扁平設計',
+   titleClr:'#073b4c',subClr:'#118ab2',chartReq:'圖表配色使用暖陽色系(橘 #ff8c42、金黃 #ffd166、翠綠 #06d6a0、海藍 #118ab2)，活潑明亮風格'},
+  {name:'森林綠',colors:['#2d6a4f','#40916c','#52b788','#74c69d','#b7e4c7'],bg:'#f1faf5',style:'插圖式圖表',
+   titleClr:'#1b4332',subClr:'#2d6a4f',chartReq:'圖表配色使用森林綠色階(深綠 #2d6a4f、翠綠 #40916c、嫩綠 #52b788、薄荷 #74c69d)，自然清爽風格'},
+  {name:'玫瑰金',colors:['#bc6c8a','#d4a5a5','#e8c8c8','#f0dede','#c9737b'],bg:'#fdf6f6',style:'極簡風格',
+   titleClr:'#8a3a50',subClr:'#bc6c8a',chartReq:'圖表配色使用玫瑰金色系(玫瑰 #bc6c8a、裸粉 #d4a5a5、淡粉 #e8c8c8、珊瑚 #c9737b)，優雅浪漫風格'},
+];
+
+const CHAR_OPTS={
+  gender:['男生','女生','中性'],
+  hair:['黑色短髮','黑色長髮','棕色短髮','棕色捲髮','金色短髮','粉色雙馬尾','白色短髮','藍色中長髮','紅色波浪髮'],
+  outfit:['紅色旗袍','西裝','白色洋裝','運動服','和服','校服','太空裝','連帽衫'],
+  style:['台灣人','日本人','歐美人','Q版','寫實','3D皮克斯風','動漫風','賽博龐克風'],
+};
+
+let charSel={gender:'',hair:'',outfit:'',style:''};
+
+let S={
+  mode:'infographic',pageCount:10,globalBg:'#ffffff',globalStyle:'插圖式圖表',globalFont:'Noto Sans TC',globalNotes:'所有簡報都不要出現檔案名稱, 所有中文字必須像印刷品一樣清晰(crisp sharp arrow-edged text)，字體粗體加粗(font-weight:bold)，禁止任何模糊或羽化效果，文字以純色色塊呈現不帶陰影不帶漸層不帶光暈，每個漢字筆畫清楚可辨識，中文標題字體大小不低於36px，副標題不低於24px，內文不低於18px，文字區域背景必須為純色確保對比度，render text as vector-sharp glyphs',
+  activePage:0,selEl:null,pages:[],
+  logo:{enabled:false,file:'logo.png',pos:'右上角',size:'小(寬度約5%)',alpha:'不透明'},
+  density:'中',
+  infographic:{title:'',desc:'',layout:'panel7',ratio:'wide',bg:'',
+    elements:[{id:uid(),type:'title',text:'主標題',fontSize:28,color:'#222',font:'',x:28,y:20,locked:false,group:'',vertical:false},{id:uid(),type:'subtitle',text:'副標題',fontSize:14,color:'#555',font:'',x:28,y:52,locked:false,group:'',vertical:false}]}
+};
+
+// Undo/Redo
+let undoStack=[],redoStack=[];
+function snapshot(){undoStack.push(JSON.stringify(S));if(undoStack.length>200)undoStack.shift();redoStack=[];}
+function undo(){if(!undoStack.length){toast('⚠️ 沒有可復原的操作');return;}redoStack.push(JSON.stringify(S));S=JSON.parse(undoStack.pop());fullRefresh();toast(`↩ 復原 (剩餘 ${undoStack.length} 步)`);}
+function redo(){if(!redoStack.length){toast('⚠️ 沒有可重做的操作');return;}undoStack.push(JSON.stringify(S));S=JSON.parse(redoStack.pop());fullRefresh();toast(`↪ 重做 (剩餘 ${redoStack.length} 步)`);}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();if(e.shiftKey)redo();else undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();redo();}
+  if((e.key==='Delete'||e.key==='Backspace')&&S.selEl&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&document.activeElement.tagName!=='SELECT'){e.preventDefault();delElById(S.selEl);}
+});
+
+function uid(){return 'e'+Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+function fontSelHTML(id,val,onch){
+  let h=`<select class="font-sel" id="${id}" onchange="${onch}">`;
+  FONTS.forEach(g=>{h+=`<optgroup label="${g.g}">`;g.fonts.forEach(f=>{h+=`<option value="${f.v}" style="font-family:'${f.v}'" ${val===f.v?'selected':''}>${f.l}</option>`;});h+='</optgroup>';});
+  return h+'</select>';
+}
+function mkPage(i){
+  const _dt={'zh-TW':'主標題','zh-CN':'主标题','en':'Title','ja':'タイトル','ko':'제목'};
+  const _ds={'zh-TW':'次標題','zh-CN':'副标题','en':'Subtitle','ja':'サブタイトル','ko':'부제목'};
+  const _t=(typeof uiLang!=='undefined')?uiLang:'zh-TW';
+  return{bg:'',charts:[{type:'',params:''}],style:'',desc:'',url:'',elements:[{id:uid(),type:'title',text:_dt[_t]||'主標題',fontSize:32,color:'#333333',font:'',x:60,y:80,locked:false,group:''},{id:uid(),type:'subtitle',text:_ds[_t]||'次標題',fontSize:20,color:'#666666',font:'',x:60,y:140,locked:false,group:''}]};
+}
+S.pages=[];
+
+function fullRefresh(){
+  document.getElementById('gNotes').value=S.globalNotes||'';
+  renderGFontSel();renderStylePills();renderCanvas();renderElList();renderILayouts();renderChartGrid();
+  try{restoreLogoUI();}catch(e){}try{restoreDensityUI();}catch(e){}
+}
+
+// ==================== TEMPLATES ====================
+// Template i18n
+
+
+function renderTemplates(){
+  const g=document.getElementById('tplGrid');g.innerHTML='';
+  TEMPLATES.forEach(t=>{
+    const d=document.createElement('div');d.className='tpl-card tpl-mck';
+    d.innerHTML=`<span class="tpl-icon">${t.icon}</span><div class="tpl-name">${t.name}</div><div class="tpl-desc">${t.desc}</div>`;
+    d.onclick=()=>{snapshot();applyTemplate(t);};
+    g.appendChild(d);
+  });
+}
+
+function applyTemplate(t){
+  snapshot();S.globalBg=t.bg;S.globalStyle=t.style;S.selEl=null;
+  if(t.proStyle){
+    S.globalFont=t.proStyle.titleFont;
+    S.globalNotes=t.proStyle.notes;
+    document.getElementById('gNotes').value=t.proStyle.notes;
+    S.infographic.elements.forEach(el=>{
+      if(el.type==='title'){el.color=t.proStyle.titleClr;el.font=t.proStyle.titleFont;}
+      if(el.type==='subtitle'){el.color=t.proStyle.subClr;el.font=t.proStyle.subFont||t.proStyle.titleFont;}
+    });
+  }else{
+    S.globalFont='Noto Sans TC';S.globalNotes='';document.getElementById('gNotes').value='';
+  }
+  updGBg(t.bg);renderStylePills();renderGFontSel();renderCanvas();renderElList();renderChartGrid();
+  toast('🎨 已套用「'+t.name+'」風格');
+}
+
+// ==================== THEMES ====================
+function renderThemes(){
+  const r=document.getElementById('themeRow');r.innerHTML='';
+  THEMES.forEach(t=>{
+    const d=document.createElement('div');d.className='theme-chip';
+    d.title=`背景: ${t.bg}\n主標題: ${t.titleClr}\n次標題: ${t.subClr}\n${t.chartReq}`;
+    const _TN={'莫蘭迪':{'zh-CN':'莫兰迪','en':'Morandi','ja':'モランディ','ko':'모란디'},
+      '賽博龐克':{'zh-CN':'赛博朋克','en':'Cyberpunk','ja':'サイバーパンク','ko':'사이버펑크'},
+      '日系清新':{'zh-CN':'日系清新','en':'Japanese Fresh','ja':'和風フレッシュ','ko':'일본풍'},
+      '商務藍':{'zh-CN':'商务蓝','en':'Business Blue','ja':'ビジネスブルー','ko':'비즈니스블루'},
+      '暖陽金':{'zh-CN':'暖阳金','en':'Warm Gold','ja':'ウォームゴールド','ko':'웜골드'},
+      '森林綠':{'zh-CN':'森林绿','en':'Forest Green','ja':'フォレストグリーン','ko':'포레스트그린'},
+      '玫瑰金':{'zh-CN':'玫瑰金','en':'Rose Gold','ja':'ローズゴールド','ko':'로즈골드'}};
+    const tn=_TN[t.name]?.[uiLang]||t.name;
+    d.innerHTML=`<div class="theme-dots">${t.colors.map(c=>`<div class="theme-dot" style="background:${c}"></div>`).join('')}</div>${tn}`;
+    d.onclick=()=>{r.querySelectorAll('.theme-chip').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');applyTheme(t);};
+    r.appendChild(d);
+  });
+}
+
+function applyTheme(t){
+  snapshot();
+  // Background & style
+  S.globalBg=t.bg; S.globalStyle=t.style;
+  updGBg(t.bg); renderStylePills();
+
+  // Apply title/subtitle colors to ALL existing pages
+  // Apply to infographic elements
+  S.infographic.elements.forEach(el=>{
+    if(el.type==='title') el.color=t.titleClr;
+    if(el.type==='subtitle') el.color=t.subClr;
+  });
+
+  // Update globalNotes: remove old chart requirement line, add new one
+  let notes = document.getElementById('gNotes').value;
+  // Remove previous theme chart line if any
+  notes = notes.replace(/\n?圖表配色[^\n]*/g, '').trim();
+  // Append chart requirement
+  if(t.chartReq) notes += (notes ? '\n' : '') + t.chartReq;
+  S.globalNotes = notes;
+  document.getElementById('gNotes').value = notes;
+
+  renderCanvas(); renderRight(); renderElList(); updateEd();
+  toast(`🎨 已套用「${t.name}」主題 — 背景 + 標題 + 圖表配色`);
+}
+
+// ==================== STYLE PILLS ====================
+function renderStylePills(){}
+
+// ==================== CHARACTER BUILDER ====================
+function renderCharBuilder(){
+  Object.keys(CHAR_OPTS).forEach(group=>{
+    const row=document.querySelector(`.char-row[data-group="${group}"]`);if(!row)return;row.innerHTML='';
+    CHAR_OPTS[group].forEach(opt=>{
+      const c=document.createElement('span');c.className='char-chip'+(charSel[group]===opt?' sel':'');c.textContent=opt;
+      c.onclick=()=>{charSel[group]=charSel[group]===opt?'':opt;renderCharBuilder();};
+      row.appendChild(c);
+    });
+  });
+  const parts=[charSel.hair,charSel.outfit,charSel.style?'的'+charSel.style:'',charSel.gender].filter(Boolean);
+  document.getElementById('charOutput').textContent=parts.length?parts.join(' '):' 點選上方選項組合人物描述';
+}
+
+function insertCharacter(){
+  const parts=[charSel.hair,charSel.outfit,charSel.style?'的'+charSel.style:'',charSel.gender].filter(Boolean);
+  if(!parts.length){toast('⚠️ 請先選擇人物特徵');return;}
+  snapshot();addEl('character',parts.join(' '));toast('👤 已插入人物描述');
+}
+
+// ==================== INFOGRAPHIC LAYOUTS ====================
+function renderILayouts(){
+  // Highlight current layout card
+  const cards=document.querySelectorAll('#iLayouts .pst-card');
+  cards.forEach(c=>c.classList.remove('sel'));
+  const idx={'single':0,'panel4':1,'panel7':2,'panel9':3}[S.infographic.layout]||2;
+  if(cards[idx])cards[idx].classList.add('sel');
+}
+
+function applyLayout(type,el){
+  snapshot();
+  S.infographic.layout=type;
+  document.querySelectorAll('#iLayouts .pst-card').forEach(c=>c.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+
+  const cv=document.getElementById('sCanvas');
+  const W=parseInt(cv.style.width)||700;
+  const H=parseInt(cv.style.height)||394;
+  const pad=Math.round(W*0.04);
+  const els=[];
+  const _t=(typeof uiLang!=='undefined'&&uiLang==='en');
+
+  // Only title + subtitle, no panel text elements
+  if(type==='single'){
+    els.push({id:uid(),type:'title',text:_t?'Title':'主標題',fontSize:32,color:'#222',font:'',x:pad,y:Math.round(H*0.12),locked:false,group:'',vertical:false});
+    els.push({id:uid(),type:'subtitle',text:_t?'Subtitle':'副標題',fontSize:18,color:'#666',font:'',x:pad,y:Math.round(H*0.25),locked:false,group:'',vertical:false});
+  }else if(type==='panel4'||type==='panel7'||type==='panel9'){
+    els.push({id:uid(),type:'title',text:_t?'Title':'主標題',fontSize:28,color:'#222',font:'',x:pad,y:Math.round(H*0.05),locked:false,group:'',vertical:false});
+    els.push({id:uid(),type:'subtitle',text:_t?'Subtitle':'副標題',fontSize:14,color:'#555',font:'',x:pad,y:Math.round(H*0.13),locked:false,group:'',vertical:false});
+  }
+
+  S.infographic.elements=els;
+  renderCanvas();renderElList();
+  toast('📐 已套用「'+(type==='single'?'單頁滿版':type==='panel4'?'4分格':type==='panel7'?'7分格':'9分格')+'」版型');
+}
+
+
+
+
+// ==================== MODE (INFOGRAPHIC ONLY) ====================
+function switchMode(){}
+function renderTabs(){}
+function renderRight(){} 
+function duplicatePage(){}
+function copyPagePrompt(){}
+function applyBatch(){}
+function openBatch(){}
+
+function applyIR(r){
+  const cv=document.getElementById('sCanvas');
+  const sz={wide:[700,394],square:[500,500],portrait:[420,640],a4portrait:[420,594],a4landscape:[594,420],ultra:[756,324]};
+  const[w,hh]=sz[r]||sz.wide;
+  cv.style.width=w+'px';cv.style.height=hh+'px';
+}
+function chgIR(v){
+  S.infographic.ratio=v;applyIR(v);
+  // Clamp elements within new canvas bounds
+  const cv=document.getElementById('sCanvas');
+  const W=parseInt(cv.style.width)||700,H=parseInt(cv.style.height)||394;
+  S.infographic.elements.forEach(el=>{
+    el.x=Math.max(0,Math.min(W-30,el.x));
+    el.y=Math.max(0,Math.min(H-20,el.y));
+  });
+  renderCanvas();
+}
+
+// ==================== GLOBAL ====================
+function updGBg(v){S.globalBg=v;document.getElementById('gBgC').value=v;document.getElementById('gBgH').value=v;document.getElementById('gSw').style.background=v;renderCanvas();}
+
+function updGFont(v){
+  snapshot();S.globalFont=v;
+  document.getElementById('gFontPrevTxt').style.fontFamily="'"+v+"',sans-serif";
+  document.getElementById('gFontPrevTxt').textContent='Aa 文字預覽 123';
+  document.getElementById('gFontPrevLbl').textContent=v;
+  renderCanvas();
+}
+
+function renderGFontSel(){
+  document.getElementById('gFontSel').innerHTML=fontSelHTML('gFont',S.globalFont,"updGFont(this.value)");
+  document.getElementById('gFontPrevTxt').style.fontFamily="'"+S.globalFont+"',sans-serif";
+  document.getElementById('gFontPrevLbl').textContent=S.globalFont;
+}
+
+
+
+function appendNote(txt){
+  const ta=document.getElementById('gNotes');let v=ta.value.trim();
+  if(v.includes(txt)){toast('⚠️ 已包含此要求');return;}
+  ta.value=v?(v+', '+txt):txt;S.globalNotes=ta.value;toast('✅ 已加入要求');
+}
+
+function toggleLogo(el){
+  S.logo.enabled=!S.logo.enabled;
+  el.classList.toggle('on',S.logo.enabled);
+  document.getElementById('logoOpts').style.display=S.logo.enabled?'block':'none';
+}
+function restoreLogoUI(){
+  if(!S.logo)S.logo={enabled:false,file:'logo.png',pos:'右上角',size:'小(寬度約5%)',alpha:'不透明'};
+  const tgl=document.getElementById('logoTgl');
+  tgl.classList.toggle('on',S.logo.enabled);
+  document.getElementById('logoOpts').style.display=S.logo.enabled?'block':'none';
+  document.getElementById('logoFile').value=S.logo.file||'logo.png';
+  document.getElementById('logoPos').value=S.logo.pos||'右上角';
+  document.getElementById('logoSize').value=S.logo.size||'小(寬度約5%)';
+  document.getElementById('logoAlpha').value=S.logo.alpha||'不透明';
+}
+function logoStr(){
+  if(!S.logo||!S.logo.enabled)return'';
+  const f=S.logo.file||'logo.png';
+  const alpha=S.logo.alpha==='不透明'?'':('，'+S.logo.alpha);
+  return`Logo: ${S.logo.pos}放置「${f}」圖檔作為Logo(已去背透明背景PNG)，大小${S.logo.size}${alpha}`;
+}
+
+function setDensity(level){
+  S.density=level;
+  document.querySelectorAll('.density-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById({低:'dLow',中:'dMid',高:'dHigh'}[level]).classList.add('sel');
+  const hints={低:'每頁1個重點，大字留白',中:'每頁標準資訊量',高:'高密度3欄佈局，表格+圖表+框架'};
+  document.getElementById('densityHint').textContent=hints[level]||'';
+}
+function restoreDensityUI(){
+  if(!S.density)S.density='中';
+  setDensity(S.density);
+}
+function densityStr(){
+  if(S.density==='低')return'只放一個核心重點，文字極大居中，大量留白';
+  if(S.density==='高')return'高密度3欄佈局，包含表格+圖表+策略框架，資訊量豐富';
+  return'';
+}
+
+function invertColors(){
+  snapshot();
+  function inv(hex){const r=hexToRgb(hex);return rgbToHex(255-r[0],255-r[1],255-r[2]);}
+  S.globalBg=inv(S.globalBg);
+  S.infographic.elements.forEach(el=>{el.color=inv(el.color);});
+  updGBg(S.globalBg);renderCanvas();renderElList();updateEd();
+  toast('🔄 配色已反轉');
+}
+
+// ==================== RIGHT PANEL (STUB) ====================
+
+// ==================== ELEMENTS ====================
+function curEls(){return S.mode==='slides'?S.pages[S.activePage].elements:S.infographic.elements;}
+function setCurEls(e){if(S.mode==='slides')S.pages[S.activePage].elements=e;else S.infographic.elements=e;}
+function getSelE(){return S.selEl?curEls().find(e=>e.id===S.selEl):null;}
+
+function renderElList(){
+  const els=curEls(),list=document.getElementById('elList');list.innerHTML='';
+  const emptyMsg={'zh-TW':'📭 尚無元素','zh-CN':'📭 暂无元素','en':'📭 No elements','ja':'📭 要素なし','ko':'📭 요소 없음'};
+  if(!els.length){list.innerHTML=`<div style="text-align:center;padding:16px;color:var(--t4);font-size:11px">${emptyMsg['zh-TW']||emptyMsg['zh-TW']}</div>`;return;}
+  const tlMap={'zh-TW':{title:'主標題',subtitle:'次標題',text:'文字',chart:'圖表',character:'人物',note:'備註',image:'插圖'},
+    'zh-CN':{title:'主标题',subtitle:'副标题',text:'文字',chart:'图表',character:'人物',note:'备注',image:'插图'},
+    'en':{title:'Title',subtitle:'Subtitle',text:'Text',chart:'Chart',character:'Character',note:'Note',image:'Image'},
+    'ja':{title:'タイトル',subtitle:'サブタイトル',text:'テキスト',chart:'チャート',character:'人物',note:'メモ',image:'画像'},
+    'ko':{title:'제목',subtitle:'부제목',text:'텍스트',chart:'차트',character:'캐릭터',note:'메모',image:'이미지'}};
+  const tl=tlMap['zh-TW']||tlMap['zh-TW'];
+  const tc={title:'et-t',subtitle:'et-s',text:'et-x',chart:'et-c',character:'et-p',note:'et-n'};
+  els.forEach(el=>{
+    const d=document.createElement('div');d.className='eli'+(el.id===S.selEl?' sel':'');
+    let badges='';
+    if(el.locked)badges+='<span class="el-badge el-lock">🔒</span>';
+    if(el.group)badges+=`<span class="el-badge el-grp">🔗${el.group}</span>`;
+
+    const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:6px';
+
+    const info=document.createElement('div');info.style.cssText='flex:1;min-width:0;overflow:hidden';
+    info.innerHTML=`<div class="elh"><span class="elt ${tc[el.type]||''}">${tl[el.type]||el.type}${badges}</span><span class="elc">x:${el.x} y:${el.y}</span></div><div class="elv">${el.text}</div>`;
+
+    const btn=document.createElement('button');
+    btn.textContent='🗑';
+    btn.title='刪除此元素';
+    btn.style.cssText='flex-shrink:0;width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,77,106,.3);background:rgba(255,77,106,.1);color:#ff4d6a;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0';
+    btn.onmouseenter=()=>{btn.style.background='rgba(255,77,106,.3)';};
+    btn.onmouseleave=()=>{btn.style.background='rgba(255,77,106,.1)';};
+    btn.onclick=(e)=>{e.stopPropagation();delElById(el.id);};
+
+    row.appendChild(info);
+    row.appendChild(btn);
+    d.appendChild(row);
+    d.onclick=()=>selE(el.id);
+    list.appendChild(d);
+  });
+}
+
+function delElById(id){snapshot();setCurEls(curEls().filter(e=>e.id!==id));if(S.selEl===id)S.selEl=null;renderCanvas();renderElList();updateEd();toast('🗑 已刪除元素');}
+
+function selE(id){S.selEl=id;renderElList();renderCanvas();updateEd();}
+
+function setTextDir(dir){
+  const e=getSelE();if(!e)return;
+  snapshot();
+  e.vertical=(dir==='vertical');
+  renderCanvas();renderElList();updateEd();
+}
+
+function updateEd(){
+  const ed=document.getElementById('elEd'),el=getSelE();if(!el){ed.style.display='none';return;}ed.style.display='block';
+  document.getElementById('eTxt').value=el.text;document.getElementById('eFs').value=el.fontSize;document.getElementById('eFsV').textContent=el.fontSize+'px';
+  document.getElementById('eClr').value=el.color;document.getElementById('eClrH').value=el.color;document.getElementById('eSw').style.background=el.color;
+  document.getElementById('ePX').value=el.x;document.getElementById('ePY').value=el.y;
+  // Font
+  const elFont=el.font||S.globalFont;
+  document.getElementById('eFontSel').innerHTML=fontSelHTML('eFont',elFont,"updEFont(this.value)");
+  document.getElementById('eFontPrevTxt').style.fontFamily="'"+elFont+"',sans-serif";
+  document.getElementById('eFontPrevTxt').textContent='Aa 文字 123';
+  document.getElementById('eFontPrevLbl').textContent=elFont+(el.font?'':'（全域）');
+  // Lock
+  const lb=document.getElementById('eLockBtn');
+  lb.textContent=el.locked?'🔓 已鎖定':'🔒 鎖定';lb.style.color=el.locked?'var(--warn)':'';
+  // Group
+  document.getElementById('eGroup').value=el.group||'';
+  const grpEls=el.group?curEls().filter(e=>e.group===el.group).length:0;
+  document.getElementById('eGroupInfo').textContent=el.group?`(${grpEls}個元素)`:'';
+
+  // Vertical text
+  const hBtn=document.getElementById('eHorzBtn'),vBtn=document.getElementById('eVertBtn');
+  if(hBtn&&vBtn){
+    if(el&&el.vertical){hBtn.classList.remove('sel');vBtn.classList.add('sel');}
+    else{hBtn.classList.add('sel');vBtn.classList.remove('sel');}
+  }
+}
+
+function updEFont(v){const e=getSelE();if(e){snapshot();e.font=v;document.getElementById('eFontPrevTxt').style.fontFamily="'"+v+"',sans-serif";document.getElementById('eFontPrevLbl').textContent=v;renderCanvas();}}
+
+function updET(v){const e=getSelE();if(e){snapshot();e.text=v;renderCanvas();renderElList();}}
+function updEFs(v){const e=getSelE();if(e){e.fontSize=+v;document.getElementById('eFsV').textContent=v+'px';renderCanvas();}}
+function updEClr(v){const e=getSelE();if(e){snapshot();e.color=v;document.getElementById('eClr').value=v;document.getElementById('eClrH').value=v;document.getElementById('eSw').style.background=v;renderCanvas();}}
+function updEPos(){const e=getSelE();if(e){snapshot();e.x=+document.getElementById('ePX').value||0;e.y=+document.getElementById('ePY').value||0;renderCanvas();}}
+function delEl(){snapshot();setCurEls(curEls().filter(e=>e.id!==S.selEl));S.selEl=null;renderCanvas();renderElList();updateEd();}
+
+// Layer order
+function moveElLayer(dir){
+  const els=curEls(),idx=els.findIndex(e=>e.id===S.selEl);if(idx<0)return;
+  const ni=idx+dir;if(ni<0||ni>=els.length)return;
+  snapshot();[els[idx],els[ni]]=[els[ni],els[idx]];renderCanvas();renderElList();
+}
+
+// Lock
+function toggleLock(){const e=getSelE();if(e){snapshot();e.locked=!e.locked;updateEd();renderElList();renderCanvas();toast(e.locked?'🔒 已鎖定':'🔓 已解鎖');}}
+
+// Group
+function updEGroup(v){const e=getSelE();if(e){snapshot();e.group=v.trim();updateEd();renderElList();}}
+function setGroup(){
+  const e=getSelE();if(!e)return;
+  const name=e.group||'G'+(Date.now()%1000);
+  snapshot();e.group=name;
+  // If there are other selected-adjacent elements, we just set the group name
+  toast(`🔗 群組「${name}」— 在其他元素輸入相同名稱即可綁定`);
+  updateEd();renderElList();
+}
+function clearGroup(){const e=getSelE();if(e&&e.group){snapshot();e.group='';updateEd();renderElList();toast('✂ 已解除群組');}}
+
+function addEl(type,customText){
+  snapshot();const els=curEls();
+  const _dm={'zh-TW':{title:'主標題',sub:'次標題',text:'說明文字',chart:'圖表描述',img:'一張圖片描述',char:'人物描述',note:'備註'},
+    'zh-CN':{title:'主标题',sub:'副标题',text:'说明文字',chart:'图表描述',img:'图片描述',char:'人物描述',note:'备注'},
+    'en':{title:'Title',sub:'Subtitle',text:'Description',chart:'Chart description',img:'Image description',char:'Character description',note:'Note'},
+    'ja':{title:'タイトル',sub:'サブタイトル',text:'説明文',chart:'チャート説明',img:'画像の説明',char:'人物の説明',note:'メモ'},
+    'ko':{title:'제목',sub:'부제목',text:'설명',chart:'차트설명',img:'이미지설명',char:'캐릭터설명',note:'메모'}};
+  const _d=_dm[uiLang]||_dm['zh-TW'];
+  const _cv=document.getElementById('sCanvas');
+  const _W=parseInt(_cv?.style.width)||700,_H=parseInt(_cv?.style.height)||394;
+  const _p=Math.round(_W*0.04);
+  const defs={title:{text:_d.title,fontSize:32,color:'#333333',font:'',x:_p,y:Math.round(_H*0.15)},subtitle:{text:_d.sub,fontSize:20,color:'#666666',font:'',x:_p,y:Math.round(_H*0.3)},text:{text:_d.text,fontSize:14,color:'#555555',font:'',x:_p,y:Math.round(_H*0.45)},chart:{text:_d.chart,fontSize:14,color:'#0066cc',font:'',x:_p,y:Math.round(_H*0.6)},image:{text:_d.img,fontSize:14,color:'#CC6600',font:'',x:Math.round(_W*0.4),y:Math.round(_H*0.2)},character:{text:_d.char,fontSize:14,color:'#990099',font:'',x:Math.round(_W*0.4),y:Math.round(_H*0.45)},note:{text:_d.note,fontSize:12,color:'#999999',font:'',x:_p,y:Math.round(_H*0.8)}};
+  const d=defs[type]||defs.text;const el={id:uid(),type,...d,locked:false,group:'',vertical:false};if(customText)el.text=customText;
+  els.push(el);S.selEl=el.id;renderCanvas();renderElList();updateEd();
+}
+
+
+// ==================== CUSTOM STYLE FROM IMAGE ====================
+function analyzeStyleImage(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      const colors=extractColors(img);
+      showStylePreview(colors,e.target.result);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function extractColors(img){
+  const c=document.createElement('canvas');
+  const ctx=c.getContext('2d');
+  const w=Math.min(img.width,400),h=Math.round(img.height*(w/img.width));
+  c.width=w;c.height=h;
+  ctx.drawImage(img,0,0,w,h);
+
+  // Sample regions
+  const bg=sampleRegion(ctx,0,0,w,Math.round(h*0.05)).concat(
+    sampleRegion(ctx,0,h-Math.round(h*0.05),w,Math.round(h*0.05)),
+    sampleRegion(ctx,0,0,Math.round(w*0.03),h),
+    sampleRegion(ctx,w-Math.round(w*0.03),0,Math.round(w*0.03),h)
+  );
+  const bgColor=dominantColor(bg);
+
+  // Title area (top 15-30%)
+  const titleArea=sampleRegion(ctx,Math.round(w*0.05),Math.round(h*0.08),Math.round(w*0.7),Math.round(h*0.15));
+  const titleColors=getNonBgColors(titleArea,bgColor);
+  const titleColor=titleColors[0]||'#FFFFFF';
+
+  // Subtitle area (20-40%)
+  const subArea=sampleRegion(ctx,Math.round(w*0.05),Math.round(h*0.25),Math.round(w*0.7),Math.round(h*0.12));
+  const subColors=getNonBgColors(subArea,bgColor);
+  const subColor=subColors[0]||(isLight(bgColor)?'#666666':'#8899AA');
+
+  // Accent colors from middle section
+  const midArea=sampleRegion(ctx,Math.round(w*0.1),Math.round(h*0.35),Math.round(w*0.8),Math.round(h*0.4));
+  const accents=getNonBgColors(midArea,bgColor,3);
+
+  return{bg:bgColor,title:titleColor,sub:subColor,accents:accents,isDark:!isLight(bgColor)};
+}
+
+function sampleRegion(ctx,x,y,w,h){
+  if(w<1||h<1)return[];
+  const d=ctx.getImageData(Math.max(0,Math.round(x)),Math.max(0,Math.round(y)),Math.max(1,Math.round(w)),Math.max(1,Math.round(h))).data;
+  const cols=[];const step=Math.max(1,Math.floor(d.length/4/200));
+  for(let i=0;i<d.length;i+=step*4)cols.push([d[i],d[i+1],d[i+2]]);
+  return cols;
+}
+
+function dominantColor(pixels){
+  if(!pixels.length)return'#FFFFFF';
+  const buckets={};
+  pixels.forEach(p=>{const k=`${Math.round(p[0]/16)*16},${Math.round(p[1]/16)*16},${Math.round(p[2]/16)*16}`;buckets[k]=(buckets[k]||0)+1;});
+  let maxK='',maxV=0;
+  Object.entries(buckets).forEach(([k,v])=>{if(v>maxV){maxV=v;maxK=k;}});
+  const rgb=maxK.split(',').map(Number);
+  return rgbToHex(rgb[0],rgb[1],rgb[2]);
+}
+
+function getNonBgColors(pixels,bgHex,count=1){
+  if(!pixels.length)return[];
+  const bgRgb=hexToRgb(bgHex);
+  const filtered=pixels.filter(p=>colorDist(p,bgRgb)>60);
+  if(!filtered.length)return[];
+  // Cluster by quantized color
+  const buckets={};
+  filtered.forEach(p=>{const k=`${Math.round(p[0]/24)*24},${Math.round(p[1]/24)*24},${Math.round(p[2]/24)*24}`;buckets[k]=(buckets[k]||0)+1;});
+  const sorted=Object.entries(buckets).sort((a,b)=>b[1]-a[1]);
+  const results=[];
+  for(let i=0;i<Math.min(count,sorted.length);i++){
+    const rgb=sorted[i][0].split(',').map(Number);
+    results.push(rgbToHex(rgb[0],rgb[1],rgb[2]));
+  }
+  return results;
+}
+
+function colorDist(a,b){return Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2);}
+function isLight(hex){const r=hexToRgb(hex);return(r[0]*299+r[1]*587+r[2]*114)/1000>128;}
+function hexToRgb(h){h=h.replace('#','');return[parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(x=>Math.max(0,Math.min(255,x)).toString(16).padStart(2,'0')).join('').toUpperCase();}
+
+function showStylePreview(colors,imgSrc){
+  const box=document.getElementById('stylePreview');box.style.display='block';
+  box.innerHTML=`
+    <div style="border:1px solid var(--bdr);border-radius:var(--rx);overflow:hidden">
+      <img src="${imgSrc}" style="width:100%;height:60px;object-fit:cover;display:block">
+      <div style="padding:8px;background:rgba(10,15,30,.4)">
+        <div style="font-size:9px;color:var(--t3);margin-bottom:6px">偵測到的配色：</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:3px"><div style="width:16px;height:16px;border-radius:3px;background:${colors.bg};border:1px solid rgba(255,255,255,.2)"></div><span style="font-size:8px;color:var(--t4)">背景</span></div>
+          <div style="display:flex;align-items:center;gap:3px"><div style="width:16px;height:16px;border-radius:3px;background:${colors.title};border:1px solid rgba(255,255,255,.2)"></div><span style="font-size:8px;color:var(--t4)">標題</span></div>
+          <div style="display:flex;align-items:center;gap:3px"><div style="width:16px;height:16px;border-radius:3px;background:${colors.sub};border:1px solid rgba(255,255,255,.2)"></div><span style="font-size:8px;color:var(--t4)">副標</span></div>
+          ${colors.accents.map((a,i)=>`<div style="display:flex;align-items:center;gap:3px"><div style="width:16px;height:16px;border-radius:3px;background:${a};border:1px solid rgba(255,255,255,.2)"></div><span style="font-size:8px;color:var(--t4)">強調${i+1}</span></div>`).join('')}
+        </div>
+        <button class="btn btn-p btn-xs" onclick="applyCustomStyle()" style="width:100%">✅ 套用此風格到所有頁面</button>
+      </div>
+    </div>`;
+  window._customColors=colors;
+}
+
+function applyCustomStyle(){
+  const colors=window._customColors;if(!colors)return;
+  snapshot();
+
+  S.globalBg=colors.bg;
+  S.globalStyle=colors.isDark?'科技感':'極簡風格';
+
+  // Build notes with detected colors
+  const accentDesc=colors.accents.map((a,i)=>`強調色${i+1}:${a}`).join('、');
+  const styleNote=`整體風格：${colors.isDark?'深色背景專業風格':'淺色背景簡潔風格'}。背景色${colors.bg}，主標題色${colors.title}，副標題色${colors.sub}${accentDesc?'，'+accentDesc:''}。表格用0.5px細線邊框，彩色標籤用pill/badge元件，每個區塊有編號標籤與小標題，高密度3欄佈局`;
+  S.globalNotes=styleNote;
+  document.getElementById('gNotes').value=styleNote;
+
+  // Apply to all pages
+  S.pages.forEach(p=>{
+    p.elements.forEach(el=>{
+      if(el.type==='title'){el.color=colors.title;el.fontSize=28;}
+      if(el.type==='subtitle'){el.color=colors.sub;el.fontSize=16;}
+    });
+  });
+  // Also apply to infographic elements
+  S.infographic.elements.forEach(el=>{
+    if(el.type==='title'){el.color=colors.title;el.fontSize=28;}
+    if(el.type==='subtitle'){el.color=colors.sub;el.fontSize=16;}
+  });
+
+  updGBg(colors.bg);renderStylePills();renderTabs();renderCanvas();renderRight();renderElList();renderChartGrid();
+  toast('🎨 已套用自訂風格');
+}
+
+function posLabel(x,y){
+  const cv=document.getElementById('sCanvas');
+  const w=parseInt(cv?.style.width)||600,h=parseInt(cv?.style.height)||400;
+  const col=x<w/3?'左':x<w*2/3?'中':'右';
+  const row=y<h/3?'上':y<h*2/3?'中':'下';
+  if(col==='中'&&row==='中')return '正中';
+  if(col==='中')return row+'方';
+  if(row==='中')return col+'側';
+  return col+row;
+}
+
+// ==================== CANVAS ====================
+function renderCanvas(){
+  const cv=document.getElementById('sCanvas');const bg=S.mode==='slides'?(S.pages[S.activePage].bg||S.globalBg):(S.infographic.bg||S.globalBg);
+  cv.style.background=bg;cv.innerHTML='';
+  const cvW=parseInt(cv.style.width)||cv.offsetWidth,cvH=parseInt(cv.style.height)||cv.offsetHeight;
+
+  // Alignment guides (center lines)
+  const ghH=document.createElement('div');ghH.className='guide guide-h';ghH.style.top=(cvH/2)+'px';ghH.style.opacity='0';cv.appendChild(ghH);
+  const gvV=document.createElement('div');gvV.className='guide guide-v';gvV.style.left=(cvW/2)+'px';gvV.style.opacity='0';cv.appendChild(gvV);
+
+  const badge=document.createElement('div');badge.className='pb';
+  badge.textContent=S.mode==='slides'?`${S.activePage+1} / ${S.pages.length}`:'資訊圖表';cv.appendChild(badge);
+
+  // Panel grid lines
+  const _lay=S.infographic?.layout||'panel7';
+  if(_lay!=='single'){
+    const gStyle='position:absolute;background:rgba(184,149,106,.25);pointer-events:none;z-index:1;';
+    const mkLine=(x,y,w,lh)=>{
+      const ln=document.createElement('div');
+      ln.style.cssText=gStyle+`left:${x}px;top:${y}px;width:${w}px;height:${lh}px;`;
+      cv.appendChild(ln);
+    };
+    const mkLabel=(x,y,txt)=>{
+      const lb=document.createElement('div');
+      lb.style.cssText=`position:absolute;left:${x}px;top:${y}px;font-size:9px;color:rgba(184,149,106,.5);pointer-events:none;z-index:1;font-family:sans-serif;`;
+      lb.textContent=txt;cv.appendChild(lb);
+    };
+
+    if(_lay==='panel4'){
+      // 2x2: one vertical center, one horizontal center
+      mkLine(cvW/2-0.5, 0, 1, cvH);      // vertical
+      mkLine(0, cvH/2-0.5, cvW, 1);      // horizontal
+      mkLabel(cvW/4-8, cvH/4-6, '格1'); mkLabel(cvW*3/4-8, cvH/4-6, '格2');
+      mkLabel(cvW/4-8, cvH*3/4-6, '格3'); mkLabel(cvW*3/4-8, cvH*3/4-6, '格4');
+    }
+    else if(_lay==='panel7'){
+      const heroH=Math.round(cvH*0.38);
+      mkLine(0, heroH, cvW, 1);
+      const cellW=Math.round(cvW/3);
+      const cellH=Math.round((cvH-heroH)/2);
+      mkLine(cellW, heroH, 1, cvH-heroH);
+      mkLine(cellW*2, heroH, 1, cvH-heroH);
+      mkLine(0, heroH+cellH, cvW, 1);
+      mkLabel(Math.round(cvW/2)-20, Math.round(heroH/2)-6, '主視覺');
+      for(let r=0;r<2;r++){
+        for(let c=0;c<3;c++){
+          const n=r*3+c+1;
+          mkLabel(Math.round(cellW*c+cellW/2)-8, Math.round(heroH+cellH*r+cellH/2)-6, '格'+n);
+        }
+      }
+    }
+    else if(_lay==='panel9'){
+      // 3x3
+      const cellW=cvW/3, cellH=cvH/3;
+      mkLine(cellW, 0, 1, cvH);
+      mkLine(cellW*2, 0, 1, cvH);
+      mkLine(0, cellH, cvW, 1);
+      mkLine(0, cellH*2, cvW, 1);
+      for(let r=0;r<3;r++){
+        for(let c=0;c<3;c++){
+          mkLabel(cellW*c+cellW/2-8, cellH*r+cellH/2-6, '格'+(r*3+c+1));
+        }
+      }
+    }
+  }
+
+  curEls().forEach(el=>{
+    const d=document.createElement('div');d.className='de'+(el.id===S.selEl?' active':'')+(el.locked?' locked':'');
+    d.style.left=el.x+'px';d.style.top=el.y+'px';d.style.fontSize=el.fontSize+'px';d.style.color=el.color;
+    d.style.fontWeight=el.type==='title'?'700':el.type==='subtitle'?'500':'400';
+    if(el.vertical)d.classList.add('vertical-text');
+    const elFont=el.font||S.globalFont||'Noto Sans TC';
+    d.style.fontFamily="'"+elFont+"','Noto Sans TC',sans-serif";d.textContent=el.text;
+    if(el.locked)d.style.cursor='not-allowed';
+    const tag=document.createElement('div');tag.className='ct';
+    tag.textContent=(el.locked?'🔒 ':'')+`x:${el.x} y:${el.y} (${posLabel(el.x,el.y)})`+(el.group?` 🔗${el.group}`:'');d.appendChild(tag);
+
+    // Delete X button on top-right
+    const xBtn=document.createElement('div');
+    xBtn.style.cssText='position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:#ff4d6a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(255,77,106,.4);opacity:0;transition:opacity .15s;z-index:10;line-height:1;font-family:sans-serif';
+    xBtn.textContent='✕';
+    xBtn.addEventListener('mousedown',ev=>{ev.stopPropagation();ev.preventDefault();delElById(el.id);});
+    d.appendChild(xBtn);
+    d.addEventListener('mouseenter',()=>{xBtn.style.opacity='1';});
+    d.addEventListener('mouseleave',()=>{xBtn.style.opacity='0';});
+
+    d.addEventListener('mousedown',e=>{
+      e.preventDefault();S.selEl=el.id;renderElList();updateEd();
+      document.querySelectorAll('.de').forEach(x=>x.classList.remove('active'));d.classList.add('active');
+      if(el.locked)return; // prevent drag
+      const sx=e.clientX,sy=e.clientY,ox=el.x,oy=el.y;
+      const snap=6,cx=cvW/2,cy=cvH/2;
+      // Gather group members
+      const grpEls=el.group?curEls().filter(g=>g.group===el.group&&g.id!==el.id&&!g.locked):[];
+      const grpOrig=grpEls.map(g=>({el:g,ox:g.x,oy:g.y}));
+      const onM=ev=>{
+        let nx=Math.max(0,Math.min(cvW-30,ox+(ev.clientX-sx)));
+        let ny=Math.max(0,Math.min(cvH-20,oy+(ev.clientY-sy)));
+        const dx=nx-ox,dy=ny-oy;
+        const elW=d.offsetWidth/2,elH=d.offsetHeight/2;
+        let showH=false,showV=false;
+        if(Math.abs((nx+elW)-cx)<snap){nx=cx-elW;showV=true;}
+        if(Math.abs((ny+elH)-cy)<snap){ny=cy-elH;showH=true;}
+        ghH.style.opacity=showH?'1':'0';gvV.style.opacity=showV?'1':'0';
+        el.x=Math.round(nx);el.y=Math.round(ny);d.style.left=el.x+'px';d.style.top=el.y+'px';
+        tag.textContent=(el.locked?'🔒 ':'')+`x:${el.x} y:${el.y} (${posLabel(el.x,el.y)})`+(el.group?` 🔗${el.group}`:'');
+        document.getElementById('ePX').value=el.x;document.getElementById('ePY').value=el.y;
+        // Move group members
+        grpOrig.forEach(g=>{
+          g.el.x=Math.round(Math.max(0,Math.min(cvW-30,g.ox+dx)));
+          g.el.y=Math.round(Math.max(0,Math.min(cvH-20,g.oy+dy)));
+        });
+        if(grpEls.length)renderCanvas(); else renderElList();
+      };
+      const onU=()=>{snapshot();ghH.style.opacity='0';gvV.style.opacity='0';document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU);};
+      document.addEventListener('mousemove',onM);document.addEventListener('mouseup',onU);
+    });
+    cv.appendChild(d);
+  });
+}
+
+// ==================== CHART GRID ====================
+function renderChartGrid(){
+  const g=document.getElementById('ckG');g.innerHTML='';
+  // Chart grid for infographic mode
+  CK.forEach(c=>{
+    const d=document.createElement('div');d.className='cko';
+    d.innerHTML=`<span class="ci">${c.i}</span>${c.l}`;
+    d.onclick=()=>{
+      snapshot();
+      // Add chart element to canvas
+      const els=curEls();
+      const cv2=document.getElementById('sCanvas');
+      const cW=parseInt(cv2.style.width)||700,cH=parseInt(cv2.style.height)||394;
+      els.push({id:uid(),type:'chart',text:c.i+' '+c.l,fontSize:14,color:'#0066cc',font:'',x:Math.round(cW*0.1+Math.random()*cW*0.5),y:Math.round(cH*0.2+Math.random()*cH*0.4),locked:false,group:'',vertical:false});
+      renderCanvas();renderElList();renderChartGrid();
+      toast('📊 已加入: '+c.l);
+    };
+    g.appendChild(d);
+  });
+}
+
+
+
+
+function bgN(h){const m={'#ffffff':'純白色','#000000':'純黑色','#f0f8ff':'愛麗絲藍','#f5f0eb':'莫蘭迪暖白','#0a0a1a':'深夜黑','#fefcf3':'日系米白','#fffbf0':'暖陽白','#f1faf5':'森林薄荷','#fdf6f6':'玫瑰粉白'};return m[h.toLowerCase()]||h;}
+
+// ==================== GENERATE PROMPT ====================
+let detailMode=false,langEN=false;
+
+let promptMode='file';
+let visionImgBase64=null;
+
+function setPromptMode(mode,el){
+  promptMode=mode;
+  document.querySelectorAll('#promptModeGrid .pst-card').forEach(c=>c.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  document.getElementById('visionPanel').style.display=mode==='vision'?'block':'none';
+}
+
+function toggleKeyVis(){
+  const inp=document.getElementById('groqKey');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+function previewVisionImg(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    // Compress image to max 1024px and JPEG quality 0.8 to reduce payload
+    const img=new Image();
+    img.onload=function(){
+      const maxSz=1024;
+      let w=img.width,h=img.height;
+      if(w>maxSz||h>maxSz){
+        if(w>h){h=Math.round(h*maxSz/w);w=maxSz;}
+        else{w=Math.round(w*maxSz/h);h=maxSz;}
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      visionImgBase64=canvas.toDataURL('image/jpeg',0.8);
+      document.getElementById('visionImg').src=visionImgBase64;
+      document.getElementById('visionPreview').style.display='block';
+      const sizeKB=Math.round(visionImgBase64.length*3/4/1024);
+      document.getElementById('visionStatus').style.display='block';
+      document.getElementById('visionStatus').textContent='📷 圖像已載入 ('+w+'×'+h+', ~'+sizeKB+'KB)';
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeWithGroq(){
+  const key=document.getElementById('groqKey').value.trim();
+  if(!key){toast('⚠️ 請輸入 Groq API Key');return;}
+  if(!visionImgBase64){toast('⚠️ 請先上傳圖像');return;}
+
+  const btn=document.getElementById('visionBtn');
+  const status=document.getElementById('visionStatus');
+  btn.disabled=true;btn.textContent='⏳ 分析中...';
+  status.style.display='block';status.textContent='正在連線 Groq API...';
+
+  const userInstruct=document.getElementById('visionInstruct').value.trim();
+
+  let sysPrompt='你是一位專業的圖像分析師。請用繁體中文回覆。你的任務是分析圖像並產出結構化的描述。';
+
+  let userPrompt='請詳細分析這張圖像：\n\n';
+  userPrompt+='一、【整體描述】用2-3句話描述整張圖的主題和氛圍\n';
+  userPrompt+='二、【角色特徵】描述主要角色的外觀（髮型、髮色、五官、體型、服裝、配件），務必詳細到可以重新繪製\n';
+  userPrompt+='三、【場景環境】描述背景場景、光線、天氣、時間\n';
+  userPrompt+='四、【色調風格】分析色彩基調、藝術風格\n';
+  userPrompt+='五、【建議分格】請判斷這張圖最適合拆成幾格來呈現故事（回答 single/panel4/panel7/panel9 其中一個），並說明原因\n';
+  userPrompt+='六、【分格描述】根據你建議的分格數，用以下格式描述每格：\n';
+  userPrompt+='【格1】場景描述（主角在做什麼、表情、動作、背景）\n';
+  userPrompt+='【格2】...\n';
+  userPrompt+='（依此類推）\n';
+  userPrompt+='\n如果是 panel7，第一格寫【主視覺】，接著【格1】到【格6】\n';
+  userPrompt+='每格描述限30字內，聚焦視覺畫面。\n';
+
+  if(userInstruct)userPrompt+='\n額外指令：'+userInstruct;
+
+  try{
+    status.textContent='正在分析圖像...';
+
+    const models=['meta-llama/llama-4-scout-17b-16e-instruct','llama-3.2-90b-vision-preview','llama-3.2-11b-vision-preview'];
+    let result=null;
+    let lastErr='';
+
+    for(const model of models){
+      try{
+        status.textContent='嘗試模型: '+model.split('/').pop()+'...';
+        
+        const controller=new AbortController();
+        const timeout=setTimeout(()=>controller.abort(),60000); // 60s timeout
+        
+        const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+          signal:controller.signal,
+          body:JSON.stringify({
+            model:model,
+            messages:[
+              {role:'system',content:sysPrompt},
+              {role:'user',content:[
+                {type:'image_url',image_url:{url:visionImgBase64}},
+                {type:'text',text:userPrompt}
+              ]}
+            ],
+            max_tokens:2000,
+            temperature:0.3
+          })
+        });
+        clearTimeout(timeout);
+
+        if(!resp.ok){
+          const errData=await resp.json().catch(()=>({}));
+          lastErr=errData.error?.message||('HTTP '+resp.status);
+          console.warn('Model '+model+' failed:',lastErr);
+          continue; // try next model
+        }
+
+        const data=await resp.json();
+        result=data.choices?.[0]?.message?.content||null;
+        if(result){
+          status.textContent='✅ 使用模型: '+model.split('/').pop();
+          break;
+        }
+      }catch(fetchErr){
+        lastErr=fetchErr.name==='AbortError'?'逾時（超過60秒）':fetchErr.message;
+        console.warn('Model '+model+' error:',lastErr);
+        continue;
+      }
+    }
+
+    if(!result)throw new Error('所有模型皆失敗。最後錯誤: '+lastErr);
+
+    document.getElementById('visionTxt').value=result;
+    document.getElementById('visionResult').style.display='block';
+    status.textContent='✅ 分析完成！';
+
+    // Auto-detect and apply layout
+    autoApplyVision(result);
+
+    toast('✅ 圖像分析完成，已自動套用分格');
+
+  }catch(err){
+    status.textContent='❌ 錯誤：'+err.message;
+    toast('❌ '+err.message);
+  }finally{
+    btn.disabled=false;btn.textContent='🔍 開始 AI 分析圖像';
+  }
+}
+
+function autoApplyVision(result){
+  // 1. Auto-detect layout
+  let detectedLayout='panel7';
+  const layoutMatch=result.match(/(?:建議分格|最適合)[^]*?(single|panel4|panel7|panel9)/i);
+  if(layoutMatch){
+    detectedLayout=layoutMatch[1].toLowerCase();
+  }else{
+    const panelCount=(result.match(/【格\d+】/g)||[]).length;
+    const hasHero=/【主視覺】/.test(result);
+    if(panelCount<=1&&!hasHero)detectedLayout='single';
+    else if(panelCount<=4&&!hasHero)detectedLayout='panel4';
+    else if(panelCount>=7||panelCount>=6&&hasHero)detectedLayout='panel7';
+    else if(panelCount>=9)detectedLayout='panel9';
+    else if(hasHero)detectedLayout='panel7';
+  }
+
+  // 2. Apply layout (resets elements to default)
+  const layoutCards=document.querySelectorAll('#iLayouts .pst-card');
+  const layoutIdx={single:0,panel4:1,panel7:2,panel9:3}[detectedLayout]||2;
+  applyLayout(detectedLayout,layoutCards[layoutIdx]);
+
+  // 3. Put FULL analysis result into 圖像說明
+  const desc=document.getElementById('iDesc');
+  desc.value=result;
+  S.infographic.desc=desc.value;
+
+  // 4. Fill character description
+  const charMatch=result.match(/【角色特徵】[：:]?\s*([\s\S]*?)(?=\n[三四五六【])/);
+  if(charMatch){
+    const charInput=document.getElementById('charDesc');
+    if(charInput)charInput.value=charMatch[1].trim().replace(/\n/g,'，').substring(0,100);
+  }
+
+  // 5. Extract title only (don't touch panel elements)
+  const overviewMatch=result.match(/【整體描述】[：:]?\s*([\s\S]*?)(?=\n[二三四五六【])/);
+  if(overviewMatch){
+    const els=S.infographic.elements;
+    const titleEl=els.find(e=>e.type==='title');
+    if(titleEl){
+      const shortTitle=overviewMatch[1].trim().substring(0,15).replace(/[。，、\n]/g,'');
+      titleEl.text=shortTitle;
+    }
+  }
+
+  renderCanvas();renderElList();
+}
+
+function applyVisionToDesc(){
+  const result=document.getElementById('visionTxt').value;
+  if(!result){toast('⚠️ 尚無分析結果');return;}
+  const desc=document.getElementById('iDesc');
+  desc.value=(desc.value?desc.value+'\n\n':'')+'【AI 圖像分析】\n'+result;
+  S.infographic.desc=desc.value;
+  toast('📥 已填入圖像說明');
+}
+
+function applyVisionToElements(){
+  const result=document.getElementById('visionTxt').value;
+  if(!result){toast('⚠️ 尚無分析結果');return;}
+  autoApplyVision(result);
+  toast('📐 已重新偵測版型並套用');
+}
+
+function generatePrompt(){
+  S.globalNotes=document.getElementById('gNotes').value;
+  const inf=S.infographic;
+  const logoTxt=logoStr();
+  let o='資訊圖表提示詞\n\n';
+  o+='背景: '+bgN(S.globalBg)+', 背景顏色: '+S.globalBg+'\n';
+  o+='字型: '+S.globalFont+'\n';
+  const rm={wide:'橫幅 16:9',square:'正方形 1:1',portrait:'直式 9:16',a4portrait:'A4 直式',a4landscape:'A4 橫式',ultra:'超寬 21:9'};
+  o+='尺寸: '+(rm[inf.ratio]||'正方形')+'\n';
+  const lm={single:'單頁滿版構圖',panel4:'4分格 (2列×2行)',panel7:'7分格 (主視覺標題區+下方2列×3行)',panel9:'9分格 (3列×3行)',vertical:'垂直排列',split:'左右分欄',grid:'網格佈局',timeline:'時間軸',freeform:'自由佈局'};
+  o+='版型規格: '+(lm[inf.layout]||inf.layout)+'\n';
+  if(promptMode==='file'&&(inf.layout==='panel4'||inf.layout==='panel7'||inf.layout==='panel9')){
+    const panelN={panel4:4,panel7:'6+1主視覺',panel9:9}[inf.layout];
+    o+='分格要求: 請將摘要內容分配到'+panelN+'個分格中，每格一個重點\n';
+    o+='分格文字規則: 每個分格內的文字必須極度精簡——標題不超過6個字，說明不超過10個字。以圖像為主、文字為輔，畫面80%為圖像，20%為文字。禁止在分格內塞入大段文字，用視覺畫面說故事而非文字敘述。(minimal text per panel: title max 6 words, description max 10 words, 80% visual 20% text)\n';
+  }
+  // Character consistency
+  const charCon=document.getElementById('charConsist');
+  const charD=document.getElementById('charDesc')?.value?.trim();
+  if(charCon&&charCon.checked){
+    let conNote='\n【關鍵規則補充（請嚴格遵守）】\n';
+    conNote+='- 全圖只有一位主角：單一固定角色設定，不能出現第二個長相明顯不同的人物當主角。\n';
+    conNote+='- 單一分格內禁止出現兩個以上主角版本：\n';
+    conNote+='  - 每個分格內最多只允許出現這位主角的一個實體。\n';
+    conNote+='  - 不可以在同一格畫出兩個或更多主角站在一起、或前後景同時出現同一個主角的多重分身。\n';
+    conNote+='  - 同一格中可以有其他「背景路人」或人群，但他們外觀必須明顯不同於主角，不能和主角長得一樣或穿一樣的衣服，避免被誤認為有兩個主角。\n';
+    conNote+='- 角色一致性仍需維持：\n';
+    conNote+='  - 所有分格中的主角：臉型、髮型、髮色、膚色、體型、五官比例、服裝款式與顏色、配件飾品都必須完全一致。\n';
+    conNote+='  - 僅允許在不同分格中改變主角的「姿勢與表情」，例如打招呼、思考、驚訝、開心大笑等。\n';
+    conNote+='(STRICT: Only ONE protagonist throughout all panels. Each panel shows exactly ONE instance of this character - no duplicates/clones in same panel. Background people must look distinctly different. Keep character appearance identical across panels, only vary pose and expression.)\n';
+    if(charD)conNote+='\n主角設定: '+charD+'\n（⚠️ 此角色在所有分格中必須維持以上外觀完全一致，每格僅改變動作與表情，每格只出現一個主角實體）';
+    o+=conNote+'\n';
+  }
+  if(inf.title){
+    o+='主標題: '+inf.title+'\n';
+  }else if(promptMode==='file'){
+    o+='主標題: （請根據上傳檔案的內容，摘要出最適合的主標題，不超過10個字）\n';
+  }
+  if(logoTxt)o+=logoTxt+'\n';
+  let req=S.globalNotes.trim(),extras=[];
+  const ds=densityStr();if(ds)extras.push(ds);
+  const defT=inf.elements.find(e=>e.type==='title');
+  const defS2=inf.elements.find(e=>e.type==='subtitle');
+  if(defT)extras.push('大標題顏色:'+defT.color+' 字體:'+defT.fontSize+'px 字型:'+(defT.font||S.globalFont));
+  if(defS2)extras.push('小標題顏色:'+defS2.color+' 字體:'+defS2.fontSize+'px 字型:'+(defS2.font||S.globalFont));
+  o+='要求: '+(req?req+', ':'')+extras.join(', ')+'\n';
+  if(inf.desc)o+='\n【圖像說明 / 故事劇情】\n'+inf.desc+'\n';
+  if(promptMode==='file'){
+    o+='\n【分格內容指引（AI 依檔案摘要填入）】\n';
+  }else{
+    if(inf.layout!=='single')o+='⚠️ 分格文字規則: 每格文字極度精簡（標題≤6字，說明≤10字），以圖像為主。\n';
+    o+='\n【文字元素配置（直接繪製）】\n';
+  }
+  const tl={title:'大標題',subtitle:'小標題',text:'文字',chart:'圖表',image:'插圖',character:'人物',note:'備註'};
+
+  // Calculate grid position description based on layout
+  function gridPos(ex,ey){
+    const cv=document.getElementById('sCanvas');
+    const W=parseInt(cv.style.width)||700,H=parseInt(cv.style.height)||394;
+    const lay=inf.layout;
+
+    if(lay==='panel7'){
+      const heroH=Math.round(H*0.38);
+      if(ey<heroH)return '主視覺區';
+      const cellW=Math.round(W/3),cellH=Math.round((H-heroH)/2);
+      const col=Math.min(2,Math.floor(ex/cellW));
+      const row=Math.floor((ey-heroH)/cellH);
+      const n=Math.min(5,row*3+col);
+      return '格'+(n+1);
+    }
+    if(lay==='panel4'){
+      const midX=Math.round(W/2),midY=Math.round(H/2);
+      if(ey<midY*0.15)return '標題區';
+      const col=ex<midX?0:1,row=ey<midY?0:1;
+      return '格'+(row*2+col+1);
+    }
+    if(lay==='panel9'){
+      const cellW=Math.round(W/3),cellH=Math.round(H/3);
+      if(ey<cellH*0.1)return '標題區';
+      const col=Math.min(2,Math.floor(ex/cellW));
+      const row=Math.min(2,Math.floor(ey/cellH));
+      return '格'+(row*3+col+1);
+    }
+    // single: describe position area
+    const cv2=document.getElementById('sCanvas');
+    const W2=parseInt(cv2.style.width)||700,H2=parseInt(cv2.style.height)||394;
+    const xPct=Math.round(ex/W2*100),yPct=Math.round(ey/H2*100);
+    if(yPct<25)return '頂部區域';
+    if(yPct<50)return '中上區域';
+    if(yPct<75)return '中下區域';
+    return '底部區域';
+  }
+
+  // Only output title/subtitle elements (grid content comes from 圖像說明)
+  inf.elements.forEach((el,idx)=>{
+    if(el.type==='title'||el.type==='subtitle'){
+      const vMark=el.vertical?' [直書/vertical text]':'';
+      const posDesc=posLabel(el.x,el.y);
+      o+=(tl[el.type]||el.type)+': '+el.text+' — 位置:'+posDesc+vMark+'\n';
+    }
+  });
+
+  // Summary of layout structure
+  if(inf.layout!=='single'&&inf.elements.length>0){
+    o+='\n【版面結構摘要】\n';
+    const cv=document.getElementById('sCanvas');
+    const W=parseInt(cv.style.width)||700,H=parseInt(cv.style.height)||394;
+    if(inf.layout==='panel7'){
+      o+='整張圖像分為上下兩區：\n';
+      o+='- 上方 38%: 主視覺大圖區（含標題）\n';
+      o+='- 下方 62%: 2列×3行 = 6個說明分格\n';
+      o+='- 每個分格獨立場景，但風格統一\n';
+    }else if(inf.layout==='panel4'){
+      o+='整張圖像分為 2列×2行 = 4個等分格\n';
+      o+='- 標題置於頂部跨格\n';
+      o+='- 每個分格獨立場景，但風格統一\n';
+    }else if(inf.layout==='panel9'){
+      o+='整張圖像分為 3列×3行 = 9個等分格\n';
+      o+='- 標題置於頂部\n';
+      o+='- 每個分格獨立場景，但風格統一\n';
+    }
+  }
+  document.getElementById('oTxt').value=o.trim();
+  document.getElementById('oModal').classList.add('show');
+}
+
+function cpOut(){navigator.clipboard.writeText(document.getElementById('oTxt').value);toast('📋 已複製提示詞');}
+function clsM(){document.getElementById('oModal').classList.remove('show');}
+function resetAll(){if(confirm('確定重置？'))location.reload();}
+
+// ==================== SAVE / LOAD ====================
+function openSaveLoad(){renderSaveList();document.getElementById('slModal').classList.add('show');}
+function clsSL(){document.getElementById('slModal').classList.remove('show');}
+
+function saveTemplate(){
+  const name=document.getElementById('saveName').value.trim();if(!name){toast('⚠️ 請輸入名稱');return;}
+  const saves=JSON.parse(localStorage.getItem('nlm_saves')||'{}');
+  saves[name]={ts:Date.now(),data:JSON.parse(JSON.stringify(S))};
+  localStorage.setItem('nlm_saves',JSON.stringify(saves));
+  document.getElementById('saveName').value='';renderSaveList();toast(`💾 已儲存「${name}」`);
+}
+
+function renderSaveList(){
+  const list=document.getElementById('saveList');list.innerHTML='';
+  const saves=JSON.parse(localStorage.getItem('nlm_saves')||'{}');
+  const keys=Object.keys(saves).sort((a,b)=>saves[b].ts-saves[a].ts);
+  if(!keys.length){list.innerHTML='<div style="font-size:11px;color:var(--t4);text-align:center;padding:12px">尚無儲存</div>';return;}
+  keys.forEach(k=>{
+    const d=document.createElement('div');d.className='save-item';
+    d.innerHTML=`<span>${k}</span><span class="si-del" onclick="event.stopPropagation();deleteSave('${k}')">🗑</span>`;
+    d.onclick=()=>{loadSave(k);};list.appendChild(d);
+  });
+}
+
+function loadSave(name){
+  const saves=JSON.parse(localStorage.getItem('nlm_saves')||'{}');if(!saves[name])return;
+  snapshot();Object.assign(S,saves[name].data);fullRefresh();switchMode(S.mode);clsSL();toast(`📂 已載入「${name}」`);
+}
+
+function deleteSave(name){
+  if(!confirm(`刪除「${name}」？`))return;
+  const saves=JSON.parse(localStorage.getItem('nlm_saves')||'{}');delete saves[name];
+  localStorage.setItem('nlm_saves',JSON.stringify(saves));renderSaveList();toast('🗑️ 已刪除');
+}
+
+// ==================== EXPORT / IMPORT ====================
+function exportJSON(){
+  S.globalNotes=document.getElementById('gNotes').value;
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='notebooklm-prompt-'+Date.now()+'.json';a.click();toast('📦 已匯出 JSON');
+}
+
+function importJSON(){document.getElementById('jsonFileInput').click();}
+function handleImportJSON(e){
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=ev=>{try{snapshot();const d=JSON.parse(ev.target.result);Object.assign(S,d);fullRefresh();switchMode(S.mode);toast('📂 已匯入 JSON');}catch(err){toast('⚠️ JSON 格式錯誤');}};
+  r.readAsText(f);e.target.value='';
+}
+
+// ==================== UTILS ====================
+function clsM(){document.getElementById('oModal').classList.remove('show');}
+function cpOut(){navigator.clipboard.writeText(document.getElementById('oTxt').value).then(()=>toast('✅ 已複製！'));}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function resetAll(){
+  if(!confirm('確定重置？'))return;
+  S.pages=[];S.mode='infographic';S.pageCount=10;S.activePage=0;S.selEl=null;S.globalBg='#ffffff';S.globalStyle='插圖式圖表';S.globalFont='Noto Sans TC';S.globalNotes='所有簡報都不要出現檔案名稱, 所有中文字必須像印刷品一樣清晰(crisp sharp arrow-edged text)，字體粗體加粗(font-weight:bold)，禁止任何模糊或羽化效果，文字以純色色塊呈現不帶陰影不帶漸層不帶光暈，每個漢字筆畫清楚可辨識，中文標題字體大小不低於36px，副標題不低於24px，內文不低於18px，文字區域背景必須為純色確保對比度，render text as vector-sharp glyphs';
+  for(let i=0;i<10;i++)S.pages.push(mkPage(i));
+  S.infographic={title:'',desc:'',layout:'panel7',ratio:'wide',bg:'',elements:[
+    {id:uid(),type:'title',text:'主標題',fontSize:28,color:'#222',font:'',x:28,y:20,locked:false,group:'',vertical:false},
+    {id:uid(),type:'subtitle',text:'副標題',fontSize:14,color:'#555',font:'',x:28,y:52,locked:false,group:'',vertical:false}
+  ]};
+  fullRefresh();switchMode('slides');toast('🗑️ 已重置');
+}
+
+
+
+// ==================== UI LANGUAGE ====================
+const UI_T={
+  // [id or unique selector]: {lang: text}
+  // We use a flat approach: key = text to find, value = translations
+};
+function setUILang(lang){
+  uiLang=lang;
+
+  // Sync EN toggle
+  try{if(lang==='en'){langEN=true;document.getElementById('langTgl')?.classList.add('on');}
+  else{langEN=false;document.getElementById('langTgl')?.classList.remove('on');}}catch(e){}
+
+  // Translation dictionary: original zh-TW → other languages
+  const T={
+    '產生提示詞':{'zh-CN':'生成提示词','en':'Generate','ja':'生成','ko':'생성'},
+    '復原':{'zh-CN':'撤销','en':'Undo','ja':'元に戻す','ko':'실행취소'},
+    '重做':{'zh-CN':'重做','en':'Redo','ja':'やり直す','ko':'다시실행'},
+    '存檔':{'zh-CN':'保存','en':'Save','ja':'保存','ko':'저장'},
+    '重置':{'zh-CN':'重置','en':'Reset','ja':'リセット','ko':'초기화'},
+    '簡報':{'zh-CN':'幻灯片','en':'Slides','ja':'スライド','ko':'슬라이드'},
+    '資訊圖表':{'zh-CN':'信息图','en':'Infographic','ja':'インフォグラフィック','ko':'인포그래픽'},
+    '語音摘要':{'zh-CN':'语音摘要','en':'Audio','ja':'音声要約','ko':'오디오'},
+    '海報':{'zh-CN':'海报','en':'Poster','ja':'ポスター','ko':'포스터'},
+    '影片摘要':{'zh-CN':'视频摘要','en':'Video','ja':'動画要約','ko':'영상요약'},
+    '筆記':{'zh-CN':'笔记','en':'Notes','ja':'ノート','ko':'노트'},
+    '來源分析':{'zh-CN':'来源分析','en':'Analysis','ja':'分析','ko':'분석'},
+    '內容轉用':{'zh-CN':'内容转用','en':'Repurpose','ja':'転用','ko':'전환'},
+    '商業報告':{'zh-CN':'商业报告','en':'Biz Report','ja':'ビジネス','ko':'비즈'},
+    '複製此頁':{'zh-CN':'复制此页','en':'Duplicate','ja':'複製','ko':'복제'},
+    '複製此頁提示詞':{'zh-CN':'复制提示词','en':'Copy Prompt','ja':'プロンプト複製','ko':'프롬프트복사'},
+    '批次修改':{'zh-CN':'批量修改','en':'Batch Edit','ja':'一括編集','ko':'일괄편집'},
+    '匯出 JSON':{'zh-CN':'导出 JSON','en':'Export JSON','ja':'JSON出力','ko':'JSON내보내기'},
+    '匯入 JSON':{'zh-CN':'导入 JSON','en':'Import JSON','ja':'JSON読込','ko':'JSON가져오기'},
+    '匯出 Markdown':{'zh-CN':'导出 MD','en':'Export MD','ja':'MD出力','ko':'MD내보내기'},
+    '關閉':{'zh-CN':'关闭','en':'Close','ja':'閉じる','ko':'닫기'},
+    '清除':{'zh-CN':'清除','en':'Clear','ja':'クリア','ko':'초기화'},
+    '複製':{'zh-CN':'复制','en':'Copy','ja':'コピー','ko':'복사'},
+    '簡報頁數':{'zh-CN':'幻灯片页数','en':'Slide Count','ja':'スライド数','ko':'슬라이드수'},
+    '📐 簡報比例':{'zh-CN':'📐 比例','en':'📐 Ratio','ja':'📐 比率','ko':'📐 비율'},
+    '背景色':{'zh-CN':'背景色','en':'Background','ja':'背景色','ko':'배경색'},
+    '全域字型':{'zh-CN':'全局字体','en':'Global Font','ja':'フォント','ko':'글꼴'},
+    '📏 內容密度':{'zh-CN':'📏 内容密度','en':'📏 Density','ja':'📏 密度','ko':'📏 밀도'},
+    '備註 / 要求':{'zh-CN':'备注/要求','en':'Notes/Requirements','ja':'メモ/要件','ko':'메모/요구사항'},
+    '圖像風格':{'zh-CN':'图像风格','en':'Image Styles','ja':'画像スタイル','ko':'이미지 스타일'},
+    '色彩主題包':{'zh-CN':'色彩主题包','en':'Color Themes','ja':'カラーテーマ','ko':'색상테마'},
+    '全域設定':{'zh-CN':'全局设置','en':'Settings','ja':'設定','ko':'설정'},
+    '頁面設定':{'zh-CN':'页面设置','en':'Page Settings','ja':'ページ設定','ko':'페이지설정'},
+    '圖表（可多個）':{'zh-CN':'图表（可多个）','en':'Charts','ja':'チャート','ko':'차트'},
+    '風格覆蓋':{'zh-CN':'风格覆盖','en':'Style Override','ja':'スタイル上書き','ko':'스타일재정의'},
+    '參考連結 URL':{'zh-CN':'参考链接','en':'Ref URL','ja':'参照URL','ko':'참조URL'},
+    '頁面描述':{'zh-CN':'页面描述','en':'Description','ja':'説明','ko':'설명'},
+    '元素列表':{'zh-CN':'元素列表','en':'Elements','ja':'要素一覧','ko':'요소목록'},
+    '元素編輯':{'zh-CN':'元素编辑','en':'Edit','ja':'編集','ko':'편집'},
+    '圖表快選':{'zh-CN':'图表快选','en':'Chart Picker','ja':'チャート選択','ko':'차트선택'},
+    '新增元素':{'zh-CN':'新增元素','en':'Add Element','ja':'要素追加','ko':'요소추가'},
+    '頁面背景色':{'zh-CN':'页面背景色','en':'Page BG','ja':'ページ背景','ko':'페이지배경'},
+    '低密度':{'zh-CN':'低密度','en':'Low','ja':'低','ko':'저'},
+    '中密度':{'zh-CN':'中密度','en':'Medium','ja':'中','ko':'중'},
+    '高密度':{'zh-CN':'高密度','en':'High','ja':'高','ko':'고'},
+    '精簡版':{'zh-CN':'精简版','en':'Simple','ja':'簡易','ko':'간단'},
+    '詳細版':{'zh-CN':'详细版','en':'Detailed','ja':'詳細','ko':'상세'},
+    '深淺配色反轉':{'zh-CN':'深浅配色反转','en':'Invert Colors','ja':'配色反転','ko':'색상반전'},
+    '16:9 寬螢幕':{'zh-CN':'16:9 宽屏','en':'16:9 Wide','ja':'16:9 ワイド','ko':'16:9 와이드'},
+    '4:3 標準':{'zh-CN':'4:3 标准','en':'4:3 Standard','ja':'4:3 標準','ko':'4:3 표준'},
+    '1:1 正方形':{'zh-CN':'1:1 正方形','en':'1:1 Square','ja':'1:1 正方形','ko':'1:1 정사각형'},
+    '9:16 直式':{'zh-CN':'9:16 竖式','en':'9:16 Portrait','ja':'9:16 縦型','ko':'9:16 세로'},
+    '姓名':{'zh-CN':'姓名','en':'Name','ja':'名前','ko':'이름'},
+    '性別':{'zh-CN':'性别','en':'Gender','ja':'性別','ko':'성별'},
+    '語氣風格':{'zh-CN':'语气风格','en':'Tone','ja':'口調','ko':'톤'},
+    '人設 / 專長':{'zh-CN':'人设/专长','en':'Persona/Expertise','ja':'キャラ/専門','ko':'전문분야'},
+    '🎬 自我介紹':{'zh-CN':'🎬 自我介绍','en':'🎬 Introduction','ja':'🎬 自己紹介','ko':'🎬 자기소개'},
+    '⏱️ 節目長度':{'zh-CN':'⏱️ 节目长度','en':'⏱️ Duration','ja':'⏱️ 時間','ko':'⏱️ 길이'},
+    '🗣️ 互動風格':{'zh-CN':'🗣️ 互动风格','en':'🗣️ Interaction','ja':'🗣️ 対話','ko':'🗣️ 상호작용'},
+    '📋 討論段落':{'zh-CN':'📋 讨论段落','en':'📋 Sections','ja':'📋 セクション','ko':'📋 섹션'},
+    '📝 額外要求 / 備註':{'zh-CN':'📝 额外要求','en':'📝 Extra','ja':'📝 追加要件','ko':'📝 추가'},
+    '⚡ 圖像風格':{'zh-CN':'⚡ 快速模板','en':'⚡ Templates','ja':'⚡ テンプレート','ko':'⚡ 템플릿'},
+    '副標題 / Slogan':{'zh-CN':'副标题/Slogan','en':'Subtitle/Slogan','ja':'サブタイトル','ko':'부제목/슬로건'},
+    '🏷️ Logo（每頁套用）':{'zh-CN':'🏷️ Logo（每页）','en':'🏷️ Logo (all pages)','ja':'🏷️ ロゴ(全ページ)','ko':'🏷️ 로고(전체)'},
+    '主題標題':{'zh-CN':'主题标题','en':'Topic','ja':'テーマ','ko':'주제'},
+    '版面配置':{'zh-CN':'版面配置','en':'Layout','ja':'レイアウト','ko':'레이아웃'},
+    '尺寸比例':{'zh-CN':'尺寸比例','en':'Ratio','ja':'比率','ko':'비율'},
+    '📖 圖像說明 / 故事劇情':{'zh-CN':'📖 图像说明 / 故事剧情','en':'📖 Image Description / Story','ja':'📖 画像説明 / ストーリー','ko':'📖 이미지 설명 / 스토리'},
+    '圖層 / 鎖定 / 群組':{'zh-CN':'图层/锁定/群组','en':'Layer/Lock/Group','ja':'レイヤー/ロック/グループ','ko':'레이어/잠금/그룹'},
+    '群組名稱':{'zh-CN':'群组名称','en':'Group Name','ja':'グループ名','ko':'그룹명'},
+    '性別':{'zh-CN':'性别','en':'Gender','ja':'性別','ko':'성별'},
+    '髮型':{'zh-CN':'发型','en':'Hairstyle','ja':'髪型','ko':'헤어스타일'},
+    '服裝':{'zh-CN':'服装','en':'Outfit','ja':'服装','ko':'의상'},
+    '已儲存的模板':{'zh-CN':'已保存的模板','en':'Saved Templates','ja':'保存済みテンプレート','ko':'저장된 템플릿'},
+    '新增儲存名稱':{'zh-CN':'保存名称','en':'Save As','ja':'保存名','ko':'저장이름'},
+    '主標題字體大小（留空不改）':{'zh-CN':'标题字号(留空不改)','en':'Title Size (blank=keep)','ja':'タイトルサイズ(空欄=変更なし)','ko':'제목크기(빈칸=유지)'},
+    '主標題顏色（留空不改）':{'zh-CN':'标题颜色(留空不改)','en':'Title Color (blank=keep)','ja':'タイトル色(空欄=変更なし)','ko':'제목색상(빈칸=유지)'},
+    '次標題字體大小':{'zh-CN':'副标题字号','en':'Subtitle Size','ja':'サブタイトルサイズ','ko':'부제목크기'},
+    '次標題顏色':{'zh-CN':'副标题颜色','en':'Subtitle Color','ja':'サブタイトル色','ko':'부제목색상'},
+    '所有頁面風格覆蓋':{'zh-CN':'全部风格覆盖','en':'Style Override (all)','ja':'全スタイル上書き','ko':'전체 스타일재정의'},
+    '🔄 深淺配色反轉':{'zh-CN':'🔄 反转','en':'🔄 Invert','ja':'🔄 反転','ko':'🔄 반전'},
+  };
+
+  // Core translate helper: looks up original text
+  function tr(orig){
+    if(!orig||lang==='zh-TW')return orig;
+    if(T[orig])return T[orig][lang]||orig;
+    return orig;
+  }
+
+  // ── ALL BUTTONS: store original, strip emoji prefix for lookup ──
+  try{document.querySelectorAll('button:not(.mdc):not(.rx)').forEach(btn=>{
+    if(btn.closest('script')||btn.closest('#posterStyles')||btn.closest('#vidTypeGrid'))return;
+    const nodes=btn.childNodes;
+    nodes.forEach(n=>{
+      if(n.nodeType===3&&n.textContent.trim()){
+        if(!n._origText)n._origText=n.textContent.trim();
+        const o=n._origText;
+        if(lang==='zh-TW'){n.textContent=' '+o;return;}
+        // Strip leading emoji/symbol to find the translatable text part
+        const m=o.match(/^([^\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ffA-Za-z]*)(.*)/);
+        if(m){
+          const prefix=m[1],body=m[2];
+          const t=tr(body);
+          if(t!==body)n.textContent=' '+prefix+t;
+          else n.textContent=' '+o;
+        }
+      }
+    });
+  });}catch(e){console.warn('btn',e);}
+
+  // ── ALL LABELS (.fl): store data-o, translate from it ──
+  try{document.querySelectorAll('.fl').forEach(lbl=>{
+    if(!lbl.getAttribute('data-o'))lbl.setAttribute('data-o',lbl.textContent.trim());
+    const o=lbl.getAttribute('data-o');
+    lbl.textContent=lang==='zh-TW'?o:tr(o);
+  });}catch(e){console.warn('fl',e);}
+
+  // ── SECTION HEADERS (.pst) ──
+  try{document.querySelectorAll('.pst').forEach(div=>{
+    const ic=div.querySelector('.i,.io');
+    if(!div.getAttribute('data-o'))div.setAttribute('data-o',div.textContent.trim());
+    const o=div.getAttribute('data-o');
+    const t=lang==='zh-TW'?o:tr(o);
+    div.textContent='';if(ic)div.appendChild(ic);div.appendChild(document.createTextNode(t));
+  });}catch(e){console.warn('pst',e);}
+
+  // ── HEADER TITLE ──
+  try{
+    document.querySelector('.hd-t').textContent={'zh-TW':'NotebookLM 提示詞產生器','zh-CN':'NotebookLM 提示词生成器','en':'NotebookLM Prompt Generator','ja':'NotebookLM プロンプト生成器','ko':'NotebookLM 프롬프트 생성기'}[lang];
+    document.querySelector('.hd-s').textContent={'zh-TW':'V5 PREMIUM — 模板·角色·匯出·多工具','zh-CN':'V5 PREMIUM — 模板·角色·导出·多工具','en':'V5 PREMIUM — Templates · Roles · Export · Multi-Tool','ja':'V5 PREMIUM — テンプレート·キャラ·出力·マルチツール','ko':'V5 PREMIUM — 템플릿·캐릭터·내보내기·멀티툴'}[lang];
+  }catch(e){}
+
+  // ── MODAL TITLES ──
+  try{
+    const mt={
+      'oModal':{'zh-TW':'📋 產生的提示詞','zh-CN':'📋 生成的提示词','en':'📋 Generated Prompt','ja':'📋 プロンプト','ko':'📋 프롬프트'},
+      'bModal':{'zh-TW':'🔧 批次修改所有頁面','zh-CN':'🔧 批量修改','en':'🔧 Batch Edit','ja':'🔧 一括編集','ko':'🔧 일괄편집'},
+      'slModal':{'zh-TW':'💾 儲存 / 載入模板','zh-CN':'💾 保存/加载','en':'💾 Save/Load','ja':'💾 保存/読込','ko':'💾 저장/불러오기'},
+    };
+    Object.keys(mt).forEach(id=>{const el=document.querySelector('#'+id+' .mdh h2');if(el)el.textContent=mt[id][lang];});
+  }catch(e){}
+
+  // ── ADD-ELEMENT BUTTONS (.aeb) ──
+  try{
+    const ae={'zh-TW':{title:'主標題',subtitle:'次標題',text:'文字',image:'插圖',chart:'圖表',character:'人物',note:'備註'},
+      'zh-CN':{title:'大标题',subtitle:'副标题',text:'文字',image:'插图',chart:'图表',character:'人物',note:'备注'},
+      'en':{title:'Title',subtitle:'Subtitle',text:'Text',image:'Image',chart:'Chart',character:'Character',note:'Note'},
+      'ja':{title:'タイトル',subtitle:'サブタイトル',text:'テキスト',image:'画像',chart:'チャート',character:'人物',note:'メモ'},
+      'ko':{title:'제목',subtitle:'부제목',text:'텍스트',image:'이미지',chart:'차트',character:'캐릭터',note:'메모'}};
+    const a=ae[lang]||ae['zh-TW'];
+    document.querySelectorAll('.aeb').forEach(btn=>{
+      const m=(btn.getAttribute('onclick')||'').match(/addEl\('(\w+)'\)/);
+      if(m&&a[m[1]]){const ic=btn.querySelector('.ic');btn.textContent='';if(ic)btn.appendChild(ic);btn.appendChild(document.createTextNode(a[m[1]]));}
+    });
+  }catch(e){}
+
+  // ── TOGGLE LABELS (精簡/詳細) ──
+  try{
+    const dtl=document.getElementById('detailTgl')?.parentElement;
+    if(dtl){const sp=dtl.querySelectorAll('span');
+      const s1={'zh-TW':'精簡版','zh-CN':'精简版','en':'Simple','ja':'簡易','ko':'간단'};
+      const s2={'zh-TW':'詳細版','zh-CN':'详细版','en':'Detailed','ja':'詳細','ko':'상세'};
+      if(sp[0])sp[0].textContent=s1[lang]||s1['zh-TW'];
+      if(sp[1])sp[1].textContent=s2[lang]||s2['zh-TW'];
+    }
+  }catch(e){}
+
+  // ── INFOGRAPHIC BAR ──
+  try{
+    const ib=document.querySelector('.ibg');
+    if(ib)ib.textContent={'zh-TW':'🗞️ 資訊圖表模式','zh-CN':'🗞️ 信息图模式','en':'🗞️ Infographic Mode','ja':'🗞️ インフォグラフィック','ko':'🗞️ 인포그래픽'}[lang];
+  }catch(e){}
+
+  // ── SYNC TOOL OUTPUT LANGUAGE SELECTS ──
+  try{
+    const lv={'zh-TW':'繁體中文','zh-CN':'简体中文','en':'English','ja':'日本語','ko':'한국어'}[lang]||'繁體中文';
+    ['vidLang'].forEach(id=>{
+      const s=document.getElementById(id);if(s)s.value=lv;
+    });
+  }catch(e){}
+
+  // ── DENSITY HINT ──
+  try{
+    const dh=document.getElementById('densityHint');
+    if(dh){
+      if(!dh.getAttribute('data-o'))dh.setAttribute('data-o',dh.textContent);
+      const hints={'zh-TW':'每頁標準資訊量','zh-CN':'每页标准信息量','en':'Standard info per page','ja':'標準情報量/ページ','ko':'페이지당 표준 정보량'};
+      dh.textContent=hints[lang]||dh.getAttribute('data-o');
+    }
+  }catch(e){}
+
+  // ── LOGO HINT ──
+  try{
+    const lh=document.querySelector('[onclick*="toggleLogo"]')?.parentElement?.querySelector('span');
+    if(lh){
+      if(!lh.getAttribute('data-o'))lh.setAttribute('data-o',lh.textContent);
+      const lt={'zh-TW':'請先在 NotebookLM 匯入 Logo 圖檔','zh-CN':'请先在NotebookLM导入Logo','en':'Import Logo in NotebookLM first','ja':'NotebookLMにロゴをインポート','ko':'NotebookLM에 로고 가져오기'};
+      lh.textContent=lt[lang]||lh.getAttribute('data-o');
+    }
+  }catch(e){}
+
+  // ── MODE BUTTONS (by ID) ──
+  try{
+    const mb={
+      mbs:{e:'📑',t:{'zh-TW':'簡報','zh-CN':'幻灯片','en':'Slides','ja':'スライド','ko':'슬라이드'}},
+      mbi:{e:'🗞️',t:{'zh-TW':'資訊圖表','zh-CN':'信息图','en':'Infographic','ja':'インフォグラフィック','ko':'인포그래픽'}},
+      mbaud:{e:'🎙️',t:{'zh-TW':'語音摘要','zh-CN':'语音摘要','en':'Audio','ja':'音声要約','ko':'오디오'}},
+      mbposter:{e:'🪧',t:{'zh-TW':'海報','zh-CN':'海报','en':'Poster','ja':'ポスター','ko':'포스터'}},
+      mbvideo:{e:'🎬',t:{'zh-TW':'影片摘要','zh-CN':'视频摘要','en':'Video','ja':'動画要約','ko':'영상요약'}},
+      mbnote:{e:'📝',t:{'zh-TW':'筆記','zh-CN':'笔记','en':'Notes','ja':'ノート','ko':'노트'}},
+      mbsrc:{e:'🧠',t:{'zh-TW':'來源分析','zh-CN':'来源分析','en':'Analysis','ja':'分析','ko':'분석'}},
+      mbcontent:{e:'📧',t:{'zh-TW':'內容轉用','zh-CN':'内容转用','en':'Repurpose','ja':'転用','ko':'전환'}},
+      mbbiz:{e:'📊',t:{'zh-TW':'商業報告','zh-CN':'商业报告','en':'Biz Report','ja':'ビジネス','ko':'비즈'}},
+    };
+    Object.keys(mb).forEach(id=>{
+      const btn=document.getElementById(id);if(!btn)return;
+      const d=mb[id],txt=d.t[lang]||d.t['zh-TW'];
+      // Preserve badge span if exists (infographic badge)
+      const badge=btn.querySelector('.badge');
+      const nodes=btn.childNodes;
+      // Clear text nodes only
+      for(let i=nodes.length-1;i>=0;i--){
+        if(nodes[i].nodeType===3)btn.removeChild(nodes[i]);
+      }
+      // Re-insert translated text
+      if(badge){
+        btn.insertBefore(document.createTextNode(d.e+' '+txt+' '),badge);
+      }else{
+        btn.appendChild(document.createTextNode(d.e+' '+txt));
+      }
+    });
+  }catch(e){console.warn('mbtn',e);}
+
+  // ── TEMPLATE CARDS ──
+  try{
+    const TN={
+      '商業簡報':{'zh-CN':'商业简报','en':'Business','ja':'ビジネス','ko':'비즈니스'},
+      '教學課件':{'zh-CN':'教学课件','en':'Education','ja':'教育','ko':'교육'},
+      '行銷提案':{'zh-CN':'营销提案','en':'Marketing','ja':'マーケティング','ko':'마케팅'},
+      '技術分享':{'zh-CN':'技术分享','en':'Tech Talk','ja':'技術共有','ko':'기술공유'},
+      '麥肯錫風格':{'en':'McKinsey','ja':'マッキンゼー','ko':'맥킨지'},
+      '高盛白底':{'en':'Goldman Sachs','ja':'ゴールドマン','ko':'골드만삭스'},
+      'BCG 綠底白':{'en':'BCG Green','ja':'BCG グリーン','ko':'BCG그린'},
+      'Bain 紅白':{'en':'Bain Red','ja':'Bain レッド','ko':'Bain레드'},
+      'PwC 橘灰':{'en':'PwC Orange','ja':'PwC オレンジ','ko':'PwC오렌지'},
+      'Apple Keynote':{},
+      'Google Material':{},
+      'Microsoft Fluent':{},
+      'Nature 學術':{'zh-CN':'Nature 学术','en':'Nature Academic','ja':'Nature 学術','ko':'Nature학술'},
+      'TED Talk':{},
+      'Muji 無印':{'zh-CN':'Muji 无印','en':'Muji Minimal','ja':'無印良品','ko':'Muji미니멀'},
+      '醫療藥廠':{'zh-CN':'医疗药厂','en':'Medical/Pharma','ja':'医療製薬','ko':'의료/제약'},
+      '政府智庫':{'zh-CN':'政府智库','en':'Government','ja':'政府シンクタンク','ko':'정부싱크탱크'},
+      '科技流程圖':{'zh-CN':'科技流程图','en':'Tech Flow','ja':'テックフロー','ko':'테크플로'},
+      '金屬工業風':{'zh-CN':'金属工业风','en':'Industrial','ja':'インダストリアル','ko':'인더스트리'},
+      '暖調中性風':{'zh-CN':'暖调中性风','en':'Warm Neutral','ja':'ウォームニュートラル','ko':'웜뉴트럴'},
+    };
+    const TD={
+      '10頁專業報告':{'zh-CN':'10页专业报告','en':'10-page report','ja':'10ページ報告','ko':'10페이지 보고서'},
+      '8頁教學投影片':{'zh-CN':'8页教学','en':'8-page teaching','ja':'8ページ教材','ko':'8페이지 교육'},
+      '10頁行銷企劃':{'zh-CN':'10页营销','en':'10-page marketing','ja':'10ページ企画','ko':'10페이지 마케팅'},
+      '8頁技術演講':{'zh-CN':'8页技术','en':'8-page tech','ja':'8ページ技術','ko':'8페이지 기술'},
+      '深藍策略顧問報告':{'zh-CN':'深蓝策略报告','en':'Navy strategy','ja':'紺色戦略','ko':'네이비전략'},
+      '淺色投行分析風格':{'zh-CN':'浅色投行','en':'Light IB','ja':'ライトIB','ko':'라이트IB'},
+      '淺色策略顧問風格':{'zh-CN':'浅色策略','en':'Light strategy','ja':'ライト戦略','ko':'라이트전략'},
+      '淺色管顧精煉風格':{'zh-CN':'浅色管顾','en':'Light consulting','ja':'ライトコンサル','ko':'라이트컨설팅'},
+      '淺色四大會計風格':{'zh-CN':'浅色四大','en':'Light Big4','ja':'ライトBig4','ko':'라이트Big4'},
+      '黑底極簡大字':{'zh-CN':'黑底极简','en':'Black minimal','ja':'黒ミニマル','ko':'블랙미니멀'},
+      '白底彩色圓角卡片':{'zh-CN':'白底彩色卡片','en':'Color cards','ja':'カラフルカード','ko':'컬러카드'},
+      '漸層藍紫科技感':{'zh-CN':'渐层蓝紫','en':'Blue-purple tech','ja':'青紫テック','ko':'블루퍼플테크'},
+      '白底嚴謹論文排版':{'zh-CN':'白底论文','en':'Academic','ja':'学術レイアウト','ko':'학술레이아웃'},
+      '深色背景大字演講':{'zh-CN':'深色大字','en':'Dark large text','ja':'ダーク大文字','ko':'다크대형'},
+      '米白極簡大量留白':{'zh-CN':'米白极简','en':'Cream minimal','ja':'クリームミニマル','ko':'크림미니멀'},
+      '白底深藍綠專業':{'zh-CN':'白底深蓝绿','en':'Teal professional','ja':'ティール専門','ko':'틸전문'},
+      '深藍白莊重公文風':{'zh-CN':'深蓝公文','en':'Navy formal','ja':'紺色公文','ko':'네이비공문'},
+      '深藍發光流程資訊圖':{'zh-CN':'深蓝发光流程','en':'Glow flowchart','ja':'発光フロー','ko':'글로우플로'},
+      '銀色管線連結工業圖':{'zh-CN':'银色管线','en':'Silver pipe','ja':'シルバーパイプ','ko':'실버파이프'},
+      '米杏配色溫暖商務風':{'zh-CN':'米杏暖商务','en':'Warm business','ja':'ウォームビジネス','ko':'웜비즈니스'},
+    };
+    document.querySelectorAll('.tpl-card').forEach(card=>{
+      const nameEl=card.querySelector('.tpl-name');
+      const descEl=card.querySelector('.tpl-desc');
+      if(nameEl){
+        if(!nameEl.getAttribute('data-o'))nameEl.setAttribute('data-o',nameEl.textContent);
+        const o=nameEl.getAttribute('data-o');
+        nameEl.textContent=(lang==='zh-TW')?o:(TN[o]?.[lang]||o);
+      }
+      if(descEl){
+        if(!descEl.getAttribute('data-o'))descEl.setAttribute('data-o',descEl.textContent);
+        const o=descEl.getAttribute('data-o');
+        descEl.textContent=(lang==='zh-TW')?o:(TD[o]?.[lang]||o);
+      }
+    });
+  }catch(e){console.warn('tpl',e);}
+
+  // ── PAGE TABS ──
+  try{
+    const pgW={'zh-TW':'第%n頁','zh-CN':'第%n页','en':'Page %n','ja':'%nページ','ko':'%n페이지'};
+    document.querySelectorAll('.pt').forEach((tab,i)=>{
+      const rx=tab.querySelector('.rx');
+      const txt=(pgW[lang]||pgW['zh-TW']).replace('%n',i+1);
+      tab.textContent='';
+      tab.appendChild(document.createTextNode(txt+' '));
+      if(rx)tab.appendChild(rx);
+    });
+  }catch(e){console.warn('tabs',e);}
+
+  // ── RIGHT PANEL PAGE LABEL ──
+  try{
+    const cpLbl=document.getElementById('cpLbl');
+    if(cpLbl){
+      const pgS={'zh-TW':'第 %n 頁','zh-CN':'第 %n 页','en':'Page %n','ja':'%n ページ','ko':'%n 페이지'};
+      cpLbl.textContent=(pgS[lang]||pgS['zh-TW']).replace('%n',S.activePage+1);
+    }
+  }catch(e){}
+
+  // ── MODAL BUTTONS (by onclick substring matching) ──
+  try{
+    const lk=lang==='zh-TW'?'zh':lang==='zh-CN'?'cn':lang;
+    const MB={
+      "audTopic').value='AI":{zh:'🤖 AI產業趨勢',cn:'🤖 AI产业趋势',en:'🤖 AI Trends',ja:'🤖 AIトレンド',ko:'🤖 AI트렌드'},
+      "audTopic').value='2026":{zh:'🔄 數位轉型',cn:'🔄 数字转型',en:'🔄 Digital DX',ja:'🔄 DX推進',ko:'🔄 디지털전환'},
+      "audTopic').value='創業":{zh:'🚀 創業分析',cn:'🚀 创业分析',en:'🚀 Startup',ja:'🚀 起業',ko:'🚀 창업'},
+      "audTopic').value='ESG":{zh:'🌱 ESG永續',cn:'🌱 ESG',en:'🌱 ESG',ja:'🌱 ESG',ko:'🌱 ESG'},
+      "audTopic').value='個人":{zh:'📱 自媒體',cn:'📱 自媒体',en:'📱 Social Media',ja:'📱 SNS',ko:'📱 소셜미디어'},
+      "addAudSec('')":{zh:'＋ 新增段落',cn:'＋ 新增段落',en:'＋ Add Section',ja:'＋ セクション追加',ko:'＋ 섹션추가'},
+      "addAudSec('反方":{zh:'＋ 質疑環節',cn:'＋ 质疑环节',en:'＋ Challenge',ja:'＋ 反論',ko:'＋ 반론'},
+      "addAudSec('聽眾":{zh:'＋ Q&A',cn:'＋ Q&A',en:'＋ Q&A',ja:'＋ Q&A',ko:'＋ Q&A'},
+      "addAudSec('快問":{zh:'＋ 快問快答',cn:'＋ 快问快答',en:'＋ Quick Fire',ja:'＋ クイックQ&A',ko:'＋ 빠른문답'},
+      "audAppend('請全程":{zh:'🇹🇼 繁體中文',cn:'🇹🇼 繁体中文',en:'🇹🇼 Trad.Chinese',ja:'🇹🇼 繁体中国語',ko:'🇹🇼 번체중국어'},
+      "audAppend('語氣":{zh:'💬 口語化',cn:'💬 口语化',en:'💬 Casual',ja:'💬 口語的',ko:'💬 구어체'},
+      "audAppend('適時":{zh:'😄 幽默風格',cn:'😄 幽默风格',en:'😄 Humor',ja:'😄 ユーモア',ko:'😄 유머'},
+      "audAppend('每段":{zh:'💎 金句收尾',cn:'💎 金句',en:'💎 Quotable',ja:'💎 名言',ko:'💎 명언'},
+      "audAppend('引用":{zh:'📊 引用數據',cn:'📊 引用数据',en:'📊 Data',ja:'📊 データ',ko:'📊 데이터'},
+      "audAppend('節目結尾":{zh:'📢 預告下集',cn:'📢 预告下集',en:'📢 Next Ep',ja:'📢 次回予告',ko:'📢 다음화'},
+      "loadAudTemplate('industry')":{zh:'📈 產業分析',cn:'📈 产业分析',en:'📈 Industry',ja:'📈 産業分析',ko:'📈 산업분석'},
+      "loadAudTemplate('career')":{zh:'💼 職涯諮詢',cn:'💼 职业咨询',en:'💼 Career',ja:'💼 キャリア',ko:'💼 커리어'},
+      "loadAudTemplate('tech')":{zh:'🔬 技術解讀',cn:'🔬 技术解读',en:'🔬 Tech',ja:'🔬 技術解説',ko:'🔬 기술해설'},
+      "loadAudTemplate('debate')":{zh:'⚔️ 正反辯論',cn:'⚔️ 辩论',en:'⚔️ Debate',ja:'⚔️ ディベート',ko:'⚔️ 토론'},
+      "loadAudTemplate('story')":{zh:'📖 故事說書',cn:'📖 说书',en:'📖 Story',ja:'📖 ストーリー',ko:'📖 스토리'},
+      "addPstrChar('商務男":{zh:'👔 商務男',cn:'👔 商务男',en:'👔 Businessman',ja:'👔 ビジネスマン',ko:'👔 비즈니스맨'},
+      "addPstrChar('商務女":{zh:'👩‍💼 商務女',cn:'👩‍💼 商务女',en:'👩‍💼 Businesswoman',ja:'👩‍💼 ビジネスウーマン',ko:'👩‍💼 비즈니스우먼'},
+      "addPstrChar('年輕":{zh:'🎒 學生',cn:'🎒 学生',en:'🎒 Student',ja:'🎒 学生',ko:'🎒 학생'},
+      "addPstrChar('廚師":{zh:'👨‍🍳 廚師',cn:'👨‍🍳 厨师',en:'👨‍🍳 Chef',ja:'👨‍🍳 シェフ',ko:'👨‍🍳 셰프'},
+      "addPstrChar('卡通":{zh:'🧸 吉祥物',cn:'🧸 吉祥物',en:'🧸 Mascot',ja:'🧸 マスコット',ko:'🧸 마스코트'},
+      "pstrAppend('主標題":{zh:'🔠 超大標題',cn:'🔠 超大标题',en:'🔠 Huge Title',ja:'🔠 超大タイトル',ko:'🔠 초대형제목'},
+      "pstrAppend('使用繁體":{zh:'🇹🇼 繁體中文',cn:'🇹🇼 繁体',en:'🇹🇼 Trad.CN',ja:'🇹🇼 繁体',ko:'🇹🇼 번체'},
+      "pstrAppend('所有中文字":{zh:'🔤 中文防模糊',cn:'🔤 防模糊',en:'🔤 Crisp CJK',ja:'🔤 鮮明CJK',ko:'🔤 선명CJK'},
+      "pstrAppend('畫面要有":{zh:'📐 視覺層次',cn:'📐 视觉层次',en:'📐 Hierarchy',ja:'📐 視覚階層',ko:'📐 시각계층'},
+      "pstrAppend('加入裝飾":{zh:'✨ 裝飾元素',cn:'✨ 装饰',en:'✨ Decorations',ja:'✨ 装飾',ko:'✨ 장식'},
+      "addPstrBlk('價格":{zh:'💰 價格',cn:'💰 价格',en:'💰 Price',ja:'💰 価格',ko:'💰 가격'},
+      "addPstrBlk('QR":{zh:'📱 QR Code',cn:'📱 QR Code',en:'📱 QR Code',ja:'📱 QRコード',ko:'📱 QR코드'},
+      "addPstrBlk('主辦":{zh:'🏢 主辦單位',cn:'🏢 主办单位',en:'🏢 Organizer',ja:'🏢 主催者',ko:'🏢 주최측'},
+      "addPstrBlk('注意":{zh:'⚠️ 注意事項',cn:'⚠️ 注意事项',en:'⚠️ Notice',ja:'⚠️ 注意事項',ko:'⚠️ 주의사항'},
+      "addPstrBlk('聯絡":{zh:'📞 聯絡方式',cn:'📞 联络方式',en:'📞 Contact',ja:'📞 連絡先',ko:'📞 연락처'},
+      "vidAppend('保留所有金句":{zh:'💎 保留金句',cn:'💎 保留金句',en:'💎 Keep Quotes',ja:'💎 名言保持',ko:'💎 명언유지'},
+      "vidAppend('標記講者":{zh:'🎭 語調標記',cn:'🎭 语调标记',en:'🎭 Tone Marks',ja:'🎭 トーン記号',ko:'🎭 톤표시'},
+      "vidAppend('列出所有提到":{zh:'📌 專有名詞',cn:'📌 专有名词',en:'📌 Proper Nouns',ja:'📌 固有名詞',ko:'📌 고유명사'},
+      "vidAppend('在每個重點":{zh:'💭 加反思欄',cn:'💭 加反思',en:'💭 Reflections',ja:'💭 振り返り',ko:'💭 성찰란'},
+      "vidAppend('最後附上10":{zh:'❓ 延伸問題',cn:'❓ 延伸问题',en:'❓ Questions',ja:'❓ 発展質問',ko:'❓ 확장질문'},
+      "vidAppend('用表情符號":{zh:'🚦 重要程度',cn:'🚦 重要程度',en:'🚦 Priority',ja:'🚦 重要度',ko:'🚦 중요도'},
+      "loadVidTpl('ted')":{zh:'🎤 TED 演講摘要',cn:'🎤 TED演讲',en:'🎤 TED Talk',ja:'🎤 TEDトーク',ko:'🎤 TED강연'},
+      "loadVidTpl('course')":{zh:'📚 線上課程筆記',cn:'📚 在线课程',en:'📚 Course Notes',ja:'📚 オンライン講座',ko:'📚 온라인강의'},
+      "loadVidTpl('meeting')":{zh:'💼 會議錄影紀錄',cn:'💼 会议录像',en:'💼 Meeting Rec',ja:'💼 会議録画',ko:'💼 회의녹화'},
+      "loadVidTpl('product')":{zh:'📱 產品發表會',cn:'📱 产品发布',en:'📱 Product Launch',ja:'📱 製品発表',ko:'📱 제품발표'},
+      "loadVidTpl('docu')":{zh:'🎞️ 紀錄片分析',cn:'🎞️ 纪录片',en:'🎞️ Documentary',ja:'🎞️ ドキュメンタリー',ko:'🎞️ 다큐멘터리'},
+      "loadVidTpl('tutorial')":{zh:'🛠️ 教學影片步驟',cn:'🛠️ 教学视频',en:'🛠️ Tutorial',ja:'🛠️ チュートリアル',ko:'🛠️ 튜토리얼'},
+      "vidTopic').value='TED":{zh:'🎤 TED Talk',cn:'🎤 TED Talk',en:'🎤 TED Talk',ja:'🎤 TED Talk',ko:'🎤 TED Talk'},
+      "vidTopic').value='線上":{zh:'📚 線上課程',cn:'📚 在线课程',en:'📚 Course',ja:'📚 講座',ko:'📚 강의'},
+      "vidTopic').value='YouTube":{zh:'🎥 YouTube',cn:'🎥 YouTube',en:'🎥 YouTube',ja:'🎥 YouTube',ko:'🎥 YouTube'},
+      "vidTopic').value='產品":{zh:'📱 發表會',cn:'📱 发布会',en:'📱 Launch',ja:'📱 発表会',ko:'📱 발표회'},
+      "vidTopic').value='會議":{zh:'💼 會議錄影',cn:'💼 会议录像',en:'💼 Meeting',ja:'💼 会議録画',ko:'💼 회의녹화'},
+      "vidTopic').value='紀錄":{zh:'🎞️ 紀錄片',cn:'🎞️ 纪录片',en:'🎞️ Documentary',ja:'🎞️ ドキュメンタリー',ko:'🎞️ 다큐멘터리'},
+      "noteFocus').value='聚焦關鍵":{zh:'🔤 定義術語',cn:'🔤 定义术语',en:'🔤 Definitions',ja:'🔤 定義用語',ko:'🔤 정의용어'},
+      "noteFocus').value='聚焦數據":{zh:'📊 數據證據',cn:'📊 数据证据',en:'📊 Data',ja:'📊 データ',ko:'📊 데이터'},
+      "noteFocus').value='聚焦不同":{zh:'⚖️ 觀點比較',cn:'⚖️ 观点比较',en:'⚖️ Compare',ja:'⚖️ 比較',ko:'⚖️ 비교'},
+      "noteFocus').value='聚焦實務":{zh:'🎯 實務應用',cn:'🎯 实务应用',en:'🎯 Applied',ja:'🎯 実務',ko:'🎯 실무'},
+      "noteFocus').value='聚焦時間":{zh:'⏳ 脈絡因果',cn:'⏳ 脉络因果',en:'⏳ Causation',ja:'⏳ 因果',ko:'⏳ 인과'},
+      "loadNoteTpl('research')":{zh:'🔬 學術研究筆記',cn:'🔬 学术研究',en:'🔬 Research',ja:'🔬 学術研究',ko:'🔬 학술연구'},
+      "loadNoteTpl('meeting')":{zh:'📋 會議紀錄整理',cn:'📋 会议纪录',en:'📋 Meeting Notes',ja:'📋 会議メモ',ko:'📋 회의록'},
+      "loadNoteTpl('book')":{zh:'📖 讀書摘要',cn:'📖 读书摘要',en:'📖 Book Summary',ja:'📖 読書要約',ko:'📖 독서요약'},
+      "loadNoteTpl('exam')":{zh:'📝 考試重點整理',cn:'📝 考试重点',en:'📝 Exam Prep',ja:'📝 試験対策',ko:'📝 시험대비'},
+      "loadNoteTpl('competitive')":{zh:'🏢 競品情報筆記',cn:'🏢 竞品情报',en:'🏢 Competitive',ja:'🏢 競合分析',ko:'🏢 경쟁분석'},
+      "loadSrcTpl('compare')":{zh:'⚖️ 論點比較表',cn:'⚖️ 论点比较',en:'⚖️ Comparison',ja:'⚖️ 論点比較',ko:'⚖️ 논점비교'},
+      "loadSrcTpl('consensus')":{zh:'🤝 共識與分歧',cn:'🤝 共识分歧',en:'🤝 Consensus',ja:'🤝 合意と相違',ko:'🤝 합의분기'},
+      "loadSrcTpl('credibility')":{zh:'🔎 來源可信度評估',cn:'🔎 可信度',en:'🔎 Credibility',ja:'🔎 信頼性',ko:'🔎 신뢰도'},
+      "loadSrcTpl('timeline')":{zh:'📅 觀點演變時間軸',cn:'📅 时间轴',en:'📅 Timeline',ja:'📅 タイムライン',ko:'📅 타임라인'},
+      "loadSrcTpl('stakeholder')":{zh:'👥 利害關係人地圖',cn:'👥 利益相关者',en:'👥 Stakeholders',ja:'👥 ステークホルダー',ko:'👥 이해관계자'},
+      "bizAppend('包含 Executive":{zh:'📄 附ES摘要',cn:'📄 附ES',en:'📄 Add ES',ja:'📄 ES追加',ko:'📄 ES추가'},
+      "bizAppend('用表格":{zh:'📊 數據表格',cn:'📊 数据表格',en:'📊 Data Table',ja:'📊 データ表',ko:'📊 데이터표'},
+      "bizAppend('包含風險":{zh:'⚠️ 風險矩陣',cn:'⚠️ 风险矩阵',en:'⚠️ Risk Matrix',ja:'⚠️ リスク',ko:'⚠️ 리스크'},
+      "bizAppend('附上具體":{zh:'✅ 行動方案',cn:'✅ 行动方案',en:'✅ Action Plan',ja:'✅ アクション',ko:'✅ 실행계획'},
+      "bizAppend('加入財務":{zh:'💰 財務預測',cn:'💰 财务预测',en:'💰 Financial',ja:'💰 財務予測',ko:'💰 재무예측'},
+      "loadBizTpl('exec')":{zh:'📄 一頁式高層摘要',cn:'📄 高层摘要',en:'📄 Exec Summary',ja:'📄 エグゼクティブ',ko:'📄 요약'},
+      "loadBizTpl('invest')":{zh:'💰 投資備忘錄',cn:'💰 投资备忘录',en:'💰 Investment Memo',ja:'💰 投資メモ',ko:'💰 투자메모'},
+      "loadBizTpl('compete')":{zh:'🏢 競品分析報告',cn:'🏢 竞品分析',en:'🏢 Competitive',ja:'🏢 競合分析',ko:'🏢 경쟁분석'},
+      "loadBizTpl('market')":{zh:'🌍 市場進入評估',cn:'🌍 市场评估',en:'🌍 Market Entry',ja:'🌍 市場参入',ko:'🌍 시장진입'},
+      "loadBizTpl('qbr')":{zh:'📈 QBR季度回顧',cn:'📈 QBR',en:'📈 QBR Review',ja:'📈 四半期レビュー',ko:'📈 QBR리뷰'},
+    };
+    document.querySelectorAll('button[onclick]').forEach(btn=>{
+      if(btn.classList.contains('mdc'))return;
+      const oc=btn.getAttribute('onclick');
+      const keys=Object.keys(MB);
+      for(let k of keys){
+        if(oc.includes(k)){
+          const v=MB[k][lk]||MB[k].zh;
+          if(v)btn.textContent=v;
+          break;
+        }
+      }
+    });
+  }catch(e){console.warn('MB',e);}
+
+  // ── HOST CARD TITLES ──
+  
+
+  // ── REAL PERSON CHECKBOX ──
+  try{
+    const rpTxt={'zh-TW':' 📷 真實人物（預設為插畫風格）','zh-CN':' 📷 真实人物（默认插画）','en':' 📷 Realistic (default: illustration)','ja':' 📷 リアル人物（デフォルト：イラスト）','ko':' 📷 실사인물 (기본: 일러스트)'};
+    const rp=document.getElementById('pstrRealPerson')?.parentElement;
+    if(rp){for(let n of rp.childNodes){if(n.nodeType===3&&n.textContent.trim()){n.textContent=rpTxt[lang]||rpTxt['zh-TW'];break;}}}
+  }catch(e){}
+
+
+
+  // ── STYLE PILLS (.spl) ──
+  try{
+    const ST={
+      '插圖式圖表':{'zh-CN':'插图式','en':'Illustrated','ja':'イラスト図','ko':'일러스트'},
+      '3D皮克斯風':{'zh-CN':'3D皮克斯','en':'3D Pixar','ja':'3Dピクサー','ko':'3D 픽사'},
+      '3D光質感':{'zh-CN':'3D光质感','en':'3D Glossy','ja':'3D光沢','ko':'3D 광택'},
+      '扁平設計':{'zh-CN':'扁平设计','en':'Flat Design','ja':'フラット','ko':'플랫'},
+      '手繪風格':{'zh-CN':'手绘','en':'Hand-drawn','ja':'手描き','ko':'핸드드로잉'},
+      '極簡風格':{'zh-CN':'极简','en':'Minimal','ja':'ミニマル','ko':'미니멀'},
+      '復古風格':{'zh-CN':'复古','en':'Retro','ja':'レトロ','ko':'레트로'},
+      '科技感':{'zh-CN':'科技感','en':'Tech','ja':'テクノ','ko':'테크'},
+      'Q版插畫':{'zh-CN':'Q版','en':'Chibi','ja':'デフォルメ','ko':'SD'},
+    };
+    document.querySelectorAll('.spl').forEach(sp=>{
+      const inner=sp.querySelector('span');if(!inner)return;
+      if(!inner.getAttribute('data-o'))inner.setAttribute('data-o',inner.textContent.trim());
+      const o=inner.getAttribute('data-o');
+      inner.textContent=lang==='zh-TW'?o:(ST[o]?.[lang]||o);
+    });
+  }catch(e){}
+
+  // ── CHART GRID (.cko) ──
+  try{
+    const CT={
+      '階梯圖':{'zh-CN':'阶梯图','en':'Staircase','ja':'階段','ko':'계단'},
+      '花瓣圖':{'zh-CN':'花瓣图','en':'Petal','ja':'花びら','ko':'꽃잎'},
+      '循環圖':{'zh-CN':'循环图','en':'Cycle','ja':'循環','ko':'순환'},
+      '分類清單':{'zh-CN':'分类清单','en':'Category','ja':'カテゴリ','ko':'분류'},
+      'SWOT':{'en':'SWOT','ja':'SWOT','ko':'SWOT'},
+      '流程圖':{'zh-CN':'流程图','en':'Flowchart','ja':'フロー','ko':'플로'},
+      '心智圖':{'zh-CN':'思维导图','en':'Mind Map','ja':'マインドマップ','ko':'마인드맵'},
+      '金字塔':{'zh-CN':'金字塔','en':'Pyramid','ja':'ピラミッド','ko':'피라미드'},
+      '時間軸':{'zh-CN':'时间轴','en':'Timeline','ja':'タイムライン','ko':'타임라인'},
+      '比較圖':{'zh-CN':'比较图','en':'Compare','ja':'比較','ko':'비교'},
+      '矩陣圖':{'zh-CN':'矩阵图','en':'Matrix','ja':'マトリクス','ko':'매트릭스'},
+      '漏斗圖':{'zh-CN':'漏斗图','en':'Funnel','ja':'ファネル','ko':'퍼널'},
+      '圓餅圖':{'zh-CN':'饼图','en':'Pie','ja':'円グラフ','ko':'원형'},
+      '長條圖':{'zh-CN':'柱状图','en':'Bar','ja':'棒グラフ','ko':'막대'},
+      '雷達圖':{'zh-CN':'雷达图','en':'Radar','ja':'レーダー','ko':'레이더'},
+      '維恩圖':{'zh-CN':'维恩图','en':'Venn','ja':'ベン図','ko':'벤다이어그램'},
+      '功能區塊':{'zh-CN':'功能区块','en':'Block','ja':'ブロック','ko':'블록'},
+      '天氣預報':{'zh-CN':'天气预报','en':'Weather','ja':'天気予報','ko':'날씨'},
+    };
+    document.querySelectorAll('.cko').forEach(d=>{
+      const ci=d.querySelector('.ci');
+      // Get the text after the icon
+      const nodes=d.childNodes;
+      nodes.forEach(n=>{
+        if(n.nodeType===3&&n.textContent.trim()){
+          if(!n._origText)n._origText=n.textContent.trim();
+          const o=n._origText;
+          n.textContent=lang==='zh-TW'?o:(CT[o]?.[lang]||o);
+        }
+      });
+    });
+  }catch(e){}
+
+  // ── NOTE QUICK TAGS (appendNote buttons) ──
+  try{
+    const NT={
+      '中文防模糊':{'zh-CN':'🔤 防模糊','en':'🔤 Crisp CJK','ja':'🔤 鮮明テキスト','ko':'🔤 선명CJK'},
+      '純色文字':{'zh-CN':'🚫 纯色文字','en':'🚫 Solid Text','ja':'🚫 単色テキスト','ko':'🚫 단색텍스트'},
+      '高對比':{'zh-CN':'🔲 高对比','en':'🔲 High Contrast','ja':'🔲 高コントラスト','ko':'🔲 고대비'},
+      '精簡文字':{'zh-CN':'✂️ 精简','en':'✂️ Concise','ja':'✂️ 簡潔','ko':'✂️ 간결'},
+      '隱藏參數':{'zh-CN':'🚫 隐藏参数','en':'🚫 Hide Params','ja':'🚫 パラメータ非表示','ko':'🚫 매개변수숨김'},
+      '隱藏檔名':{'zh-CN':'📛 隐藏文件名','en':'📛 Hide Filename','ja':'📛 ファイル名非表示','ko':'📛 파일명숨김'},
+      '顯示頁碼':{'zh-CN':'🔢 显示页码','en':'🔢 Page Numbers','ja':'🔢 ページ番号','ko':'🔢 페이지번호'},
+      '繁體中文':{'zh-CN':'🇹🇼 繁体中文','en':'🇹🇼 Trad. Chinese','ja':'🇹🇼 繁体中国語','ko':'🇹🇼 번체중국어'},
+    };
+    document.querySelectorAll('[onclick*="appendNote"]').forEach(btn=>{
+      if(!btn.getAttribute('data-o'))btn.setAttribute('data-o',btn.textContent.trim());
+      const o=btn.getAttribute('data-o');
+      // Match by checking which key the original contains
+      Object.keys(NT).forEach(k=>{
+        if(o.includes(k)){
+          btn.textContent=lang==='zh-TW'?o:(NT[k][lang]||o);
+        }
+      });
+    });
+  }catch(e){}
+
+  // ── INFOGRAPHIC LAYOUT PILLS (.slo) ──
+  try{
+    const IL={
+      '📐 垂直':{'zh-CN':'📐 垂直','en':'📐 Vertical','ja':'📐 縦','ko':'📐 세로'},
+      '📊 分欄':{'zh-CN':'📊 分栏','en':'📊 Split','ja':'📊 分割','ko':'📊 분할'},
+      '🔲 網格':{'zh-CN':'🔲 网格','en':'🔲 Grid','ja':'🔲 グリッド','ko':'🔲 그리드'},
+      '⏱️ 時間軸':{'zh-CN':'⏱️ 时间轴','en':'⏱️ Timeline','ja':'⏱️ タイムライン','ko':'⏱️ 타임라인'},
+      '🎨 自由':{'zh-CN':'🎨 自由','en':'🎨 Free','ja':'🎨 自由','ko':'🎨 자유'},
+    };
+    document.querySelectorAll('.slo').forEach(sp=>{
+      if(!sp.getAttribute('data-o'))sp.setAttribute('data-o',sp.textContent.trim());
+      const o=sp.getAttribute('data-o');
+      sp.textContent=lang==='zh-TW'?o:(IL[o]?.[lang]||o);
+    });
+  }catch(e){}
+
+  // ── FONT PREVIEW TEXT ──
+  try{
+    const fp=document.getElementById('gFontPrevTxt');
+    if(fp){
+      const ft={'zh-TW':'Aa 文字預覽 123','zh-CN':'Aa 文字预览 123','en':'Aa Preview 123','ja':'Aa プレビュー 123','ko':'Aa 미리보기 123'};
+      fp.textContent=ft[lang]||ft['zh-TW'];
+    }
+  }catch(e){}
+
+  // ── CHARACTER BUILDER: header + options + hint + button ──
+  try{
+    // Section header
+    const cbh={'zh-TW':'人物描述產生器','zh-CN':'人物描述生成器','en':'Character Builder','ja':'人物ビルダー','ko':'캐릭터 빌더'};
+    document.querySelectorAll('.pst').forEach(div=>{
+      const o=div.getAttribute('data-o')||'';
+      if(o.includes('人物描述')){
+        const ic=div.querySelector('.i,.io');
+        div.textContent='';if(ic)div.appendChild(ic);
+        div.appendChild(document.createTextNode(cbh[lang]||cbh['zh-TW']));
+      }
+    });
+
+    // Option chips translation map
+    const CO={
+      '男生':{'zh-CN':'男生','en':'Male','ja':'男性','ko':'남성'},
+      '女生':{'zh-CN':'女生','en':'Female','ja':'女性','ko':'여성'},
+      '中性':{'zh-CN':'中性','en':'Neutral','ja':'中性','ko':'중성'},
+      '黑色短髮':{'zh-CN':'黑色短发','en':'Black Short','ja':'黒ショート','ko':'검정 단발'},
+      '黑色長髮':{'zh-CN':'黑色长发','en':'Black Long','ja':'黒ロング','ko':'검정 장발'},
+      '棕色短髮':{'zh-CN':'棕色短发','en':'Brown Short','ja':'茶ショート','ko':'갈색 단발'},
+      '棕色捲髮':{'zh-CN':'棕色卷发','en':'Brown Curly','ja':'茶カーリー','ko':'갈색 곱슬'},
+      '金色短髮':{'zh-CN':'金色短发','en':'Blond Short','ja':'金ショート','ko':'금발 단발'},
+      '粉色雙馬尾':{'zh-CN':'粉色双马尾','en':'Pink Twintails','ja':'ピンクツインテ','ko':'핑크 트윈테일'},
+      '白色短髮':{'zh-CN':'白色短发','en':'White Short','ja':'白ショート','ko':'흰색 단발'},
+      '藍色中長髮':{'zh-CN':'蓝色中长发','en':'Blue Medium','ja':'青ミディアム','ko':'파랑 중단발'},
+      '紅色波浪髮':{'zh-CN':'红色波浪发','en':'Red Wavy','ja':'赤ウェーブ','ko':'빨강 웨이브'},
+      '紅色旗袍':{'zh-CN':'红色旗袍','en':'Red Qipao','ja':'赤チャイナドレス','ko':'빨간 치파오'},
+      '西裝':{'zh-CN':'西装','en':'Suit','ja':'スーツ','ko':'정장'},
+      '白色洋裝':{'zh-CN':'白色连衣裙','en':'White Dress','ja':'白ワンピース','ko':'흰 원피스'},
+      '運動服':{'zh-CN':'运动服','en':'Sportswear','ja':'スポーツウェア','ko':'운동복'},
+      '和服':{'zh-CN':'和服','en':'Kimono','ja':'着物','ko':'기모노'},
+      '校服':{'zh-CN':'校服','en':'School Uniform','ja':'制服','ko':'교복'},
+      '太空裝':{'zh-CN':'太空装','en':'Space Suit','ja':'宇宙服','ko':'우주복'},
+      '連帽衫':{'zh-CN':'连帽衫','en':'Hoodie','ja':'パーカー','ko':'후디'},
+      '台灣人':{'zh-CN':'台湾人','en':'Taiwanese','ja':'台湾人','ko':'대만인'},
+      '日本人':{'zh-CN':'日本人','en':'Japanese','ja':'日本人','ko':'일본인'},
+      '歐美人':{'zh-CN':'欧美人','en':'Western','ja':'欧米人','ko':'서양인'},
+      'Q版':{'zh-CN':'Q版','en':'Chibi','ja':'デフォルメ','ko':'SD'},
+      '寫實':{'zh-CN':'写实','en':'Realistic','ja':'リアル','ko':'사실적'},
+      '3D皮克斯風':{'zh-CN':'3D皮克斯','en':'3D Pixar','ja':'3Dピクサー','ko':'3D 픽사'},
+      '動漫風':{'zh-CN':'动漫风','en':'Anime','ja':'アニメ風','ko':'애니메'},
+      '賽博龐克風':{'zh-CN':'赛博朋克','en':'Cyberpunk','ja':'サイバーパンク','ko':'사이버펑크'},
+    };
+    document.querySelectorAll('.char-chip').forEach(chip=>{
+      if(!chip.getAttribute('data-o'))chip.setAttribute('data-o',chip.textContent.trim());
+      const o=chip.getAttribute('data-o');
+      chip.textContent=lang==='zh-TW'?o:(CO[o]?.[lang]||o);
+    });
+
+    // Hint text
+    const co=document.getElementById('charOutput');
+    if(co){
+      // Check if it's the default hint or has selected content
+      const isDefault=!charSel.gender&&!charSel.hair&&!charSel.outfit&&!charSel.style;
+      if(isDefault){
+        co.textContent={'zh-TW':'點選上方選項組合人物描述','zh-CN':'点选上方选项组合人物描述','en':'Select options above to build character','ja':'上のオプションを選択して人物を作成','ko':'위 옵션을 선택하여 캐릭터 구성'}[lang]||'點選上方選項組合人物描述';
+      }
+    }
+
+    // Insert button
+    const ib=document.querySelector('#charBuilder [onclick*="insertCharacter"]');
+    if(ib){
+      ib.textContent={'zh-TW':'➕ 插入到當前頁','zh-CN':'➕ 插入到当前页','en':'➕ Insert to Page','ja':'➕ ページに挿入','ko':'➕ 페이지에 삽입'}[lang]||'➕ 插入到當前頁';
+    }
+  }catch(e){console.warn('char',e);}
+
+
+
+  // ── CANVAS DEFAULT TEXT (主標題/次標題) ──
+  try{
+    const defMap={
+      title:{'zh-TW':'主標題','zh-CN':'主标题','en':'Title','ja':'タイトル','ko':'제목'},
+      subtitle:{'zh-TW':'次標題','zh-CN':'副标题','en':'Subtitle','ja':'サブタイトル','ko':'부제목'},
+      text:{'zh-TW':'說明文字','zh-CN':'说明文字','en':'Description','ja':'説明文','ko':'설명'},
+      chart:{'zh-TW':'圖表描述','zh-CN':'图表描述','en':'Chart description','ja':'チャート説明','ko':'차트설명'},
+      image:{'zh-TW':'一張圖片描述','zh-CN':'一张图片描述','en':'Image description','ja':'画像の説明','ko':'이미지설명'},
+      character:{'zh-TW':'人物描述','zh-CN':'人物描述','en':'Character description','ja':'人物の説明','ko':'캐릭터설명'},
+      note:{'zh-TW':'備註','zh-CN':'备注','en':'Note','ja':'メモ','ko':'메모'},
+    };
+    // Collect all known default texts (any language)
+    const allDefaults={};
+    Object.keys(defMap).forEach(type=>{
+      allDefaults[type]=Object.values(defMap[type]);
+    });
+    // Update all pages' elements
+    const updateEls=els=>{
+      els.forEach(el=>{
+        if(defMap[el.type]){
+          const defs=allDefaults[el.type];
+          if(defs.includes(el.text)){
+            el.text=defMap[el.type][lang]||defMap[el.type]['zh-TW'];
+          }
+        }
+      });
+    };
+    if(S.mode==='slides'){
+      S.pages.forEach(p=>updateEls(p.elements));
+    }
+    if(S.infographic?.elements){
+      updateEls(S.infographic.elements);
+    }
+    renderCanvas();renderElList();
+  }catch(e){console.warn('canvas-text',e);}
+
+
+
+  // ── RE-RENDER THEMES (with translated names) ──
+  try{renderThemes();}catch(e){}
+
+  // ── STATIC TEXTS: upload button, page unit, subtitle ──
+  try{
+    // Upload style button
+    const ubtn=document.querySelector('[onclick*="styleUpload"]');
+    if(ubtn){
+      if(!ubtn.getAttribute('data-o'))ubtn.setAttribute('data-o',ubtn.textContent.trim());
+      const ut={'zh-TW':'🎨 上傳圖片自訂風格 (PNG/JPG)','zh-CN':'🎨 上传图片自定义风格 (PNG/JPG)','en':'🎨 Upload Image for Custom Style','ja':'🎨 画像アップロードでカスタム','ko':'🎨 이미지 업로드 커스텀'};
+      ubtn.textContent=ut[lang]||ut['zh-TW'];
+    }
+  }catch(e){}
+
+  try{
+    // "頁" unit after page count
+    const pgUnit=document.querySelector('#pcg .il span[style]');
+    if(pgUnit){
+      const pu={'zh-TW':'頁','zh-CN':'页','en':'pages','ja':'ページ','ko':'페이지'};
+      pgUnit.textContent=pu[lang]||'頁';
+    }
+  }catch(e){}
+
+  try{
+    // Theme section subtitle "背景+標題+圖表配色"
+    const tsub=document.querySelector('#themeRow')?.closest('.ps')?.querySelector('.pst span[style]');
+    if(tsub){
+      const ts={'zh-TW':'背景+標題+圖表配色','zh-CN':'背景+标题+图表配色','en':'BG + Title + Chart colors','ja':'背景+タイトル+チャート配色','ko':'배경+제목+차트 배색'};
+      tsub.textContent=ts[lang]||ts['zh-TW'];
+    }
+  }catch(e){}
+
+  try{
+    // cpLbl "第 1 頁"
+    const cp=document.getElementById('cpLbl');
+    if(cp){
+      const n=S.activePage+1;
+      const pl={'zh-TW':`第 ${n} 頁`,'zh-CN':`第 ${n} 页`,'en':`Page ${n}`,'ja':`${n} ページ`,'ko':`${n} 페이지`};
+      cp.textContent=pl[lang]||pl['zh-TW'];
+    }
+  }catch(e){}
+
+  try{
+    // "1頁" badge in infographic button
+    const badge=document.querySelector('#mbi .badge');
+    if(badge){
+      const bl={'zh-TW':'1頁','zh-CN':'1页','en':'1pg','ja':'1頁','ko':'1페이지'};
+      badge.textContent=bl[lang]||'1頁';
+    }
+  }catch(e){}
+
+  // ── PAGE TABS re-render ──
+  try{
+    const tabs=(document.getElementById('pTabs')||{classList:{remove:function(){},add:function(){}},style:{display:''}});
+    if(tabs){
+      tabs.querySelectorAll('.pt').forEach((t,i)=>{
+        const rx=t.querySelector('.rx');
+        const pl={'zh-TW':`第${i+1}頁`,'zh-CN':`第${i+1}页`,'en':`Page ${i+1}`,'ja':`${i+1}ページ`,'ko':`${i+1}페이지`};
+        t.textContent='';
+        t.appendChild(document.createTextNode((pl[lang]||pl['zh-TW'])+' '));
+        if(rx)t.appendChild(rx);
+      });
+    }
+  }catch(e){}
+
+  // ── CHAR BUILDER GROUPS ──
+  try{
+    const CG={'性別':{'zh-CN':'性别','en':'Gender','ja':'性別','ko':'성별'},
+      '年齡':{'zh-CN':'年龄','en':'Age','ja':'年齢','ko':'나이'},
+      '髮型':{'zh-CN':'发型','en':'Hair','ja':'ヘアスタイル','ko':'헤어'},
+      '表情':{'zh-CN':'表情','en':'Expression','ja':'表情','ko':'표정'},
+      '服裝':{'zh-CN':'服装','en':'Outfit','ja':'服装','ko':'의상'},
+      '動作':{'zh-CN':'动作','en':'Action','ja':'動作','ko':'동작'},
+      '配件':{'zh-CN':'配件','en':'Accessories','ja':'アクセ','ko':'액세서리'},
+      '風格':{'zh-CN':'风格','en':'Style','ja':'スタイル','ko':'스타일'}};
+    document.querySelectorAll('.char-row').forEach(row=>{
+      const lbl=row.previousElementSibling;
+      if(lbl&&lbl.classList.contains('fl')){
+        if(!lbl.getAttribute('data-o'))lbl.setAttribute('data-o',lbl.textContent.trim());
+        const o=lbl.getAttribute('data-o');
+        if(CG[o])lbl.textContent=lang==='zh-TW'?o:(CG[o][lang]||o);
+      }
+    });
+  }catch(e){}
+
+
+
+  // ── ALL MODAL SELECT OPTIONS (by select id) ──
+  try{
+    const SO={
+      // Audio
+      audGenderA:{'男':{'ko':'남성','en':'Male','ja':'男性','zh-CN':'男'},'女':{'ko':'여성','en':'Female','ja':'女性','zh-CN':'女'}},
+      audIntro:{full:{'zh-TW':'完整自介（姓名+專長+節目主題）','zh-CN':'完整自介','en':'Full intro (name+expertise+topic)','ja':'完全な自己紹介','ko':'완전 자기소개'},
+        brief:{'zh-TW':'簡短自介（姓名+一句話）','zh-CN':'简短自介','en':'Brief intro','ja':'簡単な自己紹介','ko':'간단 자기소개'},
+        none:{'zh-TW':'不需要自介','zh-CN':'不需要','en':'No intro','ja':'紹介なし','ko':'소개없음'}},
+      audLength:{'短':{'zh-TW':'短（3-5 分鐘）','zh-CN':'短（3-5分钟）','en':'Short (3-5 min)','ja':'短い（3-5分）','ko':'짧음(3-5분)'},
+        '中':{'zh-TW':'中（8-12 分鐘）','zh-CN':'中（8-12分钟）','en':'Medium (8-12 min)','ja':'中（8-12分）','ko':'보통(8-12분)'},
+        '長':{'zh-TW':'長（15-20 分鐘）','zh-CN':'长（15-20分钟）','en':'Long (15-20 min)','ja':'長い（15-20分）','ko':'길음(15-20분)'}},
+      audStyle:{'輕鬆對談':{'zh-TW':'輕鬆對談（有默契、不吵架，觀點角度不同）','zh-CN':'轻松对谈','en':'Casual chat','ja':'カジュアルトーク','ko':'캐주얼대화'},
+        '辯論交鋒':{'zh-TW':'辯論交鋒（立場鮮明、互相挑戰）','zh-CN':'辩论交锋','en':'Debate','ja':'ディベート','ko':'토론'},
+        '訪談式':{'zh-TW':'訪談式（A 主導提問、B 回答分享）','zh-CN':'访谈式','en':'Interview','ja':'インタビュー','ko':'인터뷰'},
+        '說書式':{'zh-TW':'說書式（A 說故事、B 補充評論）','zh-CN':'说书式','en':'Storytelling','ja':'ストーリーテリング','ko':'스토리텔링'}},
+      // Note
+      noteRole:{'研究員':{'zh-CN':'🔬 研究员','en':'🔬 Researcher','ja':'🔬 研究者','ko':'🔬 연구원'},
+        '大學生':{'zh-CN':'🎓 大学生','en':'🎓 Student','ja':'🎓 大学生','ko':'🎓 대학생'},
+        '產品經理':{'zh-CN':'💼 产品经理','en':'💼 Product Manager','ja':'💼 PM','ko':'💼 PM'},
+        '記者':{'zh-CN':'📰 记者','en':'📰 Journalist','ja':'📰 記者','ko':'📰 기자'},
+        '律師':{'zh-CN':'⚖️ 律师','en':'⚖️ Lawyer','ja':'⚖️ 弁護士','ko':'⚖️ 변호사'},
+        '醫師':{'zh-CN':'🏥 医师','en':'🏥 Doctor','ja':'🏥 医師','ko':'🏥 의사'},
+        '教師':{'zh-CN':'👩‍🏫 教师','en':'👩‍🏫 Teacher','ja':'👩‍🏫 教師','ko':'👩‍🏫 교사'},
+        '投資分析師':{'zh-CN':'📈 投资分析师','en':'📈 Investment Analyst','ja':'📈 投資アナリスト','ko':'📈 투자분석가'}},
+      noteFormat:{'結構化條列（階層式）':{'zh-CN':'📑 结构化条列','en':'📑 Structured List','ja':'📑 構造化リスト','ko':'📑 구조화목록'},
+        '表格整理（欄位分類）':{'zh-CN':'📊 表格整理','en':'📊 Table Format','ja':'📊 テーブル整理','ko':'📊 테이블정리'},
+        '心智圖文字版（縮排結構）':{'zh-CN':'🧠 思维导图','en':'🧠 Mind Map (text)','ja':'🧠 マインドマップ','ko':'🧠 마인드맵'},
+        '康乃爾筆記法（筆記欄+提示欄+摘要）':{'zh-CN':'📓 康奈尔笔记','en':'📓 Cornell Notes','ja':'📓 コーネルノート','ko':'📓 코넬노트'},
+        'Q&A問答格式':{'zh-CN':'❓ Q&A','en':'❓ Q&A Format','ja':'❓ Q&A形式','ko':'❓ Q&A형식'},
+        '時間軸整理（依時序排列事件）':{'zh-CN':'⏳ 时间轴','en':'⏳ Timeline','ja':'⏳ タイムライン','ko':'⏳ 타임라인'}},
+      noteDepth:{'精簡（重點摘要300字內）':{'zh-CN':'精简','en':'Concise (300 words)','ja':'簡潔（300字）','ko':'간결(300자)'},
+        '中等（核心論點+支持證據，約500-800字）':{'zh-CN':'中等','en':'Standard (500-800)','ja':'標準（500-800字）','ko':'표준(500-800자)'},
+        '詳細（完整論述+案例+引用，1000字以上）':{'zh-CN':'详细','en':'Detailed (1000+)','ja':'詳細（1000字+）','ko':'상세(1000자+)'}},
+      // Source
+      srcMode:{'交叉比較（找出來源間的異同）':{'zh-CN':'⚖️ 交叉比较','en':'⚖️ Cross Compare','ja':'⚖️ 交差比較','ko':'⚖️ 교차비교'},
+        '整合綜述（將多來源整合為統一觀點）':{'zh-CN':'🔗 整合综述','en':'🔗 Synthesis','ja':'🔗 統合レビュー','ko':'🔗 통합종합'},
+        '矛盾偵測（找出來源間互相矛盾的論述）':{'zh-CN':'⚡ 矛盾检测','en':'⚡ Contradiction Detection','ja':'⚡ 矛盾検出','ko':'⚡ 모순탐지'},
+        '趨勢追蹤（依時序分析觀點演變）':{'zh-CN':'📈 趋势追踪','en':'📈 Trend Tracking','ja':'📈 トレンド追跡','ko':'📈 트렌드추적'},
+        '因果分析（分析事件因果鏈）':{'zh-CN':'🔄 因果分析','en':'🔄 Causal Analysis','ja':'🔄 因果分析','ko':'🔄 인과분석'},
+        '立場光譜（將各來源定位在議題光譜上）':{'zh-CN':'🌈 立场光谱','en':'🌈 Stance Spectrum','ja':'🌈 立場スペクトル','ko':'🌈 입장스펙트럼'}},
+      srcFramework:{'不指定框架（自由分析）':{'zh-CN':'🆓 不指定','en':'🆓 None','ja':'🆓 指定なし','ko':'🆓 미지정'},
+        'SWOT分析（優勢/劣勢/機會/威脅）':{'zh-CN':'📊 SWOT','en':'📊 SWOT','ja':'📊 SWOT','ko':'📊 SWOT'},
+        'PEST分析（政治/經濟/社會/科技）':{'zh-CN':'🌍 PEST','en':'🌍 PEST','ja':'🌍 PEST','ko':'🌍 PEST'},
+        '波特五力分析':{'zh-CN':'⚔️ 波特五力','en':'⚔️ Porter 5 Forces','ja':'⚔️ ポーター5F','ko':'⚔️ 포터5F'},
+        '價值鏈分析':{'zh-CN':'🔗 价值链','en':'🔗 Value Chain','ja':'🔗 バリューチェーン','ko':'🔗 가치사슬'},
+        'BCG矩陣（成長率/市佔率）':{'zh-CN':'📈 BCG矩阵','en':'📈 BCG Matrix','ja':'📈 BCGマトリクス','ko':'📈 BCG매트릭스'},
+        '利害關係人分析':{'zh-CN':'👥 利害关系人','en':'👥 Stakeholder','ja':'👥 ステークホルダー','ko':'👥 이해관계자'}},
+      srcDepth:{'概覽（快速掃描重點差異）':{'zh-CN':'概览','en':'Overview','ja':'概要','ko':'개요'},
+        '標準（逐項分析+證據引用）':{'zh-CN':'标准','en':'Standard','ja':'標準','ko':'표준'},
+        '深度（完整論證+反駁+建議）':{'zh-CN':'深度','en':'Deep','ja':'深掘り','ko':'심층'}},
+      // Content
+      contentTone:{'專業權威（數據導向、邏輯清晰）':{'zh-CN':'👔 专业权威','en':'👔 Professional','ja':'👔 プロフェッショナル','ko':'👔 전문적'},
+        '輕鬆親切（口語化、有溫度）':{'zh-CN':'😊 轻松亲切','en':'😊 Casual & Warm','ja':'😊 カジュアル','ko':'😊 친근한'},
+        '勵志激勵（正能量、行動導向）':{'zh-CN':'💪 励志','en':'💪 Motivational','ja':'💪 モチベーション','ko':'💪 동기부여'},
+        '幽默風趣（比喻、梗、反差）':{'zh-CN':'😄 幽默','en':'😄 Humorous','ja':'😄 ユーモア','ko':'😄 유머'},
+        '學術嚴謹（引用、客觀、中立）':{'zh-CN':'📚 学术','en':'📚 Academic','ja':'📚 アカデミック','ko':'📚 학술적'},
+        '故事敘事（情境帶入、人物描寫）':{'zh-CN':'📖 叙事','en':'📖 Narrative','ja':'📖 ナラティブ','ko':'📖 스토리텔링'}},
+      // Biz
+      bizType:{'Executive Summary（一頁式高層摘要）':{'zh-CN':'📄 Executive Summary','en':'📄 Executive Summary','ja':'📄 エグゼクティブサマリー','ko':'📄 Executive Summary'},
+        '投資備忘錄（投資論點+風險+回報分析）':{'zh-CN':'💰 投资备忘录','en':'💰 Investment Memo','ja':'💰 投資メモ','ko':'💰 투자메모'},
+        '競品分析報告（競爭格局+差異化+策略建議）':{'zh-CN':'🏢 竞品分析','en':'🏢 Competitive Analysis','ja':'🏢 競合分析','ko':'🏢 경쟁분석'},
+        '市場研究報告（市場規模+趨勢+機會）':{'zh-CN':'🌍 市场研究','en':'🌍 Market Research','ja':'🌍 市場調査','ko':'🌍 시장조사'},
+        '商業計畫書（商業模式+財務預測+里程碑）':{'zh-CN':'🚀 商业计划','en':'🚀 Business Plan','ja':'🚀 ビジネスプラン','ko':'🚀 사업계획'},
+        '盡職調查報告（Due Diligence，全面性風險評估）':{'zh-CN':'🔍 尽职调查','en':'🔍 Due Diligence','ja':'🔍 デューデリジェンス','ko':'🔍 실사(DD)'},
+        '季度業務回顧（QBR，績效+挑戰+下季計畫）':{'zh-CN':'📈 季度回顾','en':'📈 QBR','ja':'📈 QBR','ko':'📈 QBR'}},
+      bizAudience:{'C-Suite高層（CEO/CFO/CTO）':{'zh-CN':'👔 C-Suite','en':'👔 C-Suite','ja':'👔 C-Suite','ko':'👔 C-Suite'},
+        '董事會成員':{'zh-CN':'🏛️ 董事会','en':'🏛️ Board','ja':'🏛️ 取締役会','ko':'🏛️ 이사회'},
+        '投資人/VC':{'zh-CN':'💎 投资人','en':'💎 Investors/VC','ja':'💎 投資家/VC','ko':'💎 투자자/VC'},
+        '中階主管/部門經理':{'zh-CN':'📋 中层管理','en':'📋 Mid-level Mgr','ja':'📋 中間管理職','ko':'📋 중간관리자'},
+        '跨部門團隊':{'zh-CN':'👥 跨部门','en':'👥 Cross-functional','ja':'👥 部門横断','ko':'👥 부서간'},
+        '外部客戶/合作夥伴':{'zh-CN':'🤝 外部客户','en':'🤝 External Client','ja':'🤝 外部顧客','ko':'🤝 외부고객'}},
+      bizFramework:{'不指定（自由組織）':{'zh-CN':'🆓 不指定','en':'🆓 None','ja':'🆓 指定なし','ko':'🆓 미지정'},
+        '金字塔原理（結論先行→支持論點→數據佐證）':{'zh-CN':'🔺 金字塔','en':'🔺 Pyramid','ja':'🔺 ピラミッド','ko':'🔺 피라미드'},
+        'MECE原則（互斥且完整的分類）':{'zh-CN':'📊 MECE','en':'📊 MECE','ja':'📊 MECE','ko':'📊 MECE'},
+        'SWOT分析框架':{'zh-CN':'📋 SWOT','en':'📋 SWOT','ja':'📋 SWOT','ko':'📋 SWOT'},
+        'Porter五力分析':{'zh-CN':'⚔️ 波特五力','en':'⚔️ Porter 5F','ja':'⚔️ ポーター5F','ko':'⚔️ 포터5F'},
+        'BCG矩陣分析':{'zh-CN':'📈 BCG','en':'📈 BCG','ja':'📈 BCG','ko':'📈 BCG'},
+        'TAM/SAM/SOM市場規模分析':{'zh-CN':'🎯 TAM/SAM/SOM','en':'🎯 TAM/SAM/SOM','ja':'🎯 TAM/SAM/SOM','ko':'🎯 TAM/SAM/SOM'}},
+      // Video
+      vidLength:{'精簡版（300字內，3-5個重點）':{'zh-CN':'精简','en':'Concise (300w)','ja':'簡潔（300字）','ko':'간결(300자)'},
+        '標準版（500-800字，完整段落摘要）':{'zh-CN':'标准','en':'Standard (500-800)','ja':'標準（500-800字）','ko':'표준(500-800자)'},
+        '詳細版（1000字以上，逐段分析含引用）':{'zh-CN':'详细','en':'Detailed (1000+)','ja':'詳細（1000字+）','ko':'상세(1000자+)'}},
+      vidRole:{'不指定':{'zh-CN':'🆓 不指定','en':'🆓 None','ja':'🆓 指定なし','ko':'🆓 미지정'},
+        '記者（客觀報導、5W1H）':{'zh-CN':'📰 记者','en':'📰 Journalist','ja':'📰 記者','ko':'📰 기자'},
+        '研究員（學術視角、嚴謹引用）':{'zh-CN':'🔬 研究员','en':'🔬 Researcher','ja':'🔬 研究者','ko':'🔬 연구원'},
+        '學生（學習筆記、考試重點）':{'zh-CN':'🎓 学生','en':'🎓 Student','ja':'🎓 学生','ko':'🎓 학생'},
+        '產品經理（商業洞察、行動項目）':{'zh-CN':'💼 PM','en':'💼 PM','ja':'💼 PM','ko':'💼 PM'},
+        '社群小編（吸睛重點、傳播力）':{'zh-CN':'📱 小编','en':'📱 Social Media','ja':'📱 SNS担当','ko':'📱 소셜담당'}},
+      vidFocus:{'不指定':{'zh-CN':'🆓 不指定','en':'🆓 None','ja':'🆓 指定なし','ko':'🆓 미지정'},
+        '聚焦講者的核心論點和主張':{'zh-CN':'💡 核心论点','en':'💡 Key Arguments','ja':'💡 核心論点','ko':'💡 핵심논점'},
+        '聚焦數據、統計和實證':{'zh-CN':'📊 数据实证','en':'📊 Data & Evidence','ja':'📊 データ実証','ko':'📊 데이터실증'},
+        '聚焦案例故事和具體範例':{'zh-CN':'📖 案例故事','en':'📖 Case Stories','ja':'📖 事例','ko':'📖 사례'},
+        '聚焦方法論、步驟和框架':{'zh-CN':'🔧 方法框架','en':'🔧 Methods & Frameworks','ja':'🔧 手法','ko':'🔧 방법론'},
+        '聚焦爭議點、反面觀點和辯論':{'zh-CN':'⚡ 争议辩论','en':'⚡ Controversies','ja':'⚡ 論争','ko':'⚡ 논쟁'}},
+      // Poster size
+      pstrSize:{'直式A3海報(297×420mm)':{'zh-CN':'直式A3','en':'Portrait A3','ja':'縦A3','ko':'세로A3'},
+        '直式A4傳單(210×297mm)':{'zh-CN':'直式A4','en':'Portrait A4','ja':'縦A4','ko':'세로A4'},
+        '正方形社群貼文(1:1)':{'zh-CN':'正方形1:1','en':'Square 1:1','ja':'正方形1:1','ko':'정사각형1:1'},
+        '直式手機螢幕(9:16)':{'zh-CN':'直式9:16','en':'Portrait 9:16','ja':'縦9:16','ko':'세로9:16'},
+        '橫式Banner(16:9)':{'zh-CN':'横式16:9','en':'Landscape 16:9','ja':'横16:9','ko':'가로16:9'}},
+      iRatio:{square:{'zh-TW':'正方形 (1:1)','zh-CN':'正方形(1:1)','en':'Square (1:1)','ja':'正方形(1:1)','ko':'정사각형(1:1)'},
+        wide:{'zh-TW':'橫幅 (16:9)','zh-CN':'横幅(16:9)','en':'Landscape (16:9)','ja':'横型(16:9)','ko':'가로(16:9)'},
+        portrait:{'zh-TW':'直式 (9:16)','zh-CN':'竖式(9:16)','en':'Portrait (9:16)','ja':'縦型(9:16)','ko':'세로(9:16)'}},
+    };
+    // Also handle audGenderB same as audGenderA
+    SO.audGenderB=SO.audGenderA;
+    Object.keys(SO).forEach(sid=>{
+      const sel=document.getElementById(sid);if(!sel)return;
+      Array.from(sel.options).forEach(opt=>{
+        if(SO[sid][opt.value]?.[lang])opt.textContent=SO[sid][opt.value][lang];
+        else if(lang==='zh-TW'&&SO[sid][opt.value]?.['zh-TW'])opt.textContent=SO[sid][opt.value]['zh-TW'];
+      });
+    });
+  }catch(e){console.warn('selects',e);}
+
+  // ── MODAL BUTTONS & QUICK TAGS (inside tool modals) ──
+  try{
+    // Video type cards
+    const VT=[
+      {'zh-TW':'📑 結構化摘要','zh-CN':'📑 结构化摘要','en':'📑 Structured','ja':'📑 構造化要約','ko':'📑 구조화요약'},
+      {'zh-TW':'⏱️ 時間戳筆記','zh-CN':'⏱️ 时间戳笔记','en':'⏱️ Timestamps','ja':'⏱️ タイムスタンプ','ko':'⏱️ 타임스탬프'},
+      {'zh-TW':'🧠 心智圖大綱','zh-CN':'🧠 思维导图大纲','en':'🧠 Mind Map','ja':'🧠 マインドマップ','ko':'🧠 마인드맵'},
+      {'zh-TW':'📝 逐字稿精華版','zh-CN':'📝 逐字稿精华','en':'📝 Transcript Highlights','ja':'📝 要約トランスクリプト','ko':'📝 핵심전사'},
+      {'zh-TW':'📊 關鍵數據摘錄','zh-CN':'📊 关键数据','en':'📊 Key Data Extract','ja':'📊 キーデータ抽出','ko':'📊 핵심데이터'},
+      {'zh-TW':'✅ 行動清單','zh-CN':'✅ 行动清单','en':'✅ Action List','ja':'✅ アクションリスト','ko':'✅ 액션리스트'},
+    ];
+    const vtDescs=[
+      {'zh-TW':'依段落整理重點、論點、結論','zh-CN':'按段落整理','en':'Organized by sections','ja':'セクション別整理','ko':'섹션별 정리'},
+      {'zh-TW':'按時間標記重點 [00:00] 格式','zh-CN':'按时间标记','en':'[MM:SS] format','ja':'[MM:SS]形式','ko':'[MM:SS] 형식'},
+      {'zh-TW':'中心主題→分支→細節的樹狀結構','zh-CN':'树状结构','en':'Tree structure','ja':'ツリー構造','ko':'트리 구조'},
+      {'zh-TW':'保留金句原文+刪除贅詞的精煉版','zh-CN':'精炼版','en':'Key quotes preserved','ja':'名言保持+簡潔化','ko':'핵심인용 보존'},
+      {'zh-TW':'只萃取數字、統計、引用來源','zh-CN':'数字统计','en':'Numbers & stats only','ja':'数字・統計のみ','ko':'숫자·통계만'},
+      {'zh-TW':'將內容轉為可執行的待辦事項','zh-CN':'可执行待办','en':'Actionable to-dos','ja':'実行可能なToDo','ko':'실행가능 할일'},
+    ];
+    document.querySelectorAll('#vidTypeGrid .pst-card').forEach((card,i)=>{
+      const divs=card.querySelectorAll('div');
+      if(divs[0]&&VT[i])divs[0].textContent=VT[i][lang]||VT[i]['zh-TW'];
+      if(divs[1]&&vtDescs[i])divs[1].textContent=vtDescs[i][lang]||vtDescs[i]['zh-TW'];
+    });
+  }catch(e){}
+
+  // ── VIDEO quick topic & tags ──
+  
+
+  // ── NOTE quick focus & templates ──
+  
+
+  // ── SOURCE templates ──
+  
+
+  // ── CONTENT platform buttons ──
+  
+
+  // ── BIZ quick tags & templates ──
+  
+
+  // ── MODAL FOOTER HINT TEXTS ──
+  try{
+    const hints={
+    };
+    Object.keys(hints).forEach(mid=>{
+      const el=document.querySelector('#'+mid+' .mdf div[style*="font-size:9px"]');
+      if(el)el.textContent=hints[mid][lang]||hints[mid]['zh-TW'];
+    });
+  }catch(e){}
+
+
+
+  // ── POSTER MODAL INTERNALS ──
+  
+  try{renderRight();}catch(e){}
+
+  // ── RIGHT PANEL PLACEHOLDERS ──
+  try{
+    const rph={
+      pSty:{'zh-TW':'例: 3D皮克斯風','zh-CN':'例: 3D皮克斯','en':'e.g. 3D Pixar','ja':'例: 3Dピクサー','ko':'예: 3D 픽사'},
+      pDesc:{'zh-TW':'詳細描述…','zh-CN':'详细描述…','en':'Description…','ja':'詳細説明…','ko':'상세 설명…'},
+    };
+    Object.keys(rph).forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&rph[id][lang])el.placeholder=rph[id][lang];
+    });
+  }catch(e){}
+
+  // ── ELEMENT LIST TYPE BADGES ──
+  try{
+    const eltl={
+      'zh-TW':{title:'主標題',subtitle:'次標題',text:'文字',chart:'圖表',character:'人物',note:'備註',image:'插圖'},
+      'zh-CN':{title:'主标题',subtitle:'副标题',text:'文字',chart:'图表',character:'人物',note:'备注',image:'插图'},
+      'en':{title:'Title',subtitle:'Subtitle',text:'Text',chart:'Chart',character:'Character',note:'Note',image:'Image'},
+      'ja':{title:'タイトル',subtitle:'サブタイトル',text:'テキスト',chart:'チャート',character:'人物',note:'メモ',image:'画像'},
+      'ko':{title:'제목',subtitle:'부제목',text:'텍스트',chart:'차트',character:'캐릭터',note:'메모',image:'이미지'},
+    };
+    const tl=eltl[lang]||eltl['zh-TW'];
+    document.querySelectorAll('.elt').forEach(sp=>{
+      // Get the type from class: et-t=title, et-s=subtitle, etc
+      const cm={'et-t':'title','et-s':'subtitle','et-x':'text','et-c':'chart','et-p':'character','et-n':'note'};
+      Object.keys(cm).forEach(cls=>{
+        if(sp.classList.contains(cls)){
+          // Preserve badges (lock/group)
+          const badges=sp.querySelectorAll('.el-badge');
+          const typeName=tl[cm[cls]]||cm[cls];
+          sp.textContent=typeName;
+          badges.forEach(b=>sp.appendChild(b));
+        }
+      });
+    });
+  }catch(e){}
+
+}
+
+
+
+// ==================== INIT ====================
+S.mode='infographic';
+S.pages=[];
+applyIR(S.infographic.ratio);
+renderTemplates();renderThemes();renderStylePills();renderGFontSel();renderCharBuilder();renderILayouts();renderChartGrid();renderCanvas();renderElList();
+</script>
+</body>
+</html>

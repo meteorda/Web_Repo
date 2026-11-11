@@ -6,20 +6,23 @@
   <title>雲端隨身工具導航大廳 · Web_Repo Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: rgba(17, 24, 39, 0.75);
+      --bg: #0a0e17;
+      --card-bg: rgba(16, 23, 38, 0.78);
       --card-border: rgba(255, 255, 255, 0.08);
-      --card-hover: rgba(30, 41, 59, 0.95);
-      --text: #f9fafb;
+      --card-hover-border: rgba(56, 189, 248, 0.45);
+      --card-hover-bg: rgba(24, 34, 56, 0.95);
+      --text: #f8fafc;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
       --primary: #38bdf8;
-      --primary-glow: rgba(56, 189, 248, 0.25);
-      --accent: #10b981;
-      --gold: #fbbf24;
-      --purple: #a855f7;
+      --primary-glow: rgba(56, 189, 248, 0.28);
+      --accent-green: #10b981;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -31,36 +34,36 @@
       flex-direction: column;
       line-height: 1.6;
       background-image: 
-        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.04) 0px, transparent 60%);
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.09) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 60%);
       background-attachment: fixed;
     }
     .container {
-      max-width: 1280px;
+      max-width: 1360px;
       margin: 0 auto;
-      padding: 40px 20px 80px;
+      padding: 36px 24px 80px;
       width: 100%;
       flex: 1;
     }
     /* Header */
     header {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
       color: var(--primary);
       padding: 6px 18px;
       border-radius: 9999px;
       font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.05em;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       backdrop-filter: blur(8px);
     }
     h1 {
@@ -70,60 +73,62 @@
       background: linear-gradient(135deg, #ffffff 20%, #cbd5e1 60%, #94a3b8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .subtitle {
       color: var(--text-muted);
       font-size: 15px;
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
     }
     /* Stats Bar */
     .stats-bar {
       display: flex;
       justify-content: center;
-      gap: 24px;
-      margin: 24px 0 32px;
+      gap: 16px;
+      margin: 20px 0 28px;
       flex-wrap: wrap;
     }
     .stat-item {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.035);
       border: 1px solid var(--card-border);
-      padding: 8px 16px;
+      padding: 7px 16px;
       border-radius: 12px;
       font-size: 13px;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       gap: 6px;
+      backdrop-filter: blur(10px);
     }
     .stat-item strong {
       color: var(--primary);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
+      font-size: 14px;
     }
-    /* Search */
+    /* Search Bar */
     .search-wrapper {
-      max-width: 600px;
-      margin: 0 auto 24px;
+      max-width: 640px;
+      margin: 0 auto 20px;
       position: relative;
     }
     .search-input {
       width: 100%;
-      background: rgba(17, 24, 39, 0.8);
+      background: rgba(16, 23, 38, 0.85);
       border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 14px 20px 14px 48px;
+      padding: 13px 20px 13px 48px;
       color: #fff;
-      font-size: 15px;
+      font-size: 14.5px;
       outline: none;
       transition: all 0.2s ease;
       font-family: inherit;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
     }
     .search-input:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px var(--primary-glow);
+      background: rgba(16, 23, 38, 0.95);
     }
     .search-icon {
       position: absolute;
@@ -132,21 +137,21 @@
       transform: translateY(-50%);
       color: var(--text-muted);
       pointer-events: none;
-      font-size: 18px;
+      font-size: 17px;
     }
-    /* Filter Pills */
+    /* Category Filter Pills */
     .category-pills {
       display: flex;
       justify-content: center;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 36px;
+      margin-bottom: 40px;
     }
     .pill-btn {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--card-border);
       color: var(--text-muted);
-      padding: 7px 15px;
+      padding: 7px 14px;
       border-radius: 9999px;
       font-size: 13px;
       cursor: pointer;
@@ -162,27 +167,83 @@
     }
     .pill-btn.active {
       background: var(--primary);
-      color: #0b0f19;
+      color: #0a0e17;
       border-color: var(--primary);
       font-weight: 700;
-      box-shadow: 0 0 12px var(--primary-glow);
+      box-shadow: 0 0 14px var(--primary-glow);
     }
     .pill-btn .count {
       font-size: 11px;
       background: rgba(0, 0, 0, 0.25);
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 999px;
       font-family: 'JetBrains Mono', monospace;
     }
     .pill-btn.active .count {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
       color: #fff;
     }
-    /* Tools Grid */
+
+    /* Section Styles (Two distinct blocks) */
+    .portal-section {
+      margin-bottom: 56px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 22px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .section-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .section-badge.doc-badge {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+    .section-hint {
+      font-size: 12.5px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glowing Divider */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.3), rgba(168, 85, 247, 0.3), transparent);
+      margin: 10px 0 50px;
+    }
+
+    /* Card Grid */
     .tools-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 20px;
     }
     .tool-card {
       background: var(--card-bg);
@@ -198,70 +259,96 @@
       backdrop-filter: blur(12px);
     }
     .tool-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 0 16px var(--primary-glow);
-      background: var(--card-hover);
+      transform: translateY(-4px);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.6), 0 0 16px var(--primary-glow);
+      background: var(--card-hover-bg);
     }
     .card-top {
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       margin-bottom: 12px;
+      gap: 8px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .card-icon {
-      font-size: 26px;
-      width: 44px;
-      height: 44px;
+      font-size: 22px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
+      border-radius: 10px;
       border: 1px solid var(--card-border);
     }
-    .badge {
+    .category-badge {
       font-size: 11px;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 6px;
       font-weight: 600;
-      letter-spacing: 0.03em;
-      background: rgba(56, 189, 248, 0.12);
-      color: var(--primary);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+    }
+    /* Modification Date Badge */
+    .date-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .date-badge.recent {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.25);
     }
     .card-title {
       font-size: 16px;
       font-weight: 700;
       color: #fff;
       line-height: 1.4;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       word-break: break-word;
     }
     .card-desc {
-      font-size: 13px;
+      font-size: 12.8px;
       color: var(--text-muted);
-      line-height: 1.5;
-      font-family: 'JetBrains Mono', monospace;
-      word-break: break-all;
+      line-height: 1.55;
+      word-break: break-word;
     }
+    /* Actions */
     .card-actions {
       margin-top: 16px;
       padding-top: 14px;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
       justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
     }
     .btn-launch {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(56, 189, 248, 0.15);
+      background: rgba(56, 189, 248, 0.14);
       color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      border: 1px solid rgba(56, 189, 248, 0.35);
       padding: 7px 14px;
       border-radius: 8px;
       font-size: 12.5px;
@@ -271,18 +358,51 @@
     }
     .btn-launch:hover {
       background: #38bdf8;
-      color: #0b0f19;
+      color: #0a0e17;
       border-color: #38bdf8;
-      box-shadow: 0 0 10px var(--primary-glow);
+      box-shadow: 0 0 12px var(--primary-glow);
     }
-    /* Empty State */
+    .btn-launch.btn-doc {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+    .btn-launch.btn-doc:hover {
+      background: #a855f7;
+      color: #fff;
+      border-color: #a855f7;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+    }
+    .btn-raw-md {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-raw-md:hover {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Empty state */
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-      grid-column: 1 / -1;
+      padding: 40px 20px;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      font-size: 14px;
       display: none;
     }
+
     /* Footer */
     footer {
       text-align: center;
@@ -296,6 +416,9 @@
       text-decoration: none;
     }
     footer a:hover { text-decoration: underline; }
+    @media (max-width: 768px) {
+      .section-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
   </style>
 </head>
 <body>
@@ -307,107 +430,176 @@
       <p class="subtitle">彙整量化交易、AI 應用、行政文書、商業決策、學務、遊戲與生活工具，全設備瀏覽器即點即開。</p>
       
       <div class="stats-bar">
-        <div class="stat-item">📦 總收錄工具：<strong id="stat-total">54</strong> 款</div>
+        <div class="stat-item">📦 總收錄項目：<strong id="stat-total">71</strong> 款</div>
+        <div class="stat-item">🚀 應用工具：<strong>69</strong> 款</div>
+        <div class="stat-item">📚 文件手冊：<strong>2</strong> 份</div>
         <div class="stat-item">🗂️ 核心分類：<strong>10</strong> 大類</div>
-        <div class="stat-item">🌐 託管平台：<strong>GitHub Pages</strong></div>
       </div>
     </header>
 
     <!-- 搜尋列 -->
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="即時搜尋工具名稱、功能、分類關鍵字..." autofocus>
+      <input type="text" id="searchInput" class="search-input" placeholder="即時搜尋工具名稱、功能、分類、修改日期 (如 2026-11)..." autofocus>
     </div>
 
     <!-- 分類切換按鈕 -->
     <div class="category-pills" id="categoryPills">
-      <button class="pill-btn active" data-cat="all">🌟 全部 <span class="count">54</span></button>
-      <button class="pill-btn" data-cat="股票工具">📈 股票工具 <span class="count">10</span></button>
-      <button class="pill-btn" data-cat="AI工具">🤖 AI工具 <span class="count">13</span></button>
-      <button class="pill-btn" data-cat="文書行政">📑 文書行政 <span class="count">11</span></button>
+      <button class="pill-btn active" data-cat="all">🌟 全部 <span class="count">71</span></button>
+      <button class="pill-btn" data-cat="股票工具">📈 股票工具 <span class="count">11</span></button>
+      <button class="pill-btn" data-cat="AI工具">🤖 AI工具 <span class="count">15</span></button>
+      <button class="pill-btn" data-cat="文書行政">📑 文書行政 <span class="count">15</span></button>
       <button class="pill-btn" data-cat="商業">💼 商業 <span class="count">4</span></button>
-      <button class="pill-btn" data-cat="學務">🎓 學務 <span class="count">5</span></button>
-      <button class="pill-btn" data-cat="娛樂">🎮 娛樂 <span class="count">5</span></button>
+      <button class="pill-btn" data-cat="學務">🎓 學務 <span class="count">6</span></button>
+      <button class="pill-btn" data-cat="娛樂">🎮 娛樂 <span class="count">7</span></button>
       <button class="pill-btn" data-cat="生活工具">🍳 生活工具 <span class="count">1</span></button>
-      <button class="pill-btn" data-cat="命理">☯️ 命理 <span class="count">2</span></button>
-      <button class="pill-btn" data-cat="多媒體">🎙️ 多媒體 <span class="count">2</span></button>
+      <button class="pill-btn" data-cat="命理">☯️ 命理 <span class="count">3</span></button>
+      <button class="pill-btn" data-cat="多媒體">🎙️ 多媒體 <span class="count">8</span></button>
       <button class="pill-btn" data-cat="中醫研究">🌿 中醫研究 <span class="count">1</span></button>
     </div>
 
-    <!-- 工具卡片網格 -->
-    <div class="tools-grid" id="toolsGrid">
-      <div class="empty-state" id="emptyState">
-        <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
-        <p>沒有找到符合條件的工具，請嘗試更換關鍵字！</p>
+    <!-- 上區塊：互動應用與 Web 工具 -->
+    <section class="portal-section" id="section-tools">
+      <div class="section-header">
+        <div class="section-title-group">
+          <h2 class="section-title">🚀 互動應用與 Web 工具</h2>
+          <span class="section-badge" id="toolsCountBadge">共 69 款</span>
+        </div>
+        <div class="section-hint">按最後修改日期排序（最新在最前）</div>
       </div>
-    </div>
+      <div class="tools-grid" id="toolsGrid"></div>
+      <div class="empty-state" id="toolsEmptyState">此分類目前無收錄應用工具</div>
+    </section>
+
+    <!-- 分隔光線 -->
+    <div class="section-divider"></div>
+
+    <!-- 下區塊：文件手冊與深度研究報告 -->
+    <section class="portal-section" id="section-docs">
+      <div class="section-header">
+        <div class="section-title-group">
+          <h2 class="section-title">📚 文件手冊與深度研究報告</h2>
+          <span class="section-badge doc-badge" id="docsCountBadge">共 2 份</span>
+        </div>
+        <div class="section-hint">收錄系統架構剖析、源碼深度解析與教學實戰手冊</div>
+      </div>
+      <div class="tools-grid" id="docsGrid"></div>
+      <div class="empty-state" id="docsEmptyState">此分類目前無收錄文件報告</div>
+    </section>
+
   </div>
 
   <footer>
-    <p>託管庫：<a href="https://github.com/meteorda/Web_Repo" target="_blank">meteorda/Web_Repo</a> · 由 Google Antigravity 自動編譯同步 · 更新於 2026-11-11</p>
+    <p>託管庫：<a href="https://github.com/meteorda/Web_Repo" target="_blank">meteorda/Web_Repo</a> · 由 Google Antigravity 自動編譯同步 · 更新於 2026-11-11 23:59</p>
   </footer>
 
   <script>
-    const toolsData = [{"category": "股票工具", "icon": "📈", "file_name": "台股AI分析儀表板.html", "path": "股票工具/台股AI分析儀表板.html", "title": "台股 AI 主力行為判讀系統", "desc": "股票工具 · 台股AI分析儀表板", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E5%8F%B0%E8%82%A1AI%E5%88%86%E6%9E%90%E5%84%80%E8%A1%A8%E6%9D%BF.html"}, {"category": "股票工具", "icon": "📈", "file_name": "台股AI全方位儀表板.html", "path": "股票工具/台股AI全方位儀表板.html", "title": "台股 AI 全方位分析儀表板", "desc": "股票工具 · 台股AI全方位儀表板", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E5%8F%B0%E8%82%A1AI%E5%85%A8%E6%96%B9%E4%BD%8D%E5%84%80%E8%A1%A8%E6%9D%BF.html"}, {"category": "股票工具", "icon": "📈", "file_name": "index.html", "path": "股票工具/tw-stock-ai/index.html", "title": "台股個股資料分析與 Groq AI 洞察系統", "desc": "股票工具 · index", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/tw-stock-ai/index.html"}, {"category": "股票工具", "icon": "📈", "file_name": "長期投資分析_v2.html", "path": "股票工具/長期投資分析_v2.html", "title": "台股長期投資分析系統 v2", "desc": "股票工具 · 長期投資分析_v2", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%95%B7%E6%9C%9F%E6%8A%95%E8%B3%87%E5%88%86%E6%9E%90_v2.html"}, {"category": "股票工具", "icon": "📈", "file_name": "量化策略實驗室.html", "path": "股票工具/量化策略實驗室.html", "title": "量化策略實驗室", "desc": "股票工具 · 量化策略實驗室", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%8F%E5%8C%96%E7%AD%96%E7%95%A5%E5%AF%A6%E9%A9%97%E5%AE%A4.html"}, {"category": "股票工具", "icon": "📘", "file_name": "釣魚選股v12_程式深度解析與教學要點手冊.html", "path": "股票工具/釣魚選股v12_程式深度解析與教學要點手冊.html", "title": "🎣 股王釣魚選股攻略 v12 · 程式架構與教學使用手冊", "desc": "股票工具 · 錄影教學比對整理、水深折價意涵、AI Vision 截圖辨識放魚與籌碼量化實戰", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1v12_%E7%A8%8B%E5%BC%8F%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E8%88%87%E6%95%99%E5%AD%B8%E8%A6%81%E9%BB%9E%E6%89%8B%E5%86%8A.html"}, {"category": "股票工具", "icon": "📈", "file_name": "釣魚選股_v16.html", "path": "股票工具/釣魚選股_v16.html", "title": "🎣 股王釣魚選股攻略 v16", "desc": "股票工具 · 釣魚選股_v16", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v16.html"}, {"category": "股票工具", "icon": "📑", "file_name": "釣魚選股_v12_原始碼深度解析報告.html", "path": "股票工具/釣魚選股_v12_原始碼深度解析報告.html", "title": "🎣 釣魚選股 v12 · 原始碼與系統架構深度解析報告", "desc": "股票工具 · 21,340行原生前端代碼架構、三大腳本模組（GameLoop/量化指標/產業星圖）源碼拆解", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v12_%E5%8E%9F%E5%A7%8B%E7%A2%BC%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E5%A0%B1%E5%91%8A.html"}, {"category": "股票工具", "icon": "📈", "file_name": "股王拉霸選股攻略_v1.html", "path": "股票工具/股王拉霸選股攻略_v1.html", "title": "🎰 股王拉霸選股攻略 v1", "desc": "股票工具 · 股王拉霸選股攻略_v1", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E6%8B%89%E9%9C%B8%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1.html"}, {"category": "股票工具", "icon": "📈", "file_name": "股王鳥卦選股攻略_v1_6.html", "path": "股票工具/股王鳥卦選股攻略_v1_6.html", "title": "🐦 股王鳥卦選股攻略 v1.6", "desc": "股票工具 · 股王鳥卦選股攻略_v1_6", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E9%B3%A5%E5%8D%A6%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1_6.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "AI_Agent_架構流光圖 (1).html", "path": "AI工具/AI_Agent_架構流光圖 (1).html", "title": "AI Agent 完整架構 · 流光互動圖", "desc": "AI工具 · AI_Agent_架構流光圖 (1)", "url": "AI%E5%B7%A5%E5%85%B7/AI_Agent_%E6%9E%B6%E6%A7%8B%E6%B5%81%E5%85%89%E5%9C%96%20%281%29.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "Agent_運用模式_流光動態圖.html", "path": "AI工具/Agent_運用模式_流光動態圖.html", "title": "Agent 十種運用模式｜流光動態圖", "desc": "AI工具 · Agent_運用模式_流光動態圖", "url": "AI%E5%B7%A5%E5%85%B7/Agent_%E9%81%8B%E7%94%A8%E6%A8%A1%E5%BC%8F_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "Groq解析_Gemini圖像生成器.html", "path": "AI工具/Groq解析_Gemini圖像生成器.html", "title": "Groq 解析 × Gemini 圖像生成器", "desc": "AI工具 · Groq解析_Gemini圖像生成器", "url": "AI%E5%B7%A5%E5%85%B7/Groq%E8%A7%A3%E6%9E%90_Gemini%E5%9C%96%E5%83%8F%E7%94%9F%E6%88%90%E5%99%A8.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "SDLC_vs_ADLC_流光圖.html", "path": "AI工具/SDLC_vs_ADLC_流光圖.html", "title": "SDLC vs ADLC 流光圖", "desc": "AI工具 · SDLC_vs_ADLC_流光圖", "url": "AI%E5%B7%A5%E5%85%B7/SDLC_vs_ADLC_%E6%B5%81%E5%85%89%E5%9C%96.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "Skills 配對器_Groq版_v3.html", "path": "AI工具/Skills 配對器_Groq版_v3.html", "title": "Skills 配對器_Groq版_v3", "desc": "AI工具 · Skills 配對器_Groq版_v3", "url": "AI%E5%B7%A5%E5%85%B7/Skills%20%E9%85%8D%E5%B0%8D%E5%99%A8_Groq%E7%89%88_v3.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "TTS益值玩 (9).html", "path": "AI工具/TTS益值玩 (9).html", "title": "TTS益值玩 · 多引擎台語語音實驗室", "desc": "AI工具 · TTS益值玩 (9)", "url": "AI%E5%B7%A5%E5%85%B7/TTS%E7%9B%8A%E5%80%BC%E7%8E%A9%20%289%29.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "企業提示詞工程產生器-v2.html", "path": "AI工具/企業提示詞工程產生器-v2.html", "title": "企業提示詞工程產生器 · Prompt Studio", "desc": "AI工具 · 企業提示詞工程產生器-v2", "url": "AI%E5%B7%A5%E5%85%B7/%E4%BC%81%E6%A5%AD%E6%8F%90%E7%A4%BA%E8%A9%9E%E5%B7%A5%E7%A8%8B%E7%94%A2%E7%94%9F%E5%99%A8-v2.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "Token 瘦身引擎 v2.html", "path": "AI工具/Token 瘦身引擎 v2.html", "title": "意境壓縮器 v2 · Token 瘦身引擎", "desc": "AI工具 · Token 瘦身引擎 v2", "url": "AI%E5%B7%A5%E5%85%B7/Token%20%E7%98%A6%E8%BA%AB%E5%BC%95%E6%93%8E%20v2.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "提示詞大師.html", "path": "AI工具/提示詞大師.html", "title": "提示詞大師 · Prompt Master", "desc": "AI工具 · 提示詞大師", "url": "AI%E5%B7%A5%E5%85%B7/%E6%8F%90%E7%A4%BA%E8%A9%9E%E5%A4%A7%E5%B8%AB.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "數據清洗正規化分析_v6.html", "path": "AI工具/數據清洗正規化分析_v6.html", "title": "數據清洗、正規化 及 分析", "desc": "AI工具 · 數據清洗正規化分析_v6", "url": "AI%E5%B7%A5%E5%85%B7/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "風格擷取師_R2.html", "path": "AI工具/風格擷取師_R2.html", "title": "風格擷取師 R2 · 圖像風格紀錄生成器（完整配置盤點版）", "desc": "AI工具 · 風格擷取師_R2", "url": "AI%E5%B7%A5%E5%85%B7/%E9%A2%A8%E6%A0%BC%E6%93%B7%E5%8F%96%E5%B8%AB_R2.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "HTML反向工程_R2.html", "path": "AI工具/HTML反向工程_R2.html", "title": "🔍 HTML 反向工程 — 提示詞產生器", "desc": "AI工具 · HTML反向工程_R2", "url": "AI%E5%B7%A5%E5%85%B7/HTML%E5%8F%8D%E5%90%91%E5%B7%A5%E7%A8%8B_R2.html"}, {"category": "AI工具", "icon": "🤖", "file_name": "程式反向工程 (3).html", "path": "AI工具/程式反向工程 (3).html", "title": "🔍 程式反向工程 — 提示詞產生器", "desc": "AI工具 · 程式反向工程 (3)", "url": "AI%E5%B7%A5%E5%85%B7/%E7%A8%8B%E5%BC%8F%E5%8F%8D%E5%90%91%E5%B7%A5%E7%A8%8B%20%283%29.html"}, {"category": "文書行政", "icon": "📑", "file_name": "AI_SWOT分析工具_專業版_v3.8_Groq.html", "path": "文書行政/AI_SWOT分析工具_專業版_v3.8_Groq.html", "title": "AI SWOT 分析工具 - 專業版", "desc": "文書行政 · AI_SWOT分析工具_專業版_v3.8_Groq", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/AI_SWOT%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7_%E5%B0%88%E6%A5%AD%E7%89%88_v3.8_Groq.html"}, {"category": "文書行政", "icon": "📑", "file_name": "Markdown-Editor-v2.html", "path": "文書行政/Markdown-Editor-v2.html", "title": "Markdown 編輯器 v2", "desc": "文書行政 · Markdown-Editor-v2", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Markdown-Editor-v2.html"}, {"category": "文書行政", "icon": "📑", "file_name": "Mermaid_Editor_企業版 (5).html", "path": "文書行政/Mermaid_Editor_企業版 (5).html", "title": "Mermaid Editor", "desc": "文書行政 · Mermaid_Editor_企業版 (5)", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Mermaid_Editor_%E4%BC%81%E6%A5%AD%E7%89%88%20%285%29.html"}, {"category": "文書行政", "icon": "📑", "file_name": "Spin3D (2).html", "path": "文書行政/Spin3D (2).html", "title": "Spin3D 動態展演工坊", "desc": "文書行政 · Spin3D (2)", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Spin3D%20%282%29.html"}, {"category": "文書行政", "icon": "📑", "file_name": "圖表大師 II.html", "path": "文書行政/圖表大師 II.html", "title": "圖表大師 v4 · ECF", "desc": "文書行政 · 圖表大師 II", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E5%9C%96%E8%A1%A8%E5%A4%A7%E5%B8%AB%20II.html"}, {"category": "文書行政", "icon": "📑", "file_name": "數據清洗正規化分析_v6.html", "path": "文書行政/數據清洗正規化分析_v6.html", "title": "數據清洗、正規化 及 分析", "desc": "文書行政 · 數據清洗正規化分析_v6", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html"}, {"category": "文書行政", "icon": "📑", "file_name": "文案策略X光機.html", "path": "文書行政/文案策略X光機.html", "title": "文案策略X光機", "desc": "文書行政 · 文案策略X光機", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%96%87%E6%A1%88%E7%AD%96%E7%95%A5X%E5%85%89%E6%A9%9F.html"}, {"category": "文書行政", "icon": "📑", "file_name": "nexus_atlas-new.html", "path": "文書行政/nexus_atlas-new.html", "title": "星脈圖譜 · AI 關聯星圖產生器", "desc": "文書行政 · nexus_atlas-new", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/nexus_atlas-new.html"}, {"category": "文書行政", "icon": "📑", "file_name": "組織架構圖產生器_v17.html", "path": "文書行政/組織架構圖產生器_v17.html", "title": "組織架構圖產生器", "desc": "文書行政 · 組織架構圖產生器_v17", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E7%B5%84%E7%B9%94%E6%9E%B6%E6%A7%8B%E5%9C%96%E7%94%A2%E7%94%9F%E5%99%A8_v17.html"}, {"category": "文書行政", "icon": "📑", "file_name": "職場_Agent_應用_流光動態圖.html", "path": "文書行政/職場_Agent_應用_流光動態圖.html", "title": "職場 Agent 應用｜流光動態圖", "desc": "文書行政 · 職場_Agent_應用_流光動態圖", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%81%B7%E5%A0%B4_Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html"}, {"category": "文書行政", "icon": "📑", "file_name": "PDF拆分工具-new.html", "path": "文書行政/PDF拆分工具-new.html", "title": "📚 PDF自動切割工具", "desc": "文書行政 · PDF拆分工具-new", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/PDF%E6%8B%86%E5%88%86%E5%B7%A5%E5%85%B7-new.html"}, {"category": "商業", "icon": "💼", "file_name": "BMC商業模式畫布生成器_v3.html", "path": "商業/BMC商業模式畫布生成器_v3.html", "title": "BMC 商業模式畫布生成器 · Groq", "desc": "商業 · BMC商業模式畫布生成器_v3", "url": "%E5%95%86%E6%A5%AD/BMC%E5%95%86%E6%A5%AD%E6%A8%A1%E5%BC%8F%E7%95%AB%E5%B8%83%E7%94%9F%E6%88%90%E5%99%A8_v3.html"}, {"category": "商業", "icon": "💼", "file_name": "台灣薪資位階_3D高質版.html", "path": "商業/台灣薪資位階_3D高質版.html", "title": "台灣薪資位階 · 3D 高質版", "desc": "商業 · 台灣薪資位階_3D高質版", "url": "%E5%95%86%E6%A5%AD/%E5%8F%B0%E7%81%A3%E8%96%AA%E8%B3%87%E4%BD%8D%E9%9A%8E_3D%E9%AB%98%E8%B3%AA%E7%89%88.html"}, {"category": "商業", "icon": "💼", "file_name": "消費族群分析儀_Groq版_v17.html", "path": "商業/消費族群分析儀_Groq版_v17.html", "title": "消費族群分析儀 · 消費洞察平台", "desc": "商業 · 消費族群分析儀_Groq版_v17", "url": "%E5%95%86%E6%A5%AD/%E6%B6%88%E8%B2%BB%E6%97%8F%E7%BE%A4%E5%88%86%E6%9E%90%E5%84%80_Groq%E7%89%88_v17.html"}, {"category": "商業", "icon": "💼", "file_name": "行銷組合演進器_4P5P7P.html", "path": "商業/行銷組合演進器_4P5P7P.html", "title": "行銷組合演進器｜4P → 5P → 7P", "desc": "商業 · 行銷組合演進器_4P5P7P", "url": "%E5%95%86%E6%A5%AD/%E8%A1%8C%E9%8A%B7%E7%B5%84%E5%90%88%E6%BC%94%E9%80%B2%E5%99%A8_4P5P7P.html"}, {"category": "學務", "icon": "🎓", "file_name": "Agent_應用_流光動態圖_企業學校版.html", "path": "學務/Agent_應用_流光動態圖_企業學校版.html", "title": "Agent 應用｜流光動態圖", "desc": "學務 · Agent_應用_流光動態圖_企業學校版", "url": "%E5%AD%B8%E5%8B%99/Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96_%E4%BC%81%E6%A5%AD%E5%AD%B8%E6%A0%A1%E7%89%88.html"}, {"category": "學務", "icon": "🎓", "file_name": "Mermaid_Editor_學校版 (7).html", "path": "學務/Mermaid_Editor_學校版 (7).html", "title": "Mermaid Editor", "desc": "學務 · Mermaid_Editor_學校版 (7)", "url": "%E5%AD%B8%E5%8B%99/Mermaid_Editor_%E5%AD%B8%E6%A0%A1%E7%89%88%20%287%29.html"}, {"category": "學務", "icon": "🎓", "file_name": "新出題小幫手-風格學習-Groq版.html", "path": "學務/新出題小幫手-風格學習-Groq版.html", "title": "新出題小幫手-風格學習-Groq版", "desc": "學務 · 新出題小幫手-風格學習-Groq版", "url": "%E5%AD%B8%E5%8B%99/%E6%96%B0%E5%87%BA%E9%A1%8C%E5%B0%8F%E5%B9%AB%E6%89%8B-%E9%A2%A8%E6%A0%BC%E5%AD%B8%E7%BF%92-Groq%E7%89%88.html"}, {"category": "學務", "icon": "🎓", "file_name": "貼課通-學生專業版_v4.0.html", "path": "學務/貼課通-學生專業版_v4.0.html", "title": "貼課通 v4.0 · 學生版（加入課堂）", "desc": "學務 · 貼課通-學生專業版_v4.0", "url": "%E5%AD%B8%E5%8B%99/%E8%B2%BC%E8%AA%B2%E9%80%9A-%E5%AD%B8%E7%94%9F%E5%B0%88%E6%A5%AD%E7%89%88_v4.0.html"}, {"category": "學務", "icon": "🎓", "file_name": "貼課通-教師專業版_v4.0.html", "path": "學務/貼課通-教師專業版_v4.0.html", "title": "貼課通 v4.0 · 專業版（課堂即時牆）", "desc": "學務 · 貼課通-教師專業版_v4.0", "url": "%E5%AD%B8%E5%8B%99/%E8%B2%BC%E8%AA%B2%E9%80%9A-%E6%95%99%E5%B8%AB%E5%B0%88%E6%A5%AD%E7%89%88_v4.0.html"}, {"category": "娛樂", "icon": "🎮", "file_name": "1943-3D.html", "path": "娛樂/1943-3D.html", "title": "1943 — 街機空戰", "desc": "娛樂 · 1943-3D", "url": "%E5%A8%9B%E6%A8%82/1943-3D.html"}, {"category": "娛樂", "icon": "🎮", "file_name": "AI_滑塊拼圖遊戲_v3.html", "path": "娛樂/AI_滑塊拼圖遊戲_v3.html", "title": "AI 滑塊拼圖", "desc": "娛樂 · AI_滑塊拼圖遊戲_v3", "url": "%E5%A8%9B%E6%A8%82/AI_%E6%BB%91%E5%A1%8A%E6%8B%BC%E5%9C%96%E9%81%8A%E6%88%B2_v3.html"}, {"category": "娛樂", "icon": "🎮", "file_name": "小蜜蜂3D-星海遠征.html", "path": "娛樂/小蜜蜂3D-星海遠征.html", "title": "小蜜蜂 3D · 星海遠征", "desc": "娛樂 · 小蜜蜂3D-星海遠征", "url": "%E5%A8%9B%E6%A8%82/%E5%B0%8F%E8%9C%9C%E8%9C%823D-%E6%98%9F%E6%B5%B7%E9%81%A0%E5%BE%81.html"}, {"category": "娛樂", "icon": "🎮", "file_name": "金屬音律播放器_語音辨識版.html", "path": "娛樂/金屬音律播放器_語音辨識版.html", "title": "金屬音律播放器", "desc": "娛樂 · 金屬音律播放器_語音辨識版", "url": "%E5%A8%9B%E6%A8%82/%E9%87%91%E5%B1%AC%E9%9F%B3%E5%BE%8B%E6%92%AD%E6%94%BE%E5%99%A8_%E8%AA%9E%E9%9F%B3%E8%BE%A8%E8%AD%98%E7%89%88.html"}, {"category": "娛樂", "icon": "🎮", "file_name": "青蛙過街-3D.html", "path": "娛樂/青蛙過街-3D.html", "title": "青蛙過街 3D · 河岸冒險", "desc": "娛樂 · 青蛙過街-3D", "url": "%E5%A8%9B%E6%A8%82/%E9%9D%92%E8%9B%99%E9%81%8E%E8%A1%97-3D.html"}, {"category": "生活工具", "icon": "🍳", "file_name": "AI料理王_Groq_Gemini3_5.html", "path": "生活工具/AI料理王_Groq_Gemini3_5.html", "title": "🍳 AI料理王", "desc": "生活工具 · AI料理王_Groq_Gemini3_5", "url": "%E7%94%9F%E6%B4%BB%E5%B7%A5%E5%85%B7/AI%E6%96%99%E7%90%86%E7%8E%8B_Groq_Gemini3_5.html"}, {"category": "命理", "icon": "☯️", "file_name": "八字姓名學_v7.html", "path": "命理/八字姓名學_v7.html", "title": "ECF 八字×姓名合參", "desc": "命理 · 八字姓名學_v7", "url": "%E5%91%BD%E7%90%86/%E5%85%AB%E5%AD%97%E5%A7%93%E5%90%8D%E5%AD%B8_v7.html"}, {"category": "命理", "icon": "☯️", "file_name": "星命譜.html", "path": "命理/星命譜.html", "title": "星命譜｜八字・姓名・星座血型", "desc": "命理 · 星命譜", "url": "%E5%91%BD%E7%90%86/%E6%98%9F%E5%91%BD%E8%AD%9C.html"}, {"category": "多媒體", "icon": "🎙️", "file_name": "Podcast-prompt.html", "path": "多媒體/Podcast-prompt.html", "title": "CAST PROMPT — 語音摘要提示詞工具", "desc": "多媒體 · Podcast-prompt", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/Podcast-prompt.html"}, {"category": "多媒體", "icon": "🎙️", "file_name": "TTS益值玩 (9).html", "path": "多媒體/TTS益值玩 (9).html", "title": "TTS益值玩 · 多引擎台語語音實驗室", "desc": "多媒體 · TTS益值玩 (9)", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/TTS%E7%9B%8A%E5%80%BC%E7%8E%A9%20%289%29.html"}, {"category": "中醫研究", "icon": "🌿", "file_name": "nihaisha/index.html", "path": "nihaisha/index.html", "title": "倪海廈經方中醫工作台 v4.0", "desc": "金匱要略、傷寒論方證速查，條文圖譜與辨證階梯引導。", "url": "nihaisha/index.html"}];
+    const allItems = [{"type": "tool", "category": "商業", "icon": "💼", "file_name": "BMC商業模式畫布生成器_v3.html", "path": "商業/BMC商業模式畫布生成器_v3.html", "title": "BMC 商業模式畫布生成器 · Groq", "desc": "九宮格商業模式畫布（BMC）智能推導、成本結構與價值主張設計", "mtime": 1794410896.0947907, "mtime_str": "2026-11-11 23:28", "url": "%E5%95%86%E6%A5%AD/BMC%E5%95%86%E6%A5%AD%E6%A8%A1%E5%BC%8F%E7%95%AB%E5%B8%83%E7%94%9F%E6%88%90%E5%99%A8_v3.html", "raw_url": ""}, {"type": "tool", "category": "命理", "icon": "🔮", "file_name": "星命譜.html", "path": "命理/星命譜.html", "title": "星命譜｜八字・姓名・星座血型", "desc": "橫跨東西方命理體系：八字格局、姓名五格與西洋占星十字盤", "mtime": 1794410896.0924401, "mtime_str": "2026-11-11 23:28", "url": "%E5%91%BD%E7%90%86/%E6%98%9F%E5%91%BD%E8%AD%9C.html", "raw_url": ""}, {"type": "tool", "category": "命理", "icon": "☯️", "file_name": "八字姓名學_v7.html", "path": "命理/八字姓名學_v7.html", "title": "ECF 八字 × 姓名合參 v7", "desc": "四柱生辰八字排盤、五行旺衰、姓名筆畫吉凶與運勢推算", "mtime": 1794410896.083926, "mtime_str": "2026-11-11 23:28", "url": "%E5%91%BD%E7%90%86/%E5%85%AB%E5%AD%97%E5%A7%93%E5%90%8D%E5%AD%B8_v7.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "💹", "file_name": "index.html", "path": "股票工具/tw-stock-ai/index.html", "title": "台股個股資料分析與 Groq AI 洞察系統", "desc": "深度財報 PDF 解析、歷史 K 線與 Groq AI 智能洞察", "mtime": 1793802250.0, "mtime_str": "2026-11-04 22:24", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/tw-stock-ai/index.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "💻", "file_name": "程式反向工程 (3).html", "path": "AI工具/程式反向工程 (3).html", "title": "🔍 程式反向工程 — 提示詞產生器", "desc": "代碼邏輯拆解與架構反推提示詞生成器", "mtime": 1793742044.0, "mtime_str": "2026-11-04 05:40", "url": "AI%E5%B7%A5%E5%85%B7/%E7%A8%8B%E5%BC%8F%E5%8F%8D%E5%90%91%E5%B7%A5%E7%A8%8B%20%283%29.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "🧩", "file_name": "AI_滑塊拼圖遊戲_v3.html", "path": "娛樂/AI_滑塊拼圖遊戲_v3.html", "title": "AI 滑塊拼圖 v3", "desc": "自訂圖片與難度，內建 A* 自動解題演算法之經典滑塊益智遊戲", "mtime": 1793731986.0, "mtime_str": "2026-11-04 02:53", "url": "%E5%A8%9B%E6%A8%82/AI_%E6%BB%91%E5%A1%8A%E6%8B%BC%E5%9C%96%E9%81%8A%E6%88%B2_v3.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🔄", "file_name": "SDLC_vs_ADLC_流光圖.html", "path": "AI工具/SDLC_vs_ADLC_流光圖.html", "title": "SDLC vs ADLC 流光圖", "desc": "傳統軟體開發生命週期與 AI 驅動開發生命週期之流光對比圖", "mtime": 1793571842.0, "mtime_str": "2026-11-02 06:24", "url": "AI%E5%B7%A5%E5%85%B7/SDLC_vs_ADLC_%E6%B5%81%E5%85%89%E5%9C%96.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "🏛️", "file_name": "組織架構圖產生器_v17.html", "path": "文書行政/組織架構圖產生器_v17.html", "title": "組織架構圖產生器 v17", "desc": "層級樹狀組織架構繪製、節點折疊與企業職權圖譜匯出", "mtime": 1793376124.0, "mtime_str": "2026-10-31 00:02", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E7%B5%84%E7%B9%94%E6%9E%B6%E6%A7%8B%E5%9C%96%E7%94%A2%E7%94%9F%E5%99%A8_v17.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🎨", "file_name": "Pollinations_意境圖像創作_Groq翻譯版-new.html", "path": "多媒體/Pollinations_意境圖像創作_Groq翻譯版-new.html", "title": "Pollinations 意境圖像創作 · Groq 智能翻譯版", "desc": "中文自然語言輸入自動經由 Groq 轉換為高品質 AI 繪圖提示詞並即時生圖", "mtime": 1793265973.764, "mtime_str": "2026-10-29 17:26", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/Pollinations_%E6%84%8F%E5%A2%83%E5%9C%96%E5%83%8F%E5%89%B5%E4%BD%9C_Groq%E7%BF%BB%E8%AD%AF%E7%89%88-new.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "🎵", "file_name": "金屬音律播放器_語音辨識版.html", "path": "娛樂/金屬音律播放器_語音辨識版.html", "title": "金屬音律播放器 · 語音辨識版", "desc": "金屬質感激發動態音波頻譜視覺化，支援語音指令切歌與操控", "mtime": 1793198312.304, "mtime_str": "2026-10-28 22:38", "url": "%E5%A8%9B%E6%A8%82/%E9%87%91%E5%B1%AC%E9%9F%B3%E5%BE%8B%E6%92%AD%E6%94%BE%E5%99%A8_%E8%AA%9E%E9%9F%B3%E8%BE%A8%E8%AD%98%E7%89%88.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "🚀", "file_name": "小蜜蜂3D-星海遠征.html", "path": "娛樂/小蜜蜂3D-星海遠征.html", "title": "小蜜蜂 3D · 星海遠征", "desc": "復古小蜜蜂 Galaga 3D 空間飛行版，光子魚雷與星際母艦對決", "mtime": 1793198311.946, "mtime_str": "2026-10-28 22:38", "url": "%E5%A8%9B%E6%A8%82/%E5%B0%8F%E8%9C%9C%E8%9C%823D-%E6%98%9F%E6%B5%B7%E9%81%A0%E5%BE%81.html", "raw_url": ""}, {"type": "tool", "category": "學務", "icon": "🏫", "file_name": "Agent_應用_流光動態圖_企業學校版.html", "path": "學務/Agent_應用_流光動態圖_企業學校版.html", "title": "Agent 應用｜流光動態圖 (學校企業版)", "desc": "教育場景與學校行政中 Agent 自動化工作流之流光展示", "mtime": 1793198311.082, "mtime_str": "2026-10-28 22:38", "url": "%E5%AD%B8%E5%8B%99/Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96_%E4%BC%81%E6%A5%AD%E5%AD%B8%E6%A0%A1%E7%89%88.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "📈", "file_name": "台股AI全方位儀表板.html", "path": "股票工具/台股AI全方位儀表板.html", "title": "台股 AI 全方位分析儀表板", "desc": "即時行情、多維指標與技術形態分析儀表板", "mtime": 1793198308.811, "mtime_str": "2026-10-28 22:38", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E5%8F%B0%E8%82%A1AI%E5%85%A8%E6%96%B9%E4%BD%8D%E5%84%80%E8%A1%A8%E6%9D%BF.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "🐸", "file_name": "青蛙過街-3D.html", "path": "娛樂/青蛙過街-3D.html", "title": "青蛙過街 3D · 河岸冒險", "desc": "經典 Frogger 穿越車流滾木 3D 化，考驗反應力與微操節奏", "mtime": 1793151996.0, "mtime_str": "2026-10-28 09:46", "url": "%E5%A8%9B%E6%A8%82/%E9%9D%92%E8%9B%99%E9%81%8E%E8%A1%97-3D.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📐", "file_name": "Mermaid_Editor_企業版 (5).html", "path": "文書行政/Mermaid_Editor_企業版 (5).html", "title": "Mermaid Editor · 企業版 v5", "desc": "即時編寫流程圖、時序圖、甘特圖與架構圖，支援高解析匯出", "mtime": 1793104700.0, "mtime_str": "2026-10-27 20:38", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Mermaid_Editor_%E4%BC%81%E6%A5%AD%E7%89%88%20%285%29.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "🪐", "file_name": "Spin3D (2).html", "path": "文書行政/Spin3D (2).html", "title": "Spin3D 動態展演工坊", "desc": "3D 物件旋轉展示、透視調節與光影渲染互動舞台", "mtime": 1793027553.425, "mtime_str": "2026-10-26 23:12", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Spin3D%20%282%29.html", "raw_url": ""}, {"type": "tool", "category": "中醫研究", "icon": "🌿", "file_name": "index.html", "path": "nihaisha/index.html", "title": "倪海廈經方中醫工作台 v4.0", "desc": "金匱要略、傷寒論方證速查，條文圖譜與辨證階梯引導", "mtime": 1792855948.19, "mtime_str": "2026-10-24 23:32", "url": "nihaisha/index.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "🐦", "file_name": "股王鳥卦選股攻略_v1_6.html", "path": "股票工具/股王鳥卦選股攻略_v1_6.html", "title": "🐦 股王鳥卦選股攻略 v1.6", "desc": "易經卦象結合台股量化選股模型", "mtime": 1792824608.509, "mtime_str": "2026-10-24 14:50", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E9%B3%A5%E5%8D%A6%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1_6.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "🔬", "file_name": "量化策略實驗室.html", "path": "股票工具/量化策略實驗室.html", "title": "量化策略實驗室", "desc": "量化回測與策略模擬實驗沙盒", "mtime": 1792770789.351, "mtime_str": "2026-10-23 23:53", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%8F%E5%8C%96%E7%AD%96%E7%95%A5%E5%AF%A6%E9%A9%97%E5%AE%A4.html", "raw_url": ""}, {"type": "tool", "category": "學務", "icon": "✏️", "file_name": "Mermaid_Editor_學校版 (7).html", "path": "學務/Mermaid_Editor_學校版 (7).html", "title": "Mermaid Editor · 學校版 v7", "desc": "適合師生課堂繪製教學概念圖、心智圖與時序圖之視覺化編輯器", "mtime": 1792770701.513, "mtime_str": "2026-10-23 23:51", "url": "%E5%AD%B8%E5%8B%99/Mermaid_Editor_%E5%AD%B8%E6%A0%A1%E7%89%88%20%287%29.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📝", "file_name": "Markdown-Editor-v2.html", "path": "文書行政/Markdown-Editor-v2.html", "title": "Markdown 編輯器 v2", "desc": "支援即時雙欄預覽、語法高亮、表格與圖表渲染之寫作工具", "mtime": 1792281562.0, "mtime_str": "2026-10-18 07:59", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Markdown-Editor-v2.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "✈️", "file_name": "1943-3D.html", "path": "娛樂/1943-3D.html", "title": "1943 — 街機空戰 3D", "desc": "經典二戰街機縱向射擊遊戲 3D 復刻版，彈幕飛行與艦隊轟炸", "mtime": 1792281010.0, "mtime_str": "2026-10-18 07:50", "url": "%E5%A8%9B%E6%A8%82/1943-3D.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "🎰", "file_name": "股王拉霸選股攻略_v1.html", "path": "股票工具/股王拉霸選股攻略_v1.html", "title": "🎰 股王拉霸選股攻略 v1", "desc": "拉霸機視覺趣味選股與量化篩選工具", "mtime": 1792110390.601, "mtime_str": "2026-10-16 08:26", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E8%82%A1%E7%8E%8B%E6%8B%89%E9%9C%B8%E9%81%B8%E8%82%A1%E6%94%BB%E7%95%A5_v1.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📊", "file_name": "圖表大師 II.html", "path": "文書行政/圖表大師 II.html", "title": "圖表大師 v4 · ECF", "desc": "多樣化統計圖表（長條圖、折線圖、雷達圖）一鍵快速生成", "mtime": 1791417614.0, "mtime_str": "2026-10-08 08:00", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E5%9C%96%E8%A1%A8%E5%A4%A7%E5%B8%AB%20II.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🤖", "file_name": "AI_Agent_架構流光圖 (1).html", "path": "AI工具/AI_Agent_架構流光圖 (1).html", "title": "AI Agent 完整架構 · 流光互動圖", "desc": "展示 AI Agent 感知、記憶、規劃與行動之動態流光架構圖", "mtime": 1791328940.0, "mtime_str": "2026-10-07 07:22", "url": "AI%E5%B7%A5%E5%85%B7/AI_Agent_%E6%9E%B6%E6%A7%8B%E6%B5%81%E5%85%89%E5%9C%96%20%281%29.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "👔", "file_name": "職場_Agent_應用_流光動態圖.html", "path": "文書行政/職場_Agent_應用_流光動態圖.html", "title": "職場 Agent 應用｜流光動態圖", "desc": "行政公文、跨部門協同與自動化任務之職場 Agent 應用流光展演", "mtime": 1791250620.0, "mtime_str": "2026-10-06 09:37", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%81%B7%E5%A0%B4_Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "⚡", "file_name": "Agent_運用模式_流光動態圖.html", "path": "AI工具/Agent_運用模式_流光動態圖.html", "title": "Agent 十種運用模式｜流光動態圖", "desc": "深入拆解企業與個人十種主流 Agent 協同架構演進路徑", "mtime": 1791244856.0, "mtime_str": "2026-10-06 08:00", "url": "AI%E5%B7%A5%E5%85%B7/Agent_%E9%81%8B%E7%94%A8%E6%A8%A1%E5%BC%8F_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "🎣", "file_name": "釣魚選股_v16.html", "path": "股票工具/釣魚選股_v16.html", "title": "🎣 股王釣魚選股攻略 v16", "desc": "水深折價撈魚、主升段跳水與 50 隻活躍魚池實時追蹤", "mtime": 1791040065.0, "mtime_str": "2026-10-03 23:07", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v16.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "💡", "file_name": "文案策略X光機.html", "path": "文書行政/文案策略X光機.html", "title": "文案策略 X 光機", "desc": "透視受眾痛點、吸睛標題公式與轉化率說服力拆解儀", "mtime": 1790892470.0, "mtime_str": "2026-10-02 06:07", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%96%87%E6%A1%88%E7%AD%96%E7%95%A5X%E5%85%89%E6%A9%9F.html", "raw_url": ""}, {"type": "tool", "category": "商業", "icon": "🚀", "file_name": "行銷組合演進器_4P5P7P.html", "path": "商業/行銷組合演進器_4P5P7P.html", "title": "行銷組合演進器｜4P → 5P → 7P", "desc": "經典行銷 4P 邁向現代服務行銷 7P 之演進架構與實務推演", "mtime": 1790793748.0, "mtime_str": "2026-10-01 02:42", "url": "%E5%95%86%E6%A5%AD/%E8%A1%8C%E9%8A%B7%E7%B5%84%E5%90%88%E6%BC%94%E9%80%B2%E5%99%A8_4P5P7P.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "📊", "file_name": "長期投資分析_v2.html", "path": "股票工具/長期投資分析_v2.html", "title": "台股長期投資分析系統 v2", "desc": "價值投資、股利折現與長期成長率評估系統", "mtime": 1790684852.0, "mtime_str": "2026-09-29 20:27", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%95%B7%E6%9C%9F%E6%8A%95%E8%B3%87%E5%88%86%E6%9E%90_v2.html", "raw_url": ""}, {"type": "tool", "category": "學務", "icon": "📝", "file_name": "新出題小幫手-風格學習-Groq版.html", "path": "學務/新出題小幫手-風格學習-Groq版.html", "title": "新出題小幫手 · 風格學習版 (Groq)", "desc": "學習過往試題風格與題型，自動產製客製化測驗卷與標準答案", "mtime": 1790682972.0, "mtime_str": "2026-09-29 19:56", "url": "%E5%AD%B8%E5%8B%99/%E6%96%B0%E5%87%BA%E9%A1%8C%E5%B0%8F%E5%B9%AB%E6%89%8B-%E9%A2%A8%E6%A0%BC%E5%AD%B8%E7%BF%92-Groq%E7%89%88.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🧙‍♂️", "file_name": "提示詞大師.html", "path": "AI工具/提示詞大師.html", "title": "提示詞大師 · Prompt Master", "desc": "多維度提示詞強化、結構擴展與高階思維鏈引導工具", "mtime": 1790456496.0, "mtime_str": "2026-09-27 05:01", "url": "AI%E5%B7%A5%E5%85%B7/%E6%8F%90%E7%A4%BA%E8%A9%9E%E5%A4%A7%E5%B8%AB.html", "raw_url": ""}, {"type": "tool", "category": "商業", "icon": "💰", "file_name": "台灣薪資位階_3D高質版.html", "path": "商業/台灣薪資位階_3D高質版.html", "title": "台灣薪資位階 · 3D 高質版", "desc": "台灣全體受僱員工薪資級距與分佈 3D 視覺化立體圖譜", "mtime": 1790274658.0, "mtime_str": "2026-09-25 02:30", "url": "%E5%95%86%E6%A5%AD/%E5%8F%B0%E7%81%A3%E8%96%AA%E8%B3%87%E4%BD%8D%E9%9A%8E_3D%E9%AB%98%E8%B3%AA%E7%89%88.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🏢", "file_name": "企業提示詞工程產生器-v2.html", "path": "AI工具/企業提示詞工程產生器-v2.html", "title": "企業提示詞工程產生器 · Prompt Studio v2", "desc": "結構化生成各類企業業務場景的標準化 Prompt 模板", "mtime": 1790085690.0, "mtime_str": "2026-09-22 22:01", "url": "AI%E5%B7%A5%E5%85%B7/%E4%BC%81%E6%A5%AD%E6%8F%90%E7%A4%BA%E8%A9%9E%E5%B7%A5%E7%A8%8B%E7%94%A2%E7%94%9F%E5%99%A8-v2.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "📈", "file_name": "台股AI分析儀表板.html", "path": "股票工具/台股AI分析儀表板.html", "title": "台股 AI 主力行為判讀系統", "desc": "主力大戶與籌碼流向動態判讀系統", "mtime": 1789694692.0, "mtime_str": "2026-09-18 09:24", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E5%8F%B0%E8%82%A1AI%E5%88%86%E6%9E%90%E5%84%80%E8%A1%A8%E6%9D%BF.html", "raw_url": ""}, {"type": "doc", "category": "股票工具", "icon": "📑", "file_name": "釣魚選股_v12_原始碼深度解析報告.html", "path": "股票工具/釣魚選股_v12_原始碼深度解析報告.html", "title": "🎣 釣魚選股 v12 · 原始碼與系統架構深度解析報告", "desc": "21,340 行純原生前端代碼架構、三大腳本模組（GameLoop/量化指標/產業星圖）源碼拆解", "mtime": 1788571934.0, "mtime_str": "2026-09-05 09:32", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v12_%E5%8E%9F%E5%A7%8B%E7%A2%BC%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E5%A0%B1%E5%91%8A.html", "raw_url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1_v12_%E5%8E%9F%E5%A7%8B%E7%A2%BC%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E5%A0%B1%E5%91%8A.md"}, {"type": "doc", "category": "股票工具", "icon": "📘", "file_name": "釣魚選股v12_程式深度解析與教學要點手冊.html", "path": "股票工具/釣魚選股v12_程式深度解析與教學要點手冊.html", "title": "🎣 股王釣魚選股攻略 v12 · 程式架構與教學使用手冊", "desc": "依據線上教學錄影比對整理，深入解析水深折價隱喻、AI 截圖辨識放魚與籌碼量化實戰", "mtime": 1788570652.0, "mtime_str": "2026-09-05 09:10", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1v12_%E7%A8%8B%E5%BC%8F%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E8%88%87%E6%95%99%E5%AD%B8%E8%A6%81%E9%BB%9E%E6%89%8B%E5%86%8A.html", "raw_url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%E9%87%A3%E9%AD%9A%E9%81%B8%E8%82%A1v12_%E7%A8%8B%E5%BC%8F%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E8%88%87%E6%95%99%E5%AD%B8%E8%A6%81%E9%BB%9E%E6%89%8B%E5%86%8A.md"}, {"type": "tool", "category": "學務", "icon": "🎒", "file_name": "貼課通-學生專業版_v4.0.html", "path": "學務/貼課通-學生專業版_v4.0.html", "title": "貼課通 v4.0 · 學生版（加入課堂）", "desc": "課堂互動協同平台，學生即時提問、參與隨堂測驗與意見反饋", "mtime": 1788447636.0, "mtime_str": "2026-09-03 23:00", "url": "%E5%AD%B8%E5%8B%99/%E8%B2%BC%E8%AA%B2%E9%80%9A-%E5%AD%B8%E7%94%9F%E5%B0%88%E6%A5%AD%E7%89%88_v4.0.html", "raw_url": ""}, {"type": "tool", "category": "學務", "icon": "👨‍🏫", "file_name": "貼課通-教師專業版_v4.0.html", "path": "學務/貼課通-教師專業版_v4.0.html", "title": "貼課通 v4.0 · 專業版（課堂即時牆）", "desc": "課堂白板即時牆、學生提問動態分流與課堂互動統計主控台", "mtime": 1788447628.0, "mtime_str": "2026-09-03 23:00", "url": "%E5%AD%B8%E5%8B%99/%E8%B2%BC%E8%AA%B2%E9%80%9A-%E6%95%99%E5%B8%AB%E5%B0%88%E6%A5%AD%E7%89%88_v4.0.html", "raw_url": ""}, {"type": "tool", "category": "商業", "icon": "👥", "file_name": "消費族群分析儀_Groq版_v17.html", "path": "商業/消費族群分析儀_Groq版_v17.html", "title": "消費族群分析儀 · 消費洞察平台", "desc": "消費者人設輪廓、動機痛點與市場區隔深度畫像生成器", "mtime": 1787877026.0, "mtime_str": "2026-08-28 08:30", "url": "%E5%95%86%E6%A5%AD/%E6%B6%88%E8%B2%BB%E6%97%8F%E7%BE%A4%E5%88%86%E6%9E%90%E5%84%80_Groq%E7%89%88_v17.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "🌌", "file_name": "nexus_atlas-new.html", "path": "文書行政/nexus_atlas-new.html", "title": "星脈圖譜 · AI 關聯星圖產生器", "desc": "知識節點力導向關聯星圖，支援縮放、聚集與高密度知識導航", "mtime": 1787770620.0, "mtime_str": "2026-08-27 02:57", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/nexus_atlas-new.html", "raw_url": ""}, {"type": "tool", "category": "生活工具", "icon": "🍳", "file_name": "AI料理王_Groq_Gemini3_5.html", "path": "生活工具/AI料理王_Groq_Gemini3_5.html", "title": "🍳 AI 料理王 (Groq + Gemini 3.5)", "desc": "冰箱剩餘食材輸入，自動生成星級主廚私房食譜與營養熱量分析", "mtime": 1787534218.0, "mtime_str": "2026-08-24 09:16", "url": "%E7%94%9F%E6%B4%BB%E5%B7%A5%E5%85%B7/AI%E6%96%99%E7%90%86%E7%8E%8B_Groq_Gemini3_5.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📊", "file_name": "AI_SWOT分析工具_專業版_v3.8_Groq.html", "path": "文書行政/AI_SWOT分析工具_專業版_v3.8_Groq.html", "title": "AI SWOT 分析工具 · 專業版 v3.8 (Groq)", "desc": "輸入業務背景即可秒級生成四大維度交叉優劣勢戰略矩陣", "mtime": 1783640348.0, "mtime_str": "2026-07-10 07:39", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/AI_SWOT%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7_%E5%B0%88%E6%A5%AD%E7%89%88_v3.8_Groq.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🎙️", "file_name": "TTS益值玩 (9).html", "path": "AI工具/TTS益值玩 (9).html", "title": "TTS益值玩 · 多引擎台語語音實驗室 (AI版)", "desc": "支援多音色合成與在地台語發音之語音合成工作台", "mtime": 1783561150.0, "mtime_str": "2026-07-09 09:39", "url": "AI%E5%B7%A5%E5%85%B7/TTS%E7%9B%8A%E5%80%BC%E7%8E%A9%20%289%29.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🗣️", "file_name": "TTS益值玩 (9).html", "path": "多媒體/TTS益值玩 (9).html", "title": "TTS益值玩 · 多引擎台語語音實驗室 (多媒體版)", "desc": "在地台語語音合成、多種台語方言音色調節與音訊檔導出", "mtime": 1783561150.0, "mtime_str": "2026-07-09 09:39", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/TTS%E7%9B%8A%E5%80%BC%E7%8E%A9%20%289%29.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🧹", "file_name": "數據清洗正規化分析_v6.html", "path": "AI工具/數據清洗正規化分析_v6.html", "title": "數據清洗、正規化 及 分析 (AI版)", "desc": "上傳 CSV/表格資料自動進行正規化清理、異常值檢測與分析", "mtime": 1783459448.0, "mtime_str": "2026-07-08 05:24", "url": "AI%E5%B7%A5%E5%85%B7/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📋", "file_name": "數據清洗正規化分析_v6.html", "path": "文書行政/數據清洗正規化分析_v6.html", "title": "數據清洗、正規化 及 分析 (行政版)", "desc": "行政表格批次清理、欄位型別校正與統計分析報告導出", "mtime": 1783459448.0, "mtime_str": "2026-07-08 05:24", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🔍", "file_name": "HTML反向工程_R2.html", "path": "AI工具/HTML反向工程_R2.html", "title": "🔍 HTML 反向工程 — 提示詞產生器", "desc": "單檔網頁原始碼解析與逆向提示詞還原工具", "mtime": 1783440280.0, "mtime_str": "2026-07-08 00:04", "url": "AI%E5%B7%A5%E5%85%B7/HTML%E5%8F%8D%E5%90%91%E5%B7%A5%E7%A8%8B_R2.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🖌️", "file_name": "風格擷取師_R2.html", "path": "AI工具/風格擷取師_R2.html", "title": "風格擷取師 R2 · 圖像風格紀錄生成器", "desc": "深度解構圖片風格、色調、筆觸與光影特徵，生成還原提示詞", "mtime": 1783438268.0, "mtime_str": "2026-07-07 23:31", "url": "AI%E5%B7%A5%E5%85%B7/%E9%A2%A8%E6%A0%BC%E6%93%B7%E5%8F%96%E5%B8%AB_R2.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🧩", "file_name": "Skills 配對器_Groq版_v3.html", "path": "AI工具/Skills 配對器_Groq版_v3.html", "title": "Skills 配對器 · Groq 版 v3", "desc": "智能比對使用者需求與 Agent 專用技能庫之適配引擎", "mtime": 1783387632.0, "mtime_str": "2026-07-07 09:27", "url": "AI%E5%B7%A5%E5%85%B7/Skills%20%E9%85%8D%E5%B0%8D%E5%99%A8_Groq%E7%89%88_v3.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "🎨", "file_name": "Groq解析_Gemini圖像生成器.html", "path": "AI工具/Groq解析_Gemini圖像生成器.html", "title": "Groq 解析 × Gemini 圖像生成器", "desc": "利用 Groq 極速推論精準解析意圖並串接 Gemini 圖像生成", "mtime": 1783162098.0, "mtime_str": "2026-07-04 18:48", "url": "AI%E5%B7%A5%E5%85%B7/Groq%E8%A7%A3%E6%9E%90_Gemini%E5%9C%96%E5%83%8F%E7%94%9F%E6%88%90%E5%99%A8.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "✂️", "file_name": "Token 瘦身引擎 v2.html", "path": "AI工具/Token 瘦身引擎 v2.html", "title": "意境壓縮器 v2 · Token 瘦身引擎", "desc": "精準剔除冗餘文字，大幅降低 LLM Prompt 消耗與成本", "mtime": 1782525966.0, "mtime_str": "2026-06-27 10:06", "url": "AI%E5%B7%A5%E5%85%B7/Token%20%E7%98%A6%E8%BA%AB%E5%BC%95%E6%93%8E%20v2.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "✨", "file_name": "流光流程動態生成器_v12.html", "path": "AI工具/流光流程動態生成器_v12.html", "title": "流光 · 流程動態生成器 v12", "desc": "炫彩粒子流光動畫與互動流程圖產生器，即時自訂節點與流速", "mtime": 1782433720.0, "mtime_str": "2026-06-26 08:28", "url": "AI%E5%B7%A5%E5%85%B7/%E6%B5%81%E5%85%89%E6%B5%81%E7%A8%8B%E5%8B%95%E6%85%8B%E7%94%9F%E6%88%90%E5%99%A8_v12.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "🕹️", "file_name": "積木彈珠檯.html", "path": "娛樂/積木彈珠檯.html", "title": "BRICK CADET · 積木彈珠檯", "desc": "像素積木風格物理彈珠碰撞台，自適應聲光與積分機制", "mtime": 1782346800.0, "mtime_str": "2026-06-25 08:20", "url": "%E5%A8%9B%E6%A8%82/%E7%A9%8D%E6%9C%A8%E5%BD%88%E7%8F%A0%E6%AA%AF.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🔍", "file_name": "全能辨識系統_v3 (2).html", "path": "多媒體/全能辨識系統_v3 (2).html", "title": "全能 OCR 辨識系統 v3", "desc": "支援圖片拖曳、剪貼簿貼圖即時 OCR 文字辨識與格式化導出", "mtime": 1782265798.0, "mtime_str": "2026-06-24 09:49", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/%E5%85%A8%E8%83%BD%E8%BE%A8%E8%AD%98%E7%B3%BB%E7%B5%B1_v3%20%282%29.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🪄", "file_name": "RemoveBG_Studio_v2-1.html", "path": "多媒體/RemoveBG_Studio_v2-1.html", "title": "RemoveBG Studio v2.1 · AI 智能去背工作室", "desc": "本機端或雲端快速人像/物品摳圖去背，一鍵切換透明或自訂背景", "mtime": 1782079112.0, "mtime_str": "2026-06-22 05:58", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/RemoveBG_Studio_v2-1.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📈", "file_name": "pest_swot_analyzer.html", "path": "文書行政/pest_swot_analyzer.html", "title": "ECF 企業策略分析 · PEST × SWOT 矩陣", "desc": "巨觀總體環境 PEST 與微觀競爭力 SWOT 交叉策略矩陣自動評估系統", "mtime": 1781793894.0, "mtime_str": "2026-06-18 22:44", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/pest_swot_analyzer.html", "raw_url": ""}, {"type": "tool", "category": "娛樂", "icon": "♟️", "file_name": "布袋戲象棋-連線同系列版-v6.html", "path": "娛樂/布袋戲象棋-連線同系列版-v6.html", "title": "布袋戲象棋 · 連線同系列版 v6", "desc": "經典布袋戲角色主題象棋對弈，支援同系列連線對戰規則", "mtime": 1781350226.0, "mtime_str": "2026-06-13 19:30", "url": "%E5%A8%9B%E6%A8%82/%E5%B8%83%E8%A2%8B%E6%88%B2%E8%B1%A1%E6%A3%8B-%E9%80%A3%E7%B7%9A%E5%90%8C%E7%B3%BB%E5%88%97%E7%89%88-v6.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "🎯", "file_name": "行銷企劃生成器.html", "path": "文書行政/行銷企劃生成器.html", "title": "行銷企劃 × 示意圖提示詞生成器", "desc": "整合行銷策略定位、文案架構與視覺生成提示詞之全方位企劃助手", "mtime": 1781108848.0, "mtime_str": "2026-06-11 00:27", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%A1%8C%E9%8A%B7%E4%BC%81%E5%8A%83%E7%94%9F%E6%88%90%E5%99%A8.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "📽️", "file_name": "slides-prompt-generator .html", "path": "文書行政/slides-prompt-generator .html", "title": "簡報提示詞產生器 · Slides Prompt Studio", "desc": "支援 Claude / Gemini / NotebookLM 的多章節簡報大綱與投影片結構生成器", "mtime": 1776902812.0, "mtime_str": "2026-04-23 08:06", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/slides-prompt-generator%20.html", "raw_url": ""}, {"type": "tool", "category": "學務", "icon": "🧑‍🏫", "file_name": "中小學教師Prompt工程練習平台.html", "path": "學務/中小學教師Prompt工程練習平台.html", "title": "中小學教師 Prompt 工程練習平台", "desc": "專為中小學教育現場量身打造之教師 AI 提示詞架構與教學設計練習器", "mtime": 1776902812.0, "mtime_str": "2026-04-23 08:06", "url": "%E5%AD%B8%E5%8B%99/%E4%B8%AD%E5%B0%8F%E5%AD%B8%E6%95%99%E5%B8%ABPrompt%E5%B7%A5%E7%A8%8B%E7%B7%B4%E7%BF%92%E5%B9%B3%E5%8F%B0.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "✏️", "file_name": "ECF_PDFIMG_Editor_v3_7.html", "path": "文書行政/ECF_PDFIMG_Editor_v3_7.html", "title": "ECF PDF/IMG Editor v3.7 · 圖像文檔編輯器", "desc": "輕量化 PDF 與圖像快速編輯、標註、旋轉與裁切匯出工作台", "mtime": 1775786394.0, "mtime_str": "2026-04-10 09:59", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/ECF_PDFIMG_Editor_v3_7.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "✂️", "file_name": "圖像簡易工具.html", "path": "多媒體/圖像簡易工具.html", "title": "CutLab · 圖像切割 × 去背簡易工具", "desc": "瀏覽器端快速網格九宮格切割、尺寸縮放與簡易去背透明化處理", "mtime": 1775785260.0, "mtime_str": "2026-04-10 09:41", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/%E5%9C%96%E5%83%8F%E7%B0%A1%E6%98%93%E5%B7%A5%E5%85%B7.html", "raw_url": ""}, {"type": "tool", "category": "AI工具", "icon": "⚔️", "file_name": "AI辯論大亂鬥-多模式版 v2.html", "path": "AI工具/AI辯論大亂鬥-多模式版 v2.html", "title": "AI 辯論大亂鬥 · OmniMind (多模式版 v2)", "desc": "多模型多視角自動化攻防辯論系統，支援多輪審計與論證裁判", "mtime": 1775518728.0, "mtime_str": "2026-04-07 07:38", "url": "AI%E5%B7%A5%E5%85%B7/AI%E8%BE%AF%E8%AB%96%E5%A4%A7%E4%BA%82%E9%AC%A5-%E5%A4%9A%E6%A8%A1%E5%BC%8F%E7%89%88%20v2.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🌌", "file_name": "Mirage_Studio_v2.html", "path": "多媒體/Mirage_Studio_v2.html", "title": "Mirage Studio v2 · AI 視覺創意工作室", "desc": "多風格視覺藝術生成工作台，支援光影調節、風格套用與高解析繪製", "mtime": 1775335136.0, "mtime_str": "2026-04-05 04:38", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/Mirage_Studio_v2.html", "raw_url": ""}, {"type": "tool", "category": "股票工具", "icon": "🏆", "file_name": "taiwan-stock-analyzer_v60.html", "path": "股票工具/🏆 台股分析系統 專家版 (即時版) - v60/taiwan-stock-analyzer_v60.html", "title": "🏆 台股分析系統 專家版 (即時版) - v60", "desc": "全方位即時報價、主力籌碼雷達、多週期指標與即時監控", "mtime": 1775073416.0, "mtime_str": "2026-04-02 03:56", "url": "%E8%82%A1%E7%A5%A8%E5%B7%A5%E5%85%B7/%F0%9F%8F%86%20%E5%8F%B0%E8%82%A1%E5%88%86%E6%9E%90%E7%B3%BB%E7%B5%B1%20%E5%B0%88%E5%AE%B6%E7%89%88%20%28%E5%8D%B3%E6%99%82%E7%89%88%29%20-%20v60/taiwan-stock-analyzer_v60.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "🎙️", "file_name": "Podcast-prompt.html", "path": "多媒體/Podcast-prompt.html", "title": "CAST PROMPT — 語音摘要提示詞工具", "desc": "長音訊摘要、對話金句提煉與 Podcast 腳本自動生成輔助器", "mtime": 1774729296.0, "mtime_str": "2026-03-29 04:21", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/Podcast-prompt.html", "raw_url": ""}, {"type": "tool", "category": "命理", "icon": "🃏", "file_name": "撲克占卜_v3.html", "path": "命理/撲克占卜_v3.html", "title": "撲克占卜術 v3 · 命運推演儀", "desc": "結合撲克花色象徵與牌陣推演，多維度生活運勢與決策解讀", "mtime": 1773527566.0, "mtime_str": "2026-03-15 06:32", "url": "%E5%91%BD%E7%90%86/%E6%92%B2%E5%85%8B%E5%8D%A0%E5%8D%9C_v3.html", "raw_url": ""}, {"type": "tool", "category": "多媒體", "icon": "💡", "file_name": "圖像生成提示詞產生器.html", "path": "多媒體/圖像生成提示詞產生器.html", "title": "NotebookLM 圖像生成提示詞產生器 V5", "desc": "專門針對筆記型知識庫與 NotebookLM 視覺化筆記設計之精準提示詞產生器", "mtime": 1773436136.0, "mtime_str": "2026-03-14 05:08", "url": "%E5%A4%9A%E5%AA%92%E9%AB%94/%E5%9C%96%E5%83%8F%E7%94%9F%E6%88%90%E6%8F%90%E7%A4%BA%E8%A9%9E%E7%94%A2%E7%94%9F%E5%99%A8.html", "raw_url": ""}, {"type": "tool", "category": "文書行政", "icon": "✂️", "file_name": "PDF拆分工具-new.html", "path": "文書行政/PDF拆分工具-new.html", "title": "📚 PDF 自動切割工具", "desc": "純前端零上傳安全分割 PDF 文件，支援多頁拆分與自訂範圍", "mtime": 1757599728.0, "mtime_str": "2025-09-11 22:08", "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/PDF%E6%8B%86%E5%88%86%E5%B7%A5%E5%85%B7-new.html", "raw_url": ""}];
 
     const toolsGrid = document.getElementById('toolsGrid');
+    const docsGrid = document.getElementById('docsGrid');
+    const toolsEmptyState = document.getElementById('toolsEmptyState');
+    const docsEmptyState = document.getElementById('docsEmptyState');
+    const toolsCountBadge = document.getElementById('toolsCountBadge');
+    const docsCountBadge = document.getElementById('docsCountBadge');
     const searchInput = document.getElementById('searchInput');
     const categoryPills = document.getElementById('categoryPills');
-    const emptyState = document.getElementById('emptyState');
+
     let currentCategory = 'all';
 
-    function renderTools(tools) {
-      // Remove all cards except emptyState
-      const cards = toolsGrid.querySelectorAll('.tool-card');
-      cards.forEach(c => c.remove());
+    function createCard(item) {
+      const card = document.createElement('div');
+      card.className = 'tool-card';
+      card.setAttribute('data-category', item.category);
 
-      if (tools.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-      } else {
-        emptyState.style.display = 'none';
+      const isDoc = item.type === 'doc';
+      const launchBtnClass = isDoc ? 'btn-launch btn-doc' : 'btn-launch';
+      const launchLabel = isDoc ? '線上閱讀 ↗' : '啟動工具 ↗';
+
+      let actionsHtml = `
+        <a href="${item.url}" target="_blank" class="${launchBtnClass}">
+          ${launchLabel}
+        </a>
+      `;
+
+      if (isDoc && item.raw_url) {
+        actionsHtml += `
+          <a href="${item.raw_url}" target="_blank" class="btn-raw-md" title="檢視原始 Markdown 檔案">
+            原始 MD 📄
+          </a>
+        `;
       }
 
-      tools.forEach(tool => {
-        const isDoc = tool.file_name.endsWith('.md') || tool.title.includes('手冊') || tool.title.includes('報告');
-        const launchLabel = isDoc ? '閱讀手冊/報告 ↗' : '啟動工具 ↗';
-        const card = document.createElement('div');
-        card.className = 'tool-card';
-        card.setAttribute('data-category', tool.category);
-        card.innerHTML = `
-          <div class="card-top">
-            <div class="card-header">
-              <div class="card-icon">${tool.icon || '🔧'}</div>
-              <span class="badge">${tool.category}</span>
+      // Check if date is in November 2026
+      const isRecent = item.mtime_str.startsWith('2026-11');
+      const recentClass = isRecent ? 'date-badge recent' : 'date-badge';
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-header">
+            <div class="header-left">
+              <div class="card-icon">${item.icon || '🔧'}</div>
+              <span class="category-badge">${item.category}</span>
             </div>
-            <div class="card-title">${tool.title}</div>
-            <div class="card-desc">${tool.desc || tool.path}</div>
+            <span class="${recentClass}" title="檔案最後修改時間">
+              🕒 ${item.mtime_str}
+            </span>
           </div>
-          <div class="card-actions">
-            <a href="${tool.url}" target="_blank" class="btn-launch">
-              ${launchLabel}
-            </a>
-          </div>
-        `;
-        toolsGrid.appendChild(card);
-      });
+          <div class="card-title">${item.title}</div>
+          <div class="card-desc">${item.desc}</div>
+        </div>
+        <div class="card-actions">
+          ${actionsHtml}
+        </div>
+      `;
+      return card;
     }
 
-    function filterTools() {
+    function filterAndRender() {
       const query = searchInput.value.trim().toLowerCase();
-      const filtered = toolsData.filter(tool => {
-        const matchCategory = (currentCategory === 'all' || tool.category === currentCategory);
+
+      const filtered = allItems.filter(item => {
+        const matchCategory = (currentCategory === 'all' || item.category === currentCategory);
         const matchQuery = !query || 
-          tool.title.toLowerCase().includes(query) || 
-          tool.path.toLowerCase().includes(query) ||
-          tool.category.toLowerCase().includes(query);
+          item.title.toLowerCase().includes(query) || 
+          item.desc.toLowerCase().includes(query) || 
+          item.path.toLowerCase().includes(query) ||
+          item.mtime_str.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query);
         return matchCategory && matchQuery;
       });
-      renderTools(filtered);
+
+      // Split into tools and docs
+      const tools = filtered.filter(i => i.type === 'tool');
+      const docs = filtered.filter(i => i.type === 'doc');
+
+      // Sort descending by mtime (newest first)
+      tools.sort((a, b) => b.mtime - a.mtime);
+      docs.sort((a, b) => b.mtime - a.mtime);
+
+      // Render Tools Section
+      toolsGrid.innerHTML = '';
+      toolsCountBadge.textContent = `共 ${tools.length} 款`;
+      if (tools.length === 0) {
+        toolsEmptyState.style.display = 'block';
+      } else {
+        toolsEmptyState.style.display = 'none';
+        tools.forEach(tool => toolsGrid.appendChild(createCard(tool)));
+      }
+
+      // Render Docs Section
+      docsGrid.innerHTML = '';
+      docsCountBadge.textContent = `共 ${docs.length} 份`;
+      if (docs.length === 0) {
+        docsEmptyState.style.display = 'block';
+      } else {
+        docsEmptyState.style.display = 'none';
+        docs.forEach(doc => docsGrid.appendChild(createCard(doc)));
+      }
     }
 
     // Event Listeners
-    searchInput.addEventListener('input', filterTools);
+    searchInput.addEventListener('input', filterAndRender);
 
     categoryPills.addEventListener('click', (e) => {
       const btn = e.target.closest('.pill-btn');
@@ -415,11 +607,11 @@
       categoryPills.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentCategory = btn.getAttribute('data-cat');
-      filterTools();
+      filterAndRender();
     });
 
     // Initial render
-    renderTools(toolsData);
+    filterAndRender();
   </script>
 </body>
 </html>

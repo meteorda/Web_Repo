@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行銷企劃 × 示意圖提示詞生成器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e1a;
+  --bg2:#0e1322;
+  --panel:#141a2c;
+  --panel2:#1a2138;
+  --line:rgba(224,164,88,.14);
+  --line2:rgba(255,255,255,.07);
+  --txt:#e8ecf5;
+  --txt2:#9aa3bd;
+  --txt3:#646d88;
+  --gold:#e0a458;
+  --gold-soft:#f0b860;
+  --cyan:#5ec8d8;
+  --green:#6bd098;
+  --red:#e0707a;
+  --purple:#9b8fe0;
+  --r:14px;
+  font-synthesis:none;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(224,164,88,.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 20%, rgba(94,200,216,.06), transparent 55%),
+    var(--bg);
+  color:var(--txt);
+  font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 22px 80px}
+
+/* header */
+header{margin-bottom:26px}
+.eyebrow{font-family:'Space Grotesk';letter-spacing:.32em;font-size:11px;color:var(--gold);text-transform:uppercase;font-weight:600;margin-bottom:8px}
+h1{font-family:'Space Grotesk';font-weight:600;font-size:30px;letter-spacing:-.01em;line-height:1.2}
+h1 .x{color:var(--gold);font-weight:400;margin:0 6px}
+.sub{color:var(--txt2);font-size:14px;margin-top:8px;max-width:640px}
+
+.grid{display:grid;grid-template-columns:380px 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line2);border-radius:var(--r);padding:20px}
+.card + .card{margin-top:18px}
+.card h2{font-family:'Space Grotesk';font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.tag{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;font-family:'Space Grotesk';font-size:12px;font-weight:700;color:#0a0e1a}
+.t-gold{background:var(--gold)} .t-cy{background:var(--cyan)} .t-pp{background:var(--purple)}
+
+label{display:block;font-size:12px;color:var(--txt2);margin:0 0 6px;font-weight:500}
+input[type=text],input[type=password],textarea,select{
+  width:100%;background:var(--bg);border:1px solid var(--line2);color:var(--txt);
+  border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;outline:none;transition:.15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(224,164,88,.12)}
+textarea{resize:vertical;min-height:96px;line-height:1.6}
+.field{margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hint{font-size:11px;color:var(--txt3);margin-top:5px}
+
+/* uploader */
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:.15s;background:rgba(224,164,88,.02)}
+.drop:hover,.drop.over{border-color:var(--gold);background:rgba(224,164,88,.06)}
+.drop .ic{font-size:26px}
+.drop p{font-size:13px;color:var(--txt2);margin-top:6px}
+.drop small{color:var(--txt3);font-size:11px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.thumb{position:relative;width:64px;height:64px;border-radius:9px;overflow:hidden;border:1px solid var(--line2)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:50%;background:rgba(10,14,26,.85);color:#fff;cursor:pointer;font-size:12px;line-height:18px;padding:0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;
+  padding:12px 16px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold-soft));color:#0a0e1a}
+.btn-primary:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.btn-ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line2)}
+.btn-ghost:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px}
+.btn-sm{padding:9px 10px;font-size:12px}
+
+/* results */
+.result{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line2);border-radius:var(--r);overflow:hidden}
+.result + .result{margin-top:16px}
+.result-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line2);background:rgba(255,255,255,.015)}
+.result-head .title{font-family:'Space Grotesk';font-size:14px;font-weight:600;flex:1}
+.result-head .ttl-sub{font-size:11px;color:var(--txt3);font-weight:400;margin-left:2px}
+.copy-btn{background:transparent;border:1px solid var(--line2);color:var(--txt2);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+.result-body{padding:18px;font-size:14px;color:var(--txt);white-space:pre-wrap;word-break:break-word;min-height:40px;line-height:1.75}
+.result-body.empty{color:var(--txt3);font-style:italic;white-space:normal}
+.result-body h3{font-family:'Space Grotesk';color:var(--gold-soft);font-size:15px;margin:14px 0 6px}
+.result-body strong{color:var(--gold-soft)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--txt3);flex:none}
+.dot.run{background:var(--gold);box-shadow:0 0 0 0 rgba(224,164,88,.6);animation:pulse 1.3s infinite}
+.dot.done{background:var(--green)}
+.dot.err{background:var(--red)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,164,88,.5)}70%{box-shadow:0 0 0 7px rgba(224,164,88,0)}100%{box-shadow:0 0 0 0 rgba(224,164,88,0)}}
+
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar .btn{width:auto}
+.divider{height:1px;background:var(--line2);margin:16px 0}
+
+details summary{cursor:pointer;font-size:12px;color:var(--txt2);user-select:none;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary:before{content:"▸ ";color:var(--gold)}
+details[open] summary:before{content:"▾ "}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#0a0e1a;
+  padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.muted{color:var(--txt3);font-size:11px}
+.history-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;margin-bottom:7px;font-size:12px;cursor:pointer;transition:.15s}
+.history-item:hover{border-color:var(--gold)}
+.history-item .hm{flex:1;color:var(--txt2)}
+.history-item .hd{color:var(--txt3);font-size:11px}
+.history-item .del{background:none;border:0;color:var(--txt3);cursor:pointer;font-size:13px;padding:2px 4px}
+.history-item .del:hover{color:var(--red)}
+.cursor::after{content:"▋";color:var(--gold);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Marketing Studio · Powered by Groq</div>
+    <h1>行銷企劃<span class="x">×</span>示意圖提示詞生成器</h1>
+    <p class="sub">上傳商品圖或文案，輸入行銷主題與目標受眾，一鍵產出：圖像元素解析 → 含 4P 與 SWOT 的行銷企劃 → 行銷意境圖提示詞（S+O 展開、W+T 因應）。</p>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: 輸入區 -->
+    <div>
+      <div class="card">
+        <h2>設定</h2>
+        <div class="field">
+          <label>Groq API Key</label>
+          <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off">
+          <div class="hint">至 console.groq.com 申請，僅存於本機瀏覽器。</div>
+        </div>
+        <div class="row">
+          <div class="field" style="margin-bottom:0">
+            <label>視覺模型（圖像）</label>
+            <input type="text" id="visionModel" value="meta-llama/llama-4-scout-17b-16e-instruct">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>文字模型</label>
+            <input type="text" id="textModel" value="llama-3.3-70b-versatile" list="textModels">
+            <datalist id="textModels">
+              <option value="llama-3.3-70b-versatile">最高品質（額度較易用盡）</option>
+              <option value="llama-3.1-8b-instant">輕量極速 · 每日額度高</option>
+              <option value="openai/gpt-oss-120b">GPT-OSS 120B · 推理強</option>
+              <option value="openai/gpt-oss-20b">GPT-OSS 20B · 省額度</option>
+            </datalist>
+          </div>
+        </div>
+        <div class="hint">若模型失效，請至 Groq 文件查詢可用模型名稱後替換。</div>
+      </div>
+
+      <div class="card">
+        <h2>素材輸入</h2>
+        <div class="field">
+          <label>商品圖 / 示意圖（可多張）</label>
+          <div class="drop" id="drop">
+            <div class="ic">🖼️</div>
+            <p>點擊或拖曳上傳圖片</p>
+            <small>JPG / PNG / WebP</small>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" multiple hidden>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+        <div class="field">
+          <label>文案內容（選填，可貼上既有產品說明）</label>
+          <textarea id="copyText" placeholder="例如：手工冷萃咖啡，使用單一產區豆，低溫 18 小時萃取……"></textarea>
+        </div>
+        <div class="field">
+          <label>行銷主題 *</label>
+          <input type="text" id="theme" placeholder="例如：夏季限定冷萃咖啡上市">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>目標受眾 *</label>
+          <input type="text" id="audience" placeholder="例如：25–35 歲注重生活品味的都會上班族">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>執行</h2>
+        <button class="btn btn-primary" id="runAll" style="margin-bottom:10px">⚡ 一鍵全部生成</button>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" data-fn="1">功能一</button>
+          <button class="btn btn-ghost btn-sm" data-fn="2">功能二</button>
+          <button class="btn btn-ghost btn-sm" data-fn="3">功能三</button>
+        </div>
+        <div class="hint" style="text-align:center">功能二需先有功能一結果；功能三需先有功能一、二。</div>
+      </div>
+
+      <div class="card">
+        <h2>儲存紀錄</h2>
+        <div id="historyList"><p class="muted">尚無儲存紀錄。</p></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 結果區 -->
+    <div>
+      <div class="toolbar">
+        <button class="btn btn-ghost" id="saveBtn" style="width:auto">💾 儲存本次</button>
+        <button class="btn btn-ghost" id="exportBtn" style="width:auto">⬇ 匯出 Markdown</button>
+        <button class="btn btn-ghost" id="clearBtn" style="width:auto">🗑 清空結果</button>
+      </div>
+
+      <div class="result">
+        <div class="result-head">
+          <span class="dot" id="dot1"></span>
+          <span class="title">功能一　<span class="ttl-sub">圖像元素詳細解析</span></span>
+          <button class="copy-btn" data-copy="out1">複製</button>
+        </div>
+        <div class="result-body empty" id="out1">上傳圖片後，將詳細描述圖中所有物品與元素。</div>
+      </div>
+
+      <div class="result">
+        <div class="result-head">
+          <span class="dot" id="dot2"></span>
+          <span class="title">功能二　<span class="ttl-sub">行銷企劃文案 · 4P + SWOT</span></span>
+          <button class="copy-btn" data-copy="out2">複製</button>
+        </div>
+        <div class="result-body empty" id="out2">根據圖像解析與主題受眾，產出完整行銷企劃（含行銷 4P 與 SWOT 分析）。</div>
+      </div>
+
+      <div class="result">
+        <div class="result-head">
+          <span class="dot" id="dot3"></span>
+          <span class="title">功能三　<span class="ttl-sub">行銷意境圖提示詞</span></span>
+          <button class="copy-btn" data-copy="out3">複製</button>
+        </div>
+        <div class="result-body empty" id="out3">產出意境圖提示詞，含主題、風格、S+O 三項展開策略與 W+T 三項因應方針。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+let images = []; // {dataUrl, mime}
+
+/* ---------- 設定持久化 ---------- */
+const LS_KEY='mkt_planner_cfg', LS_HIST='mkt_planner_hist';
+const DEPRECATED={  // 已被 Groq 棄用 → 自動替換為現行模型
+  'meta-llama/llama-4-maverick-17b-128e-instruct':'meta-llama/llama-4-scout-17b-16e-instruct'
+};
+function fixModel(m, fallback){
+  return (m && DEPRECATED[m]) ? DEPRECATED[m] : (m || fallback);
+}
+function loadCfg(){
+  try{
+    const c=JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+    if(c.apiKey) $('apiKey').value=c.apiKey;
+    $('visionModel').value=fixModel(c.visionModel, $('visionModel').value);
+    $('textModel').value=fixModel(c.textModel, $('textModel').value);
+    saveCfg(); // 把修正後的設定寫回，清掉殘留的舊模型
+  }catch(e){}
+}
+function saveCfg(){
+  localStorage.setItem(LS_KEY, JSON.stringify({
+    apiKey:$('apiKey').value.trim(),
+    visionModel:$('visionModel').value.trim(),
+    textModel:$('textModel').value.trim()
+  }));
+}
+['apiKey','visionModel','textModel'].forEach(id=>$(id).addEventListener('change',saveCfg));
+loadCfg();
+
+/* ---------- 圖片上傳 ---------- */
+const drop=$('drop'), fileInput=$('fileInput');
+drop.addEventListener('click',()=>fileInput.click());
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>handleFiles(ev.dataTransfer.files));
+fileInput.addEventListener('change',ev=>handleFiles(ev.target.files));
+
+function handleFiles(list){
+  [...list].forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const r=new FileReader();
+    r.onload=()=>{ images.push({dataUrl:r.result, mime:f.type}); renderThumbs(); };
+    r.readAsDataURL(f);
+  });
+}
+function renderThumbs(){
+  const c=$('thumbs'); c.innerHTML='';
+  images.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<img src="${img.dataUrl}"><button title="移除">×</button>`;
+    d.querySelector('button').onclick=()=>{images.splice(i,1);renderThumbs();};
+    c.appendChild(d);
+  });
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+/* ---------- Groq 串流呼叫 ---------- */
+const FALLBACK_MODEL='llama-3.1-8b-instant'; // 429 時自動降級的文字模型
+async function callGroq({model, messages, onToken, dotId, fallback}){
+  const key=$('apiKey').value.trim();
+  if(!key) throw new Error('請先輸入 Groq API Key');
+  const dot = dotId ? $(dotId) : null;
+  if(dot){dot.className='dot run';}
+  const res=await fetch(API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({model, messages, temperature:0.7, max_tokens:4096, stream:true})
+  });
+  if(!res.ok){
+    let detail=''; try{detail=(await res.json()).error?.message||'';}catch(e){}
+    // 429 額度上限 → 自動降級為輕量模型重試一次
+    if(res.status===429 && fallback && model!==FALLBACK_MODEL){
+      toast(`額度已滿，自動改用 ${FALLBACK_MODEL} 重試`);
+      if(onToken) onToken(''); // 清空已輸出內容
+      return await callGroq({model:FALLBACK_MODEL, messages, onToken, dotId, fallback:false});
+    }
+    if(dot)dot.className='dot err';
+    throw new Error(`API 錯誤 ${res.status}：${detail||res.statusText}`);
+  }
+  const reader=res.body.getReader(), dec=new TextDecoder();
+  let buf='', full='';
+  while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const lines=buf.split('\n'); buf=lines.pop();
+    for(const line of lines){
+      const s=line.trim();
+      if(!s.startsWith('data:'))continue;
+      const data=s.slice(5).trim();
+      if(data==='[DONE]')continue;
+      try{
+        const j=JSON.parse(data);
+        const tok=j.choices?.[0]?.delta?.content||'';
+        if(tok){full+=tok; onToken&&onToken(full);}
+      }catch(e){}
+    }
+  }
+  if(dot)dot.className='dot done';
+  return full;
+}
+
+/* ---------- 渲染輔助：輕量 markdown ---------- */
+function render(el, text, streaming){
+  const html=text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.*)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.*)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  el.classList.remove('empty');
+  el.innerHTML=html+(streaming?'<span class="cursor"></span>':'');
+}
+
+/* ---------- 取得輸入 ---------- */
+function getInputs(){
+  return {
+    theme:$('theme').value.trim(),
+    audience:$('audience').value.trim(),
+    copy:$('copyText').value.trim()
+  };
+}
+function imageContent(){
+  return images.map(im=>({type:'image_url',image_url:{url:im.dataUrl}}));
+}
+
+/* ---------- 三大功能 ---------- */
+let R1='', R2='', R3=''; // 各功能結果快取
+
+async function fn1(){
+  if(images.length===0) throw new Error('功能一需先上傳至少一張圖片');
+  const {copy}=getInputs();
+  const txt = `請以繁體中文，極為詳細地描述這${images.length>1?'些':'張'}圖像中的所有物品與元素。`+
+    `請涵蓋：主體物件、背景場景、色彩配置、材質質感、光線氛圍、構圖視角、文字標誌（若有）、品牌線索、情緒調性。`+
+    `分項條列、力求具體精確。`+ (copy?`\n\n附參考文案：${copy}`:'');
+  const messages=[{role:'user',content:[{type:'text',text:txt},...imageContent()]}];
+  $('out1').classList.remove('empty'); $('out1').textContent='';
+  R1=await callGroq({model:$('visionModel').value.trim(), messages, dotId:'dot1',
+    onToken:t=>render($('out1'),t,true)});
+  render($('out1'),R1,false);
+  return R1;
+}
+
+async function fn2(){
+  if(!R1) await fn1();
+  const {theme,audience,copy}=getInputs();
+  if(!theme||!audience) throw new Error('功能二需填寫「行銷主題」與「目標受眾」');
+  const prompt=`你是資深行銷策略顧問。請以繁體中文，根據以下資料撰寫一份完整、專業、可執行的行銷企劃文案。
+
+【行銷主題】${theme}
+【目標受眾】${audience}
+${copy?`【既有文案】${copy}\n`:''}
+【圖像元素解析】
+${R1}
+
+請依下列結構輸出（使用 ## 標題分段）：
+
+## 一、企劃概述
+（主題定位、核心訴求、一句話主張 slogan）
+
+## 二、目標受眾洞察
+（受眾輪廓、痛點、需求動機、購買情境）
+
+## 三、行銷 4P 策略
+請逐項詳述：
+- **Product 產品**：賣點、差異化、價值定位
+- **Price 價格**：定價策略與心理價位邏輯
+- **Place 通路**：銷售與曝光通路規劃
+- **Promotion 推廣**：主視覺、文案調性、活動與媒體操作
+
+## 四、SWOT 分析
+請逐項列出（各至少 3 點）：
+- **S 優勢 Strengths**
+- **W 劣勢 Weaknesses**
+- **O 機會 Opportunities**
+- **T 威脅 Threats**
+
+## 五、執行建議
+（時程節奏、KPI 指標、預期效益）
+
+內容須緊扣圖像解析與受眾特性，具體不空泛。`;
+  $('out2').classList.remove('empty'); $('out2').textContent='';
+  R2=await callGroq({model:$('textModel').value.trim(), messages:[{role:'user',content:prompt}],
+    dotId:'dot2', fallback:true, onToken:t=>render($('out2'),t,true)});
+  render($('out2'),R2,false);
+  return R2;
+}
+
+async function fn3(){
+  if(!R2) await fn2();
+  const {theme,audience}=getInputs();
+  const prompt=`你是 AI 繪圖提示詞專家與行銷策略師。請以繁體中文，根據以下行銷企劃資料，產出一組「行銷意境圖像」的提示詞與策略對照。
+
+【行銷主題】${theme}
+【目標受眾】${audience}
+【圖像元素解析】
+${R1}
+
+【行銷企劃（含 4P 與 SWOT）】
+${R2}
+
+請嚴格依下列格式輸出：
+
+## 行銷意境圖提示詞
+
+**主題：** ${theme}
+
+**風格：** （請從上方圖像解析中萃取出實際的視覺風格——色調、材質、光線、構圖氛圍，描述為一致的視覺風格基調）
+
+**完整繪圖提示詞（中文）：**
+（一段可直接餵給 AI 繪圖的完整意境描述：場景、主體、構圖、光線、色彩、情緒、商業攝影質感）
+
+**English Prompt：**
+（對應的英文版提示詞，逗號分隔關鍵字風格，含 photography／lighting／mood／composition 用語）
+
+## 策略對照
+
+**S + O 展開策略（發揮優勢、把握機會，三項）：**
+1. （結合一項優勢與一項機會的畫面或訴求展開方向）
+2. 
+3. 
+
+**W + T 因應方針（修補劣勢、防範威脅，三項）：**
+1. （針對劣勢與威脅在視覺與訴求上的因應做法）
+2. 
+3. 
+
+請確保 S+O 與 W+T 各為三項，且與前述 SWOT 內容呼應。`;
+  $('out3').classList.remove('empty'); $('out3').textContent='';
+  R3=await callGroq({model:$('textModel').value.trim(), messages:[{role:'user',content:prompt}],
+    dotId:'dot3', fallback:true, onToken:t=>render($('out3'),t,true)});
+  render($('out3'),R3,false);
+  return R3;
+}
+
+/* ---------- 事件 ---------- */
+function lockUI(lock){
+  document.querySelectorAll('.btn').forEach(b=>b.disabled=lock);
+}
+async function run(fn){
+  lockUI(true);
+  try{ await fn(); }
+  catch(e){ toast(e.message); }
+  finally{ lockUI(false); }
+}
+$('runAll').onclick=()=>run(async()=>{
+  R1=R2=R3=''; // 重新生成
+  await fn1(); await fn2(); await fn3();
+  toast('全部生成完成');
+});
+document.querySelectorAll('[data-fn]').forEach(b=>{
+  b.onclick=()=>run({1:fn1,2:fn2,3:fn3}[b.dataset.fn]);
+});
+
+/* 複製 */
+document.querySelectorAll('[data-copy]').forEach(b=>{
+  b.onclick=()=>{
+    const el=$(b.dataset.copy);
+    if(el.classList.contains('empty')){toast('尚無內容');return;}
+    navigator.clipboard.writeText(el.innerText).then(()=>toast('已複製'));
+  };
+});
+
+/* ---------- 匯出 Markdown ---------- */
+function buildMarkdown(){
+  const {theme,audience}=getInputs();
+  return `# 行銷企劃輸出\n\n- **行銷主題：** ${theme||'(未填)'}\n- **目標受眾：** ${audience||'(未填)'}\n- **產出時間：** ${new Date().toLocaleString('zh-TW')}\n\n`+
+  `---\n\n## 功能一　圖像元素詳細解析\n\n${R1||'(無)'}\n\n`+
+  `---\n\n## 功能二　行銷企劃文案（4P + SWOT）\n\n${R2||'(無)'}\n\n`+
+  `---\n\n## 功能三　行銷意境圖提示詞（S+O / W+T）\n\n${R3||'(無)'}\n`;
+}
+$('exportBtn').onclick=()=>{
+  if(!R1&&!R2&&!R3){toast('尚無可匯出的內容');return;}
+  const {theme}=getInputs();
+  const blob=new Blob([buildMarkdown()],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`行銷企劃_${(theme||'未命名').slice(0,20)}_${Date.now()}.md`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('已匯出 Markdown');
+};
+
+/* 清空 */
+$('clearBtn').onclick=()=>{
+  R1=R2=R3='';
+  [['out1','上傳圖片後，將詳細描述圖中所有物品與元素。'],
+   ['out2','根據圖像解析與主題受眾，產出完整行銷企劃（含行銷 4P 與 SWOT 分析）。'],
+   ['out3','產出意境圖提示詞，含主題、風格、S+O 三項展開策略與 W+T 三項因應方針。']]
+  .forEach(([id,txt])=>{const e=$(id);e.classList.add('empty');e.textContent=txt;});
+  ['dot1','dot2','dot3'].forEach(d=>$(d).className='dot');
+  toast('已清空');
+};
+
+/* ---------- 儲存 / 歷史紀錄 ---------- */
+function getHist(){ try{return JSON.parse(localStorage.getItem(LS_HIST)||'[]')}catch(e){return[]} }
+function setHist(h){ localStorage.setItem(LS_HIST, JSON.stringify(h.slice(0,30))); renderHist(); }
+$('saveBtn').onclick=()=>{
+  if(!R1&&!R2&&!R3){toast('尚無內容可儲存');return;}
+  const {theme,audience,copy}=getInputs();
+  const h=getHist();
+  h.unshift({id:Date.now(), theme, audience, copy, R1,R2,R3, time:new Date().toLocaleString('zh-TW')});
+  setHist(h); toast('已儲存至本機');
+};
+function renderHist(){
+  const h=getHist(), c=$('historyList');
+  if(h.length===0){c.innerHTML='<p class="muted">尚無儲存紀錄。</p>';return;}
+  c.innerHTML='';
+  h.forEach(item=>{
+    const d=document.createElement('div'); d.className='history-item';
+    d.innerHTML=`<span class="hm">${item.theme||'(未命名)'}<br><span class="hd">${item.time}</span></span><button class="del" title="刪除">×</button>`;
+    d.querySelector('.hm').onclick=()=>loadHist(item);
+    d.querySelector('.del').onclick=ev=>{ev.stopPropagation(); setHist(getHist().filter(x=>x.id!==item.id)); toast('已刪除');};
+    c.appendChild(d);
+  });
+}
+function loadHist(item){
+  $('theme').value=item.theme||''; $('audience').value=item.audience||''; $('copyText').value=item.copy||'';
+  R1=item.R1||''; R2=item.R2||''; R3=item.R3||'';
+  [['out1',R1,'dot1'],['out2',R2,'dot2'],['out3',R3,'dot3']].forEach(([id,val,dot])=>{
+    if(val){render($(id),val,false);$(dot).className='dot done';}
+  });
+  toast('已載入紀錄');
+}
+renderHist();
+</script>
+</body>
+</html>

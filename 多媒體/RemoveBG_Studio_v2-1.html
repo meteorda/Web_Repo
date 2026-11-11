@@ -1,0 +1,2546 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✂️ RemoveBG Studio — AI 智能去背工具</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+
+  :root{
+    --bg:#0a0b0e;
+    --surface:rgba(21,22,28,0.72);
+    --surface-2:rgba(13,14,18,0.6);
+    --line:rgba(212,175,55,0.16);
+    --line-soft:rgba(255,255,255,0.05);
+    --gold:#d4af37;
+    --gold-soft:#e8cd72;
+    --gold-deep:#9c7c1e;
+    --jade:#4fb89a;
+    --jade-soft:#74d6b9;
+    --jade-deep:#2f8f76;
+    --ink:#ece8e1;
+    --ink-dim:#a8a293;
+    --ink-faint:#6b665c;
+    --danger:#e07070;
+    --warn:#e0b25a;
+    --info:#7fb6d8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(212,175,55,0.10), transparent 58%),
+      radial-gradient(820px 460px at 108% 112%, rgba(79,184,154,0.10), transparent 60%),
+      radial-gradient(600px 600px at 50% 120%, rgba(212,175,55,0.04), transparent 70%),
+      var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 22px 16px 8px;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  /* ── 標題 ─────────────────────── */
+  .header {
+    text-align: center;
+    padding: 26px 8px 30px;
+    position: relative;
+  }
+  .header .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 14px;
+    opacity: 0.9;
+  }
+  .header h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.9rem, 5vw, 2.9rem);
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header h1 .h1-text {
+    background: linear-gradient(120deg, #f4e6ad 0%, var(--gold) 42%, var(--gold-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header h1 .h1-emoji {
+    color: initial;
+    -webkit-text-fill-color: initial;
+    font-size: 0.82em;
+    filter: drop-shadow(0 2px 6px rgba(212,175,55,0.3));
+  }
+  /* 標題下方金色細規 + 菱形 signature */
+  .header .rule {
+    width: 200px; max-width: 60%;
+    margin: 18px auto 0;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .header .rule span {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep), transparent);
+  }
+  .header .rule i {
+    width: 7px; height: 7px;
+    transform: rotate(45deg);
+    background: var(--gold);
+    box-shadow: 0 0 10px rgba(212,175,55,0.6);
+    flex: 0 0 auto;
+  }
+  .header p {
+    font-size: 0.86rem;
+    color: var(--ink-dim);
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+  }
+  .header .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 5px 16px;
+    background: linear-gradient(180deg, rgba(212,175,55,0.12), rgba(212,175,55,0.04));
+    border: 1px solid var(--line);
+    color: var(--gold-soft);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── 卡片 ─────────────────────── */
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 24px 60px -30px rgba(0,0,0,0.8);
+  }
+  /* 卡片四角金色刻線 signature */
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border: 1px solid var(--gold);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .card::before { top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
+  .card::after  { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
+
+  /* ── 上傳區 ───────────────────── */
+  .drop-zone {
+    border: 1.5px dashed rgba(212,175,55,0.32);
+    border-radius: 14px;
+    padding: 44px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background:
+      radial-gradient(420px 200px at 50% 0%, rgba(212,175,55,0.05), transparent 70%),
+      var(--surface-2);
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    background:
+      radial-gradient(420px 220px at 50% 0%, rgba(212,175,55,0.12), transparent 70%),
+      var(--surface-2);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 44px -24px rgba(212,175,55,0.4);
+  }
+  .drop-zone .drop-icon {
+    font-size: 2.6rem;
+    margin-bottom: 12px;
+    display: block;
+    filter: drop-shadow(0 4px 10px rgba(212,175,55,0.25));
+  }
+  .drop-zone .drop-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.12rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .drop-zone .drop-sub {
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    line-height: 1.8;
+  }
+  .drop-zone .drop-sub kbd {
+    background: rgba(212,175,55,0.08);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: var(--gold-soft);
+  }
+
+  /* ── 按鈕 ─────────────────────── */
+  .btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 11px 20px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* 主行動：去背 = 玉色 */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--jade), var(--jade-deep));
+    color: #06140f;
+    box-shadow: 0 8px 22px -8px rgba(79,184,154,0.6);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--jade-soft), var(--jade));
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(79,184,154,0.7);
+  }
+  /* 次要：幽靈深色 */
+  .btn-secondary {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--line-soft);
+    color: var(--ink-dim);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    color: var(--ink);
+    border-color: rgba(255,255,255,0.14);
+  }
+  /* 下載：金色描邊 */
+  .btn-blue {
+    background: linear-gradient(180deg, rgba(212,175,55,0.16), rgba(212,175,55,0.05));
+    border-color: var(--line);
+    color: var(--gold-soft);
+  }
+  .btn-blue:hover:not(:disabled) {
+    background: linear-gradient(180deg, rgba(212,175,55,0.26), rgba(212,175,55,0.1));
+    border-color: var(--gold);
+    color: #f4e6ad;
+    transform: translateY(-2px);
+  }
+
+  /* ── 狀態列 ───────────────────── */
+  .status {
+    margin-top: 14px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    display: none;
+    line-height: 1.55;
+    border: 1px solid;
+  }
+  .status.show { display: block; }
+  .status.info    { background: rgba(127,182,216,0.08); border-color: rgba(127,182,216,0.3); color: #a8d2ea; }
+  .status.success { background: rgba(79,184,154,0.1);   border-color: rgba(79,184,154,0.35); color: var(--jade-soft); }
+  .status.error   { background: rgba(224,112,112,0.1);  border-color: rgba(224,112,112,0.35); color: #f0a8a8; }
+  .status.warn    { background: rgba(212,175,55,0.1);   border-color: var(--line); color: var(--gold-soft); }
+
+  /* ── 預覽區 ───────────────────── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 4px;
+  }
+  @media (max-width: 640px) {
+    .preview-grid { grid-template-columns: 1fr; }
+  }
+  .preview-box {
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .preview-box .preview-label {
+    font-size: 0.68rem;
+    color: var(--gold);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 600;
+  }
+  .preview-box img {
+    max-width: 100%;
+    max-height: 360px;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+  .preview-box .empty {
+    color: var(--ink-faint);
+    font-size: 0.84rem;
+    padding: 34px 10px;
+  }
+
+  /* 棋盤格背景（透明） */
+  .checkerboard {
+    background-image:
+      linear-gradient(45deg, #2a2b31 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2b31 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2b31 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2b31 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: #1a1b21;
+  }
+
+  /* ── 背景色切換 ───────────────── */
+  .bg-options {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .bg-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.1);
+    transition: all 0.18s;
+    position: relative;
+  }
+  .bg-swatch:hover { transform: scale(1.12); border-color: rgba(212,175,55,0.5); }
+  .bg-swatch.active {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.28);
+  }
+  .bg-swatch.transparent {
+    background-image:
+      linear-gradient(45deg, #3a3b42 25%, transparent 25%),
+      linear-gradient(-45deg, #3a3b42 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #3a3b42 75%),
+      linear-gradient(-45deg, transparent 75%, #3a3b42 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+    background-color: #1a1b21;
+  }
+  .bg-picker-wrap { position: relative; display: inline-block; }
+  .bg-picker-wrap input[type=color] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* ── 設定區 ───────────────────── */
+  .settings-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .settings-row label {
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    font-weight: 500;
+  }
+  .settings-row select {
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .settings-row select:hover { border-color: var(--line); }
+  .settings-row select:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+  }
+
+  /* ── 工具按鈕列 ───────────────── */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 18px;
+  }
+  .action-row .btn { flex: 1 1 150px; min-width: 130px; }
+
+  /* ── 載入動畫 ─────────────────── */
+  .spinner {
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: rgba(0,0,0,0.7);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── 區段小標 ─────────────────── */
+  .section-label {
+    font-size: 0.66rem;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  /* ── API Key 狀態指示器 ──────── */
+  .key-status {
+    display: flex;
+    gap: 7px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .key-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.14);
+    transition: all 0.2s;
+  }
+  .key-dot-custom {
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--gold);
+    background: transparent;
+  }
+  .key-dot-divider {
+    width: 1px;
+    height: 12px;
+    background: var(--line-soft);
+    margin: 0 5px;
+  }
+  .key-dot.active {
+    background: var(--jade);
+    box-shadow: 0 0 9px rgba(79,184,154,0.7);
+  }
+  .key-dot.failed { background: var(--danger); }
+  .key-dot.trying { background: var(--gold); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  /* ── 自訂 Key 區 ─────────────── */
+  .custom-key-section {
+    margin-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 16px;
+  }
+  .custom-key-toggle {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    color: var(--ink-dim);
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.18s;
+  }
+  .custom-key-toggle:hover {
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .custom-key-toggle.has-key {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.08);
+    color: var(--gold-soft);
+  }
+  .custom-key-arrow {
+    transition: transform 0.2s;
+    font-size: 0.66rem;
+  }
+  .custom-key-section.open .custom-key-arrow { transform: rotate(180deg); }
+  .custom-key-panel {
+    display: none;
+    margin-top: 10px;
+    padding: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+  }
+  .custom-key-section.open .custom-key-panel { display: block; }
+  .custom-key-input {
+    flex: 1 1 200px;
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    color: var(--jade-soft);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    font-family: monospace;
+    min-width: 0;
+  }
+  .custom-key-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.18);
+  }
+  .custom-key-state {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    min-height: 1rem;
+  }
+  .custom-key-state.saved { color: var(--jade-soft); }
+  .custom-key-state.empty { color: var(--ink-dim); }
+  .custom-key-state.cleared { color: var(--gold-soft); }
+
+  /* ── Footer ──────────────────── */
+  .footer {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    padding: 22px 0 28px;
+    letter-spacing: 0.3px;
+  }
+  .footer a { color: var(--gold); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ── 批次列表 ─────────────────── */
+  .batch-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .batch-item {
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 7px;
+    position: relative;
+    aspect-ratio: 1;
+  }
+  .batch-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+  }
+  .batch-item .batch-status {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    text-align: center;
+    font-size: 0.64rem;
+    background: rgba(0,0,0,0.78);
+    color: var(--ink-dim);
+    border-radius: 5px;
+    padding: 2px;
+    backdrop-filter: blur(2px);
+  }
+  .batch-item .batch-rm {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(0,0,0,0.78);
+    color: #f0a8a8;
+    border: none;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+  }
+  .batch-item .batch-rm:hover { color: var(--danger); background: rgba(0,0,0,0.92); }
+
+  /* 隱藏 file input */
+  #file-input { display: none; }
+
+  /* 無障礙：焦點可見 + 減少動態 */
+  .btn:focus-visible, .bg-swatch:focus-visible, select:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* ── 選取去背範圍 ─────────────── */
+  .sel-stage {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .sel-stage img { display: block; max-width: 100%; max-height: 360px; }
+  .sel-overlay { position: absolute; top: 0; left: 0; display: block; touch-action: none; }
+  .sel-stage:not(.selecting) .sel-overlay { pointer-events: none; }
+  .sel-stage.selecting .sel-overlay { cursor: crosshair; }
+
+  .sel-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .sel-toolbar .btn { flex: 0 0 auto; padding: 8px 16px; font-size: 0.78rem; }
+  .sel-toolbar .btn.active {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.14);
+    color: var(--gold-soft);
+  }
+  .sel-hint { font-size: 0.74rem; color: var(--ink-dim); letter-spacing: 0.3px; }
+  .sel-hint.has-sel { color: var(--jade-soft); }
+
+  /* ══════════════════════════════════════════════════
+     ▼▼▼ 新增功能（本地引擎 / 後製 / 筆刷 / 前後對照） ▼▼▼
+     ══════════════════════════════════════════════════ */
+
+  .engine-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
+    padding: 4px 11px; border-radius: 999px;
+    border: 1px solid var(--line-soft); background: var(--surface-2); color: var(--ink-dim);
+  }
+  .engine-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); }
+  .engine-pill.local .dot { background: var(--jade); box-shadow: 0 0 7px var(--jade); }
+  .engine-pill.api   .dot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+
+  .progress-wrap { margin-top: 12px; display: none; }
+  .progress-wrap.show { display: block; }
+  .progress-bar {
+    height: 8px; border-radius: 999px; background: rgba(255,255,255,0.05);
+    overflow: hidden; border: 1px solid var(--line-soft);
+  }
+  .progress-bar > i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--jade), var(--gold));
+    transition: width 0.2s ease;
+  }
+  .progress-text { font-size: 0.72rem; color: var(--ink-dim); margin-top: 5px; text-align: center; }
+
+  /* 後製面板 */
+  .post-panel { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .post-tabs { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .post-tab {
+    flex: 1 1 auto; min-width: 88px;
+    background: var(--surface-2); border: 1px solid var(--line-soft); color: var(--ink-dim);
+    border-radius: 9px; padding: 8px 9px; font-size: 0.75rem; font-weight: 600;
+    font-family: inherit; letter-spacing: 0.3px; cursor: pointer; transition: all 0.16s; text-align: center;
+  }
+  .post-tab:hover { color: var(--ink); border-color: rgba(255,255,255,0.14); }
+  .post-tab.active {
+    background: rgba(212,175,55,0.12); border-color: var(--gold); color: var(--gold-soft);
+  }
+  .post-body { display: none; animation: fadeIn 0.2s ease; }
+  .post-body.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .field-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 11px; }
+  .field-row label { font-size: 0.76rem; color: var(--ink-dim); font-weight: 500; min-width: 60px; }
+  .field-row input[type=range] { flex: 1 1 120px; accent-color: var(--gold); }
+  .field-row .val { font-size: 0.74rem; color: var(--ink); min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  .field-row input[type=text], .field-row textarea, .field-row select {
+    flex: 1 1 200px; background: var(--surface-2); border: 1px solid var(--line-soft); color: var(--ink);
+    border-radius: 8px; padding: 8px 11px; font-size: 0.78rem; font-family: inherit; min-width: 0;
+  }
+  .field-row input:focus, .field-row textarea:focus, .field-row select:focus { outline: none; border-color: var(--gold); }
+  .post-hint { font-size: 0.71rem; color: var(--ink-faint); line-height: 1.6; margin-top: 2px; }
+
+  .swatch-grid { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 8px; }
+  .grad-swatch {
+    width: 46px; height: 34px; border-radius: 9px; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.15s;
+  }
+  .grad-swatch:hover { transform: scale(1.08); }
+  .grad-swatch.active { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,0.3); }
+
+  /* 前後對照滑桿 */
+  .ba-wrap {
+    position: relative; width: 100%; max-width: 480px; margin: 0 auto;
+    border-radius: 10px; overflow: hidden; user-select: none; touch-action: none; line-height: 0;
+    border: 1px solid var(--line);
+  }
+  .ba-wrap img { width: 100%; display: block; }
+  .ba-after { position: absolute; inset: 0; overflow: hidden; border-right: 2px solid var(--gold); }
+  .ba-after img { position: absolute; top: 0; left: 0; height: 100%; width: auto; max-width: none; }
+  .ba-handle {
+    position: absolute; top: 0; bottom: 0; width: 38px; margin-left: -19px;
+    cursor: ew-resize; display: flex; align-items: center; justify-content: center;
+  }
+  .ba-handle::before {
+    content: '⇄'; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold); color: #1a1407; display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; font-weight: 700; box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  }
+  .ba-tag {
+    position: absolute; top: 8px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px;
+    padding: 3px 9px; border-radius: 999px; background: rgba(10,11,14,0.72); color: var(--ink);
+  }
+  .ba-tag.l { left: 8px; } .ba-tag.r { right: 8px; color: var(--gold-soft); }
+
+  /* 筆刷編輯器 Modal */
+  .editor-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(6, 7, 10, 0.9); backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center; padding: 12px;
+  }
+  .editor-overlay.show { display: flex; }
+  .editor-box {
+    background: #0c0d11; border: 1px solid var(--line); border-radius: 16px;
+    width: 100%; max-width: 920px; max-height: 94vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8);
+  }
+  .editor-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .editor-head h3 { font-family: 'Noto Serif TC', serif; font-size: 1rem; font-weight: 700; color: var(--gold-soft); }
+  .editor-close {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-soft); color: var(--ink); width: 32px; height: 32px;
+    border-radius: 9px; cursor: pointer; font-size: 1rem;
+  }
+  .editor-close:hover { background: rgba(255,255,255,0.1); }
+  .editor-canvas-area {
+    flex: 1; overflow: auto; padding: 14px; display: flex; align-items: center; justify-content: center; min-height: 240px;
+    background-image:
+      linear-gradient(45deg, #16181f 25%, transparent 25%),
+      linear-gradient(-45deg, #16181f 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #16181f 75%),
+      linear-gradient(-45deg, transparent 75%, #16181f 75%);
+    background-size: 18px 18px; background-position: 0 0, 0 9px, 9px -9px, -9px 0; background-color: #0a0b0e;
+  }
+  #editor-canvas { cursor: crosshair; display: block; box-shadow: 0 0 0 1px var(--line); }
+  .editor-tools {
+    padding: 13px 18px; border-top: 1px solid var(--line);
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .tool-group { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+  .seg { display: flex; border: 1px solid var(--line-soft); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    background: var(--surface-2); border: none; color: var(--ink-dim); padding: 8px 13px;
+    font-size: 0.76rem; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .seg button.active { background: linear-gradient(135deg, var(--jade), var(--jade-deep)); color: #06140f; }
+  .seg button + button { border-left: 1px solid var(--line-soft); }
+  .editor-tools label { font-size: 0.74rem; color: var(--ink-dim); }
+  .editor-tools input[type=range] { accent-color: var(--gold); width: 110px; }
+
+  @media (max-width: 560px) {
+    .editor-tools { gap: 9px; }
+    .post-tab { min-width: 74px; font-size: 0.7rem; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 標題 -->
+  <div class="header">
+    <div class="eyebrow">AI · Background Atelier</div>
+    <h1><span class="h1-emoji">✂️</span><span class="h1-text">RemoveBG Studio</span></h1>
+    <div class="rule"><span></span><i></i><span></span></div>
+    <p>AI 智能去背工作室 · 本地離線 + 雲端雙引擎 · 框選 · 修補 · 換背景 · AI 場景</p>
+    <span class="badge">✦ 本地 WASM 免額度 · remove.bg 雲端容錯 · 全在瀏覽器完成</span>
+  </div>
+
+  <!-- 上傳區 -->
+  <div class="card">
+    <div class="drop-zone" id="drop-zone">
+      <span class="drop-icon">📤</span>
+      <div class="drop-title">點擊或拖曳圖像到此處</div>
+      <div class="drop-sub">
+        支援 JPG / PNG / WebP 等格式<br>
+        也可直接按 <kbd>Ctrl</kbd> + <kbd>V</kbd> 貼上剪貼簿圖像
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" multiple>
+
+    <!-- 設定 -->
+    <div class="settings-row" style="margin-top: 14px;">
+      <label for="size-select">📐 輸出尺寸：</label>
+      <select id="size-select">
+        <option value="auto" selected>自動（最佳品質）</option>
+        <option value="preview">預覽（小尺寸快速）</option>
+        <option value="full">完整原始尺寸</option>
+        <option value="regular">標準 0.25MP</option>
+        <option value="medium">中等 1.5MP</option>
+        <option value="hd">HD 4MP</option>
+        <option value="4k">4K 10MP</option>
+      </select>
+
+      <label for="type-select" style="margin-left:8px;">🎯 物件類型：</label>
+      <select id="type-select">
+        <option value="auto" selected>自動偵測</option>
+        <option value="person">人物</option>
+        <option value="product">產品</option>
+        <option value="animal">動物</option>
+        <option value="car">汽車</option>
+        <option value="other">其他</option>
+      </select>
+    </div>
+
+    <!-- 去背引擎 -->
+    <div class="settings-row">
+      <label for="engine-select">⚙️ 去背引擎：</label>
+      <select id="engine-select">
+        <option value="local-first" selected>本地優先（失敗才用 API）</option>
+        <option value="local-only">僅本地（離線 · 免額度）</option>
+        <option value="api-only">僅 remove.bg API（雲端）</option>
+      </select>
+      <span class="engine-pill" id="engine-pill"><span class="dot"></span><span id="engine-pill-text">待命</span></span>
+    </div>
+    <div class="post-hint" style="margin-top:-2px;margin-bottom:8px;">
+      ✦ 本地引擎首次使用會下載 AI 模型（約 20–40MB，之後快取免下載），完全在瀏覽器內運算、不耗 API 點數。
+    </div>
+
+    <!-- API Key 指示器（動態生成） -->
+    <div class="key-status" id="key-status" title="API Key 輪換狀態"></div>
+
+    <!-- 自訂 API Key 區（可摺疊） -->
+    <div class="custom-key-section">
+      <button type="button" class="custom-key-toggle" id="custom-key-toggle">
+        <span>🔑 自訂 API Key（選用，優先使用）</span>
+        <span class="custom-key-arrow">▼</span>
+      </button>
+      <div class="custom-key-panel" id="custom-key-panel">
+        <div style="font-size:0.72rem;color:#94a3b8;line-height:1.6;margin-bottom:6px;">
+          若您有自己的 remove.bg API Key，可在此輸入。<br>
+          系統會<strong style="color:#fcd34d;">優先使用您的 Key</strong>，失敗時才會切換到內建 3 組 Key。<br>
+          Key 會儲存在瀏覽器本地（localStorage），不會上傳到任何伺服器。
+          <a href="https://www.remove.bg/api" target="_blank" style="color:#d4af37;margin-left:4px;">取得免費 Key ↗</a>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input type="password" id="custom-key-input" class="custom-key-input" placeholder="請貼上您的 remove.bg API Key">
+          <button class="btn btn-secondary" id="btn-custom-key-show" style="padding:6px 10px;font-size:0.72rem;flex:0 0 auto;" title="顯示/隱藏">👁</button>
+          <button class="btn btn-blue" id="btn-custom-key-save" style="padding:6px 14px;font-size:0.72rem;flex:0 0 auto;">💾 儲存</button>
+          <button class="btn btn-secondary" id="btn-custom-key-clear" style="padding:6px 10px;font-size:0.72rem;flex:0 0 auto;">🗑 清除</button>
+        </div>
+        <div class="custom-key-state" id="custom-key-state"></div>
+      </div>
+    </div>
+
+    <!-- 進度條（本地模型下載 / 處理進度） -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><i id="progress-fill"></i></div>
+      <div class="progress-text" id="progress-text"></div>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- 預覽區 -->
+  <div class="card" id="preview-card" style="display:none;">
+    <div class="preview-grid">
+      <div class="preview-box">
+        <div class="preview-label">📷 原始圖像</div>
+        <div id="original-wrap"><div class="empty">尚未上傳</div></div>
+      </div>
+      <div class="preview-box" id="result-wrap-box">
+        <div class="preview-label">
+          ✨ 去背 / 套用背景結果
+          <button id="btn-toggle-ba" class="btn btn-secondary" style="padding:3px 10px;font-size:0.66rem;margin-left:8px;display:none;">🔍 前後對照</button>
+        </div>
+        <div id="result-wrap" class="checkerboard" style="width:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;min-height:150px;padding:8px;">
+          <div class="empty">點擊下方按鈕開始去背</div>
+        </div>
+        <div id="ba-view" style="display:none;width:100%;">
+          <div class="ba-wrap" id="ba-wrap">
+            <img id="ba-orig" alt="原圖">
+            <div class="ba-after" id="ba-after"><img id="ba-result" alt="結果"></div>
+            <div class="ba-handle" id="ba-handle"></div>
+            <span class="ba-tag l">原圖</span>
+            <span class="ba-tag r">結果</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 選取去背範圍 -->
+    <div class="sel-toolbar">
+      <button type="button" class="btn btn-secondary" id="btn-mode-rect">▭ 矩形框選</button>
+      <button type="button" class="btn btn-secondary" id="btn-mode-poly">⬡ 多邊形框選</button>
+      <button type="button" class="btn btn-secondary" id="btn-mode-lasso">✎ 套索</button>
+      <button type="button" class="btn btn-primary" id="btn-sel-finish" style="display:none;">✓ 完成封閉</button>
+      <button type="button" class="btn btn-secondary" id="btn-sel-clear" disabled>✕ 清除選取</button>
+      <span class="sel-hint" id="sel-hint">未選取 · 將對整張圖去背</span>
+    </div>
+
+    <!-- ════════ 後製工具面板 ════════ -->
+    <div class="post-panel" id="post-panel" style="display:none;">
+      <div class="post-tabs">
+        <button class="post-tab active" data-tab="bg">🎨 背景</button>
+        <button class="post-tab" data-tab="grad">🌌 漸層／場景</button>
+        <button class="post-tab" data-tab="image">🖼 自訂背景圖</button>
+        <button class="post-tab" data-tab="blur">📷 背景模糊</button>
+        <button class="post-tab" data-tab="ai">🤖 AI 生成背景</button>
+        <button class="post-tab" data-tab="edit">🖌 修補／裁切</button>
+      </div>
+
+      <!-- 純色 -->
+      <div class="post-body active" data-body="bg">
+        <div class="post-hint" style="margin-bottom:8px;">選擇純色或透明背景：</div>
+        <div class="bg-options" style="justify-content:flex-start;">
+          <div class="bg-swatch transparent active" data-bg="transparent" title="透明（棋盤格）"></div>
+          <div class="bg-swatch" data-bg="#ffffff" style="background:#ffffff;" title="白色"></div>
+          <div class="bg-swatch" data-bg="#000000" style="background:#000000;" title="黑色"></div>
+          <div class="bg-swatch" data-bg="#f1f5f9" style="background:#f1f5f9;" title="淺灰"></div>
+          <div class="bg-swatch" data-bg="#1e293b" style="background:#1e293b;" title="深灰"></div>
+          <div class="bg-swatch" data-bg="#fef3c7" style="background:#fef3c7;" title="米黃"></div>
+          <div class="bg-swatch" data-bg="#dbeafe" style="background:#dbeafe;" title="天藍"></div>
+          <div class="bg-swatch" data-bg="#fce7f3" style="background:#fce7f3;" title="粉紅"></div>
+          <div class="bg-picker-wrap">
+            <div class="bg-swatch" id="custom-bg-swatch" style="background:linear-gradient(135deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#a855f7);" title="自訂顏色"></div>
+            <input type="color" id="custom-bg-input" value="#ffffff">
+          </div>
+        </div>
+      </div>
+
+      <!-- 漸層 / 場景 -->
+      <div class="post-body" data-body="grad">
+        <div class="post-hint" style="margin-bottom:8px;">點擊套用漸層／棚拍場景背景：</div>
+        <div class="swatch-grid" id="grad-grid"></div>
+      </div>
+
+      <!-- 自訂背景圖 -->
+      <div class="post-body" data-body="image">
+        <div class="field-row">
+          <button class="btn btn-blue" id="btn-bg-image-pick" style="flex:0 0 auto;">🖼 上傳背景圖</button>
+          <button class="btn btn-secondary" id="btn-bg-image-clear" style="flex:0 0 auto;">清除</button>
+          <input type="file" id="bg-image-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="field-row">
+          <label>填滿方式</label>
+          <select id="bg-image-fit">
+            <option value="cover" selected>裁切填滿（cover）</option>
+            <option value="contain">完整置中（contain）</option>
+            <option value="stretch">拉伸鋪滿（stretch）</option>
+          </select>
+        </div>
+        <div class="post-hint">上傳的背景圖會以主體尺寸為基準合成，可直接下載成品。</div>
+      </div>
+
+      <!-- 背景模糊 -->
+      <div class="post-body" data-body="blur">
+        <div class="post-hint" style="margin-bottom:8px;">保留原圖、只模糊背景，做出人像散景（淺景深）效果。</div>
+        <div class="field-row">
+          <label>模糊強度</label>
+          <input type="range" id="blur-range" min="0" max="40" value="14">
+          <span class="val" id="blur-val">14px</span>
+        </div>
+        <button class="btn btn-blue" id="btn-apply-blur">📷 套用散景背景</button>
+      </div>
+
+      <!-- AI 生成背景 -->
+      <div class="post-body" data-body="ai">
+        <div class="post-hint" style="margin-bottom:8px;">輸入場景描述，由 Pollinations 生成背景圖並合成於主體後方。可選用 Groq 自動翻譯成英文提升品質。</div>
+        <div class="field-row">
+          <label style="min-width:auto;">場景描述</label>
+          <input type="text" id="ai-bg-prompt" placeholder="例如：柔和棚拍背景、夕陽海灘、現代辦公室">
+        </div>
+        <div class="field-row">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.74rem;cursor:pointer;min-width:auto;">
+            <input type="checkbox" id="ai-bg-translate" style="accent-color:var(--gold);"> 用 Groq 翻譯成英文
+          </label>
+          <button type="button" class="btn btn-secondary" id="ai-groq-toggle" style="padding:5px 11px;font-size:0.7rem;flex:0 0 auto;">🔑 Groq Key</button>
+        </div>
+        <div id="ai-groq-panel" style="display:none;margin-bottom:10px;">
+          <div class="field-row">
+            <input type="password" id="ai-groq-key" placeholder="貼上 Groq API Key（存於本地）" style="font-family:monospace;">
+            <button class="btn btn-blue" id="ai-groq-save" style="flex:0 0 auto;">儲存</button>
+          </div>
+          <div class="post-hint" id="ai-groq-state"></div>
+        </div>
+        <button class="btn btn-blue" id="btn-apply-ai-bg">🤖 生成並套用背景</button>
+      </div>
+
+      <!-- 修補 / 裁切 -->
+      <div class="post-body" data-body="edit">
+        <div class="post-hint" style="margin-bottom:8px;">修補去背瑕疵，或自動裁切掉多餘透明邊。</div>
+        <div class="action-row" style="margin-top:0;">
+          <button class="btn btn-blue" id="btn-open-editor">🖌 開啟修補筆刷</button>
+          <button class="btn btn-blue" id="btn-autocrop">✂️ 自動裁切到主體</button>
+        </div>
+        <div class="field-row" style="margin-top:11px;">
+          <label>裁切留邊</label>
+          <input type="range" id="crop-pad" min="0" max="80" value="8">
+          <span class="val" id="crop-pad-val">8px</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 動作按鈕 -->
+    <div class="action-row">
+      <button class="btn btn-primary" id="btn-process">
+        <span>✂️ 開始去背</span>
+      </button>
+      <button class="btn btn-blue" id="btn-download" disabled>
+        ⬇ 下載透明 PNG
+      </button>
+      <button class="btn btn-blue" id="btn-download-bg" disabled>
+        ⬇ 下載含背景
+      </button>
+      <button class="btn btn-secondary" id="btn-reset">
+        🔄 重新選擇
+      </button>
+    </div>
+    <div class="field-row" style="margin-top:10px;justify-content:center;">
+      <label style="min-width:auto;">下載格式</label>
+      <select id="out-format" style="flex:0 0 auto;">
+        <option value="png" selected>PNG（支援透明）</option>
+        <option value="jpeg">JPG（檔案小）</option>
+        <option value="webp">WebP（最小）</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 批次處理（多張） -->
+  <div class="card" id="batch-card" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:0.85rem;font-weight:700;color:#e2e8f0;">📦 批次處理佇列</span>
+      <button class="btn btn-secondary" id="btn-batch-clear" style="padding:5px 10px;font-size:0.72rem;">清空</button>
+    </div>
+    <div class="batch-list" id="batch-list"></div>
+    <div class="action-row" style="margin-top:10px;">
+      <button class="btn btn-primary" id="btn-batch-run">✂️ 批次去背全部</button>
+      <button class="btn btn-blue" id="btn-batch-download" disabled>📦 下載全部 (ZIP)</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by <a href="https://www.remove.bg" target="_blank">remove.bg API</a> +
+    <a href="https://github.com/imgly/background-removal-js" target="_blank">@imgly/background-removal</a>（本地 WASM）·
+    本地優先 · 雲端容錯 · 框選 / 修補 / 換背景 / AI 場景全在瀏覽器完成
+    <br><span style="color:var(--ink-faint);font-size:0.68rem;">build R4 · 雙引擎 + 後製工作室</span>
+  </div>
+
+</div>
+
+<!-- ══════════ 筆刷修補編輯器 ══════════ -->
+<div class="editor-overlay" id="editor-overlay">
+  <div class="editor-box">
+    <div class="editor-head">
+      <h3>🖌 修補筆刷 — 擦除殘留 / 還原誤刪</h3>
+      <button class="editor-close" id="editor-close">✕</button>
+    </div>
+    <div class="editor-canvas-area">
+      <canvas id="editor-canvas"></canvas>
+    </div>
+    <div class="editor-tools">
+      <div class="tool-group">
+        <span class="seg" id="brush-mode-seg">
+          <button data-mode="erase" class="active">🧽 擦除</button>
+          <button data-mode="restore">↩ 還原</button>
+        </span>
+      </div>
+      <div class="tool-group">
+        <label>筆刷</label>
+        <input type="range" id="brush-size" min="4" max="160" value="36">
+        <span class="val" id="brush-size-val">36</span>
+      </div>
+      <div class="tool-group">
+        <label>縮放</label>
+        <input type="range" id="brush-zoom" min="20" max="300" value="100">
+        <span class="val" id="brush-zoom-val">100%</span>
+      </div>
+      <div class="tool-group" style="margin-left:auto;">
+        <button class="btn btn-secondary" id="brush-undo" style="padding:8px 13px;font-size:0.74rem;">↶ 復原</button>
+        <button class="btn btn-secondary" id="brush-reset" style="padding:8px 13px;font-size:0.74rem;">重設</button>
+        <button class="btn btn-primary" id="brush-apply" style="padding:8px 18px;font-size:0.74rem;">✔ 套用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ══════════════════════════════════════════════════════════
+  // 🔑 API Key 池（3 組隨機輪換）
+  // ══════════════════════════════════════════════════════════
+  const API_KEYS = [
+    'qfVx3df1CG45pQLWrjQyhsnU',
+    'YShbFpzCRD4b5MCQk6ET8Vnr',
+    'p3Lg1G61ppZriVQAG1iMGiQR'
+  ];
+
+  const LS_CUSTOM_KEY = 'rembg_custom_api_key';
+  const getCustomKey = () => (localStorage.getItem(LS_CUSTOM_KEY) || '').trim();
+  const setCustomKey = (v) => {
+    if (v && v.trim()) localStorage.setItem(LS_CUSTOM_KEY, v.trim());
+    else localStorage.removeItem(LS_CUSTOM_KEY);
+  };
+
+  // 取得隨機排序的 Key 列表（用於失敗時依序嘗試）
+  // 若使用者有自訂 Key → 自訂 Key 優先（放第一位），其餘隨機排序
+  const getShuffledKeys = () => {
+    const arr = [...API_KEYS];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    const custom = getCustomKey();
+    if (custom && !arr.includes(custom)) {
+      return [custom, ...arr];
+    }
+    return arr;
+  };
+
+  // 更新 Key 狀態指示燈
+  const setKeyDot = (keyStr, state) => {
+    const customKey = getCustomKey();
+    let dot;
+    if (customKey && keyStr === customKey) {
+      dot = document.querySelector('.key-dot[data-custom="1"]');
+    } else {
+      const realIdx = API_KEYS.indexOf(keyStr);
+      dot = document.querySelector(`.key-dot[data-idx="${realIdx}"]`);
+    }
+    if (!dot) return;
+    dot.classList.remove('active', 'failed', 'trying');
+    if (state) dot.classList.add(state);
+  };
+  const resetKeyDots = () => {
+    document.querySelectorAll('.key-dot').forEach(d => {
+      d.classList.remove('active', 'failed', 'trying');
+    });
+  };
+
+  // 取得 Key 顯示標籤（給狀態訊息用）
+  const getKeyLabel = (keyStr) => {
+    const customKey = getCustomKey();
+    if (customKey && keyStr === customKey) return '自訂 Key';
+    return `Key #${API_KEYS.indexOf(keyStr) + 1}`;
+  };
+
+  // 重建 Key 指示燈（含自訂 Key 燈號）
+  const rebuildKeyDots = () => {
+    const container = $('key-status');
+    if (!container) return;
+    const customKey = getCustomKey();
+    let html = '';
+    if (customKey) {
+      html += `<div class="key-dot key-dot-custom" data-custom="1" title="自訂 API Key（優先使用）"></div><div class="key-dot-divider"></div>`;
+    }
+    for (let i = 0; i < API_KEYS.length; i++) {
+      html += `<div class="key-dot" data-idx="${i}" title="內建 Key #${i+1}"></div>`;
+    }
+    container.innerHTML = html;
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 📦 狀態
+  // ══════════════════════════════════════════════════════════
+  let currentFile = null;          // 當前單張的 File 物件
+  let currentOriginalUrl = null;   // 原圖 DataURL
+  let currentResultBlobUrl = null; // 去背結果（cutout）Blob URL — 後製唯一真實來源
+  let currentResultBlob = null;    // cutout Blob
+  let currentBg = { type: 'transparent', value: null, fit: 'cover' }; // 背景設定
+  let bgImageEl = null;            // 自訂 / AI 背景圖（Image）
+  let originalImgCache = null;     // 原圖 Image（供模糊 / 還原筆刷）
+  let batchQueue = [];             // 批次佇列：[{ file, originalUrl, resultBlobUrl, status }]
+
+  // ══════════════════════════════════════════════════════════
+  // 🛠️ 工具函式
+  // ══════════════════════════════════════════════════════════
+  const $ = (id) => document.getElementById(id);
+
+  const setStatus = (msg, type = 'info') => {
+    const el = $('status');
+    el.textContent = msg;
+    el.className = 'status show ' + type;
+    if (!msg) el.classList.remove('show');
+  };
+
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+
+  const loadImage = (src) => new Promise((resolve, reject) => {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error('圖像載入失敗'));
+    im.src = src;
+  });
+
+  const getOriginalImage = async () => {
+    if (originalImgCache) return originalImgCache;
+    originalImgCache = await loadImage(currentOriginalUrl);
+    return originalImgCache;
+  };
+
+  // 進度條
+  const showProgress = () => $('progress-wrap').classList.add('show');
+  const hideProgress = () => { $('progress-wrap').classList.remove('show'); setProgress(0, ''); };
+  const setProgress = (pct, text) => {
+    $('progress-fill').style.width = Math.max(0, Math.min(100, pct)) + '%';
+    $('progress-text').textContent = text || '';
+  };
+
+  // 引擎徽章
+  const setEnginePill = (kind) => {
+    const pill = $('engine-pill');
+    pill.classList.remove('local', 'api');
+    if (kind === 'local') { pill.classList.add('local'); $('engine-pill-text').textContent = '本地引擎'; }
+    else if (kind === 'api') { pill.classList.add('api'); $('engine-pill-text').textContent = '雲端 API'; }
+    else { $('engine-pill-text').textContent = '待命'; }
+  };
+
+  // 依比例填滿（cover / contain / stretch）
+  const drawFit = (ctx, img, W, H, fit) => {
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    if (fit === 'stretch') { ctx.drawImage(img, 0, 0, W, H); return; }
+    const scale = fit === 'contain' ? Math.min(W / iw, H / ih) : Math.max(W / iw, H / ih);
+    const dw = iw * scale, dh = ih * scale;
+    ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  };
+
+  // 漸層 / 棚拍場景預設
+  const GRADIENTS = [
+    { name: '棚拍灰', type: 'radial', colors: ['#f8fafc', '#cbd5e1', '#64748b'] },
+    { name: '純白棚', type: 'radial', colors: ['#ffffff', '#e5e7eb'] },
+    { name: '暗黑棚', type: 'radial', colors: ['#475569', '#0f172a'] },
+    { name: '暖膚光', type: 'linear', colors: ['#fde68a', '#fca5a5'] },
+    { name: '夕陽',   type: 'linear', colors: ['#fb923c', '#f43f5e', '#7c3aed'] },
+    { name: '海洋',   type: 'linear', colors: ['#22d3ee', '#3b82f6'] },
+    { name: '薄荷',   type: 'linear', colors: ['#a7f3d0', '#34d399'] },
+    { name: '金玉',   type: 'linear', colors: ['#e8cd72', '#4fb89a'] },
+  ];
+  const gradientCss = (g) => g.type === 'radial'
+    ? `radial-gradient(circle at 50% 42%, ${g.colors.join(',')})`
+    : `linear-gradient(135deg, ${g.colors.join(',')})`;
+  const paintGradient = (ctx, W, H, g) => {
+    let grad;
+    if (g.type === 'radial') {
+      grad = ctx.createRadialGradient(W / 2, H * 0.42, Math.min(W, H) * 0.08, W / 2, H / 2, Math.max(W, H) * 0.78);
+    } else {
+      grad = ctx.createLinearGradient(0, 0, W, H);
+    }
+    const n = g.colors.length;
+    g.colors.forEach((c, i) => grad.addColorStop(n === 1 ? 0 : i / (n - 1), c));
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  };
+
+  // 取得 cutout canvas（原生解析度）
+  const cutoutCanvas = async () => {
+    const img = await loadImage(currentResultBlobUrl);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return c;
+  };
+
+  // 依目前背景設定合成完整結果 canvas
+  const buildCompositeCanvas = async () => {
+    const cut = await loadImage(currentResultBlobUrl);
+    const W = cut.naturalWidth, H = cut.naturalHeight;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    const t = currentBg.type;
+    if (t === 'color') {
+      ctx.fillStyle = currentBg.value; ctx.fillRect(0, 0, W, H);
+    } else if (t === 'gradient') {
+      paintGradient(ctx, W, H, currentBg.value);
+    } else if ((t === 'image' || t === 'ai') && bgImageEl) {
+      drawFit(ctx, bgImageEl, W, H, currentBg.fit || 'cover');
+    } else if (t === 'blur') {
+      const orig = await getOriginalImage();
+      ctx.filter = `blur(${currentBg.value}px)`;
+      drawFit(ctx, orig, W, H, 'cover');
+      ctx.filter = 'none';
+    }
+    ctx.drawImage(cut, 0, 0);
+    return c;
+  };
+
+  // 在預覽區渲染目前結果
+  const renderResult = async () => {
+    if (!currentResultBlobUrl) return;
+    const wrap = $('result-wrap');
+    const canvas = await buildCompositeCanvas();
+    wrap.classList.toggle('checkerboard', currentBg.type === 'transparent');
+    wrap.style.background = '';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '360px';
+    canvas.style.borderRadius = '6px';
+    wrap.innerHTML = '';
+    wrap.appendChild(canvas);
+  };
+
+  // 以 canvas 取代目前 cutout（裁切 / 筆刷後）
+  const replaceCutoutFromCanvas = (canvas) => new Promise((resolve, reject) => {
+    canvas.toBlob(async (b) => {
+      if (!b) { reject(new Error('canvas.toBlob 失敗')); return; }
+      if (currentResultBlobUrl) URL.revokeObjectURL(currentResultBlobUrl);
+      currentResultBlob = b;
+      currentResultBlobUrl = URL.createObjectURL(b);
+      await renderResult();
+      resolve();
+    }, 'image/png');
+  });
+
+  // 匯出（依背景與格式）
+  const exportComposite = async (format) => {
+    const canvas = await buildCompositeCanvas();
+    if (format === 'image/jpeg' && currentBg.type === 'transparent') {
+      const c2 = document.createElement('canvas');
+      c2.width = canvas.width; c2.height = canvas.height;
+      const x = c2.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, c2.width, c2.height);
+      x.drawImage(canvas, 0, 0);
+      return new Promise(r => c2.toBlob(b => r(b), format, 0.92));
+    }
+    return new Promise(r => canvas.toBlob(b => r(b), format, 0.92));
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 🔲 選取去背範圍（ROI）
+  // ══════════════════════════════════════════════════════════
+  // selection（已提交）：{ type:'rect'|'poly'|'lasso', pts:[{x,y}...] }，座標為相對比例 0~1
+  let selection = null;
+  let drawMode = null;        // null | 'rect' | 'poly' | 'lasso'
+  let dragging = false;       // rect / lasso 拖曳中
+  let rStart = null, rCur = null;   // 矩形暫存（比例）
+  let polyPts = [];           // 多邊形建構中頂點（比例）
+  let lassoPts = [];          // 套索拖曳軌跡（比例）
+  let hoverPt = null;         // 多邊形橡皮筋線
+
+  const GOLD = '#d4af37', JADE = '#4fb89a', INK0 = '#0a0b0e';
+
+  const canvasRect = () => $('sel-canvas').getBoundingClientRect();
+
+  const evToFrac = (e) => {
+    const r = canvasRect();
+    const t = e.touches && e.touches[0];
+    const cx = t ? t.clientX : e.clientX;
+    const cy = t ? t.clientY : e.clientY;
+    return {
+      x: Math.min(Math.max((cx - r.left) / r.width, 0), 1),
+      y: Math.min(Math.max((cy - r.top) / r.height, 0), 1)
+    };
+  };
+
+  const dot = (ctx, x, y, color) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = INK0; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = color; ctx.stroke();
+    ctx.restore();
+  };
+
+  const tracePath = (ctx, pts, W, H, close) => {
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const X = p.x * W, Y = p.y * H;
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    });
+    if (close) ctx.closePath();
+  };
+
+  // 以「圖片」的顯示尺寸為唯一基準來校正 canvas（避免讀 canvas 自身尺寸造成失控放大）
+  const drawSel = () => {
+    const cv = $('sel-canvas'), img = $('orig-img');
+    if (!cv || !img) return;
+    const W = img.clientWidth, H = img.clientHeight;
+    if (!W || !H) return;
+    const dpr = window.devicePixelRatio || 1;
+    const bw = Math.round(W * dpr), bh = Math.round(H * dpr);
+    if (cv.width !== bw) cv.width = bw;
+    if (cv.height !== bh) cv.height = bh;
+    if (cv.style.width !== W + 'px') cv.style.width = W + 'px';
+    if (cv.style.height !== H + 'px') cv.style.height = H + 'px';
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // 已提交 / 矩形拖曳中的封閉形狀
+    let shapePts = null;
+    if (selection) shapePts = selection.pts;
+    else if (drawMode === 'rect' && dragging && rStart && rCur) {
+      const x = Math.min(rStart.x, rCur.x), y = Math.min(rStart.y, rCur.y);
+      const w = Math.abs(rCur.x - rStart.x), h = Math.abs(rCur.y - rStart.y);
+      shapePts = [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }];
+    }
+
+    if (shapePts) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'destination-out';
+      tracePath(ctx, shapePts, W, H, true);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = GOLD;
+      ctx.fillStyle = 'rgba(212,175,55,0.08)';
+      tracePath(ctx, shapePts, W, H, true);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+      // 矩形 / 多邊形顯示頂點；套索點太多不畫點
+      if (!selection || selection.type !== 'lasso')
+        shapePts.forEach(p => dot(ctx, p.x * W, p.y * H, GOLD));
+    }
+
+    // 多邊形建構中：虛線折線 + 橡皮筋線 + 頂點（起點玉色＝可點回封閉）
+    if (drawMode === 'poly' && polyPts.length) {
+      ctx.save();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = GOLD; ctx.setLineDash([5, 4]);
+      tracePath(ctx, polyPts, W, H, false);
+      if (hoverPt) ctx.lineTo(hoverPt.x * W, hoverPt.y * H);
+      ctx.stroke();
+      ctx.restore();
+      polyPts.forEach((p, i) => dot(ctx, p.x * W, p.y * H, i === 0 ? JADE : GOLD));
+    }
+
+    // 套索拖曳中：實線軌跡 + 虛線閉合預覽
+    if (drawMode === 'lasso' && dragging && lassoPts.length) {
+      ctx.save();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = GOLD;
+      tracePath(ctx, lassoPts, W, H, false);
+      ctx.stroke();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(212,175,55,0.5)';
+      const a = lassoPts[lassoPts.length - 1], b = lassoPts[0];
+      ctx.beginPath();
+      ctx.moveTo(a.x * W, a.y * H); ctx.lineTo(b.x * W, b.y * H);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  const sizeCanvas = () => drawSel();
+
+  const updateModeButtons = () => {
+    const r = $('btn-mode-rect'), p = $('btn-mode-poly'), l = $('btn-mode-lasso'), f = $('btn-sel-finish');
+    if (r) r.classList.toggle('active', drawMode === 'rect');
+    if (p) p.classList.toggle('active', drawMode === 'poly');
+    if (l) l.classList.toggle('active', drawMode === 'lasso');
+    if (f) {
+      f.style.display = (drawMode === 'poly') ? 'inline-flex' : 'none';
+      f.disabled = polyPts.length < 3;
+    }
+  };
+
+  const updateSelHint = () => {
+    const h = $('sel-hint');
+    if (!h) return;
+    if (selection) {
+      const name = selection.type === 'rect' ? '已框選矩形'
+        : selection.type === 'poly' ? '已封閉多邊形' : '已套索選取';
+      h.textContent = name + ' · 僅保留此範圍去背結果，其餘透明';
+      h.className = 'sel-hint has-sel';
+    } else if (drawMode === 'rect') {
+      h.textContent = '在原圖上拖曳出矩形範圍';
+      h.className = 'sel-hint';
+    } else if (drawMode === 'poly') {
+      h.textContent = polyPts.length
+        ? '繼續點選頂點；點回起點（綠點）或按「完成封閉」結束'
+        : '連續點選頂點以圍出範圍（至少 3 點）';
+      h.className = 'sel-hint';
+    } else if (drawMode === 'lasso') {
+      h.textContent = '按住並沿主體邊緣拖曳一圈，放開即自動封閉';
+      h.className = 'sel-hint';
+    } else {
+      h.textContent = '未選取 · 將對整張圖去背';
+      h.className = 'sel-hint';
+    }
+  };
+
+  const refreshSelUI = () => {
+    const stage = $('sel-stage');
+    if (stage) stage.classList.toggle('selecting', !!drawMode);
+    const c = $('btn-sel-clear');
+    if (c) c.disabled = !selection && !polyPts.length && !lassoPts.length;
+    updateModeButtons();
+    updateSelHint();
+    drawSel();
+  };
+
+  const resetSelectionState = () => {
+    selection = null; drawMode = null; dragging = false;
+    rStart = null; rCur = null; polyPts = []; lassoPts = []; hoverPt = null;
+  };
+
+  const clearSelection = () => {
+    resetSelectionState();
+    refreshSelUI();
+  };
+
+  const setMode = (m) => {
+    drawMode = (drawMode === m) ? null : m;   // 點同一鍵 = 取消該模式
+    dragging = false; rStart = null; rCur = null;
+    polyPts = []; lassoPts = []; hoverPt = null;
+    if (drawMode) selection = null;           // 進入繪製即重新框選
+    refreshSelUI();
+  };
+
+  const closePolygon = () => {
+    if (polyPts.length < 3) { setStatus('多邊形至少需要 3 個頂點', 'warn'); return; }
+    selection = { type: 'poly', pts: polyPts.slice() };
+    polyPts = []; hoverPt = null; drawMode = null;
+    refreshSelUI();
+  };
+
+  // 建立原圖 + 選取 canvas 圖層
+  const renderOriginalStage = (url) => {
+    $('original-wrap').innerHTML =
+      `<div class="sel-stage${drawMode ? ' selecting' : ''}" id="sel-stage">` +
+        `<img src="${url}" id="orig-img" alt="原圖" draggable="false">` +
+        `<canvas class="sel-overlay" id="sel-canvas"></canvas>` +
+      `</div>`;
+    const cv = $('sel-canvas');
+    const img = $('orig-img');
+    cv.addEventListener('mousedown', onCvDown);
+    cv.addEventListener('click', onCvClick);
+    cv.addEventListener('mousemove', onCvMove);
+    cv.addEventListener('touchstart', onCvDown, { passive: false });
+    cv.addEventListener('touchmove', onCvMove, { passive: false });
+    img.addEventListener('load', drawSel);
+    img.addEventListener('error', () => setStatus('❌ 圖片載入失敗，請改用 JPG / PNG / WebP 格式再試', 'error'));
+    if (img.complete && img.naturalWidth) drawSel();
+    // 圖片尺寸變動時重畫（版面/載入/縮放），以圖片為基準不會失控
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => drawSel());
+      ro.observe(img);
+    }
+    refreshSelUI();
+  };
+
+  const onCvDown = (e) => {
+    if (drawMode === 'rect') {
+      e.preventDefault();
+      selection = null; dragging = true;
+      rStart = evToFrac(e); rCur = rStart;
+      drawSel();
+    } else if (drawMode === 'lasso') {
+      e.preventDefault();
+      selection = null; dragging = true;
+      lassoPts = [evToFrac(e)];
+      drawSel();
+    }
+  };
+  const onCvMove = (e) => {
+    if (drawMode === 'poly') {
+      hoverPt = evToFrac(e);
+      if (polyPts.length) drawSel();
+      return;
+    }
+    if (!dragging) return;
+    if (e.cancelable) e.preventDefault();
+    const p = evToFrac(e);
+    if (drawMode === 'rect') {
+      rCur = p; drawSel();
+    } else if (drawMode === 'lasso') {
+      const last = lassoPts[lassoPts.length - 1];
+      const r = canvasRect();
+      if (!last || Math.hypot((p.x - last.x) * r.width, (p.y - last.y) * r.height) >= 3) {
+        lassoPts.push(p); drawSel();
+      }
+    }
+  };
+  const onCvUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (drawMode === 'rect') {
+      if (!rStart || !rCur) return;
+      const x = Math.min(rStart.x, rCur.x), y = Math.min(rStart.y, rCur.y);
+      const w = Math.abs(rCur.x - rStart.x), h = Math.abs(rCur.y - rStart.y);
+      rStart = rCur = null;
+      if (w < 0.01 || h < 0.01) { drawSel(); return; }
+      selection = { type: 'rect', pts: [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }] };
+      drawMode = null;
+      refreshSelUI();
+    } else if (drawMode === 'lasso') {
+      const pts = lassoPts.slice();
+      lassoPts = [];
+      if (pts.length < 3) { drawSel(); return; }
+      selection = { type: 'lasso', pts };
+      drawMode = null;
+      refreshSelUI();
+    }
+  };
+  const onCvClick = (e) => {
+    if (drawMode !== 'poly') return;
+    const p = evToFrac(e);
+    if (polyPts.length >= 3) {
+      const r = canvasRect();
+      const f = polyPts[0];
+      if (Math.hypot((p.x - f.x) * r.width, (p.y - f.y) * r.height) < 12) { closePolygon(); return; }
+    }
+    polyPts.push(p);
+    refreshSelUI();
+  };
+
+  window.addEventListener('mouseup', onCvUp);
+  window.addEventListener('touchend', onCvUp);
+  window.addEventListener('resize', () => sizeCanvas());
+
+  // 友善化 remove.bg 錯誤訊息
+  const friendlyError = (raw) => {
+    const m = (raw || '').toLowerCase();
+    if (m.includes('foreground') || m.includes('identify')) {
+      return '無法在影像中辨識主體。建議：框選範圍涵蓋完整主體並留些邊距、主體與背景對比要明顯，或將「物件類型」設為自動偵測。詳見 remove.bg/supported-images';
+    }
+    return raw;
+  };
+
+  const processRegion = async (file, sel, options) => {
+    const img = await loadImage(await fileToDataUrl(file));
+    const nw = img.naturalWidth, nh = img.naturalHeight;
+
+    // 由選取頂點求邊界框（自然像素）
+    const xs = sel.pts.map(p => p.x), ys = sel.pts.map(p => p.y);
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const maxX = Math.max(...xs), maxY = Math.max(...ys);
+    let rx = Math.round(minX * nw), ry = Math.round(minY * nh);
+    let rw = Math.round((maxX - minX) * nw), rh = Math.round((maxY - minY) * nh);
+    rx = Math.max(0, Math.min(rx, nw - 1));
+    ry = Math.max(0, Math.min(ry, nh - 1));
+    rw = Math.max(1, Math.min(rw, nw - rx));
+    rh = Math.max(1, Math.min(rh, nh - ry));
+
+    // 合成：只保留「選取形狀內」的去背結果，形狀外一律透明
+    const compose = (cutImg, destX, destY, destW, destH) => {
+      const out = document.createElement('canvas');
+      out.width = nw; out.height = nh;
+      const ctx = out.getContext('2d');
+      ctx.save();
+      ctx.beginPath();
+      sel.pts.forEach((p, i) => {
+        const X = p.x * nw, Y = p.y * nh;
+        if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      });
+      ctx.closePath();
+      ctx.clip();                                                  // 限制在選取形狀內
+      // 將整張去背回傳圖「等比例拉伸」填回它對應的自然矩形
+      // （remove.bg 免費 Key 常回傳較小的預覽尺寸，不可假設與裁切同尺寸）
+      ctx.drawImage(cutImg, 0, 0, cutImg.naturalWidth, cutImg.naturalHeight, destX, destY, destW, destH);
+      ctx.restore();
+      return new Promise((res, rej) =>
+        out.toBlob(b => b ? res(b) : rej(new Error('合成失敗')), 'image/png'));
+    };
+
+    // 作法 A：帶邊距裁切邊界框送出（給 API 多一點上下文，較易辨識主體）
+    const pad = Math.round(Math.max(rw, rh) * 0.25);
+    const px = Math.max(0, rx - pad), py = Math.max(0, ry - pad);
+    const px2 = Math.min(nw, rx + rw + pad), py2 = Math.min(nh, ry + rh + pad);
+    const PW = px2 - px, PH = py2 - py;
+
+    const crop = document.createElement('canvas');
+    crop.width = PW; crop.height = PH;
+    crop.getContext('2d').drawImage(img, px, py, PW, PH, 0, 0, PW, PH);
+    const cropBlob = await new Promise((res, rej) =>
+      crop.toBlob(b => b ? res(b) : rej(new Error('裁切失敗')), 'image/png'));
+
+    try {
+      const apiRes = await removeBgAuto(cropBlob, options);
+      const cutImg = await loadImage(URL.createObjectURL(apiRes.blob));
+      const finalBlob = await compose(cutImg, px, py, PW, PH);
+      return { blob: finalBlob, key: apiRes.key, credits: apiRes.credits, remaining: apiRes.remaining, engine: apiRes.engine, meta: apiRes.meta, mode: 'crop' };
+    } catch (e) {
+      const m = (e.message || '').toLowerCase();
+      const noForeground = m.includes('foreground') || m.includes('identify') || m.includes('400');
+      if (!noForeground) throw e;
+
+      // 作法 B（後援）：去背整張，再裁進選取形狀（整圖辨識通常更可靠）
+      setStatus('⚠ 選取區難以辨識主體，改用「整圖去背 → 套用範圍」重試…', 'warn');
+      resetKeyDots();
+      const wc = document.createElement('canvas');
+      wc.width = nw; wc.height = nh;
+      wc.getContext('2d').drawImage(img, 0, 0);
+      const wholeBlob = await new Promise((res, rej) =>
+        wc.toBlob(b => b ? res(b) : rej(new Error('影像處理失敗')), 'image/png'));
+      const apiRes2 = await removeBgAuto(wholeBlob, options);
+      const cutWhole = await loadImage(URL.createObjectURL(apiRes2.blob));
+      const finalBlob2 = await compose(cutWhole, 0, 0, nw, nh);
+      return { blob: finalBlob2, key: apiRes2.key, credits: apiRes2.credits, remaining: apiRes2.remaining, engine: apiRes2.engine, meta: apiRes2.meta, mode: 'whole' };
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 🌐 核心：呼叫 remove.bg API（含 Key 輪換 + 自動重試）
+  // ══════════════════════════════════════════════════════════
+  const callRemoveBg = async (fileOrBlob, options = {}) => {
+    const { size = 'auto', type = 'auto' } = options;
+    const keys = getShuffledKeys();
+    let lastError = null;
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      setKeyDot(key, 'trying');
+
+      try {
+        const formData = new FormData();
+        formData.append('image_file', fileOrBlob, fileOrBlob.name || 'image.jpg');
+        formData.append('size', size);
+        if (type && type !== 'auto') formData.append('type', type);
+
+        const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+          method: 'POST',
+          headers: { 'X-Api-Key': key },
+          body: formData
+        });
+
+        if (res.ok) {
+          setKeyDot(key, 'active');
+          // 顯示剩餘額度（如果有）
+          const credits = res.headers.get('X-Credits-Charged');
+          const remaining = res.headers.get('X-Total-Credits');
+          const blob = await res.blob();
+          return { blob, key, credits, remaining };
+        }
+
+        // 失敗：解析錯誤
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          errMsg = errJson?.errors?.[0]?.title || errMsg;
+        } catch (_) {
+          try { errMsg = await res.text(); } catch (_) {}
+        }
+        lastError = `${getKeyLabel(key)}: ${errMsg}`;
+        setKeyDot(key, 'failed');
+
+        // 402 = 配額用完，403 = 無權限，429 = 速率限制 → 自動換 Key
+        // 400 = 圖像問題 → 不需換 Key，直接結束
+        if (res.status === 400) {
+          throw new Error(errMsg);
+        }
+
+        // 提示正在切換
+        if (i < keys.length - 1) {
+          setStatus(`⚠ ${getKeyLabel(key)} 失敗（${errMsg}），自動切換下一組…`, 'warn');
+          await new Promise(r => setTimeout(r, 300));
+        }
+      } catch (e) {
+        setKeyDot(key, 'failed');
+        lastError = `${getKeyLabel(key)}: ${e.message}`;
+        if (e.message && /HTTP 400/.test(e.message)) throw e;
+      }
+    }
+
+    throw new Error(`全部 API Key 皆失敗。最後錯誤：${lastError || '未知'}`);
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 🧠 本地引擎：@imgly/background-removal（瀏覽器 WASM）
+  // ══════════════════════════════════════════════════════════
+  let _imglyMod = null;
+  const getImgly = async () => {
+    if (_imglyMod) return _imglyMod;
+    _imglyMod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.6.0/+esm');
+    return _imglyMod;
+  };
+  const removeBgLocal = async (input, onProgress) => {
+    const mod = await getImgly();
+    return await mod.removeBackground(input, {
+      output: { format: 'image/png' },
+      progress: (key, cur, total) => { if (onProgress) onProgress(key, cur, total); }
+    });
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 🔀 雙引擎調度：本地優先 / 僅本地 / 僅 API
+  // ══════════════════════════════════════════════════════════
+  const removeBgAuto = async (fileOrBlob, options = {}) => {
+    const engine = $('engine-select').value;
+
+    const tryLocal = async () => {
+      setEnginePill('local');
+      showProgress();
+      setProgress(2, '準備本地 AI 模型…');
+      const blob = await removeBgLocal(fileOrBlob, (key, cur, total) => {
+        const pct = total ? Math.round((cur / total) * 100) : 0;
+        const isModel = /fetch|download|model|resource|\.onnx|\.wasm|\.json/i.test(key || '');
+        setProgress(pct, `${isModel ? '下載 / 載入模型' : '本地運算去背'}… ${pct}%`);
+      });
+      hideProgress();
+      return { blob, engine: 'local', meta: '本地 WASM・免額度' };
+    };
+
+    if (engine === 'api-only') {
+      setEnginePill('api');
+      const r = await callRemoveBg(fileOrBlob, options);
+      return { blob: r.blob, key: r.key, credits: r.credits, remaining: r.remaining, engine: 'api', meta: `${getKeyLabel(r.key)}${r.credits ? `・扣 ${r.credits} 點` : ''}` };
+    }
+    if (engine === 'local-only') {
+      try { return await tryLocal(); }
+      catch (e) { hideProgress(); throw new Error('本地引擎失敗：' + e.message); }
+    }
+    // local-first
+    try {
+      return await tryLocal();
+    } catch (e) {
+      hideProgress();
+      setStatus('⚠ 本地引擎失敗，自動改用 remove.bg API…', 'warn');
+      setEnginePill('api');
+      const r = await callRemoveBg(fileOrBlob, options);
+      return { blob: r.blob, key: r.key, credits: r.credits, remaining: r.remaining, engine: 'api', meta: `${getKeyLabel(r.key)}（本地失敗後援）` };
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 📤 上傳 / 拖曳 / 貼上
+  // ══════════════════════════════════════════════════════════
+  const dropZone = $('drop-zone');
+  const fileInput = $('file-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropZone.addEventListener(ev, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (ev === 'dragleave') dropZone.classList.remove('dragover');
+    });
+  });
+  dropZone.addEventListener('drop', e => {
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  // 貼上
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const f = item.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length > 0) handleFiles(files);
+  });
+
+  const handleFiles = (fileList) => {
+    const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      setStatus('❌ 請上傳圖像檔案（JPG/PNG/WebP）', 'error');
+      return;
+    }
+    if (files.length === 1) {
+      loadSingleFile(files[0]);
+    } else {
+      loadBatchFiles(files);
+    }
+  };
+
+  const loadSingleFile = async (file) => {
+    // 重置批次區
+    batchQueue = [];
+    $('batch-card').style.display = 'none';
+
+    currentFile = file;
+    currentOriginalUrl = await fileToDataUrl(file);
+    currentResultBlobUrl = null;
+    currentResultBlob = null;
+    originalImgCache = null;
+    bgImageEl = null;
+    currentBg = { type: 'transparent', value: null, fit: 'cover' };
+    resetBgSwatches();
+
+    clearSelection();
+    renderOriginalStage(currentOriginalUrl);
+    $('result-wrap').className = 'checkerboard';
+    $('result-wrap').style.cssText = 'width:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;min-height:150px;padding:8px;';
+    $('result-wrap').innerHTML = '<div class="empty">點擊「開始去背」按鈕</div>';
+    $('preview-card').style.display = 'block';
+    $('post-panel').style.display = 'none';
+    $('btn-toggle-ba').style.display = 'none';
+    showResultView();
+    $('btn-download').disabled = true;
+    $('btn-download-bg').disabled = true;
+    resetKeyDots();
+    setEnginePill(null);
+    setStatus(`✅ 已載入：${file.name}（${(file.size/1024).toFixed(1)} KB）`, 'success');
+    setTimeout(() => setStatus('', 'info'), 2500);
+  };
+
+  const loadBatchFiles = async (files) => {
+    currentFile = null;
+    $('preview-card').style.display = 'none';
+
+    batchQueue = [];
+    for (const file of files) {
+      const url = await fileToDataUrl(file);
+      batchQueue.push({ file, originalUrl: url, resultBlobUrl: null, status: 'pending' });
+    }
+    renderBatchList();
+    $('batch-card').style.display = 'block';
+    $('btn-batch-download').disabled = true;
+    resetKeyDots();
+    setStatus(`✅ 已載入 ${files.length} 張圖像到批次佇列`, 'success');
+    setTimeout(() => setStatus('', 'info'), 2500);
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // 🎨 背景系統（純色 / 漸層 / 圖片 / 模糊 / AI）
+  // ══════════════════════════════════════════════════════════
+  const resetBgSwatches = () => {
+    document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+    const t = document.querySelector('.bg-swatch[data-bg="transparent"]');
+    if (t) t.classList.add('active');
+    document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('active'));
+  };
+
+  const applyBg = async (bg) => {
+    currentBg = Object.assign({ fit: 'cover' }, bg);
+    if (currentResultBlobUrl) {
+      await renderResult();
+      if (baActive) buildBA();
+    }
+  };
+
+  document.querySelectorAll('.bg-swatch[data-bg]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      const v = el.dataset.bg;
+      applyBg(v === 'transparent' ? { type: 'transparent' } : { type: 'color', value: v });
+    });
+  });
+
+  $('custom-bg-input').addEventListener('input', e => {
+    document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('active'));
+    $('custom-bg-swatch').classList.add('active');
+    $('custom-bg-swatch').style.background = e.target.value;
+    applyBg({ type: 'color', value: e.target.value });
+  });
+
+  // 漸層 / 場景
+  const gradGrid = $('grad-grid');
+  GRADIENTS.forEach((g) => {
+    const d = document.createElement('div');
+    d.className = 'grad-swatch';
+    d.title = g.name;
+    d.style.background = gradientCss(g);
+    d.addEventListener('click', () => {
+      document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('active'));
+      d.classList.add('active');
+      applyBg({ type: 'gradient', value: g });
+    });
+    gradGrid.appendChild(d);
+  });
+
+  // 自訂背景圖
+  $('btn-bg-image-pick').addEventListener('click', () => $('bg-image-input').click());
+  $('bg-image-input').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const url = await fileToDataUrl(f);
+    bgImageEl = await loadImage(url);
+    resetBgSwatches();
+    document.querySelector('.bg-swatch[data-bg="transparent"]').classList.remove('active');
+    await applyBg({ type: 'image', value: url, fit: $('bg-image-fit').value });
+    setStatus('✅ 已套用背景圖', 'success');
+  });
+  $('bg-image-fit').addEventListener('change', e => {
+    if (currentBg.type === 'image' || currentBg.type === 'ai') applyBg(Object.assign({}, currentBg, { fit: e.target.value }));
+  });
+  $('btn-bg-image-clear').addEventListener('click', () => {
+    bgImageEl = null;
+    resetBgSwatches();
+    applyBg({ type: 'transparent' });
+  });
+
+  // 背景模糊（散景）
+  $('blur-range').addEventListener('input', e => {
+    $('blur-val').textContent = e.target.value + 'px';
+    if (currentBg.type === 'blur') applyBg({ type: 'blur', value: parseInt(e.target.value) });
+  });
+  $('btn-apply-blur').addEventListener('click', async () => {
+    if (!currentResultBlobUrl) { setStatus('請先完成去背', 'warn'); return; }
+    resetBgSwatches();
+    document.querySelector('.bg-swatch[data-bg="transparent"]').classList.remove('active');
+    await applyBg({ type: 'blur', value: parseInt($('blur-range').value) });
+    setStatus('✅ 已套用散景背景', 'success');
+  });
+
+  // AI 生成背景（Pollinations + 選用 Groq 翻譯）
+  const LS_GROQ = 'rembg_groq_key';
+  const getGroqKey = () => (localStorage.getItem(LS_GROQ) || '').trim();
+  $('ai-groq-toggle').addEventListener('click', () => {
+    const p = $('ai-groq-panel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    const k = getGroqKey();
+    $('ai-groq-key').value = k;
+    $('ai-groq-state').textContent = k ? `✅ 已儲存 Groq Key（${k.slice(0,4)}…${k.slice(-4)}）` : '尚未設定，將直接以原文送出生成';
+  });
+  $('ai-groq-save').addEventListener('click', () => {
+    const v = $('ai-groq-key').value.trim();
+    if (v) localStorage.setItem(LS_GROQ, v); else localStorage.removeItem(LS_GROQ);
+    $('ai-groq-state').textContent = v ? '✅ 已儲存' : '已清除';
+  });
+  const groqTranslate = async (text, key) => {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'Convert the user description into a concise English image-generation prompt for a photographic BACKGROUND scene only (no people, no foreground subject). Output only the prompt.' },
+          { role: 'user', content: text }
+        ],
+        temperature: 0.4, max_tokens: 120
+      })
+    });
+    if (!res.ok) throw new Error('Groq HTTP ' + res.status);
+    const j = await res.json();
+    return (j.choices?.[0]?.message?.content || text).trim();
+  };
+  $('btn-apply-ai-bg').addEventListener('click', async () => {
+    if (!currentResultBlobUrl) { setStatus('請先完成去背', 'warn'); return; }
+    const raw = $('ai-bg-prompt').value.trim();
+    if (!raw) { setStatus('請先輸入場景描述', 'warn'); return; }
+    const btn = $('btn-apply-ai-bg');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span><span>生成中…</span>';
+    try {
+      let prompt = raw;
+      if ($('ai-bg-translate').checked) {
+        const key = getGroqKey();
+        if (key) { setStatus('🌐 Groq 翻譯中…', 'info'); try { prompt = await groqTranslate(raw, key); } catch (e) {} }
+      }
+      const cut = await loadImage(currentResultBlobUrl);
+      const m = 1024, s = Math.min(1, m / Math.max(cut.naturalWidth, cut.naturalHeight));
+      const w = Math.max(64, Math.round(cut.naturalWidth * s));
+      const h = Math.max(64, Math.round(cut.naturalHeight * s));
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
+      setStatus('🤖 生成 AI 背景中（約數秒）…', 'info');
+      bgImageEl = await loadImage(url);
+      resetBgSwatches();
+      document.querySelector('.bg-swatch[data-bg="transparent"]').classList.remove('active');
+      await applyBg({ type: 'ai', value: prompt, fit: 'cover' });
+      setStatus('✅ AI 背景已套用：' + prompt.slice(0, 40), 'success');
+    } catch (err) {
+      setStatus('❌ AI 背景生成失敗：' + err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '🤖 生成並套用背景';
+    }
+  });
+
+  // 自動裁切到主體
+  $('crop-pad').addEventListener('input', e => $('crop-pad-val').textContent = e.target.value + 'px');
+  $('btn-autocrop').addEventListener('click', async () => {
+    if (!currentResultBlobUrl) { setStatus('請先完成去背', 'warn'); return; }
+    setStatus('✂️ 掃描主體邊界中…', 'info');
+    try {
+      const c = await cutoutCanvas();
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      const data = ctx.getImageData(0, 0, W, H).data;
+      let minX = W, minY = H, maxX = -1, maxY = -1;
+      const TH = 8;
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (data[(y * W + x) * 4 + 3] > TH) {
+            if (x < minX) minX = x; if (x > maxX) maxX = x;
+            if (y < minY) minY = y; if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX < 0) { setStatus('找不到主體（影像全透明）', 'warn'); return; }
+      const pad = parseInt($('crop-pad').value) || 0;
+      minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+      maxX = Math.min(W - 1, maxX + pad); maxY = Math.min(H - 1, maxY + pad);
+      const nw = maxX - minX + 1, nh = maxY - minY + 1;
+      const o = document.createElement('canvas');
+      o.width = nw; o.height = nh;
+      o.getContext('2d').drawImage(c, minX, minY, nw, nh, 0, 0, nw, nh);
+      originalImgCache = null; // 裁切後座標已不對應原圖
+      await replaceCutoutFromCanvas(o);
+      if (baActive) buildBA();
+      setStatus(`✅ 已裁切到主體：${nw}×${nh}px`, 'success');
+    } catch (err) {
+      setStatus('❌ 裁切失敗：' + err.message, 'error');
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // 🔍 前後對照滑桿
+  // ══════════════════════════════════════════════════════════
+  let baActive = false;
+  const showResultView = () => { $('result-wrap').style.display = 'flex'; $('ba-view').style.display = 'none'; baActive = false; $('btn-toggle-ba').classList.remove('btn-blue'); };
+  const buildBA = async () => {
+    const canvas = await buildCompositeCanvas();
+    $('ba-orig').src = currentOriginalUrl;
+    $('ba-result').src = canvas.toDataURL('image/png');
+    $('ba-after').classList.add('checkerboard');
+    requestAnimationFrame(() => {
+      const w = $('ba-wrap').clientWidth;
+      $('ba-result').style.width = w + 'px';
+      setBA(50);
+    });
+  };
+  const setBA = (pct) => {
+    pct = Math.max(0, Math.min(100, pct));
+    $('ba-after').style.width = pct + '%';
+    $('ba-handle').style.left = pct + '%';
+  };
+  $('btn-toggle-ba').addEventListener('click', async () => {
+    if (!currentResultBlobUrl) return;
+    if (baActive) { showResultView(); return; }
+    $('result-wrap').style.display = 'none';
+    $('ba-view').style.display = 'block';
+    baActive = true;
+    $('btn-toggle-ba').classList.add('btn-blue');
+    await buildBA();
+  });
+  (() => {
+    let dragging = false;
+    const wrap = $('ba-wrap');
+    const move = (clientX) => { const r = wrap.getBoundingClientRect(); setBA(((clientX - r.left) / r.width) * 100); };
+    wrap.addEventListener('pointerdown', e => { dragging = true; move(e.clientX); wrap.setPointerCapture(e.pointerId); });
+    wrap.addEventListener('pointermove', e => { if (dragging) move(e.clientX); });
+    wrap.addEventListener('pointerup', () => dragging = false);
+    wrap.addEventListener('pointercancel', () => dragging = false);
+  })();
+
+  // 後製分頁切換
+  document.querySelectorAll('.post-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.post-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.post-body').forEach(b => b.classList.remove('active'));
+      tab.classList.add('active');
+      const body = document.querySelector(`.post-body[data-body="${tab.dataset.tab}"]`);
+      if (body) body.classList.add('active');
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // ✂️ 單張：開始去背（框選 / 整圖 · 雙引擎）
+  // ══════════════════════════════════════════════════════════
+  $('btn-process').addEventListener('click', async () => {
+    if (!currentFile) {
+      setStatus('❌ 請先上傳圖像', 'error');
+      return;
+    }
+    const btn = $('btn-process');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span><span>處理中…</span>';
+    setStatus(selection ? '⏳ 正在對選取範圍去背，請稍候…' : '⏳ 正在移除背景，請稍候…', 'info');
+    resetKeyDots();
+
+    try {
+      const opts = { size: $('size-select').value, type: $('type-select').value };
+      const result = selection
+        ? await processRegion(currentFile, selection, opts)
+        : await removeBgAuto(currentFile, opts);
+
+      currentResultBlob = result.blob;
+      if (currentResultBlobUrl) URL.revokeObjectURL(currentResultBlobUrl);
+      currentResultBlobUrl = URL.createObjectURL(result.blob);
+      originalImgCache = null;
+      bgImageEl = null;
+      currentBg = { type: 'transparent', value: null, fit: 'cover' };
+      resetBgSwatches();
+
+      $('result-wrap').className = 'checkerboard';
+      $('result-wrap').style.cssText = 'width:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;min-height:150px;padding:8px;';
+      await renderResult();
+      showResultView();
+      $('post-panel').style.display = 'block';
+      $('btn-toggle-ba').style.display = 'inline-flex';
+      $('btn-download').disabled = false;
+      $('btn-download-bg').disabled = false;
+
+      const eng = result.engine === 'local' ? '🧠 本地引擎' : '☁️ remove.bg';
+      let modeTxt = selection ? (result.mode === 'whole' ? '局部去背完成（整圖後援）' : '局部去背完成') : '去背完成';
+      setStatus(`✅ ${modeTxt}！（${eng}・${result.meta || ''}）`, 'success');
+    } catch (err) {
+      setStatus('❌ ' + friendlyError(err.message), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>✂️ 開始去背</span>';
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // ⬇ 下載
+  // ══════════════════════════════════════════════════════════
+  const outMime = () => ({ png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp' }[$('out-format').value] || 'image/png');
+  const outExt = () => ($('out-format').value === 'jpeg' ? 'jpg' : $('out-format').value);
+  const triggerDownload = (blob, name) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  $('btn-download').addEventListener('click', () => {
+    if (!currentResultBlob) return;
+    triggerDownload(currentResultBlob, `rembg_${Date.now()}.png`);
+  });
+
+  $('btn-download-bg').addEventListener('click', async () => {
+    if (!currentResultBlobUrl) return;
+    try {
+      const blob = await exportComposite(outMime());
+      triggerDownload(blob, `rembg_bg_${Date.now()}.${outExt()}`);
+    } catch (err) {
+      setStatus('❌ 匯出失敗：' + err.message + '（AI/外部背景圖可能因跨域無法匯出）', 'error');
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // 🔄 重置
+  // ══════════════════════════════════════════════════════════
+  $('btn-reset').addEventListener('click', () => {
+    currentFile = null;
+    if (currentResultBlobUrl) URL.revokeObjectURL(currentResultBlobUrl);
+    currentResultBlobUrl = null;
+    currentResultBlob = null;
+    currentOriginalUrl = null;
+    originalImgCache = null;
+    bgImageEl = null;
+    currentBg = { type: 'transparent', value: null, fit: 'cover' };
+    fileInput.value = '';
+    clearSelection();
+    $('preview-card').style.display = 'none';
+    $('post-panel').style.display = 'none';
+    showResultView();
+    resetKeyDots();
+    setEnginePill(null);
+    hideProgress();
+    setStatus('', 'info');
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // 🔲 選取範圍按鈕
+  // ══════════════════════════════════════════════════════════
+  $('btn-mode-rect').addEventListener('click', () => setMode('rect'));
+  $('btn-mode-poly').addEventListener('click', () => setMode('poly'));
+  $('btn-mode-lasso').addEventListener('click', () => setMode('lasso'));
+  $('btn-sel-finish').addEventListener('click', () => closePolygon());
+  $('btn-sel-clear').addEventListener('click', () => clearSelection());
+
+  // ══════════════════════════════════════════════════════════
+  // 📦 批次處理
+  // ══════════════════════════════════════════════════════════
+  const renderBatchList = () => {
+    const list = $('batch-list');
+    list.innerHTML = '';
+    batchQueue.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'batch-item';
+      const imgSrc = item.resultBlobUrl || item.originalUrl;
+      const statusText = {
+        pending: '⏸ 待處理',
+        processing: '⏳ 處理中…',
+        done: '✅ 完成',
+        error: '❌ 失敗'
+      }[item.status] || '';
+      div.innerHTML = `
+        <img src="${imgSrc}" alt="">
+        <button class="batch-rm" data-idx="${idx}">✕</button>
+        <div class="batch-status">${statusText}</div>
+      `;
+      list.appendChild(div);
+    });
+
+    list.querySelectorAll('.batch-rm').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        const item = batchQueue[idx];
+        if (item.resultBlobUrl) URL.revokeObjectURL(item.resultBlobUrl);
+        batchQueue.splice(idx, 1);
+        renderBatchList();
+        if (batchQueue.length === 0) $('batch-card').style.display = 'none';
+      });
+    });
+  };
+
+  $('btn-batch-clear').addEventListener('click', () => {
+    batchQueue.forEach(item => {
+      if (item.resultBlobUrl) URL.revokeObjectURL(item.resultBlobUrl);
+    });
+    batchQueue = [];
+    $('batch-card').style.display = 'none';
+    resetKeyDots();
+  });
+
+  $('btn-batch-run').addEventListener('click', async () => {
+    if (batchQueue.length === 0) return;
+    const btn = $('btn-batch-run');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span><span>批次處理中…</span>';
+
+    let success = 0, fail = 0;
+    for (let i = 0; i < batchQueue.length; i++) {
+      const item = batchQueue[i];
+      if (item.status === 'done') { success++; continue; }
+      item.status = 'processing';
+      renderBatchList();
+      setStatus(`⏳ 正在處理第 ${i+1}/${batchQueue.length} 張…`, 'info');
+      try {
+        const result = await removeBgAuto(item.file, {
+          size: $('size-select').value,
+          type: $('type-select').value
+        });
+        if (item.resultBlobUrl) URL.revokeObjectURL(item.resultBlobUrl);
+        item.resultBlobUrl = URL.createObjectURL(result.blob);
+        item.status = 'done';
+        success++;
+      } catch (err) {
+        item.status = 'error';
+        item.error = err.message;
+        fail++;
+      }
+      renderBatchList();
+      // 短暫間隔避免速率限制
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '✂️ 批次去背全部';
+    $('btn-batch-download').disabled = success === 0;
+    setStatus(`📊 批次處理完成：成功 ${success} 張，失敗 ${fail} 張`, success > 0 ? 'success' : 'error');
+  });
+
+  $('btn-batch-download').addEventListener('click', () => {
+    // 不使用 ZIP 庫（保持單檔），直接逐張下載
+    const completed = batchQueue.filter(it => it.status === 'done' && it.resultBlobUrl);
+    if (completed.length === 0) return;
+    setStatus(`⬇ 正在下載 ${completed.length} 張結果圖…`, 'info');
+    completed.forEach((item, i) => {
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = item.resultBlobUrl;
+        a.download = `rembg_${i+1}_${Date.now()}.png`;
+        a.click();
+      }, i * 400);
+    });
+    setTimeout(() => setStatus(`✅ 已觸發 ${completed.length} 張下載`, 'success'), completed.length * 400 + 100);
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // 🖌 修補筆刷編輯器
+  // ══════════════════════════════════════════════════════════
+  const ED = { canvas: null, ctx: null, W: 0, H: 0, mode: 'erase', brush: 36, displayScale: 1, drawing: false, last: null, origCanvas: null, history: [] };
+  const edRender = () => { ED.canvas.style.width = (ED.W * ED.displayScale) + 'px'; ED.canvas.style.height = (ED.H * ED.displayScale) + 'px'; };
+  const edPushHistory = () => { ED.history.push(ED.ctx.getImageData(0, 0, ED.W, ED.H)); if (ED.history.length > 14) ED.history.shift(); };
+  const syncBrush = () => { ED.brush = parseInt($('brush-size').value) / ED.displayScale; };
+
+  const openEditor = async () => {
+    if (!currentResultBlobUrl) { setStatus('請先完成去背', 'warn'); return; }
+    const cut = await loadImage(currentResultBlobUrl);
+    const W = cut.naturalWidth, H = cut.naturalHeight;
+    const canvas = $('editor-canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H); ctx.drawImage(cut, 0, 0);
+    ED.canvas = canvas; ED.ctx = ctx; ED.W = W; ED.H = H;
+    const orig = await getOriginalImage();
+    const oc = document.createElement('canvas'); oc.width = W; oc.height = H;
+    oc.getContext('2d').drawImage(orig, 0, 0, W, H);
+    ED.origCanvas = oc;
+    ED.history = []; edPushHistory();
+    const area = canvas.parentElement;
+    const fit = Math.min((area.clientWidth - 30) / W, (area.clientHeight - 30) / H, 1);
+    ED.displayScale = fit > 0 ? fit : 1;
+    $('brush-zoom').value = 100; $('brush-zoom-val').textContent = '100%';
+    syncBrush(); edRender();
+    $('editor-overlay').classList.add('show');
+  };
+  const closeEditor = () => $('editor-overlay').classList.remove('show');
+
+  const edPaintAt = (x, y) => {
+    const ctx = ED.ctx, r = ED.brush / 2;
+    if (ED.mode === 'erase') {
+      ctx.save(); ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    } else {
+      ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+      ctx.globalCompositeOperation = 'source-over'; ctx.drawImage(ED.origCanvas, 0, 0); ctx.restore();
+    }
+  };
+  const edStroke = (x, y) => {
+    if (ED.last) {
+      const dx = x - ED.last.x, dy = y - ED.last.y, dist = Math.hypot(dx, dy);
+      const step = Math.max(1, ED.brush / 4), n = Math.ceil(dist / step);
+      for (let i = 1; i <= n; i++) edPaintAt(ED.last.x + dx * i / n, ED.last.y + dy * i / n);
+    } else edPaintAt(x, y);
+    ED.last = { x, y };
+  };
+  const edPointer = (e) => {
+    const rect = ED.canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) / rect.width * ED.W, y: (e.clientY - rect.top) / rect.height * ED.H };
+  };
+  $('editor-canvas').addEventListener('pointerdown', e => {
+    e.preventDefault(); ED.drawing = true; ED.last = null; edPushHistory();
+    const p = edPointer(e); edStroke(p.x, p.y); ED.canvas.setPointerCapture(e.pointerId);
+  });
+  $('editor-canvas').addEventListener('pointermove', e => { if (ED.drawing) { const p = edPointer(e); edStroke(p.x, p.y); } });
+  $('editor-canvas').addEventListener('pointerup', () => { ED.drawing = false; ED.last = null; });
+  $('editor-canvas').addEventListener('pointercancel', () => { ED.drawing = false; ED.last = null; });
+
+  $('brush-mode-seg').querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      $('brush-mode-seg').querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); ED.mode = b.dataset.mode;
+    });
+  });
+  $('brush-size').addEventListener('input', e => { $('brush-size-val').textContent = e.target.value; syncBrush(); });
+  $('brush-zoom').addEventListener('input', e => {
+    const z = parseInt(e.target.value) / 100;
+    $('brush-zoom-val').textContent = e.target.value + '%';
+    const area = ED.canvas.parentElement;
+    const fit = Math.min((area.clientWidth - 30) / ED.W, (area.clientHeight - 30) / ED.H, 1);
+    ED.displayScale = (fit > 0 ? fit : 1) * z;
+    syncBrush(); edRender();
+  });
+  $('brush-undo').addEventListener('click', () => { if (ED.history.length > 1) { ED.history.pop(); ED.ctx.putImageData(ED.history[ED.history.length - 1], 0, 0); } });
+  $('brush-reset').addEventListener('click', () => { if (ED.history.length) { ED.ctx.putImageData(ED.history[0], 0, 0); ED.history = [ED.history[0]]; } });
+  $('brush-apply').addEventListener('click', async () => {
+    await replaceCutoutFromCanvas(ED.canvas);
+    if (baActive) buildBA();
+    closeEditor(); setStatus('✅ 修補已套用', 'success');
+  });
+  $('btn-open-editor').addEventListener('click', openEditor);
+  $('editor-close').addEventListener('click', closeEditor);
+  $('editor-overlay').addEventListener('click', e => { if (e.target === $('editor-overlay')) closeEditor(); });
+
+  // ══════════════════════════════════════════════════════════
+  // 🔑 自訂 API Key UI 行為
+  // ══════════════════════════════════════════════════════════
+  const customKeySection = $('custom-key-toggle').parentElement;
+  const customKeyInput = $('custom-key-input');
+  const customKeyToggle = $('custom-key-toggle');
+  const customKeyState = $('custom-key-state');
+  const btnCustomKeyShow = $('btn-custom-key-show');
+
+  const refreshCustomKeyUI = () => {
+    const saved = getCustomKey();
+    if (saved) {
+      customKeyInput.value = saved;
+      customKeyToggle.classList.add('has-key');
+      customKeyState.textContent = `✅ 已啟用自訂 Key（${saved.slice(0, 4)}…${saved.slice(-4)}）會優先使用`;
+      customKeyState.className = 'custom-key-state saved';
+    } else {
+      customKeyInput.value = '';
+      customKeyToggle.classList.remove('has-key');
+      customKeyState.textContent = '尚未設定自訂 Key，將使用內建 3 組 Key 隨機輪換';
+      customKeyState.className = 'custom-key-state empty';
+    }
+    rebuildKeyDots();
+  };
+
+  customKeyToggle.addEventListener('click', () => {
+    customKeySection.classList.toggle('open');
+  });
+
+  $('btn-custom-key-save').addEventListener('click', () => {
+    const v = customKeyInput.value.trim();
+    if (!v) {
+      customKeyState.textContent = '⚠ 請先輸入 API Key';
+      customKeyState.className = 'custom-key-state cleared';
+      return;
+    }
+    if (v.length < 10) {
+      customKeyState.textContent = '⚠ Key 長度看起來不正確';
+      customKeyState.className = 'custom-key-state cleared';
+      return;
+    }
+    setCustomKey(v);
+    refreshCustomKeyUI();
+  });
+
+  $('btn-custom-key-clear').addEventListener('click', () => {
+    setCustomKey('');
+    refreshCustomKeyUI();
+    customKeyState.textContent = '🗑 已清除自訂 Key';
+    customKeyState.className = 'custom-key-state cleared';
+  });
+
+  btnCustomKeyShow.addEventListener('click', () => {
+    if (customKeyInput.type === 'password') {
+      customKeyInput.type = 'text';
+      btnCustomKeyShow.textContent = '🙈';
+    } else {
+      customKeyInput.type = 'password';
+      btnCustomKeyShow.textContent = '👁';
+    }
+  });
+
+  // Enter 鍵儲存
+  customKeyInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      $('btn-custom-key-save').click();
+    }
+  });
+
+  // 初始化自訂 Key UI
+  refreshCustomKeyUI();
+
+  // ══════════════════════════════════════════════════════════
+  // 初始化
+  // ══════════════════════════════════════════════════════════
+  console.log('✂️ RemoveBG Studio 已就緒（本地 + 雲端雙引擎）');
+  console.log('%c build R4 · 雙引擎 + 後製工作室', 'color:#d4af37;font-weight:bold;');
+  console.log(`🔑 內建 ${API_KEYS.length} 組 remove.bg Key，本地引擎失敗時自動容錯`);
+  if (getCustomKey()) console.log('🔑 偵測到自訂 Key，將優先使用');
+  setEnginePill(null);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✂️ CutLab — 圖像切割 × 去背工作室</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+:root {
+  --bg:#13151f;--surface:#1a1d2b;--card:#21253a;--card2:#272b3f;
+  --border:#2e3350;--borderL:#363c58;
+  --accent:#f97316;--accentH:#fb923c;
+  --a2:#6366f1;--a2h:#818cf8;
+  --a3:#10b981;--danger:#ef4444;
+  --text:#e2e8f0;--t2:#94a3b8;--muted:#64748b;
+  --glow:0 0 16px rgba(249,115,22,.25);
+  --r:8px;--rs:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter','Noto Sans TC',sans-serif;min-height:100vh;overflow:hidden}
+
+header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface);height:52px}
+.logo{font-size:20px;background:linear-gradient(135deg,var(--accent),#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700}
+.logo-text{font-size:15px;font-weight:700}.logo-sub{font-size:10px;color:var(--muted)}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.undo-btn{background:var(--card);border:1px solid var(--borderL);color:var(--t2);padding:5px 12px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;font-family:inherit}
+.undo-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.undo-btn:disabled{opacity:.35;cursor:not-allowed}
+.badge{background:rgba(99,102,241,.15);color:var(--a2h);font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid rgba(99,102,241,.3)}
+
+.main{display:grid;grid-template-columns:310px 1fr;height:calc(100vh - 52px)}
+.sidebar{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);padding:6px 6px 0;gap:3px}
+.tab{flex:1;padding:8px 4px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s;border-radius:var(--rs) var(--rs) 0 0;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(249,115,22,.08)}
+.tab:hover:not(.active){color:var(--t2);background:rgba(255,255,255,.04)}
+.tab-panel{display:none;padding:14px;overflow-y:auto;flex:1}
+.tab-panel.active{display:flex;flex-direction:column;gap:10px}
+
+.sl{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.sl::after{content:'';flex:1;height:1px;background:var(--border)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:10px;font-weight:500;color:var(--t2)}
+input[type=number],input[type=text],input[type=password],select{background:var(--card);border:1px solid var(--borderL);color:var(--text);padding:7px 9px;border-radius:var(--rs);font-family:inherit;font-size:12px;width:100%;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(249,115,22,.1)}
+input[type=color]{height:34px;padding:2px 3px;cursor:pointer}
+.btn{width:100%;padding:9px 12px;border:none;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border-radius:var(--rs)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accentH);box-shadow:var(--glow)}
+.btn-indigo{background:var(--a2);color:#fff}.btn-indigo:hover{background:var(--a2h)}
+.btn-green{background:var(--a3);color:#fff}.btn-green:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--card2);color:var(--t2);border:1px solid var(--borderL)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent);background:rgba(249,115,22,.06)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.status{padding:8px 10px;background:var(--card);border-left:3px solid var(--a2);border-radius:0 var(--rs) var(--rs) 0;font-size:11px;color:var(--t2);min-height:32px;line-height:1.5}
+.status.err{border-left-color:var(--danger);color:#fca5a5}
+.status.ok{border-left-color:var(--a3);color:#6ee7b7}
+.status.loading{border-left-color:var(--accent);color:var(--accentH)}
+.pw{height:3px;background:var(--border);border-radius:2px;display:none;overflow:hidden}
+.pw.show{display:block}
+.pb{height:100%;background:linear-gradient(90deg,var(--accent),#fbbf24);width:0%;transition:width .3s;border-radius:2px}
+.preset-row{display:flex;flex-wrap:wrap;gap:5px}
+.pbtn{padding:4px 10px;background:var(--card);border:1px solid var(--borderL);color:var(--t2);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;border-radius:var(--rs);transition:all .15s}
+.pbtn:hover,.pbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(249,115,22,.1)}
+hr.div{border:none;border-top:1px solid var(--border)}
+
+/* region list */
+.rlist{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.ritem{display:flex;align-items:center;gap:6px;padding:7px 9px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs);cursor:pointer;transition:all .15s}
+.ritem.sel{border-color:var(--accent);background:rgba(249,115,22,.08)}
+.rswatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.rinfo{flex:1;min-width:0}
+.rname{font-size:11px;font-weight:600;color:var(--text)}
+.rdim{font-size:10px;color:var(--muted)}
+.racts{display:flex;gap:3px}
+.ribtn{background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:3px;font-size:12px;color:var(--muted);transition:all .15s}
+.ribtn:hover{background:var(--card2)}
+.ribtn.dl:hover{color:var(--a3)}
+.ribtn.del:hover{color:var(--danger)}
+.empty-hint{text-align:center;padding:14px;color:var(--muted);font-size:11px;line-height:1.6}
+
+/* canvas */
+.canvas-area{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+.checker{background-image:linear-gradient(45deg,#1e2235 25%,transparent 25%),linear-gradient(-45deg,#1e2235 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1e2235 75%),linear-gradient(-45deg,transparent 75%,#1e2235 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;background-color:#181b29;border-radius:var(--r)}
+.cwrap{position:relative;display:inline-block;line-height:0}
+#mainCanvas{display:block;max-width:100%;max-height:calc(100vh - 180px);border-radius:var(--r)}
+#overlayCanvas{position:absolute;top:0;left:0;pointer-events:none;border-radius:var(--r)}
+#drawCanvas{position:absolute;top:0;left:0;border-radius:var(--r)}
+.toolbar{position:absolute;top:12px;right:12px;display:flex;gap:5px}
+.tbtn{background:var(--surface);border:1px solid var(--borderL);color:var(--t2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .15s;border-radius:var(--rs);position:relative}
+.tbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(249,115,22,.08)}
+.tbtn .tip{position:absolute;bottom:calc(100% + 5px);right:0;background:var(--card2);border:1px solid var(--borderL);padding:3px 7px;font-size:10px;white-space:nowrap;color:var(--text);border-radius:var(--rs);pointer-events:none;opacity:0;transition:opacity .15s}
+.tbtn:hover .tip{opacity:1}
+.info-strip{position:absolute;bottom:0;left:0;right:0;padding:6px 14px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:16px;font-size:10px;color:var(--muted)}
+.info-strip span{color:var(--t2);font-weight:500;margin-left:3px}
+.placeholder{text-align:center;padding:50px 30px}
+.placeholder-icon{font-size:52px;margin-bottom:14px;filter:grayscale(1) opacity(.2)}
+.placeholder-title{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.placeholder-sub{font-size:11px;color:var(--borderL)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--borderL);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-right:4px;vertical-align:middle}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--borderL);border-radius:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">✦</div>
+  <div><div class="logo-text">CutLab</div><div class="logo-sub">圖像切割 × 去背工作室</div></div>
+  <div class="hdr-r">
+    <button class="undo-btn" id="undoBtn" onclick="undo()" disabled>↩ 復原 <kbd style="opacity:.5;font-size:10px">Ctrl+Z</kbd></button>
+    <div class="badge" id="histCount">0 步驟</div>
+  </div>
+</header>
+
+<div class="main">
+<div class="sidebar">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('upload')">📁 上傳</div>
+    <div class="tab" onclick="switchTab('crop')">✂️ 切割</div>
+    <div class="tab" onclick="switchTab('story')">🎬 故事版</div>
+    <div class="tab" onclick="switchTab('bg')">🪄 去背</div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="tab-panel active" id="tab-upload">
+    <div id="uploadZone" style="border:2px dashed var(--borderL);border-radius:var(--r);padding:28px 14px;text-align:center;cursor:pointer;background:var(--card);transition:all .2s" onclick="document.getElementById('fileInput').click()">
+      <div style="font-size:34px;margin-bottom:8px">🖼️</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.7"><strong style="color:var(--accent);font-weight:600">點擊選擇</strong> 或拖曳圖片<br>JPG · PNG · WebP · GIF<br><small style="color:var(--muted)">最大 30MB</small></div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <hr class="div">
+    <div class="sl">輸出格式</div>
+    <div class="row2">
+      <div class="field"><label>格式</label>
+        <select id="outputFormat"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select>
+      </div>
+      <div class="field"><label>品質 (JPEG)</label><input type="number" id="outputQuality" value="92" min="10" max="100"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="resetAll()">🗑 清除重置</button>
+    <div class="status" id="uploadStatus">尚未載入圖片…</div>
+  </div>
+
+  <!-- CROP -->
+  <div class="tab-panel" id="tab-crop">
+    <div class="sl">操作模式</div>
+    <div class="row2">
+      <button class="btn" id="btnDraw" onclick="setMode('draw')" style="background:rgba(249,115,22,.15);border:1px solid var(--accent);color:var(--accent)">✏️ 標記區塊</button>
+      <button class="btn btn-ghost" id="btnSelect" onclick="setMode('select')">👆 選擇移動</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.6;padding:7px 9px;background:var(--card);border-radius:var(--rs)">
+      ✏️ 標記：拖曳畫布新增區塊<br>👆 選擇：點擊選取・拖曳控制點調整・雙擊刪除
+    </div>
+
+    <hr class="div">
+    <div class="sl">比例鎖定</div>
+    <div class="preset-row">
+      <div class="pbtn active" data-a="0" onclick="setAspect(this)">自由</div>
+      <div class="pbtn" data-a="1" onclick="setAspect(this)">1:1</div>
+      <div class="pbtn" data-a="1.333" onclick="setAspect(this)">4:3</div>
+      <div class="pbtn" data-a="1.778" onclick="setAspect(this)">16:9</div>
+      <div class="pbtn" data-a="0.75" onclick="setAspect(this)">3:4</div>
+      <div class="pbtn" data-a="0.5625" onclick="setAspect(this)">9:16</div>
+    </div>
+
+    <hr class="div">
+    <div class="sl">已標記區塊 <span id="rCount" style="color:var(--accent);font-size:11px"></span></div>
+    <div class="rlist" id="rList"><div class="empty-hint">尚未標記任何區塊<br>在畫布上拖曳來新增</div></div>
+    <div class="row2">
+      <button class="btn btn-green" id="dlAllBtn" onclick="downloadAll()" disabled>⬇ 全部下載</button>
+      <button class="btn btn-ghost" onclick="clearRegions()">🗑 清除全部</button>
+    </div>
+
+    <hr class="div">
+    <div class="sl">旋轉 / 翻轉</div>
+    <div class="row2">
+      <button class="btn btn-ghost" onclick="rotImg(-90)">↺ 左轉90°</button>
+      <button class="btn btn-ghost" onclick="rotImg(90)">↻ 右轉90°</button>
+    </div>
+    <div class="row2">
+      <button class="btn btn-ghost" onclick="flipImg('h')">↔ 水平翻轉</button>
+      <button class="btn btn-ghost" onclick="flipImg('v')">↕ 垂直翻轉</button>
+    </div>
+    <div class="status" id="cropStatus">請先載入圖片…</div>
+  </div>
+
+  <!-- BG -->
+  <div class="tab-panel" id="tab-bg">
+    <div class="sl">去背方法</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:9px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs)">
+        <input type="radio" name="bgM" value="api" checked onchange="selBgM('api')" style="accent-color:var(--accent)">
+        <div><div style="font-size:12px;font-weight:600">🌐 Remove.bg API</div><div style="font-size:10px;color:var(--muted);margin-top:1px">最精準・需 API Key・消耗點數</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:9px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs)">
+        <input type="radio" name="bgM" value="local" onchange="selBgM('local')" style="accent-color:var(--accent)">
+        <div><div style="font-size:12px;font-weight:600">🤖 本地 AI（離線可用）</div><div style="font-size:10px;color:var(--muted);margin-top:1px">@imgly・首次需下載 ~50MB 模型</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:9px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs)">
+        <input type="radio" name="bgM" value="color" onchange="selBgM('color')" style="accent-color:var(--accent)">
+        <div><div style="font-size:12px;font-weight:600">🎨 色彩去背（離線可用）</div><div style="font-size:10px;color:var(--muted);margin-top:1px">純色背景・點畫布自動選色</div></div>
+      </label>
+    </div>
+    <div id="opt-api">
+      <div class="sl">Remove.bg 設定</div>
+      <div class="field" style="margin-bottom:6px"><label>API Key</label>
+        <div style="display:flex;gap:5px">
+          <input type="password" id="bgKey" placeholder="貼上 API Key…">
+          <button onclick="toggleKey()" id="eyeBtn" style="background:var(--card);border:1px solid var(--borderL);color:var(--muted);padding:0 9px;cursor:pointer;border-radius:var(--rs);font-size:13px">👁</button>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px"><a href="https://www.remove.bg/api" target="_blank" style="color:var(--accent)">remove.bg/api</a> 申請・每月免費 50 張・Key 不儲存</div>
+      <div class="field"><label>輸出尺寸</label>
+        <select id="bgSize"><option value="auto">auto（自動）</option><option value="preview">preview（免費）</option><option value="small">small（625px）</option><option value="regular">regular（1500px）</option><option value="hd">hd（2500px）</option><option value="4k">4k（4000px）</option><option value="full">full（原始）</option></select>
+      </div>
+    </div>
+    <div id="opt-local" style="display:none">
+      <div style="font-size:10px;color:var(--muted);padding:9px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs);line-height:1.7">⚡ 完全在瀏覽器執行，圖片不上傳<br>⏬ 首次使用需下載 ~50MB 模型</div>
+    </div>
+    <div id="opt-color" style="display:none">
+      <div class="sl">色彩設定</div>
+      <div class="row2">
+        <div class="field"><label>目標顏色</label><input type="color" id="bgColor" value="#ffffff"></div>
+        <div class="field"><label>容忍度 (0–100)</label><input type="number" id="bgTol" value="30" min="0" max="100"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">💡 點擊畫布顏色可自動選色</div>
+    </div>
+    <button class="btn btn-indigo" id="bgBtn" onclick="removeBg()" disabled>⚡ 執行去背</button>
+    <button class="btn btn-ghost" onclick="restoreOrig()" id="restoreBtn" disabled>↺ 還原原圖</button>
+    <div class="pw" id="bgProg"><div class="pb" id="bgBar"></div></div>
+    <div class="status" id="bgStatus">請先載入圖片…</div>
+    <hr class="div">
+    <div class="sl">填充背景色</div>
+    <div class="row2">
+      <div class="field"><label>顏色</label><input type="color" id="fillColor" value="#ffffff"></div>
+      <div class="field" style="justify-content:flex-end;padding-top:18px"><button class="btn btn-ghost" onclick="fillBg()" style="height:34px">填充</button></div>
+    </div>
+  </div>
+
+  <!-- STORYBOARD -->
+  <div class="tab-panel" id="tab-story">
+    <div class="sl">新增圖片</div>
+    <div id="sbUpZone" style="border:2px dashed var(--borderL);border-radius:var(--r);padding:18px 12px;text-align:center;cursor:pointer;background:var(--card);transition:all .2s" onclick="document.getElementById('sbFileIn').click()">
+      <div style="font-size:26px;margin-bottom:6px">🖼️</div>
+      <div style="font-size:12px;color:var(--t2)"><strong style="color:var(--accent)">點擊</strong> 或拖曳多張圖片<br><small style="color:var(--muted)">可一次選多張</small></div>
+    </div>
+    <input type="file" id="sbFileIn" accept="image/*" multiple style="display:none">
+
+    <hr class="div">
+    <div class="sl">版面設定</div>
+    <div class="row2">
+      <div class="field"><label>欄數 (Columns)</label><input type="number" id="sbCols" value="3" min="1" max="20" onchange="sbPreview()"></div>
+      <div class="field"><label>列數 (Rows) — 0=自動</label><input type="number" id="sbRows" value="0" min="0" max="20" onchange="sbPreview()"></div>
+    </div>
+    <div class="sl">格間距</div>
+    <div class="row2">
+      <div class="field"><label>間距 (px)</label><input type="number" id="sbGap" value="4" min="0" max="100" onchange="sbPreview()"></div>
+      <div class="field"><label>背景色</label><input type="color" id="sbBg" value="#000000" onchange="sbPreview()"></div>
+    </div>
+    <div class="sl">格子尺寸</div>
+    <div class="row2">
+      <div class="field"><label>每格寬 (px)</label><input type="number" id="sbCellW" value="400" min="50" max="2000" onchange="sbPreview()"></div>
+      <div class="field"><label>每格高 (px)</label><input type="number" id="sbCellH" value="300" min="50" max="2000" onchange="sbPreview()"></div>
+    </div>
+    <div class="sl">填充方式</div>
+    <div class="preset-row" id="sbFitBtns">
+      <div class="pbtn active" data-fit="cover" onclick="setSbFit(this)">Cover</div>
+      <div class="pbtn" data-fit="contain" onclick="setSbFit(this)">Contain</div>
+      <div class="pbtn" data-fit="stretch" onclick="setSbFit(this)">Stretch</div>
+    </div>
+
+    <hr class="div">
+    <div class="sl">快速預設</div>
+    <div class="preset-row">
+      <div class="pbtn" onclick="setSbPreset(3,0,400,300,4)">3欄自動</div>
+      <div class="pbtn" onclick="setSbPreset(4,0,300,300,3)">4欄正方</div>
+      <div class="pbtn" onclick="setSbPreset(2,2,640,360,6)">2×2</div>
+      <div class="pbtn" onclick="setSbPreset(3,3,360,240,4)">3×3</div>
+      <div class="pbtn" onclick="setSbPreset(1,0,800,450,0)">1欄滾動</div>
+    </div>
+
+    <hr class="div">
+    <div class="sl">圖片清單 <span id="sbCount" style="color:var(--accent);font-size:11px"></span></div>
+    <div id="sbList" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto">
+      <div class="empty-hint">尚未加入任何圖片</div>
+    </div>
+    <div class="row2">
+      <button class="btn btn-primary" onclick="sbRender()" id="sbRenderBtn" disabled>🎬 產生故事版</button>
+      <button class="btn btn-ghost" onclick="sbClear()">🗑 清除全部</button>
+    </div>
+    <div class="status" id="sbStatus">加入圖片後可產生故事版合併圖。</div>
+  </div>
+</div>
+
+<!-- CANVAS -->
+<div class="canvas-area" id="canvasArea">
+  <!-- Normal editor view -->
+  <div id="editorView" style="display:contents">
+    <div class="placeholder" id="placeholder">
+      <div class="placeholder-icon">🖼️</div>
+      <div class="placeholder-title">尚未載入圖片</div>
+      <div class="placeholder-sub">← 在左側上傳選項卡選擇圖片</div>
+    </div>
+    <div class="cwrap checker" id="cwrap" style="display:none">
+      <canvas id="mainCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+    <div class="toolbar" id="toolbar" style="display:none">
+      <div class="tbtn" onclick="dlFull()">⬇<div class="tip">下載完整圖片</div></div>
+      <div class="tbtn" onclick="copyClip()">📋<div class="tip">複製到剪貼簿</div></div>
+      <div class="tbtn" onclick="doZoom(1.2)">🔍<div class="tip">放大</div></div>
+      <div class="tbtn" onclick="doZoom(0.8)">🔎<div class="tip">縮小</div></div>
+      <div class="tbtn" onclick="zoomFit()">⊡<div class="tip">適合視窗</div></div>
+    </div>
+    <div class="info-strip" id="infoStrip" style="display:none">
+      <div>尺寸<span id="iSz">—</span></div>
+      <div>格式<span id="iFmt">—</span></div>
+      <div>縮放<span id="iZm">100%</span></div>
+      <div>區塊<span id="iRg">0</span></div>
+    </div>
+  </div>
+  <!-- Storyboard preview -->
+  <div id="sbPreviewArea" style="display:none;width:100%;height:100%;overflow:auto;align-items:center;justify-content:center;padding:20px;background:var(--bg)">
+    <div style="color:var(--muted);font-size:12px;text-align:center;padding:40px">加入圖片以預覽</div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── Elements ──
+const mainC = document.getElementById('mainCanvas');
+const ovrC  = document.getElementById('overlayCanvas');
+const drwC  = document.getElementById('drawCanvas');
+const ctx   = mainC.getContext('2d');
+const octx  = ovrC.getContext('2d');
+const dctx  = drwC.getContext('2d');
+
+// ── State ──
+let origImg = null, origData = null, fileName = '', fileType = '', scale = 1;
+const HIST = [], MAX_HIST = 40;
+const COLORS = ['#f97316','#6366f1','#10b981','#ef4444','#f59e0b','#06b6d4','#ec4899','#84cc16','#a855f7','#14b8a6'];
+let regions = [], selIdx = -1;
+let mode = 'draw'; // 'draw' | 'select'
+let aspect = 0;
+
+// Draw state
+let drawing = false, dStart = {x:0,y:0}, dCur = {x:0,y:0};
+// Drag state
+let dragging = false, dragH = '', dPt0 = {x:0,y:0}, dR0 = {};
+
+// ── Tab ──
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['upload','crop','story','bg'][i]===t));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  drwC.style.pointerEvents = (t==='crop'&&origImg)?'all':'none';
+  // toggle storyboard vs editor canvas area
+  const isSb = t==='story';
+  document.getElementById('editorView').style.display = isSb ? 'none' : 'contents';
+  document.getElementById('sbPreviewArea').style.display = isSb ? 'flex' : 'none';
+  if(isSb) { sbPreview(); return; }
+  // Always refresh region list & overlay when entering any editor tab
+  renderList();
+  renderOvr();
+}
+
+// ── Upload ──
+const upZone = document.getElementById('uploadZone');
+const fInput = document.getElementById('fileInput');
+upZone.addEventListener('dragover',e=>{e.preventDefault();upZone.style.borderColor='var(--accent)';upZone.style.background='rgba(249,115,22,.06)'});
+upZone.addEventListener('dragleave',()=>{upZone.style.borderColor='';upZone.style.background=''});
+upZone.addEventListener('drop',e=>{e.preventDefault();upZone.style.borderColor='';upZone.style.background='';const f=e.dataTransfer.files[0];if(f)loadFile(f)});
+fInput.addEventListener('change',()=>{if(fInput.files[0])loadFile(fInput.files[0])});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>e.preventDefault());
+
+function loadFile(f) {
+  if(f.size>30*1024*1024){sts('uploadStatus','err','❌ 超過 30MB 限制');return}
+  fileName=f.name; fileType=f.type;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      origImg=img;
+      mainC.width=img.width; mainC.height=img.height;
+      ctx.drawImage(img,0,0);
+      origData=ctx.getImageData(0,0,img.width,img.height);
+      syncSizes();
+      HIST.length=0; updHistUI();
+      regions=[]; selIdx=-1; renderList(); renderOvr();
+      document.getElementById('placeholder').style.display='none';
+      document.getElementById('cwrap').style.display='inline-block';
+      document.getElementById('toolbar').style.display='flex';
+      document.getElementById('infoStrip').style.display='flex';
+      document.getElementById('bgBtn').disabled=false;
+      document.getElementById('restoreBtn').disabled=false;
+      zoomFit(); updInfo();
+      sts('uploadStatus','ok',`✓ ${fileName} (${img.width}×${img.height} px, ${fmtB(f.size)})`);
+      sts('cropStatus','','在畫布上拖曳來標記裁切區塊。');
+      sts('bgStatus','','選擇去背方法後點擊執行。');
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(f);
+}
+
+// ── History ──
+function pushH() {
+  HIST.push({d:ctx.getImageData(0,0,mainC.width,mainC.height),w:mainC.width,h:mainC.height});
+  if(HIST.length>MAX_HIST) HIST.shift();
+  updHistUI();
+}
+function undo() {
+  if(!HIST.length) return;
+  const s=HIST.pop();
+  mainC.width=s.w; mainC.height=s.h; ctx.putImageData(s.d,0,0);
+  syncSizes(); zoomFit(); updInfo(); updHistUI(); renderOvr();
+}
+function updHistUI() {
+  document.getElementById('undoBtn').disabled=!HIST.length;
+  document.getElementById('histCount').textContent=HIST.length+' 步驟';
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}});
+
+// ── Zoom ──
+function zoomFit() {
+  const a=document.getElementById('canvasArea');
+  scale=Math.min(1,(a.clientWidth-60)/mainC.width,(a.clientHeight-80)/mainC.height);
+  applyZ();
+}
+function doZoom(f){scale=Math.min(5,Math.max(.05,scale*f));applyZ();}
+function applyZ(){
+  const w=mainC.width*scale,h=mainC.height*scale;
+  [mainC,ovrC,drwC].forEach(c=>{c.style.width=w+'px';c.style.height=h+'px';});
+  document.getElementById('iZm').textContent=Math.round(scale*100)+'%';
+}
+function syncSizes(){
+  ovrC.width=mainC.width; ovrC.height=mainC.height;
+  drwC.width=mainC.width; drwC.height=mainC.height;
+  applyZ();
+}
+
+// ── Mode ──
+function setMode(m) {
+  mode=m;
+  const on='background:rgba(249,115,22,.15);border:1px solid var(--accent);color:var(--accent);width:100%;padding:9px 12px;border-radius:5px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s';
+  const off='background:var(--card2);color:var(--t2);border:1px solid var(--borderL);width:100%;padding:9px 12px;border-radius:5px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s';
+  const on2='background:rgba(99,102,241,.15);border:1px solid var(--a2);color:var(--a2h);width:100%;padding:9px 12px;border-radius:5px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s';
+  document.getElementById('btnDraw').style.cssText=m==='draw'?on:off;
+  document.getElementById('btnSelect').style.cssText=m==='select'?on2:off;
+  drwC.style.cursor=m==='draw'?'crosshair':'default';
+}
+function setAspect(el) {
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  aspect=parseFloat(el.dataset.a)||0;
+}
+
+// ── img coords ──
+function toI(cx,cy){return{x:Math.round(cx/scale),y:Math.round(cy/scale)};}
+function clamp(v,a,b){return Math.min(Math.max(v,a),b);}
+
+// ── Draw events ──
+drwC.addEventListener('mousedown',e=>{
+  if(!origImg) return;
+  const rc=drwC.getBoundingClientRect();
+  const p=toI(e.clientX-rc.left,e.clientY-rc.top);
+  if(mode==='draw'){
+    drawing=true; dStart={...p}; dCur={...p};
+  } else {
+    const h=hitTest(p.x,p.y);
+    if(h.i>=0){selIdx=h.i;dragging=true;dragH=h.h;dPt0={...p};dR0={...regions[h.i]};renderList();renderOvr();}
+    else{selIdx=-1;renderList();renderOvr();}
+  }
+});
+
+drwC.addEventListener('mousemove',e=>{
+  if(!origImg) return;
+  const rc=drwC.getBoundingClientRect();
+  const p=toI(e.clientX-rc.left,e.clientY-rc.top);
+  if(drawing){dCur={...p};drawPrev();}
+  else if(dragging&&selIdx>=0){
+    const dx=p.x-dPt0.x,dy=p.y-dPt0.y;
+    let {x,y,w,h}=dR0;
+    const IW=mainC.width,IH=mainC.height;
+    if(dragH==='move'){x=clamp(x+dx,0,IW-w);y=clamp(y+dy,0,IH-h);}
+    else{
+      if(dragH.includes('e')){w=clamp(w+dx,1,IW-x);}
+      if(dragH.includes('w')){const nw=clamp(w-dx,1,x+w);x=x+w-nw;w=nw;}
+      if(dragH.includes('s')){h=clamp(h+dy,1,IH-y);}
+      if(dragH.includes('n')){const nh=clamp(h-dy,1,y+h);y=y+h-nh;h=nh;}
+      if(aspect>0){if(dragH.includes('e')||dragH.includes('w'))h=w/aspect;else w=h*aspect;}
+      w=Math.max(1,Math.min(w,IW-x));h=Math.max(1,Math.min(h,IH-y));
+    }
+    regions[selIdx]={...regions[selIdx],x,y,w,h};
+    renderOvr(); updInfo();
+  } else if(mode==='select'){
+    const h=hitTest(p.x,p.y);
+    drwC.style.cursor=h.i<0?'default':h.h==='move'?'move':h.h==='nw'||h.h==='se'?'nw-resize':h.h==='ne'||h.h==='sw'?'ne-resize':h.h==='n'||h.h==='s'?'ns-resize':'ew-resize';
+  }
+});
+
+drwC.addEventListener('mouseup',e=>{
+  if(drawing){
+    drawing=false;
+    let {x:x1,y:y1}=dStart,{x:x2,y:y2}=dCur;
+    let x=Math.min(x1,x2),y=Math.min(y1,y2),w=Math.abs(x2-x1),h=Math.abs(y2-y1);
+    if(aspect>0){if(w/h>aspect)h=w/aspect;else w=h*aspect;}
+    x=clamp(x,0,mainC.width-1);y=clamp(y,0,mainC.height-1);
+    w=clamp(Math.round(w),1,mainC.width-x);h=clamp(Math.round(h),1,mainC.height-y);
+    if(w>4&&h>4){
+      const color=COLORS[regions.length%COLORS.length];
+      const label='區塊 '+(regions.length+1);
+      regions.push({id:Date.now(),x,y,w,h,label,color});
+      selIdx=regions.length-1;
+      renderList();renderOvr();updInfo();
+      sts('cropStatus','ok',`✓ ${label} 已標記 ${w}×${h} px`);
+    }
+    dctx.clearRect(0,0,drwC.width,drwC.height);
+  }
+  if(dragging){dragging=false;}
+});
+
+drwC.addEventListener('mouseleave',()=>{
+  if(drawing){drawing=false;dctx.clearRect(0,0,drwC.width,drwC.height);}
+  if(dragging){dragging=false;}
+});
+
+drwC.addEventListener('dblclick',e=>{
+  if(mode!=='select') return;
+  const rc=drwC.getBoundingClientRect();
+  const p=toI(e.clientX-rc.left,e.clientY-rc.top);
+  const h=hitTest(p.x,p.y);
+  if(h.i>=0) delRegion(h.i);
+});
+
+function drawPrev(){
+  dctx.clearRect(0,0,drwC.width,drwC.height);
+  let {x:x1,y:y1}=dStart,{x:x2,y:y2}=dCur;
+  let x=Math.min(x1,x2),y=Math.min(y1,y2),w=Math.abs(x2-x1),h=Math.abs(y2-y1);
+  if(aspect>0){if(w/h>aspect)h=w/aspect;else w=h*aspect;}
+  const col=COLORS[regions.length%COLORS.length];
+  dctx.strokeStyle=col;dctx.lineWidth=2;dctx.setLineDash([6,3]);
+  dctx.strokeRect(x+.5,y+.5,w,h);
+  dctx.fillStyle=col+'30';dctx.fillRect(x,y,w,h);
+  dctx.setLineDash([]);
+  dctx.fillStyle='#fff';dctx.font='bold 12px Inter,sans-serif';
+  dctx.fillText(Math.round(w)+'×'+Math.round(h),x+4,y+16);
+}
+
+// ── Overlay ──
+function renderOvr(){
+  octx.clearRect(0,0,ovrC.width,ovrC.height);
+  regions.forEach((r,i)=>{
+    const sel=i===selIdx;
+    octx.strokeStyle=r.color;octx.lineWidth=sel?3:1.5;
+    octx.setLineDash(sel?[]:[4,3]);
+    octx.strokeRect(r.x+.5,r.y+.5,r.w-1,r.h-1);
+    octx.fillStyle=r.color+(sel?'28':'18');octx.fillRect(r.x,r.y,r.w,r.h);
+    octx.setLineDash([]);
+    // tag
+    octx.font='bold 11px Inter,sans-serif';
+    const tw=octx.measureText(r.label).width+10;
+    octx.fillStyle=r.color;
+    octx.fillRect(r.x,Math.max(0,r.y-20),tw,18);
+    octx.fillStyle='#fff';
+    octx.fillText(r.label,r.x+5,Math.max(0,r.y)-4);
+    // handles (select mode, selected)
+    if(mode==='select'&&sel){
+      getHP(r).forEach(h=>{
+        octx.fillStyle='#fff';octx.strokeStyle=r.color;octx.lineWidth=1.5;
+        octx.beginPath();octx.rect(h.x-5,h.y-5,10,10);octx.fill();octx.stroke();
+      });
+    }
+  });
+}
+function getHP(r){
+  return [{x:r.x,y:r.y,d:'nw'},{x:r.x+r.w,y:r.y,d:'ne'},{x:r.x,y:r.y+r.h,d:'sw'},{x:r.x+r.w,y:r.y+r.h,d:'se'},
+          {x:r.x+r.w/2,y:r.y,d:'n'},{x:r.x+r.w/2,y:r.y+r.h,d:'s'},{x:r.x,y:r.y+r.h/2,d:'w'},{x:r.x+r.w,y:r.y+r.h/2,d:'e'}];
+}
+function hitTest(px,py){
+  if(selIdx>=0&&mode==='select'){
+    const r=regions[selIdx];
+    for(const h of getHP(r)){if(Math.abs(px-h.x)<8&&Math.abs(py-h.y)<8)return{i:selIdx,h:h.d};}
+    if(px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h)return{i:selIdx,h:'move'};
+  }
+  for(let i=regions.length-1;i>=0;i--){
+    const r=regions[i];
+    if(px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h)return{i,h:'move'};
+  }
+  return{i:-1,h:''};
+}
+
+// ── Region List ──
+function renderList(){
+  const el=document.getElementById('rList');
+  document.getElementById('rCount').textContent=regions.length?'('+regions.length+')':'';
+  document.getElementById('iRg').textContent=regions.length;
+  document.getElementById('dlAllBtn').disabled=!regions.length;
+  if(!regions.length){el.innerHTML='<div class="empty-hint">尚未標記任何區塊<br>在畫布上拖曳來新增</div>';return;}
+  el.innerHTML=regions.map((r,i)=>`
+    <div class="ritem${i===selIdx?' sel':''}" onclick="selR(${i})">
+      <div class="rswatch" style="background:${r.color}"></div>
+      <div class="rinfo"><div class="rname">${r.label}</div><div class="rdim">${r.w}×${r.h} px</div></div>
+      <div class="racts">
+        <button class="ribtn dl" onclick="event.stopPropagation();dlR(${i})" title="下載">⬇</button>
+        <button class="ribtn del" onclick="event.stopPropagation();delRegion(${i})" title="刪除">✕</button>
+      </div>
+    </div>`).join('');
+}
+function selR(i){selIdx=i;renderList();renderOvr();}
+function delRegion(i){regions.splice(i,1);if(selIdx>=regions.length)selIdx=regions.length-1;renderList();renderOvr();updInfo();}
+function clearRegions(){regions=[];selIdx=-1;renderList();renderOvr();updInfo();dctx.clearRect(0,0,drwC.width,drwC.height);}
+
+// ── Download ──
+function dlR(i){
+  const r=regions[i];
+  const tmp=document.createElement('canvas');
+  tmp.width=r.w;tmp.height=r.h;
+  tmp.getContext('2d').drawImage(mainC,r.x,r.y,r.w,r.h,0,0,r.w,r.h);
+  const fmt=document.getElementById('outputFormat').value;
+  const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png';
+  const ext=fmt==='jpeg'?'jpg':fmt;
+  const q=parseInt(document.getElementById('outputQuality').value)/100;
+  tmp.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fileName.replace(/\.[^.]+$/,'')+'_'+r.label.replace(' ','_')+'.'+ext;a.click();URL.revokeObjectURL(a.href);},mime,q);
+}
+async function downloadAll(){
+  for(let i=0;i<regions.length;i++){await new Promise(r=>setTimeout(r,150));dlR(i);}
+  sts('cropStatus','ok','✓ 已下載 '+regions.length+' 個區塊');
+}
+function dlFull(){
+  const fmt=document.getElementById('outputFormat').value;
+  const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png';
+  const ext=fmt==='jpeg'?'jpg':fmt;
+  mainC.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(fileName.replace(/\.[^.]+$/,'')||'cutlab')+'.'+ext;a.click();URL.revokeObjectURL(a.href);},mime,parseInt(document.getElementById('outputQuality').value)/100);
+}
+async function copyClip(){
+  try{const b=await new Promise(r=>mainC.toBlob(r,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);alert('✓ 已複製到剪貼簿');}
+  catch(e){alert('複製失敗：'+e.message);}
+}
+
+// ── Rotate/Flip ──
+function rotImg(deg){
+  if(!origImg)return;pushH();
+  const tmp=document.createElement('canvas');
+  if(Math.abs(deg)===90){tmp.width=mainC.height;tmp.height=mainC.width;}else{tmp.width=mainC.width;tmp.height=mainC.height;}
+  const tc=tmp.getContext('2d');tc.translate(tmp.width/2,tmp.height/2);tc.rotate(deg*Math.PI/180);tc.drawImage(mainC,-mainC.width/2,-mainC.height/2);
+  mainC.width=tmp.width;mainC.height=tmp.height;ctx.drawImage(tmp,0,0);
+  clearRegions();syncSizes();zoomFit();updInfo();sts('cropStatus','ok','↻ 旋轉完成');
+}
+function flipImg(dir){
+  if(!origImg)return;pushH();
+  const tmp=document.createElement('canvas');tmp.width=mainC.width;tmp.height=mainC.height;
+  const tc=tmp.getContext('2d');tc.translate(dir==='h'?tmp.width:0,dir==='v'?tmp.height:0);tc.scale(dir==='h'?-1:1,dir==='v'?-1:1);tc.drawImage(mainC,0,0);
+  ctx.drawImage(tmp,0,0);clearRegions();updInfo();sts('cropStatus','ok','↔ 翻轉完成');
+}
+
+// ── BG Removal ──
+function selBgM(m){
+  document.getElementById('opt-api').style.display=m==='api'?'block':'none';
+  document.getElementById('opt-local').style.display=m==='local'?'block':'none';
+  document.getElementById('opt-color').style.display=m==='color'?'block':'none';
+}
+function toggleKey(){const i=document.getElementById('bgKey'),b=document.getElementById('eyeBtn');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}}
+
+mainC.addEventListener('click',e=>{
+  if(document.querySelector('input[name="bgM"]:checked').value!=='color')return;
+  const rc=mainC.getBoundingClientRect();
+  const d=ctx.getImageData(Math.round((e.clientX-rc.left)/scale),Math.round((e.clientY-rc.top)/scale),1,1).data;
+  document.getElementById('bgColor').value='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+  sts('bgStatus','','已選色：'+document.getElementById('bgColor').value);
+});
+
+async function removeBg(){
+  if(!origImg)return;pushH();
+  const m=document.querySelector('input[name="bgM"]:checked').value;
+  if(m==='api')await bgAPI();else if(m==='local')await bgLocal();else bgColor();
+}
+
+async function bgAPI(){
+  const key=document.getElementById('bgKey').value.trim();
+  if(!key){sts('bgStatus','err','❌ 請輸入 Remove.bg API Key');HIST.pop();updHistUI();return;}
+  const pg=document.getElementById('bgProg'),bar=document.getElementById('bgBar');
+  pg.classList.add('show');bar.style.width='20%';
+  sts('bgStatus','loading','<span class="spinner"></span> 傳送至 remove.bg…');
+  document.getElementById('bgBtn').disabled=true;
+  try{
+    const blob=await new Promise(r=>mainC.toBlob(r,'image/png'));bar.style.width='40%';
+    const fd=new FormData();fd.append('image_file',blob,'image.png');fd.append('size',document.getElementById('bgSize').value);
+    const resp=await fetch('https://api.remove.bg/v1.0/removebg',{method:'POST',headers:{'X-Api-Key':key},body:fd});
+    bar.style.width='80%';
+    if(!resp.ok){let e='HTTP '+resp.status;try{const j=await resp.json();e=j.errors?.map(x=>x.title).join(', ')||e;}catch(_){}throw new Error(e);}
+    const rb=await resp.blob();bar.style.width='100%';
+    loadBlob(rb,()=>{
+      const cr=resp.headers.get('X-Credits-Charged'),rem=resp.headers.get('X-Api-Credits-Remaining');
+      sts('bgStatus','ok','✓ 去背完成！'+(rem?'<br>💳 消耗'+cr+'點・剩餘'+rem+'點':''));
+      pg.classList.remove('show');document.getElementById('bgBtn').disabled=false;
+    });
+  }catch(err){pg.classList.remove('show');sts('bgStatus','err','❌ '+err.message);document.getElementById('bgBtn').disabled=false;}
+}
+
+let bgLib = null; // { processor, model, RawImage }
+
+async function bgLocal() {
+  const pg = document.getElementById('bgProg'), bar = document.getElementById('bgBar');
+  pg.classList.add('show'); bar.style.width = '2%';
+  const setMsg = msg => sts('bgStatus', 'loading', '<span class="spinner"></span> ' + msg);
+  document.getElementById('bgBtn').disabled = true;
+
+  try {
+    if (!bgLib) {
+      setMsg('載入 Transformers.js 函式庫…');
+      bar.style.width = '5%';
+
+      // Load Transformers.js from CDN
+      let tfModule;
+      const TF_SOURCES = [
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2',
+        'https://esm.sh/@xenova/transformers@2.17.2',
+      ];
+      for (let i = 0; i < TF_SOURCES.length; i++) {
+        try {
+          setMsg(`載入函式庫 (來源 ${i+1}/${TF_SOURCES.length})…`);
+          tfModule = await import(TF_SOURCES[i]);
+          break;
+        } catch(e) {
+          console.warn('CDN failed:', TF_SOURCES[i], e.message);
+          if (i === TF_SOURCES.length - 1) throw new Error('無法載入 Transformers.js：' + e.message);
+        }
+      }
+
+      const { env, AutoProcessor, AutoModel, RawImage } = tfModule;
+      bar.style.width = '10%';
+      setMsg('⏬ 首次使用：下載 AI 模型（約 170MB），請稍候…');
+
+      const onProgress = p => {
+        if (p.status === 'downloading' && p.total) {
+          const pct = Math.round(p.loaded / p.total * 55) + 10;
+          bar.style.width = Math.min(65, pct) + '%';
+          const mb = (p.loaded / 1048576).toFixed(1);
+          const tot = (p.total / 1048576).toFixed(1);
+          setMsg(`⏬ 下載模型 ${mb} / ${tot} MB…`);
+        } else if (p.status === 'loading') {
+          bar.style.width = '70%';
+          setMsg('載入模型中…');
+        } else if (p.status === 'ready') {
+          bar.style.width = '80%';
+          setMsg('模型就緒，準備分析…');
+        }
+      };
+
+      const [processor, model] = await Promise.all([
+        AutoProcessor.from_pretrained('briaai/RMBG-1.4', { progress_callback: onProgress }),
+        AutoModel.from_pretrained('briaai/RMBG-1.4', {
+          config: { model_type: 'custom' },
+          progress_callback: onProgress,
+        }),
+      ]);
+
+      bgLib = { processor, model, RawImage };
+    }
+
+    bar.style.width = '82%';
+    setMsg('AI 分析圖片中…');
+
+    const { processor, model, RawImage } = bgLib;
+
+    // Canvas → RawImage
+    const dataURL = mainC.toDataURL('image/png');
+    const image = await RawImage.fromURL(dataURL);
+    bar.style.width = '85%';
+
+    // Run model
+    const { pixel_values } = await processor(image);
+    const { output } = await model({ input: pixel_values });
+    bar.style.width = '93%';
+
+    // Build alpha mask [1,1,H,W] → resize → apply to canvas
+    // output[0] shape: [1, H, W] — keep 3D, do NOT squeeze() or RawImage fails
+    const maskImg = await RawImage.fromTensor(
+      output[0].mul(255).to('uint8')
+    ).resize(mainC.width, mainC.height);
+
+    const tmpC = document.createElement('canvas');
+    tmpC.width = mainC.width; tmpC.height = mainC.height;
+    const tc = tmpC.getContext('2d');
+    tc.drawImage(mainC, 0, 0);
+    const imgData = tc.getImageData(0, 0, tmpC.width, tmpC.height);
+    for (let i = 0; i < maskImg.data.length; i++) {
+      imgData.data[4 * i + 3] = maskImg.data[i];
+    }
+    tc.putImageData(imgData, 0, 0);
+
+    bar.style.width = '100%';
+    mainC.width = tmpC.width; mainC.height = tmpC.height;
+    ctx.clearRect(0, 0, mainC.width, mainC.height);
+    ctx.drawImage(tmpC, 0, 0);
+    syncSizes(); zoomFit(); updInfo(); renderOvr();
+    document.getElementById('outputFormat').value = 'png';
+    sts('bgStatus', 'ok', '✓ AI 去背完成！（模型已快取，下次執行更快）');
+    pg.classList.remove('show');
+    document.getElementById('bgBtn').disabled = false;
+
+  } catch(err) {
+    pg.classList.remove('show');
+    sts('bgStatus', 'err', '❌ AI 去背失敗：' + err.message);
+    document.getElementById('bgBtn').disabled = false;
+    bgLib = null; // reset for retry
+    console.error('[bgLocal]', err);
+  }
+}
+
+
+async function bgAPI(){
+  const key=document.getElementById('bgKey').value.trim();
+  if(!key){sts('bgStatus','err','❌ 請輸入 Remove.bg API Key');HIST.pop();updHistUI();return;}
+  const pg=document.getElementById('bgProg'),bar=document.getElementById('bgBar');
+  pg.classList.add('show');bar.style.width='20%';
+  sts('bgStatus','loading','<span class="spinner"></span> 傳送至 remove.bg…');
+  document.getElementById('bgBtn').disabled=true;
+  try{
+    const blob=await new Promise(r=>mainC.toBlob(r,'image/png'));bar.style.width='40%';
+    const fd=new FormData();fd.append('image_file',blob,'image.png');fd.append('size',document.getElementById('bgSize').value);
+    const resp=await fetch('https://api.remove.bg/v1.0/removebg',{method:'POST',headers:{'X-Api-Key':key},body:fd});
+    bar.style.width='80%';
+    if(!resp.ok){let e='HTTP '+resp.status;try{const j=await resp.json();e=j.errors?.map(x=>x.title).join(', ')||e;}catch(_){}throw new Error(e);}
+    const rb=await resp.blob();bar.style.width='100%';
+    loadBlob(rb,()=>{
+      const cr=resp.headers.get('X-Credits-Charged'),rem=resp.headers.get('X-Api-Credits-Remaining');
+      sts('bgStatus','ok','✓ 去背完成！'+(rem?'<br>💳 消耗'+cr+'點・剩餘'+rem+'點':''));
+      pg.classList.remove('show');document.getElementById('bgBtn').disabled=false;
+    });
+  }catch(err){pg.classList.remove('show');sts('bgStatus','err','❌ '+err.message);document.getElementById('bgBtn').disabled=false;}
+}
+
+function bgColor(){
+  const hex=document.getElementById('bgColor').value,tol=parseInt(document.getElementById('bgTol').value)||30;
+  const tR=parseInt(hex.slice(1,3),16),tG=parseInt(hex.slice(3,5),16),tB=parseInt(hex.slice(5,7),16);
+  const id=ctx.getImageData(0,0,mainC.width,mainC.height),d=id.data;
+  const vis=new Uint8Array(mainC.width*mainC.height),q=[];
+  function tryQ(x,y){const i4=(y*mainC.width+x)*4;if(Math.abs(d[i4]-tR)+Math.abs(d[i4+1]-tG)+Math.abs(d[i4+2]-tB)<=tol*3)q.push(y*mainC.width+x);}
+  for(let x=0;x<mainC.width;x++){tryQ(x,0);tryQ(x,mainC.height-1);}
+  for(let y=0;y<mainC.height;y++){tryQ(0,y);tryQ(mainC.width-1,y);}
+  while(q.length){const idx=q.pop();if(vis[idx])continue;vis[idx]=1;const i4=idx*4;if(Math.abs(d[i4]-tR)+Math.abs(d[i4+1]-tG)+Math.abs(d[i4+2]-tB)>tol*3)continue;d[i4+3]=0;const x=idx%mainC.width,y=Math.floor(idx/mainC.width);if(x>0)q.push(idx-1);if(x<mainC.width-1)q.push(idx+1);if(y>0)q.push(idx-mainC.width);if(y<mainC.height-1)q.push(idx+mainC.width);}
+  ctx.putImageData(id,0,0);document.getElementById('outputFormat').value='png';renderOvr();sts('bgStatus','ok','✓ 色彩去背完成！');
+}
+
+function restoreOrig(){
+  if(!origData)return;pushH();
+  mainC.width=origData.width;mainC.height=origData.height;ctx.putImageData(origData,0,0);
+  clearRegions();syncSizes();zoomFit();updInfo();sts('bgStatus','','↺ 已還原原圖。');
+}
+function fillBg(){
+  if(!origImg)return;pushH();
+  const tmp=document.createElement('canvas');tmp.width=mainC.width;tmp.height=mainC.height;
+  const tc=tmp.getContext('2d');tc.fillStyle=document.getElementById('fillColor').value;tc.fillRect(0,0,tmp.width,tmp.height);tc.drawImage(mainC,0,0);
+  ctx.drawImage(tmp,0,0);renderOvr();sts('bgStatus','ok','✓ 已填充背景色。');
+}
+
+function loadBlob(blob,cb){
+  const url=URL.createObjectURL(blob);const img=new Image();
+  img.onload=()=>{mainC.width=img.width;mainC.height=img.height;ctx.clearRect(0,0,img.width,img.height);ctx.drawImage(img,0,0);URL.revokeObjectURL(url);syncSizes();zoomFit();updInfo();renderOvr();document.getElementById('outputFormat').value='png';if(cb)cb();};
+  img.src=url;
+}
+
+// ── Utils ──
+function sts(id,type,msg){const el=document.getElementById(id);el.className='status'+(type?' '+type:'');el.innerHTML=msg;}
+function updInfo(){document.getElementById('iSz').textContent=mainC.width+'×'+mainC.height;document.getElementById('iFmt').textContent=fileType||'image/*';document.getElementById('iRg').textContent=regions.length;}
+function fmtB(b){return b<1048576?(b/1024).toFixed(1)+'KB':(b/1048576).toFixed(1)+'MB';}
+function resetAll(){
+  origImg=null;origData=null;mainC.width=1;mainC.height=1;ctx.clearRect(0,0,1,1);octx.clearRect(0,0,1,1);dctx.clearRect(0,0,1,1);
+  regions=[];selIdx=-1;HIST.length=0;updHistUI();renderList();
+  document.getElementById('placeholder').style.display='block';document.getElementById('cwrap').style.display='none';document.getElementById('toolbar').style.display='none';document.getElementById('infoStrip').style.display='none';
+  document.getElementById('bgBtn').disabled=true;document.getElementById('restoreBtn').disabled=true;
+  sts('uploadStatus','','尚未載入圖片…');fInput.value='';
+}
+
+// ── STORYBOARD ──
+let sbImages = []; // [{img, name, url}]
+let sbFit = 'cover';
+
+const sbZone = document.getElementById('sbUpZone');
+const sbFileIn = document.getElementById('sbFileIn');
+sbZone.addEventListener('dragover',e=>{e.preventDefault();sbZone.style.borderColor='var(--accent)';sbZone.style.background='rgba(249,115,22,.06)'});
+sbZone.addEventListener('dragleave',()=>{sbZone.style.borderColor='';sbZone.style.background=''});
+sbZone.addEventListener('drop',e=>{e.preventDefault();sbZone.style.borderColor='';sbZone.style.background='';sbAddFiles(e.dataTransfer.files)});
+sbFileIn.addEventListener('change',()=>sbAddFiles(sbFileIn.files));
+
+function sbAddFiles(files) {
+  const arr = Array.from(files).filter(f=>f.type.startsWith('image/'));
+  let loaded = 0;
+  arr.forEach(f=>{
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = ()=>{
+      sbImages.push({img, name:f.name, url});
+      loaded++;
+      if(loaded===arr.length){ sbRenderList(); sbPreview(); }
+    };
+    img.src = url;
+  });
+}
+
+function sbRenderList() {
+  const el = document.getElementById('sbList');
+  document.getElementById('sbCount').textContent = sbImages.length ? '('+sbImages.length+')' : '';
+  document.getElementById('sbRenderBtn').disabled = sbImages.length === 0;
+  if(!sbImages.length){ el.innerHTML='<div class="empty-hint">尚未加入任何圖片</div>'; return; }
+  el.innerHTML = sbImages.map((im,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--card);border:1px solid var(--borderL);border-radius:var(--rs)">
+      <img src="${im.url}" style="width:36px;height:28px;object-fit:cover;border-radius:3px;flex-shrink:0">
+      <div style="flex:1;min-width:0;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${im.name}</div>
+      <button onclick="sbMoveUp(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 4px" title="上移">▲</button>
+      <button onclick="sbMoveDown(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 4px" title="下移">▼</button>
+      <button onclick="sbDel(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:13px;padding:2px 4px" title="移除">✕</button>
+    </div>`).join('');
+}
+
+function sbMoveUp(i){ if(i===0)return;[sbImages[i-1],sbImages[i]]=[sbImages[i],sbImages[i-1]];sbRenderList();sbPreview(); }
+function sbMoveDown(i){ if(i>=sbImages.length-1)return;[sbImages[i+1],sbImages[i]]=[sbImages[i],sbImages[i+1]];sbRenderList();sbPreview(); }
+function sbDel(i){ URL.revokeObjectURL(sbImages[i].url);sbImages.splice(i,1);sbRenderList();sbPreview(); }
+function sbClear(){ sbImages.forEach(im=>URL.revokeObjectURL(im.url));sbImages=[];sbRenderList();sbPreview();sbFileIn.value=''; }
+
+function setSbFit(el){
+  document.querySelectorAll('#sbFitBtns .pbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); sbFit=el.dataset.fit; sbPreview();
+}
+
+function setSbPreset(cols,rows,cw,ch,gap){
+  document.getElementById('sbCols').value=cols;
+  document.getElementById('sbRows').value=rows;
+  document.getElementById('sbCellW').value=cw;
+  document.getElementById('sbCellH').value=ch;
+  document.getElementById('sbGap').value=gap;
+  sbPreview();
+}
+
+function sbGetParams(){
+  const cols = Math.max(1,parseInt(document.getElementById('sbCols').value)||3);
+  const rowsInput = parseInt(document.getElementById('sbRows').value)||0;
+  const n = sbImages.length;
+  const rows = rowsInput > 0 ? rowsInput : Math.ceil(n/cols);
+  const cw = Math.max(10,parseInt(document.getElementById('sbCellW').value)||400);
+  const ch = Math.max(10,parseInt(document.getElementById('sbCellH').value)||300);
+  const gap = Math.max(0,parseInt(document.getElementById('sbGap').value)||0);
+  const bg = document.getElementById('sbBg').value;
+  const totalW = cols*cw + (cols-1)*gap;
+  const totalH = rows*ch + (rows-1)*gap;
+  return {cols,rows,cw,ch,gap,bg,totalW,totalH,n};
+}
+
+function sbDrawCell(c, img, x, y, cw, ch, fit){
+  c.save(); c.beginPath(); c.rect(x,y,cw,ch); c.clip();
+  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+  if(fit==='stretch'){
+    c.drawImage(img,x,y,cw,ch);
+  } else if(fit==='contain'){
+    const sc=Math.min(cw/iw,ch/ih);
+    const dw=iw*sc,dh=ih*sc;
+    c.drawImage(img,x+(cw-dw)/2,y+(ch-dh)/2,dw,dh);
+  } else { // cover
+    const sc=Math.max(cw/iw,ch/ih);
+    const dw=iw*sc,dh=ih*sc;
+    c.drawImage(img,x+(cw-dw)/2,y+(ch-dh)/2,dw,dh);
+  }
+  c.restore();
+}
+
+// live preview on storyboard canvas
+let sbPreviewCanvas = null;
+
+function sbPreview(){
+  if(!sbImages.length){
+    // clear canvas area storyboard preview
+    const pv = document.getElementById('sbPreviewArea');
+    if(pv) pv.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:40px">加入圖片以預覽</div>';
+    return;
+  }
+  const {cols,rows,cw,ch,gap,bg,totalW,totalH} = sbGetParams();
+  if(!sbPreviewCanvas){ sbPreviewCanvas=document.createElement('canvas'); }
+  sbPreviewCanvas.width=totalW; sbPreviewCanvas.height=totalH;
+  const sc=sbPreviewCanvas.getContext('2d');
+  sc.fillStyle=bg; sc.fillRect(0,0,totalW,totalH);
+  sbImages.forEach((im,idx)=>{
+    const col=idx%cols, row=Math.floor(idx/cols);
+    const x=col*(cw+gap), y=row*(ch+gap);
+    sbDrawCell(sc,im.img,x,y,cw,ch,sbFit);
+    // index label
+    sc.fillStyle='rgba(0,0,0,0.55)'; sc.fillRect(x,y,32,22);
+    sc.fillStyle='#fff'; sc.font='bold 13px Inter,sans-serif'; sc.fillText(idx+1,x+6,y+16);
+  });
+  // show in preview area
+  const pv = document.getElementById('sbPreviewArea');
+  if(pv){
+    const maxW=pv.clientWidth||500, maxH=pv.clientHeight||400;
+    const sc2=Math.min(1,maxW/totalW,maxH/totalH);
+    sbPreviewCanvas.style.width=(totalW*sc2)+'px';
+    sbPreviewCanvas.style.height=(totalH*sc2)+'px';
+    sbPreviewCanvas.style.display='block';
+    sbPreviewCanvas.style.margin='auto';
+    sbPreviewCanvas.style.borderRadius='var(--r)';
+    if(!pv.contains(sbPreviewCanvas)) pv.appendChild(sbPreviewCanvas);
+  }
+  sts('sbStatus','',`預覽：${totalW}×${totalH} px（${cols}欄×${rows}列，共${sbImages.length}張）`);
+}
+
+function sbRender(){
+  if(!sbImages.length) return;
+  const {cols,rows,cw,ch,gap,bg,totalW,totalH} = sbGetParams();
+  const out = document.createElement('canvas');
+  out.width=totalW; out.height=totalH;
+  const sc=out.getContext('2d');
+  sc.fillStyle=bg; sc.fillRect(0,0,totalW,totalH);
+  sbImages.forEach((im,idx)=>{
+    const col=idx%cols, row=Math.floor(idx/cols);
+    sbDrawCell(sc,im.img,col*(cw+gap),row*(ch+gap),cw,ch,sbFit);
+  });
+
+  // choose output format same as main setting
+  const fmt=document.getElementById('outputFormat').value;
+  const mime=fmt==='jpeg'?'image/jpeg':fmt==='webp'?'image/webp':'image/png';
+  const ext=fmt==='jpeg'?'jpg':fmt;
+  const q=parseInt(document.getElementById('outputQuality').value)/100;
+  out.toBlob(blob=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='storyboard_'+cols+'x'+rows+'_'+Date.now()+'.'+ext;
+    a.click(); URL.revokeObjectURL(a.href);
+    sts('sbStatus','ok','✓ 故事版已下載！尺寸 '+totalW+'×'+totalH+' px');
+  },mime,q);
+}
+
+</script>
+</body>
+</html>

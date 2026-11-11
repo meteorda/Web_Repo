@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流光 · 流程動態生成器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============ 主題色票 ============ */
+:root[data-theme="dark"]{
+  --bg:#080b14; --bg-2:#0d1322; --panel:#0a0f1c; --panel-2:#0d1424;
+  --surface:rgba(255,255,255,.045); --surface-2:rgba(255,255,255,.075);
+  --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.17);
+  --text:#e9eef8; --muted:#8b96ab; --faint:#5c6477;
+  --gold:#ffd571; --gold-deep:#f5b942; --jade:#5eead4; --jade-deep:#2dd4bf;
+  --energy-a:#ffd571; --energy-b:#5eead4;
+  --track:rgba(255,255,255,.10); --node-bg:rgba(255,255,255,.038);
+  --node-glow:rgba(255,213,113,.55);
+  --dec:#ff6b72; --dec-glow:rgba(255,107,114,.55);
+  --shadow:0 24px 60px -20px rgba(0,0,0,.7);
+  --grid-glow:radial-gradient(1200px 600px at 70% -10%, rgba(94,234,212,.10), transparent 60%),
+              radial-gradient(900px 500px at 10% 110%, rgba(255,213,113,.09), transparent 55%);
+}
+:root[data-theme="light"]{
+  --bg:#e7ecf3; --bg-2:#f3f6fb; --panel:#ffffff; --panel-2:#f6f9fd;
+  --surface:#ffffff; --surface-2:#f4f7fc;
+  --border:rgba(22,32,55,.11); --border-strong:rgba(22,32,55,.2);
+  --text:#172033; --muted:#5a6580; --faint:#8a94a8;
+  --gold:#c98a17; --gold-deep:#a9710b; --jade:#0d9488; --jade-deep:#0b7c72;
+  --energy-a:#cf8f1a; --energy-b:#0d9488;
+  --track:rgba(22,32,55,.14); --node-bg:#ffffff;
+  --node-glow:rgba(201,138,23,.4);
+  --dec:#e23b4e; --dec-glow:rgba(226,59,78,.42);
+  --shadow:0 18px 44px -18px rgba(30,45,80,.28);
+  --grid-glow:radial-gradient(1100px 560px at 75% -8%, rgba(13,148,136,.07), transparent 60%),
+              radial-gradient(900px 480px at 8% 112%, rgba(201,138,23,.07), transparent 55%);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Noto Sans TC",system-ui,sans-serif;
+  background:var(--bg); color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  transition:background .5s ease,color .5s ease;
+}
+::selection{background:var(--gold);color:#1a1208}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit}
+
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ============ 頂部 ============ */
+.topbar{
+  display:flex;align-items:center;gap:18px;
+  padding:14px 22px;flex:0 0 auto;
+  background:linear-gradient(var(--panel),var(--panel));
+  border-bottom:1px solid var(--border);
+  position:relative;z-index:30;
+}
+.brand{display:flex;flex-direction:column;line-height:1;margin-right:auto}
+.brand .eyebrow{
+  font-size:10.5px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--gold);font-weight:700;margin-bottom:7px;padding-left:2px;
+}
+.brand h1{
+  font-family:"Noto Serif TC",serif;font-weight:900;font-size:23px;
+  letter-spacing:.02em;
+}
+.brand h1 .spark{
+  background:linear-gradient(100deg,var(--gold),var(--jade));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.tb-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  height:38px;padding:0 14px;border-radius:11px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:13px;font-weight:500;
+  transition:.2s border-color,.2s background,.2s transform;
+}
+.tb-btn:hover{border-color:var(--border-strong);background:var(--surface-2)}
+.tb-btn:active{transform:translateY(1px)}
+.tb-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9}
+.tb-btn.icon{width:38px;padding:0;justify-content:center}
+
+/* 主題開關 */
+.theme-toggle{
+  position:relative;width:64px;height:34px;border-radius:30px;
+  background:var(--surface-2);border:1px solid var(--border);
+  display:flex;align-items:center;padding:0 4px;flex:0 0 auto;
+  transition:.3s;
+}
+.theme-toggle .knob{
+  position:absolute;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(150deg,var(--gold),var(--gold-deep));
+  box-shadow:0 0 14px var(--node-glow);
+  transition:transform .35s cubic-bezier(.6,1.6,.5,1);
+  display:grid;place-items:center;
+}
+:root[data-theme="light"] .theme-toggle .knob{transform:translateX(30px);
+  background:linear-gradient(150deg,#fff,#ffe9a8)}
+.theme-toggle .knob svg{width:14px;height:14px}
+.theme-toggle .ic{position:absolute;font-size:13px;pointer-events:none;color:var(--muted)}
+.theme-toggle .ic.moon{left:9px}
+.theme-toggle .ic.sun{right:9px}
+
+/* ============ 主體 ============ */
+.body{display:flex;flex:1 1 auto;min-height:0;position:relative}
+
+/* 控制面板 */
+.panel{
+  flex:0 0 360px;width:360px;display:flex;flex-direction:column;
+  background:var(--panel);border-right:1px solid var(--border);
+  overflow-y:auto;transition:margin-left .4s cubic-bezier(.5,0,.2,1),width .4s;
+  z-index:20;
+}
+.panel::-webkit-scrollbar{width:9px}
+.panel::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:9px;border:2px solid transparent;background-clip:padding-box}
+.app.collapsed .panel{margin-left:-361px}
+
+.pad{padding:20px}
+.seg{
+  display:flex;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:12px;padding:4px;gap:4px;margin-bottom:18px;
+}
+.seg button{
+  flex:1;height:38px;border:none;background:transparent;border-radius:9px;
+  color:var(--muted);font-size:12.5px;font-weight:700;transition:.2s;padding:0;
+}
+.seg button.on{background:var(--text);color:var(--bg);box-shadow:0 4px 12px -4px rgba(0,0,0,.4)}
+:root[data-theme="light"] .seg button.on{background:#172033;color:#fff}
+
+/* 流程詳細度 */
+.detail-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 18px}
+.dr-label{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.mini-seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
+.mini-seg button{border:none;background:transparent;border-radius:8px;color:var(--muted);
+  font-size:12px;font-weight:700;height:30px;padding:0 12px;transition:.18s}
+.mini-seg button.on{background:var(--gold);color:#1a1308;box-shadow:0 3px 9px -3px var(--node-glow)}
+
+label.lbl{display:block;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);font-weight:700;margin:18px 0 9px}
+label.lbl:first-child{margin-top:0}
+
+textarea.field,input.field{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:13px 14px;color:var(--text);font-size:14px;
+  resize:vertical;line-height:1.6;transition:.2s border-color,.2s box-shadow;
+}
+textarea.field:focus,input.field:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 22%,transparent)}
+textarea.field{min-height:96px}
+
+.btn-primary{
+  width:100%;height:48px;margin-top:14px;border:none;border-radius:13px;
+  background:linear-gradient(110deg,var(--gold-deep),var(--gold));
+  color:#1a1308;font-weight:900;font-size:15px;letter-spacing:.04em;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 12px 28px -10px var(--node-glow);transition:.2s transform,.2s box-shadow;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 34px -10px var(--node-glow)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.55;cursor:wait;transform:none}
+.btn-primary svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2}
+.btn-primary .spin{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.chip{
+  font-size:12px;padding:6px 11px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  transition:.18s;
+}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+
+/* 手動步驟編輯 */
+.steps-edit{display:flex;flex-direction:column;gap:10px}
+.step-row{
+  background:var(--surface);border:1px solid var(--border);border-radius:13px;
+  padding:11px 11px 11px 13px;display:flex;gap:10px;align-items:flex-start;
+  position:relative;transition:.2s;
+}
+.step-row:hover{border-color:var(--border-strong)}
+.step-row .idx{
+  flex:0 0 auto;width:26px;height:26px;border-radius:8px;margin-top:2px;
+  background:var(--surface-2);display:grid;place-items:center;
+  font-weight:900;font-size:12px;color:var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+.step-row .fields{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+.step-row .emoji-in{
+  width:46px;text-align:center;font-size:18px;padding:7px 0;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;color:var(--text);
+}
+.step-row .row2{display:flex;gap:7px}
+.step-row .title-in{
+  flex:1;min-width:0;font-weight:700;font-size:14px;padding:8px 10px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;color:var(--text);
+}
+.step-row .desc-in{
+  font-size:12.5px;padding:7px 10px;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
+}
+.step-row input:focus{outline:none;border-color:var(--gold)}
+.step-row .ctl{display:flex;flex-direction:column;gap:5px}
+.mini{
+  width:26px;height:24px;border-radius:7px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--muted);font-size:13px;line-height:1;
+  display:grid;place-items:center;transition:.16s;
+}
+.mini:hover{border-color:var(--gold);color:var(--gold)}
+.mini.del:hover{border-color:#ff6b6b;color:#ff6b6b}
+.add-step{
+  height:44px;border:1.5px dashed var(--border-strong);border-radius:13px;
+  background:transparent;color:var(--muted);font-weight:700;font-size:13.5px;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;
+}
+.add-step:hover{border-color:var(--gold);color:var(--gold)}
+
+/* 圖像上傳區 */
+.dropzone{
+  position:relative;border:1.5px dashed var(--border-strong);border-radius:15px;
+  background:var(--surface);min-height:150px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:.2s;overflow:hidden;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold);background:var(--surface-2)}
+.dz-empty{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);text-align:center;padding:22px}
+.dz-empty .dz-ico{font-size:38px;opacity:.7}
+.dz-empty p{font-size:13.5px;line-height:1.6;font-weight:500}
+.dz-empty small{color:var(--faint);font-weight:400}
+.dz-prev{position:relative;width:100%}
+.dz-prev img{display:block;width:100%;max-height:260px;object-fit:contain;background:var(--bg-2)}
+.dz-clear{
+  position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:9px;border:none;
+  background:rgba(0,0,0,.62);color:#fff;font-size:14px;display:grid;place-items:center;
+  backdrop-filter:blur(4px);transition:.18s;
+}
+.dz-clear:hover{background:#ff5757}
+.codedz{min-height:104px}
+.cf-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 8px 8px 12px;font-size:12.5px}
+.cf-chip b{color:var(--text);font-weight:700;word-break:break-all}
+.cf-chip button{width:24px;height:24px;border-radius:7px;border:1px solid var(--border);background:var(--surface);
+  color:var(--muted);font-size:12px;flex:0 0 auto;transition:.16s}
+.cf-chip button:hover{border-color:#ff6b6b;color:#ff6b6b}
+textarea.field.code{min-height:96px;margin-top:9px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:12px;line-height:1.55;white-space:pre;overflow:auto}
+
+/* 錄製遮罩 */
+.rec-overlay{position:absolute;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--bg) 76%,transparent);backdrop-filter:blur(6px)}
+.rec-overlay.on{display:flex}
+.rec-card{background:var(--panel);border:1px solid var(--border-strong);border-radius:18px;
+  padding:26px 32px;box-shadow:var(--shadow);text-align:center;min-width:260px}
+.rec-card h4{font-size:15.5px;font-weight:800;margin-bottom:15px;display:flex;align-items:center;justify-content:center}
+.rec-card .dot{width:11px;height:11px;border-radius:50%;background:#ff4d4d;display:inline-block;margin-right:9px;
+  box-shadow:0 0 8px #ff4d4d;animation:recblink 1s infinite}
+@keyframes recblink{50%{opacity:.22}}
+.rec-bar{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+.rec-bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--gold),var(--jade));transition:width .12s linear}
+.rec-card p{font-size:12px;color:var(--muted);margin-top:11px}
+
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+.opt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.opt-row .name{font-size:13.5px;font-weight:500}
+.opt-row .name small{display:block;color:var(--faint);font-size:11px;font-weight:400;margin-top:2px}
+select.field{padding:9px 12px;height:40px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 17px,calc(100% - 11px) 17px;background-size:5px 5px;background-repeat:no-repeat;width:auto;min-width:96px}
+.range{display:flex;align-items:center;gap:10px;width:150px}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;
+  background:var(--border-strong);width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 8px var(--node-glow);cursor:pointer}
+.sw{position:relative;width:46px;height:26px;flex:0 0 auto}
+.sw input{opacity:0;width:100%;height:100%;cursor:pointer;position:absolute;z-index:2}
+.sw .tk{position:absolute;inset:0;border-radius:20px;background:var(--border-strong);transition:.25s}
+.sw .tk::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.25s}
+.sw input:checked + .tk{background:var(--gold-deep)}
+.sw input:checked + .tk::after{transform:translateX(20px)}
+
+/* ============ 舞台 ============ */
+.stage-wrap{
+  flex:1 1 auto;min-width:0;position:relative;display:flex;flex-direction:column;
+  background:var(--bg);background-image:var(--grid-glow);transition:background .5s;
+}
+.stage{
+  flex:1 1 auto;min-height:0;overflow:auto;
+  display:flex;align-items:center;justify-content:center;
+  padding:48px 40px;
+}
+.stage::-webkit-scrollbar{height:10px;width:10px}
+.stage::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px}
+
+.flow-grid{
+  position:relative;width:100%;display:grid;align-items:center;
+  gap:46px 30px;
+}
+.flow-grid svg.connectors,.flow-grid canvas.fx{
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+}
+.flow-grid svg.connectors{z-index:0}
+.flow-grid canvas.fx{z-index:1}
+.connectors .gs-a{stop-color:var(--energy-a)}
+.connectors .gs-b{stop-color:var(--energy-b)}
+
+/* 節點卡片 */
+.node{
+  position:relative;z-index:2;
+  background:var(--node-bg);border:1px solid var(--border);
+  border-radius:18px;padding:18px 17px 16px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;gap:9px;min-height:118px;
+  opacity:.34;transform:translateY(8px) scale(.97);filter:saturate(.5);
+  transition:opacity .5s,transform .5s,border-color .5s,box-shadow .5s,filter .5s;
+}
+.node .badge{
+  position:absolute;top:-11px;left:16px;
+  font-family:"Noto Serif TC",serif;font-weight:900;font-size:13px;
+  font-variant-numeric:tabular-nums;letter-spacing:.06em;
+  background:var(--panel);border:1px solid var(--border);
+  padding:2px 9px;border-radius:8px;color:var(--muted);transition:.5s;
+}
+.node .emoji{font-size:30px;line-height:1;filter:grayscale(.3);transition:.5s}
+.node .ttl{font-weight:900;font-size:16.5px;letter-spacing:.01em;line-height:1.3}
+.node .desc{font-size:12.7px;color:var(--muted);line-height:1.55;
+  opacity:.5;transition:opacity .5s}
+.node::after{ /* 點燃衝擊環 */
+  content:"";position:absolute;inset:-1px;border-radius:18px;
+  border:2px solid var(--gold);opacity:0;pointer-events:none;
+}
+.node.lit{
+  opacity:1;transform:translateY(0) scale(1);filter:saturate(1);
+  border-color:color-mix(in srgb,var(--gold) 55%,var(--border));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--gold) 30%,transparent),
+             0 14px 40px -14px var(--node-glow),
+             inset 0 0 22px -14px var(--node-glow);
+}
+.node.lit .badge{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%,var(--border))}
+.node.lit .emoji{filter:grayscale(0) drop-shadow(0 0 8px var(--node-glow));transform:scale(1.06)}
+.node.lit .desc{opacity:1}
+.node.flash::after{animation:shock .7s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes shock{0%{opacity:.9;inset:-1px;border-width:2.5px}100%{opacity:0;inset:-16px;border-width:0}}
+
+@media (prefers-reduced-motion:reduce){
+  .node{transition:opacity .25s,transform .25s}
+  .node.flash::after{animation:none}
+}
+
+/* 分支圖模式 */
+.flow-grid.graph-mode{display:block;flex:0 0 auto}
+.gnode{position:absolute}
+.node .tag{position:absolute;top:-11px;right:14px;font-size:10.5px;font-weight:800;letter-spacing:.04em;
+  padding:2px 8px;border-radius:8px;background:var(--panel);border:1px solid var(--border);color:var(--muted);transition:.5s}
+.node.start .tag,.node.end .tag{color:var(--jade);border-color:color-mix(in srgb,var(--jade) 45%,var(--border))}
+/* ============ 標準流程圖形狀(統一 SVG 外框,每型不同框線顏色) ============ */
+.gnode.shaped{background:transparent;border:none;box-shadow:none;padding:0;backdrop-filter:none;overflow:visible}
+.gnode.shaped .nshape{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:0;pointer-events:none}
+.gnode.shaped .nshape .nbody{
+  fill:var(--panel-2);stroke:color-mix(in srgb,var(--sc) 55%,var(--border));stroke-width:2;
+  stroke-linejoin:round;transition:stroke .5s,filter .5s,fill .5s}
+.gnode.shaped .nshape .ndeco{fill:none;stroke:color-mix(in srgb,var(--sc) 48%,var(--border));stroke-width:1.6;transition:.5s}
+.gnode.shaped.lit .nshape .nbody{stroke:var(--sc);stroke-width:2.4;
+  filter:drop-shadow(0 0 11px color-mix(in srgb,var(--sc) 55%,transparent))}
+.gnode.shaped.lit .nshape .ndeco{stroke:var(--sc)}
+.gnode.shaped .dcontent{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;gap:4px;padding:0 15%;z-index:1}
+.gnode.shaped .dcontent .emoji{font-size:22px;line-height:1;filter:grayscale(.3);transition:.5s}
+.gnode.shaped.lit .dcontent .emoji{filter:grayscale(0) drop-shadow(0 0 7px color-mix(in srgb,var(--sc) 55%,transparent));transform:scale(1.05)}
+.gnode.shaped .dcontent .ttl{font-size:13px;font-weight:900;line-height:1.22;color:var(--text);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.gnode.shaped .badge{left:50%;transform:translateX(-50%);top:-12px;right:auto;
+  background:var(--panel);border:1px solid var(--border)}
+.gnode.shaped.lit .badge{color:var(--sc);border-color:color-mix(in srgb,var(--sc) 55%,var(--border))}
+.gnode.shaped .stype{position:absolute;top:-11px;right:9px;
+  font-size:9.5px;font-weight:800;letter-spacing:.02em;padding:2px 7px;border-radius:7px;
+  background:var(--panel);border:1px solid color-mix(in srgb,var(--sc) 42%,var(--border));
+  color:color-mix(in srgb,var(--sc) 80%,var(--text));z-index:3;white-space:nowrap;transition:.5s}
+/* 各形狀內容留白(避免尖角/弧邊裁字) */
+.gnode.shaped[data-shape="decision"] .dcontent{padding:0 23%}
+.gnode.shaped[data-shape="prepare"] .dcontent{padding:0 21%}
+.gnode.shaped[data-shape="data"] .dcontent,
+.gnode.shaped[data-shape="manualinput"] .dcontent,
+.gnode.shaped[data-shape="manual"] .dcontent{padding:0 19%}
+.gnode.shaped[data-shape="display"] .dcontent{padding:0 18% 0 22%}
+.gnode.shaped[data-shape="delay"] .dcontent{padding:0 20% 0 13%}
+.gnode.shaped[data-shape="database"] .dcontent{padding:16% 16% 8%}
+.gnode.shaped[data-shape="document"] .dcontent{padding:0 14% 12%}
+.gnode.shaped[data-shape="start"] .dcontent,
+.gnode.shaped[data-shape="end"] .dcontent{padding:0 13%}
+.gnode.shaped[data-shape="start"] .dcontent .ttl,
+.gnode.shaped[data-shape="end"] .dcontent .ttl{font-size:14px}
+/* ============ 形狀圖例 ============ */
+.shape-legend{display:flex;flex-wrap:wrap;gap:7px 14px;align-items:center;justify-content:center;
+  padding:11px 16px;margin-top:6px;border-top:1px dashed var(--border);width:100%}
+.shape-legend[hidden]{display:none}
+.shape-legend .lg-title{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--faint);
+  text-transform:uppercase;margin-right:2px}
+.shape-legend .lg-item{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.shape-legend .lg-item svg{width:26px;height:17px;overflow:visible}
+.shape-legend .lg-item svg .nbody{fill:var(--panel-2);stroke-width:2}
+.shape-legend .lg-item svg .ndeco{fill:none;stroke-width:1.4}
+/* ============ 流程主題標題(畫面上緣) ============ */
+.flow-title{flex:0 0 auto;position:relative;z-index:6;
+  padding:16px 26px 12px;text-align:center;
+  font-family:"Noto Serif TC",serif;font-weight:900;
+  font-size:clamp(18px,2.2vw,27px);letter-spacing:.04em;line-height:1.25;
+  color:var(--text);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,transparent),transparent);
+  border-bottom:1px solid var(--border)}
+.flow-title[hidden]{display:none}
+.flow-title::before{content:"";display:block;width:46px;height:3px;margin:0 auto 9px;border-radius:3px;
+  background:linear-gradient(90deg,var(--gold-deep),var(--jade-deep))}
+.flow-title::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gold) 55%,transparent),color-mix(in srgb,var(--jade) 55%,transparent),transparent)}
+.stage-wrap:fullscreen .flow-title{padding-top:26px;font-size:clamp(22px,2.6vw,34px)}
+.connectors .gtrack{stroke:var(--track);stroke-width:2.6;stroke-linecap:round;stroke-dasharray:1 8}
+.connectors .gbeam{stroke:url(#eg);stroke-width:3.2;stroke-linecap:round;
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--jade) 55%,transparent))}
+.connectors .elabel rect{fill:var(--panel);stroke:var(--border);stroke-width:1;transition:.4s}
+.connectors .elabel text{fill:var(--muted);font-size:11.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;
+  font-family:"Noto Sans TC",sans-serif;transition:.4s}
+.connectors .elabel.on rect{stroke:color-mix(in srgb,var(--gold) 60%,var(--border))}
+.connectors .elabel.on text{fill:var(--gold)}
+
+/* 舞台底部控制 */
+.stage-bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:14px;
+  padding:13px 22px;border-top:1px solid var(--border);
+  background:linear-gradient(var(--panel),var(--panel));position:relative;z-index:10;
+}
+.play-btn{
+  display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 22px;border:none;
+  border-radius:13px;background:linear-gradient(110deg,var(--jade-deep),var(--jade));
+  color:#04221d;font-weight:900;font-size:14.5px;letter-spacing:.03em;
+  box-shadow:0 12px 26px -12px color-mix(in srgb,var(--jade) 80%,transparent);transition:.2s;
+}
+:root[data-theme="light"] .play-btn{color:#fff;background:linear-gradient(110deg,var(--jade-deep),var(--jade))}
+.play-btn:hover{transform:translateY(-2px)}
+.play-btn svg{width:17px;height:17px;fill:currentColor}
+.stage-bar .ghost{
+  height:44px;width:44px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);display:grid;place-items:center;transition:.2s;
+}
+.stage-bar .ghost:hover{border-color:var(--border-strong);background:var(--surface-2)}
+.stage-bar .ghost.on{color:var(--jade);border-color:color-mix(in srgb,var(--jade) 55%,var(--border));
+  background:color-mix(in srgb,var(--jade) 12%,transparent)}
+.stage-bar .ghost svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.stage-bar .meta{margin-left:auto;font-size:12.5px;color:var(--faint);letter-spacing:.04em}
+.stage-bar .spd{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted)}
+.stage-bar .spd input{width:96px}
+
+/* 全螢幕呈現 */
+.stage-wrap:fullscreen{background:var(--bg);background-image:var(--grid-glow)}
+.stage-wrap:fullscreen .stage{padding:60px}
+
+/* 空狀態 */
+.empty{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--faint);text-align:center}
+.empty .ico{font-size:46px;opacity:.5}
+.empty p{font-size:14px;max-width:240px;line-height:1.6}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:9px;align-items:center}
+.toast{
+  padding:12px 20px;border-radius:12px;background:var(--panel-2);
+  border:1px solid var(--border-strong);color:var(--text);font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow);animation:toastIn .3s ease;max-width:84vw;
+}
+.toast.err{border-color:#ff6b6b;color:#ff8585}
+.toast.ok{border-color:var(--jade);color:var(--jade)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* 設定 Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border-strong);border-radius:20px;
+  width:min(480px,100%);box-shadow:var(--shadow);max-height:88vh;overflow:auto}
+.modal h3{font-family:"Noto Serif TC",serif;font-size:19px;font-weight:900;padding:22px 24px 0}
+.modal .sub{padding:6px 24px 0;color:var(--muted);font-size:13px;line-height:1.6}
+.modal .mbody{padding:18px 24px 24px}
+.modal .mfoot{display:flex;gap:10px;padding:0 24px 24px}
+.modal .mfoot button{flex:1;height:46px;border-radius:12px;font-weight:800;font-size:14px;border:1px solid var(--border)}
+.modal .save{background:var(--gold);border:none;color:#1a1308}
+.modal .cancel{background:var(--surface);color:var(--text)}
+.link{color:var(--jade);text-decoration:none;font-weight:700}
+.link:hover{text-decoration:underline}
+
+@media (max-width:880px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100vh}
+  .body{flex-direction:column}
+  .panel{flex:none;width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:none}
+  .app.collapsed .panel{margin-left:0;display:none}
+  .stage-wrap{min-height:64vh}
+  .brand h1{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- 頂部 -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="eyebrow">FLOW · 動態流程</span>
+      <h1>流光 <span class="spark">流程動態生成器</span></h1>
+    </div>
+    <button class="tb-btn icon" id="collapseBtn" title="收合面板">
+      <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <button class="tb-btn" id="settingsBtn" title="API 設定">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 8 1.6 1.6 0 0 0 4.3 6.2l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.6h.1A1.6 1.6 0 0 0 10.2 2 2 2 0 1 1 14 2v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1A1.6 1.6 0 0 0 21 9.8h.1a2 2 0 1 1 0 4H21a1.6 1.6 0 0 0-1.5 1.2z"/></svg>
+      設定
+    </button>
+    <div class="theme-toggle" id="themeToggle" title="切換深淺色">
+      <span class="ic moon">🌙</span><span class="ic sun">☀️</span>
+      <span class="knob"><svg viewBox="0 0 24 24" fill="none" stroke="#1a1308" stroke-width="2.4"><circle cx="12" cy="12" r="4"/></svg></span>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- 控制面板 -->
+    <aside class="panel">
+      <div class="pad">
+        <!-- 模式切換 -->
+        <div class="seg" id="modeSeg">
+          <button class="on" data-mode="ai">✨ 主題</button>
+          <button data-mode="img">📷 圖像</button>
+          <button data-mode="code">📄 程式</button>
+          <button data-mode="manual">✍️ 手動</button>
+        </div>
+
+        <!-- 流程詳細度 -->
+        <div class="detail-row" id="detailRow">
+          <span class="dr-label">流程詳細度</span>
+          <div class="mini-seg" id="detailSeg">
+            <button class="on" data-detail="normal">一般</button>
+            <button data-detail="detailed">詳細 10+</button>
+          </div>
+        </div>
+
+        <!-- AI 模式 -->
+        <div id="aiMode">
+          <label class="lbl">輸入主題或一段描述</label>
+          <textarea class="field" id="aiInput" placeholder="例：把一個新產品從發想到上市的完整流程&#10;或：使用者註冊登入驗證流程"></textarea>
+          <div class="chips" id="chips"></div>
+          <button class="btn-primary" id="genBtn">
+            <svg viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3z"/></svg>
+            生成流程
+          </button>
+        </div>
+
+        <!-- 圖像解析模式 -->
+        <div id="imgMode" style="display:none">
+          <label class="lbl">上傳流程圖 / 截圖 / 白板照片</label>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="imgFile" accept="image/*" hidden>
+            <div class="dz-empty" id="dzEmpty">
+              <div class="dz-ico">🖼️</div>
+              <p>點擊或拖曳圖片到這裡<br><small>AI 會辨識圖中流程並轉成步驟</small></p>
+            </div>
+            <div class="dz-prev" id="dzPrev" style="display:none">
+              <img id="prevImg" alt="預覽">
+              <button class="dz-clear" id="dzClear" title="移除">✕</button>
+            </div>
+          </div>
+          <input class="field" id="imgHint" placeholder="補充說明(可留空),例:這是註冊流程截圖" style="margin-top:10px">
+          <button class="btn-primary" id="visBtn">
+            <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            解析圖像生成流程
+          </button>
+        </div>
+
+        <!-- 程式解析模式 -->
+        <div id="codeMode" style="display:none">
+          <label class="lbl">上傳程式檔 或 貼上程式碼</label>
+          <div class="dropzone codedz" id="codeDrop">
+            <input type="file" id="codeFile" accept=".py,.js,.mjs,.cjs,.ts,.jsx,.tsx,.html,.htm,.css,.java,.c,.h,.cpp,.cc,.cs,.go,.rs,.php,.rb,.sql,.sh,.bash,.json,.yaml,.yml,.vue,.kt,.swift,.dart,.scala,.lua,.r,.m,.txt,.md" hidden>
+            <div class="dz-empty">
+              <div class="dz-ico">📄</div>
+              <p>點擊或拖曳程式檔到這裡<br><small>py / js / html / java / c / go / sql…</small></p>
+            </div>
+          </div>
+          <div class="cf-chip" id="cfChip" style="display:none">
+            <span>📄 <b id="cfName"></b></span><button id="codeClear" title="清除">✕</button>
+          </div>
+          <textarea class="field code" id="codeText" placeholder="或直接貼上程式碼…"></textarea>
+          <input class="field" id="codeTitle" placeholder="流程主題 / 標題(可留空,AI 自動命名)" style="margin-bottom:10px">
+          <button class="btn-primary" id="codeBtn">
+            <svg viewBox="0 0 24 24"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13 5l-2 14"/></svg>
+            解析程式生成流程
+          </button>
+        </div>
+
+        <!-- 手動模式 -->
+        <div id="manualMode" style="display:none">
+          <label class="lbl">流程步驟</label>
+          <div class="steps-edit" id="stepsEdit"></div>
+          <button class="add-step" id="addStep" style="margin-top:10px">＋ 新增步驟</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 版面與特效 -->
+        <label class="lbl">版面與特效</label>
+        <div class="opt-row">
+          <div class="name">每列欄數<small>控制左右填滿的密度</small></div>
+          <select class="field" id="colSel">
+            <option value="0">自動</option>
+            <option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          </select>
+        </div>
+        <div class="opt-row">
+          <div class="name">流動速度</div>
+          <div class="range"><input type="range" id="speed" min="0.4" max="2.4" step="0.1" value="1"></div>
+        </div>
+        <div class="opt-row">
+          <div class="name">特效強度<small>光點與粒子數量</small></div>
+          <div class="range"><input type="range" id="intensity" min="0.3" max="1.6" step="0.1" value="1"></div>
+        </div>
+        <div class="opt-row">
+          <div class="name">粒子拖尾</div>
+          <label class="sw"><input type="checkbox" id="particlesOn" checked><span class="tk"></span></label>
+        </div>
+        <div class="opt-row">
+          <div class="name">循環播放</div>
+          <label class="sw"><input type="checkbox" id="loopOn"><span class="tk"></span></label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 舞台 -->
+    <section class="stage-wrap" id="stageWrap">
+      <div class="flow-title" id="flowTitle" hidden></div>
+      <div class="stage" id="stage">
+        <div class="flow-grid" id="grid"></div>
+      </div>
+      <div class="shape-legend" id="shapeLegend" hidden></div>
+      <div class="stage-bar">
+        <button class="play-btn" id="playBtn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          播放流動
+        </button>
+        <button class="ghost" id="replayBtn" title="重播">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        </button>
+        <button class="ghost" id="fitBtn" title="符合畫面 / 實際大小">
+          <svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 0-1 1h-4"/><rect x="8.5" y="8.5" width="7" height="7" rx="1.2"/></svg>
+        </button>
+        <button class="ghost" id="fsBtn" title="全螢幕呈現">
+          <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
+        <button class="ghost" id="exportBtn" title="匯出影片(MP4)">
+          <svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5L12 14l4.5-4.5M5 20h14"/></svg>
+        </button>
+        <div class="spd"><span>速度</span><input type="range" id="speed2" min="0.4" max="2.4" step="0.1" value="1"></div>
+        <div class="meta" id="meta">— 步驟</div>
+      </div>
+      <div class="rec-overlay" id="recOverlay">
+        <div class="rec-card">
+          <h4><span class="dot"></span>正在錄製影片…</h4>
+          <div class="rec-bar"><i id="recBar"></i></div>
+          <p id="recHint">請稍候,正在逐格渲染流程動畫</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- 設定 Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Groq API 設定</h3>
+    <p class="sub">自動生成流程需要 Groq 金鑰。多組金鑰請<b>換行分隔</b>,系統會自動輪替與容錯。免費申請：<a class="link" href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a></p>
+    <div class="mbody">
+      <label class="lbl">API 金鑰(可多組,換行分隔)</label>
+      <textarea class="field" id="keysInput" placeholder="gsk_xxxxxxxx&#10;gsk_yyyyyyyy" style="min-height:90px"></textarea>
+      <label class="lbl">文字模型(備援鏈,換行分隔)</label>
+      <textarea class="field" id="modelsInput" placeholder="openai/gpt-oss-120b&#10;openai/gpt-oss-20b" style="min-height:60px"></textarea>
+      <label class="lbl">視覺模型(圖像解析,換行分隔)</label>
+      <textarea class="field" id="vmodelsInput" placeholder="meta-llama/llama-4-scout-17b-16e-instruct" style="min-height:60px"></textarea>
+    </div>
+    <div class="mfoot">
+      <button class="cancel" id="modalCancel">取消</button>
+      <button class="save" id="modalSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ===================== 狀態 ===================== */
+const LS = {
+  keys:'flow_groq_keys', models:'flow_groq_models', vmodels:'flow_groq_vmodels',
+  theme:'flow_theme', steps:'flow_steps', fit:'flow_fit', graph:'flow_graph', title:'flow_title'
+};
+// 文字模型(2026/6 後 llama 系列陸續淘汰,gpt-oss 為官方建議替代,舊款留作備援)
+const DEFAULT_MODELS = ['openai/gpt-oss-120b','openai/gpt-oss-20b','llama-3.3-70b-versatile'];
+// 視覺模型(圖像解析用)
+const DEFAULT_VISION = ['meta-llama/llama-4-scout-17b-16e-instruct','meta-llama/llama-4-maverick-17b-128e-instruct','qwen/qwen3-vl-32b-instruct'];
+const EXAMPLES = ['新產品開發上市','使用者註冊登入','客訴處理流程','內容行銷規劃','數位轉型導入','活動企劃執行'];
+const SEED = [
+  {emoji:'💡',title:'發想洞察',desc:'蒐集需求與市場痛點,定義問題'},
+  {emoji:'📐',title:'規劃設計',desc:'制定方案藍圖與功能規格'},
+  {emoji:'🛠️',title:'開發製作',desc:'依規格實作並整合各模組'},
+  {emoji:'🧪',title:'測試驗證',desc:'品質檢驗與使用者回饋修正'},
+  {emoji:'🚀',title:'正式上線',desc:'部署發布並啟動行銷推廣'},
+  {emoji:'📈',title:'營運優化',desc:'追蹤數據持續迭代改善'},
+];
+
+let state = {
+  mode:'ai',
+  steps: load(LS.steps) || SEED.slice(),
+  graph: load(LS.graph) || null,
+  flowTitle: localStorage.getItem(LS.title) || '',
+  theme: localStorage.getItem(LS.theme) || 'dark',
+  imgData:null,
+  detail: localStorage.getItem('flow_detail') || 'normal',
+};
+let nodeEls=[], nodePts=[], cumLen=[], totalLen=0, pathEl=null;
+let anim={raf:0, t0:0, playing:false, done:false};
+let sparks=[];
+let ctx=null, dpr=1;
+let graphMode=false, gNodes=[], gEdges=[], gById={}, gMaxL=0, gAmbRaf=0;
+let graphFit=(localStorage.getItem(LS.fit)!=='0'); // 預設:符合畫面
+let FX={core:'#fff',a:'255,213,113',b:'94,234,212',light:false};
+
+/* ===================== 工具 ===================== */
+function load(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function saveGraph(){ if(state.graph)save(LS.graph,state.graph); else localStorage.removeItem(LS.graph); }
+function setFlowTitle(t){
+  state.flowTitle=(t==null?'':String(t)).trim().slice(0,40);
+  if(state.flowTitle)localStorage.setItem(LS.title,state.flowTitle); else localStorage.removeItem(LS.title);
+  renderFlowTitle();
+}
+function renderFlowTitle(){
+  const el=document.getElementById('flowTitle');if(!el)return;
+  const show=graphMode&&!!state.flowTitle;
+  el.textContent=state.flowTitle||'';el.hidden=!show;
+}
+function $(s){return document.querySelector(s)}
+function toast(msg,type=''){
+  const w=$('#toastWrap'),t=document.createElement('div');
+  t.className='toast '+type;t.textContent=msg;w.appendChild(t);
+  setTimeout(()=>{t.style.transition='.3s';t.style.opacity='0';t.style.transform='translateY(8px)';
+    setTimeout(()=>t.remove(),300)},2600);
+}
+function getKeys(){return (localStorage.getItem(LS.keys)||'').split('\n').map(s=>s.trim()).filter(Boolean)}
+function getModels(){const m=(localStorage.getItem(LS.models)||'').split('\n').map(s=>s.trim()).filter(Boolean);return m.length?m:DEFAULT_MODELS}
+function getVisionModels(){const m=(localStorage.getItem(LS.vmodels)||'').split('\n').map(s=>s.trim()).filter(Boolean);return m.length?m:DEFAULT_VISION}
+
+/* ===================== 主題 ===================== */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',state.theme);
+  localStorage.setItem(LS.theme,state.theme);
+  refreshFXColors();
+}
+function refreshFXColors(){
+  const cs=getComputedStyle(document.documentElement);
+  const toRGB=(v)=>{ // 解析 hex/rgb
+    v=v.trim();
+    if(v.startsWith('#')){const h=v.slice(1);const n=h.length===3?h.split('').map(c=>c+c).join(''):h;
+      return parseInt(n.slice(0,2),16)+','+parseInt(n.slice(2,4),16)+','+parseInt(n.slice(4,6),16);}
+    const m=v.match(/\d+/g);return m?m.slice(0,3).join(','):'255,255,255';
+  };
+  FX.a=toRGB(cs.getPropertyValue('--energy-a'));
+  FX.b=toRGB(cs.getPropertyValue('--energy-b'));
+  FX.light=state.theme==='light';
+}
+$('#themeToggle').onclick=()=>{state.theme=state.theme==='dark'?'light':'dark';applyTheme();};
+
+/* ===================== 模式切換 ===================== */
+$('#modeSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  state.mode=b.dataset.mode;
+  $('#modeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#aiMode').style.display=state.mode==='ai'?'':'none';
+  $('#imgMode').style.display=state.mode==='img'?'':'none';
+  $('#codeMode').style.display=state.mode==='code'?'':'none';
+  $('#manualMode').style.display=state.mode==='manual'?'':'none';
+  $('#detailRow').style.display=state.mode==='manual'?'none':'';
+  if(state.mode==='manual'){
+    if(state.graph){ // 分支圖攤平為線性供編輯
+      const order=topoOrder(state.graph.nodes,state.graph.edges);
+      state.steps=mapSteps(order.map(id=>state.graph.nodes.find(n=>n.id===id)));
+      state.graph=null;saveGraph();save(LS.steps,state.steps);build();
+      toast('已將分支流程攤平為線性步驟以供編輯','');
+    }
+    renderEditor();
+  }
+});
+
+/* ===================== 流程詳細度 ===================== */
+$('#detailSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  state.detail=b.dataset.detail;localStorage.setItem('flow_detail',state.detail);
+  $('#detailSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+});
+// 依詳細度產生對 AI 的步驟規格說明
+function stepSpec(opt){opt=opt||{};
+  if(state.detail==='detailed'){
+    return '請產生至少10個步驟(10到16個),完整涵蓋每一個環節、不可省略或合併。'+
+      (opt.expand?'若來源環節不足10個,請將每個環節展開為更細的子步驟以達到足夠的詳細程度。':'')+
+      '每個元素格式:{"emoji":"貼合該步驟的單一表情符號","title":"2到10字短標題","desc":"詳細描述此步驟的處理過程——做什麼、如何處理、輸入與產出,約30到60字"}。';
+  }
+  return '請產生4到7個步驟。每個元素格式:{"emoji":"單一表情符號","title":"2到6字短標題","desc":"15字內的一句說明"}。';
+}
+// 套用步驟字數上限(詳細模式說明較長)
+function mapSteps(arr){
+  return arr.slice(0,16).map(x=>({
+    emoji:String(x.emoji||'🔹').slice(0,2),
+    title:String(x.title||'步驟').slice(0,16),
+    desc:String(x.desc||'').slice(0,120),
+    type:x.type
+  }));
+}
+
+/* 範例 chips */
+EXAMPLES.forEach(x=>{
+  const c=document.createElement('button');c.className='chip';c.textContent=x;
+  c.onclick=()=>{$('#aiInput').value=x;};$('#chips').appendChild(c);
+});
+
+/* ===================== 手動編輯器 ===================== */
+function renderEditor(){
+  const box=$('#stepsEdit');box.innerHTML='';
+  state.steps.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='step-row';
+    row.innerHTML=`
+      <div class="idx">${String(i+1).padStart(2,'0')}</div>
+      <div class="fields">
+        <div class="row2">
+          <input class="emoji-in" value="${esc(s.emoji||'')}" maxlength="2" data-f="emoji" placeholder="🔹">
+          <input class="title-in" value="${esc(s.title||'')}" data-f="title" placeholder="步驟標題">
+        </div>
+        <input class="desc-in" value="${esc(s.desc||'')}" data-f="desc" placeholder="一句說明(可留空)">
+      </div>
+      <div class="ctl">
+        <button class="mini up" title="上移">▲</button>
+        <button class="mini down" title="下移">▼</button>
+        <button class="mini del" title="刪除">✕</button>
+      </div>`;
+    row.querySelectorAll('input').forEach(inp=>{
+      inp.oninput=()=>{state.steps[i][inp.dataset.f]=inp.value;save(LS.steps,state.steps);scheduleBuild();};
+    });
+    row.querySelector('.up').onclick=()=>move(i,-1);
+    row.querySelector('.down').onclick=()=>move(i,1);
+    row.querySelector('.del').onclick=()=>{if(state.steps.length<=1){toast('至少保留一個步驟');return}state.steps.splice(i,1);save(LS.steps,state.steps);renderEditor();build();};
+    box.appendChild(row);
+  });
+}
+function esc(s){return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function move(i,d){const j=i+d;if(j<0||j>=state.steps.length)return;
+  [state.steps[i],state.steps[j]]=[state.steps[j],state.steps[i]];save(LS.steps,state.steps);renderEditor();build();}
+$('#addStep').onclick=()=>{state.steps.push({emoji:'🔹',title:'新步驟',desc:''});save(LS.steps,state.steps);renderEditor();build();};
+
+let buildTimer;
+function scheduleBuild(){clearTimeout(buildTimer);buildTimer=setTimeout(build,350)}
+
+/* ===================== Groq 生成 ===================== */
+async function callGroq(messages,models,opt){
+  opt=opt||{};
+  const keys=getKeys();
+  if(!keys.length)throw new Error('NO_KEY');
+  models=models||getModels();
+  const maxTok=opt.max||4096, temp=(opt.temp!=null?opt.temp:0.6);
+  let lastErr,sawRate=false;
+  for(const key of keys){
+    let keyBad=false;
+    for(const model of models){
+      const tries=opt.json?[true,false]:[false];
+      for(const useJson of tries){
+        try{
+          const body={model,messages,temperature:temp,max_tokens:maxTok};
+          if(useJson)body.response_format={type:'json_object'};
+          const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+            body:JSON.stringify(body)
+          });
+          if(r.status===429){sawRate=true;lastErr=new Error('RATE_429');keyBad=true;break;}
+          if(r.status===401||r.status===403){lastErr=new Error('KEY_'+r.status);keyBad=true;break;}
+          if(r.status===400&&useJson){lastErr=new Error('HTTP_400');continue;} // 該模型不支援 JSON 模式 → 退回一般模式重試
+          if(!r.ok){lastErr=new Error('HTTP_'+r.status);break;}            // 換下一個模型
+          const d=await r.json();
+          const c=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+          if(c==null||c==='')throw new Error('EMPTY');
+          return c;
+        }catch(e){lastErr=e;}
+      }
+      if(keyBad)break; // 此金鑰被限流/無效 → 換下一把金鑰
+    }
+  }
+  if(sawRate)throw new Error('RATE_429');
+  throw lastErr||new Error('FAIL');
+}
+function extractJSON(t){
+  let raw=String(t==null?'':t).trim()
+    .replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  const a=raw.indexOf('['),o=raw.indexOf('{');let s,e;
+  if(o>=0&&(a<0||o<a)){s=o;e=raw.lastIndexOf('}');}
+  else{s=a;e=raw.lastIndexOf(']');}
+  const start=s>=0?s:0;
+  const body=(s>=0&&e>=0&&e>s)?raw.slice(s,e+1):raw.slice(start);
+  for(const cand of [body, repairJSON(body), repairJSON(raw.slice(start))]){
+    if(!cand)continue;
+    try{return JSON.parse(cand);}catch(_){/* 試下一個 */}
+  }
+  throw new Error('PARSE');
+}
+/* 修復被截斷或含小瑕疵的 JSON:補齊未閉合的字串與括號、移除尾逗號 */
+function repairJSON(t){
+  let str=String(t||'');if(!str)return '';
+  // 1) 整體掃描:補齊結尾未閉合的引號與括號
+  let inStr=false,esc=false;const stack=[];let lastSafe=-1;
+  for(let i=0;i<str.length;i++){
+    const c=str[i];
+    if(inStr){ if(esc)esc=false; else if(c==='\\')esc=true; else if(c==='"')inStr=false; continue; }
+    if(c==='"'){inStr=true;continue;}
+    if(c==='{'||c==='[')stack.push(c==='{'?'}':']');
+    else if(c==='}'||c===']'){ if(stack.length)stack.pop(); if(stack.length>=1)lastSafe=i; }
+  }
+  let fixed=str;
+  if(inStr)fixed+='"';
+  let close='';for(let k=stack.length-1;k>=0;k--)close+=stack[k];
+  let attempt=fixed.replace(/,\s*$/,'')+close;
+  attempt=attempt.replace(/,(\s*[}\]])/g,'$1'); // 去除尾逗號
+  try{JSON.parse(attempt);return attempt;}catch(_){}
+  // 2) 若仍失敗(通常是被截在某個元素中間)→ 退回最後一個完整元素後再閉合
+  if(lastSafe>0){
+    let head=str.slice(0,lastSafe+1).replace(/,\s*$/,'');
+    let inS=false,es=false;const st=[];
+    for(let i=0;i<head.length;i++){const c=head[i];
+      if(inS){if(es)es=false;else if(c==='\\')es=true;else if(c==='"')inS=false;continue;}
+      if(c==='"'){inS=true;continue;}
+      if(c==='{'||c==='[')st.push(c==='{'?'}':']');
+      else if(c==='}'||c===']'){if(st.length)st.pop();}
+    }
+    if(inS)head+='"';
+    let cl='';for(let k=st.length-1;k>=0;k--)cl+=st[k];
+    head=(head+cl).replace(/,(\s*[}\]])/g,'$1');
+    return head;
+  }
+  return attempt;
+}
+// 圖結構生成規格(供 AI prompt 使用)
+/* ===================== 標準流程圖形狀定義 ===================== */
+const SHAPES={
+  start:      {name:'開始',    sc:'#22c55e', emoji:'🟢'},
+  end:        {name:'結束',    sc:'#ef4444', emoji:'🏁'},
+  process:    {name:'流程',    sc:'#38bdf8', emoji:'🔹'},
+  decision:   {name:'判定',    sc:'#f59e0b', emoji:'❓'},
+  subprocess: {name:'子流程',  sc:'#a855f7', emoji:'📦'},
+  data:       {name:'數據',    sc:'#fb923c', emoji:'📊'},
+  document:   {name:'文件',    sc:'#ec4899', emoji:'📄'},
+  database:   {name:'資料庫',  sc:'#06b6d4', emoji:'🗄️'},
+  manualinput:{name:'手動輸入', sc:'#f472b6', emoji:'⌨️'},
+  manual:     {name:'手動操作', sc:'#eab308', emoji:'✋'},
+  prepare:    {name:'準備',    sc:'#84cc16', emoji:'⚙️'},
+  display:    {name:'顯示',    sc:'#6366f1', emoji:'🖥️'},
+  delay:      {name:'延遲',    sc:'#8b5cf6', emoji:'⏳'}
+};
+const TYPE_ALIAS={terminal:'start',terminator:'start',begin:'start',開始:'start',起點:'start',
+  stop:'end',終點:'end',結束:'end',
+  operation:'process',action:'process',step:'process',task:'process',處理:'process',流程:'process',
+  judge:'decision',condition:'decision',if:'decision',判斷:'decision',判定:'decision',
+  predefined:'subprocess',subroutine:'subprocess',子流程:'subprocess',預定義流程:'subprocess',
+  input:'data',output:'data',io:'data',inputoutput:'data',數據:'data',資料:'data',輸入輸出:'data',
+  doc:'document',report:'document',file:'document',文件:'document',文檔:'document',報表:'document',
+  db:'database',datastore:'database',store:'database',storage:'database',資料庫:'database',數據庫:'database',
+  manualop:'manual',手動操作:'manual',人工:'manual',
+  manual_input:'manualinput',手動輸入:'manualinput',輸入:'manualinput',
+  preparation:'prepare',init:'prepare',setup:'prepare',準備:'prepare',初始化:'prepare',
+  wait:'delay',延遲:'delay',等待:'delay',
+  screen:'display',show:'display',顯示:'display'};
+function normType(t){
+  t=String(t==null?'':t).trim();const lk=t.toLowerCase();
+  if(SHAPES[lk])return lk;
+  if(TYPE_ALIAS[t])return TYPE_ALIAS[t];
+  if(TYPE_ALIAS[lk])return TYPE_ALIAS[lk];
+  return 'process';
+}
+/* 形狀路徑(viewBox 0 0 200 120,preserveAspectRatio=none,non-scaling-stroke) */
+function shapePaths(type){
+  const ve='vector-effect="non-scaling-stroke"';
+  const L=6,R=194,T=6,B=114;            // 可用邊界
+  switch(type){
+    case 'start': case 'end':           // 終端符:膠囊
+      return `<rect class="nbody" ${ve} x="${L}" y="${T}" width="${R-L}" height="${B-T}" rx="${(B-T)/2}" ry="${(B-T)/2}"/>`;
+    case 'decision':                    // 判定:菱形
+      return `<polygon class="nbody" ${ve} points="100,${T} ${R},60 100,${B} ${L},60"/>`;
+    case 'subprocess':                  // 子流程:雙側線矩形
+      return `<rect class="nbody" ${ve} x="${L}" y="${T}" width="${R-L}" height="${B-T}" rx="7" ry="7"/>`+
+             `<line class="ndeco" ${ve} x1="22" y1="${T}" x2="22" y2="${B}"/>`+
+             `<line class="ndeco" ${ve} x1="178" y1="${T}" x2="178" y2="${B}"/>`;
+    case 'data':                        // 數據:平行四邊形
+      return `<polygon class="nbody" ${ve} points="42,${T} ${R},${T} 158,${B} ${L},${B}"/>`;
+    case 'document':                    // 文件:波浪底
+      return `<path class="nbody" ${ve} d="M${L},${T} H${R} V92 C160,116 140,74 100,92 C60,110 40,74 ${L},92 Z"/>`;
+    case 'database':                    // 資料庫:圓柱
+      return `<path class="nbody" ${ve} d="M${L},22 C${L},13 47,${T} 100,${T} C153,${T} ${R},13 ${R},22 L${R},98 C${R},107 153,${B} 100,${B} C47,${B} ${L},107 ${L},98 Z"/>`+
+             `<path class="ndeco" ${ve} d="M${L},22 C${L},31 47,37 100,37 C153,37 ${R},31 ${R},22"/>`;
+    case 'manualinput':                 // 手動輸入:上斜邊
+      return `<polygon class="nbody" ${ve} points="${L},32 ${R},${T} ${R},${B} ${L},${B}"/>`;
+    case 'manual':                      // 手動操作:倒梯形
+      return `<polygon class="nbody" ${ve} points="${L},${T} ${R},${T} 166,${B} 34,${B}"/>`;
+    case 'prepare':                     // 準備:六邊形
+      return `<polygon class="nbody" ${ve} points="42,${T} 158,${T} ${R},60 158,${B} 42,${B} ${L},60"/>`;
+    case 'display':                     // 顯示:左尖右弧
+      return `<path class="nbody" ${ve} d="M46,${T} H158 C${R},${T} ${R},${B} 158,${B} H46 C16,96 16,24 46,${T} Z"/>`;
+    case 'delay':                       // 延遲:D 形
+      return `<path class="nbody" ${ve} d="M${L},${T} H148 C${R},${T} ${R},${B} 148,${B} H${L} Z"/>`;
+    default:                            // 流程:圓角矩形
+      return `<rect class="nbody" ${ve} x="${L}" y="${T}" width="${R-L}" height="${B-T}" rx="11" ry="11"/>`;
+  }
+}
+function shapeSVG(type){return `<svg class="nshape" viewBox="0 0 200 120" preserveAspectRatio="none">${shapePaths(type)}</svg>`;}
+/* 圖例:列出本圖用到的標準形狀與框色 */
+function buildLegend(){
+  const lg=$('#shapeLegend');if(!lg)return;
+  if(!graphMode||!gNodes||!gNodes.length){lg.hidden=true;lg.innerHTML='';return;}
+  const used=[];const seen=new Set();
+  gNodes.forEach(n=>{const t=SHAPES[n.type]?n.type:'process';if(!seen.has(t)){seen.add(t);used.push(t);}});
+  const order=Object.keys(SHAPES);used.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  lg.innerHTML='<span class="lg-title">標準流程圖形狀</span>'+used.map(t=>{
+    const s=SHAPES[t];
+    return `<span class="lg-item" style="--sc:${s.sc}"><svg viewBox="0 0 200 120" preserveAspectRatio="none" `+
+      `style="stroke:${s.sc}">${shapePaths(t)}</svg>${s.name}</span>`;
+  }).join('');
+  lg.hidden=false;
+}
+
+/* ===================== 流程圖 JSON 規格 ===================== */
+const GRAPH_FORMAT='輸出格式為 JSON 物件(非陣列):{"title":"整體流程主題","nodes":[{"id":"1","emoji":"🔹","title":"短標題","desc":"說明","type":"型別"}],"edges":[{"from":"1","to":"2","label":""}]}。其中 title 為「這份流程圖的整體主題名稱」(精簡 4 到 16 字,例:使用者註冊登入流程、訂單退款處理流程)。type 必須是下列「標準流程圖形狀」之一:start(開始)、end(結束)、process(處理/一般步驟)、decision(判斷,菱形)、subprocess(子流程/預定義流程)、data(數據/輸入輸出,平行四邊形)、document(產生文件/報表)、database(讀寫資料庫/資料儲存)、manualinput(使用者手動輸入)、manual(人工手動作業)、prepare(準備/初始化/設定)、display(顯示或通知使用者)、delay(等待/延遲/計時)。';
+const SHAPE_GUIDE='【形狀選用原則】依語意正確挑選 type,不要全部用 process:讀寫或查詢資料庫→database;產生報表/單據/輸出檔案→document;使用者鍵入或填寫資料→manualinput;系統間傳遞的輸入輸出資料→data;呼叫既有子流程或模組→subprocess;設定參數或環境初始化→prepare;畫面顯示、提示或通知使用者→display;等待、計時或排程延遲→delay;需人工親自操作(非系統自動)→manual;一般運算或處理→process;判斷分支→decision;流程起點→start、終點→end。';
+const GRAPH_RULES='規則:① 凡是判斷、分叉、條件式(if/else、switch、是否、成功失敗、不同情況),該處必須是 type:"decision" 節點,並為它的「每一條」分支各建立一條 edge,label 寫該分支的條件文字(例:是、否、通過、失敗、金額≥1000、查無資料);每一個條件分支都必須有對應的後續節點,絕不可省略任何一條分支。② 分支之後可匯流回同一個節點。③ 起點 type:"start"、結束 type:"end"。④ edges 的 from/to 必須對應實際存在的 node id。⑤ 只輸出 JSON 物件,不要任何說明文字、不要 markdown 圍欄。';
+function nodeCountSpec(){return state.detail==='detailed'?'至少10個節點(含判斷與分支,約10到18個),完整涵蓋每個環節與每一條件分支。':'約5到10個節點(含必要的判斷與分支)。';}
+function descSpec(){return state.detail==='detailed'?'每個 desc 詳述該步驟的處理過程(做什麼、如何處理、輸入與產出,約30到60字),title 2到10字。':'每個 desc 為15字內一句說明,title 2到6字。';}
+
+// 解析結果 → 套用為單線或分支圖
+function applyResult(parsed){
+  if(Array.isArray(parsed)){state.graph=null;saveGraph();setFlowTitle('');state.steps=mapSteps(parsed);save(LS.steps,state.steps);return{mode:'linear',count:state.steps.length};}
+  let nodes=parsed.nodes||parsed.steps||[],edges=parsed.edges||[];
+  if(!Array.isArray(nodes)||!nodes.length)throw new Error('PARSE');
+  setFlowTitle(parsed.title||parsed.topic||parsed.name||'');
+  const N=nodes.slice(0,20).map((n,i)=>({
+    id:String(n.id!=null?n.id:(i+1)),emoji:String(n.emoji||'🔹').slice(0,2),
+    title:String(n.title||'步驟').slice(0,16),desc:String(n.desc||'').slice(0,120),
+    type:normType(n.type)}));
+  const ids=new Set(N.map(n=>n.id));const seen=new Set();
+  let E=(Array.isArray(edges)?edges:[]).map(e=>({from:String(e.from),to:String(e.to),label:String(e.label||'').slice(0,18)}))
+    .filter(e=>ids.has(e.from)&&ids.has(e.to)&&e.from!==e.to)
+    .filter(e=>{const k=e.from+'>'+e.to;if(seen.has(k))return false;seen.add(k);return true;});
+  if(!E.length){for(let i=0;i<N.length-1;i++)E.push({from:N[i].id,to:N[i+1].id,label:''});}
+  // 解析出的結構一律以「標準流程圖節點」呈現(含直線流程亦攤為單列流程圖),不再退回純方塊清單
+  if(N.length>=2){
+    state.graph={nodes:N,edges:E};saveGraph();
+    state.steps=N.map(n=>({emoji:n.emoji,title:n.title,desc:n.desc,type:n.type}));
+    save(LS.steps,state.steps);return{mode:'graph',count:N.length};
+  }
+  // 僅單一節點才退回線性卡片
+  state.graph=null;saveGraph();
+  state.steps=mapSteps(N);save(LS.steps,state.steps);
+  return{mode:'linear',count:state.steps.length};
+}
+function topoOrder(N,E){const indeg={},out={};N.forEach(n=>{indeg[n.id]=0;out[n.id]=[];});
+  E.forEach(e=>{out[e.from].push(e.to);indeg[e.to]++;});
+  let q=N.filter(n=>indeg[n.id]===0).map(n=>n.id);if(!q.length)q=[N[0].id];
+  const seen=new Set(),order=[],ind={...indeg};
+  while(q.length){const u=q.shift();if(seen.has(u))continue;seen.add(u);order.push(u);
+    (out[u]||[]).forEach(v=>{ind[v]--;if(ind[v]<=0)q.push(v);});}
+  N.forEach(n=>{if(!seen.has(n.id))order.push(n.id);});return order;}
+$('#genBtn').onclick=async()=>{
+  const topic=$('#aiInput').value.trim();
+  if(!topic){toast('請先輸入主題或描述');return;}
+  if(!getKeys().length){openModal();toast('請先設定 Groq API 金鑰','err');return;}
+  const btn=$('#genBtn');btn.disabled=true;
+  btn.innerHTML='<svg class="spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> 生成中…';
+  try{
+    const sys='你是流程設計專家,擅長把流程畫成含判斷分支的流程圖。'+GRAPH_FORMAT+'節點數量:'+nodeCountSpec()+descSpec()+GRAPH_RULES+SHAPE_GUIDE+'用繁體中文,節點依邏輯順序。';
+    const out=await callGroq([{role:'system',content:sys},{role:'user',content:'主題:'+topic}],null,{json:true,max:4096,temp:0.4});
+    const r=applyResult(extractJSON(out));
+    if(!state.flowTitle)setFlowTitle(topic.slice(0,24));
+    build();setTimeout(()=>state.graph?playGraph():play(),200);
+    toast(r.mode==='graph'?('已生成分支流程('+r.count+' 節點)'):('已生成 '+r.count+' 個步驟'),'ok');
+  }catch(e){
+    const msg=e.message==='NO_KEY'?'尚未設定金鑰':
+      e.message==='RATE_429'?'請求過於頻繁或本分鐘 token 額度已用盡,請稍候約一分鐘再試(或在設定加入多組金鑰輪替)':
+      /KEY_/.test(e.message)?'金鑰無效或已停用,請至設定檢查':
+      e.message==='PARSE'?'解析失敗,請再試一次或換個描述':'生成失敗:'+e.message;
+    toast(msg,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3z"/></svg> 生成流程';
+  }
+};
+
+/* ===================== 圖像上傳與解析 ===================== */
+const dz=$('#dropzone'),imgFile=$('#imgFile');
+dz.onclick=e=>{if(e.target.closest('.dz-clear'))return;imgFile.click();};
+imgFile.onchange=e=>{const f=e.target.files[0];if(f)loadImage(f);};
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImage(f);});
+$('#dzClear').onclick=e=>{e.stopPropagation();clearImage();};
+function clearImage(){state.imgData=null;imgFile.value='';$('#dzEmpty').style.display='';$('#dzPrev').style.display='none';$('#prevImg').src='';}
+
+// 載入並縮圖(避免 base64 過大),輸出 JPEG dataURL
+function loadImage(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1280;let{width:w,height:h}=img;
+      if(w>max||h>max){const s=max/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      state.imgData=c.toDataURL('image/jpeg',0.85);
+      $('#prevImg').src=state.imgData;$('#dzEmpty').style.display='none';$('#dzPrev').style.display='';
+    };
+    img.onerror=()=>toast('圖片讀取失敗','err');
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);
+}
+
+$('#visBtn').onclick=async()=>{
+  if(!state.imgData){toast('請先上傳一張圖片');return;}
+  if(!getKeys().length){openModal();toast('請先設定 Groq API 金鑰','err');return;}
+  const hint=$('#imgHint').value.trim();
+  const btn=$('#visBtn');btn.disabled=true;
+  btn.innerHTML='<svg class="spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> 解析中…';
+  try{
+    const instr='你是流程圖解析專家。仔細分析這張圖片(流程圖、心智圖、白板、簡報截圖或步驟說明),完整還原其流程結構。特別注意:圖中的菱形/判斷框、箭頭分叉、條件標註(是/否/Yes/No 或其他條件文字)都必須忠實還原成 decision 節點與帶 label 的分支,任何一條分支都不可遺漏。'+
+      (hint?('補充說明:'+hint+'。'):'')+
+      GRAPH_FORMAT+'節點數量:'+nodeCountSpec()+descSpec()+GRAPH_RULES+SHAPE_GUIDE+'用繁體中文,節點與分支順序需與原圖一致。';
+    const messages=[{role:'user',content:[
+      {type:'text',text:instr},
+      {type:'image_url',image_url:{url:state.imgData}}
+    ]}];
+    const out=await callGroq(messages,getVisionModels(),{json:true,max:4096,temp:0.4});
+    const r=applyResult(extractJSON(out));
+    if(!state.flowTitle)setFlowTitle((hint||'').slice(0,24)||'流程圖');
+    build();setTimeout(()=>state.graph?playGraph():play(),200);
+    toast(r.mode==='graph'?('已解析分支流程('+r.count+' 節點)'):('已從圖片解析出 '+r.count+' 個步驟'),'ok');
+  }catch(e){
+    const msg=e.message==='NO_KEY'?'尚未設定金鑰':
+      e.message==='RATE_429'?'請求過於頻繁或本分鐘 token 額度已用盡,請稍候約一分鐘再試(或在設定加入多組金鑰輪替)':
+      /KEY_/.test(e.message)?'金鑰無效或已停用,請至設定檢查':
+      /HTTP_/.test(e.message)?'視覺模型呼叫失敗,請到設定確認視覺模型名稱(Groq 模型常更新)':
+      e.message==='PARSE'?'解析失敗,圖片可能不夠清楚或非流程內容':'解析失敗:'+e.message;
+    toast(msg,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> 解析圖像生成流程';
+  }
+};
+
+/* ===================== 程式解析 ===================== */
+const codeDrop=$('#codeDrop'),codeFile=$('#codeFile');
+codeDrop.onclick=()=>codeFile.click();
+codeFile.onchange=e=>{const f=e.target.files[0];if(f)readCodeFile(f);};
+['dragenter','dragover'].forEach(ev=>codeDrop.addEventListener(ev,e=>{e.preventDefault();codeDrop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>codeDrop.addEventListener(ev,e=>{e.preventDefault();codeDrop.classList.remove('drag');}));
+codeDrop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readCodeFile(f);});
+$('#codeClear').onclick=e=>{e.stopPropagation();$('#codeText').value='';$('#cfChip').style.display='none';$('#cfName').textContent='';codeFile.value='';};
+function readCodeFile(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    $('#codeText').value=r.result;
+    $('#cfName').textContent=file.name+'  ('+fmtSize(file.size)+')';
+    $('#cfChip').style.display='';
+  };
+  r.onerror=()=>toast('檔案讀取失敗','err');
+  r.readAsText(file);
+}
+function fmtSize(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';}
+
+$('#codeBtn').onclick=async()=>{
+  const code=$('#codeText').value.trim();
+  if(!code){toast('請上傳程式檔或貼上程式碼');return;}
+  if(!getKeys().length){openModal();toast('請先設定 Groq API 金鑰','err');return;}
+  const MAXC=16000;let src=code,truncated=false;
+  if(src.length>MAXC){src=src.slice(0,MAXC);truncated=true;}
+  const btn=$('#codeBtn');btn.disabled=true;
+  btn.innerHTML='<svg class="spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg> 解析中…';
+  try{
+    const sys='你是資深程式流程分析師,把程式碼還原成含判斷分支的控制流程圖。從進入點開始,依函式呼叫與控制流排列;所有 if/else、switch/case、迴圈條件、early return、try/catch 例外處理都必須表現為 type:"decision" 節點,並為每一條分支(條件成立/不成立、各 case、例外/正常)各建立一條帶 label 的 edge,不可省略。聚焦「程式做什麼、依什麼順序與條件」,而非逐行翻譯。'+GRAPH_FORMAT+'節點數量:'+nodeCountSpec()+descSpec()+GRAPH_RULES+SHAPE_GUIDE+'用繁體中文。';
+    const usr='請分析以下程式碼的執行流程:\n```\n'+src+'\n```'+(truncated?'\n(註:程式碼較長已截斷,請就可見部分分析主流程)':'');
+    const out=await callGroq([{role:'system',content:sys},{role:'user',content:usr}],null,{json:true,max:4096,temp:0.35});
+    const r=applyResult(extractJSON(out));
+    const _ct=($('#codeTitle').value||'').trim();
+    if(_ct)setFlowTitle(_ct); else if(!state.flowTitle)setFlowTitle('程式流程');
+    build();setTimeout(()=>state.graph?playGraph():play(),200);
+    toast((r.mode==='graph'?('已解析分支流程('+r.count+' 節點)'):('已從程式解析出 '+r.count+' 個步驟'))+(truncated?'(程式碼過長已截斷)':''),'ok');
+  }catch(e){
+    const msg=e.message==='NO_KEY'?'尚未設定金鑰':
+      e.message==='RATE_429'?'請求過於頻繁或本分鐘 token 額度已用盡,請稍候約一分鐘再試(或在設定加入多組金鑰輪替)':
+      /KEY_/.test(e.message)?'金鑰無效或已停用,請至設定檢查':
+      e.message==='PARSE'?'解析失敗,請確認貼上的是程式碼':'解析失敗:'+e.message;
+    toast(msg,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13 5l-2 14"/></svg> 解析程式生成流程';
+  }
+};
+
+/* ===================== 建構流程圖 ===================== */
+const grid=$('#grid'),stage=$('#stage');
+function columns(){
+  const sel=parseInt($('#colSel').value);
+  const n=state.steps.length;
+  if(sel>0)return Math.min(sel,n);
+  const w=grid.clientWidth||stage.clientWidth||900;
+  const target=state.detail==='detailed'?258:210; // 詳細流程卡片較寬
+  let c=Math.max(1,Math.floor(w/target));
+  c=Math.min(c,state.detail==='detailed'?5:6,n);
+  return Math.max(1,c);
+}
+function build(){
+  stopAnim();
+  graphMode=!!state.graph;
+  if(!state.steps.length && !graphMode){
+    $('#meta').textContent='0 步驟';grid.className='flow-grid';grid.style.gridTemplateColumns='1fr';grid.style.height='';grid.style.width='';
+    grid.innerHTML='<div class="empty"><div class="ico">🌀</div><p>還沒有流程。輸入主題自動生成,或切換到自訂步驟手動編輯。</p></div>';buildLegend();renderFlowTitle();return;
+  }
+  if(graphMode)buildGraph();else buildLinear();
+  buildLegend();renderFlowTitle();
+}
+
+function buildLinear(){
+  graphMode=false;grid.className='flow-grid';grid.style.height='';grid.style.width='';stage.style.justifyContent='';
+  grid.style.transform='';grid.style.position='';grid.style.left='';grid.style.top='';stage.style.overflow='';stage.style.position='';
+  const steps=state.steps;
+  $('#meta').textContent=steps.length+' 步驟';
+  grid.innerHTML='';
+  const N=columns();
+  grid.style.gridTemplateColumns=`repeat(${N},1fr)`;
+
+  // SVG 連線層
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','connectors');svg.innerHTML=`
+    <defs>
+      <linearGradient id="eg" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" class="gs-a"/><stop offset="1" class="gs-b"/>
+      </linearGradient>
+      <filter id="blur"><feGaussianBlur stdDeviation="3.2"/></filter>
+    </defs>
+    <path class="track" fill="none"/>
+    <path class="beam-glow" fill="none"/>
+    <path class="beam" fill="none"/>
+    <path class="ambient" fill="none"/>`;
+  grid.appendChild(svg);
+
+  // Canvas 粒子層
+  const cv=document.createElement('canvas');cv.className='fx';grid.appendChild(cv);
+  ctx=cv.getContext('2d');
+
+  // 節點(蛇形排列填滿)
+  nodeEls=[];
+  steps.forEach((s,i)=>{
+    const row=Math.floor(i/N), inRow=i%N;
+    const col=(row%2===0)?inRow:(N-1-inRow);
+    const el=document.createElement('div');el.className='node';
+    el.style.gridColumn=(col+1);el.style.gridRow=(row+1);
+    el.innerHTML=`<span class="badge">${String(i+1).padStart(2,'0')}</span>
+      <span class="emoji">${s.emoji||'🔹'}</span>
+      <span class="ttl">${esc(s.title||'步驟')}</span>
+      ${s.desc?`<span class="desc">${esc(s.desc)}</span>`:''}`;
+    grid.appendChild(el);nodeEls.push(el);
+  });
+
+  requestAnimationFrame(()=>{geometry(svg,cv);});
+}
+
+function geometry(svg,cv){
+  const W=grid.clientWidth,H=grid.clientHeight;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  nodePts=nodeEls.map(el=>({x:el.offsetLeft+el.offsetWidth/2,y:el.offsetTop+el.offsetHeight/2}));
+  let d='';nodePts.forEach((p,i)=>{d+=(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' ';});
+
+  const track=svg.querySelector('.track'),beam=svg.querySelector('.beam'),
+        glow=svg.querySelector('.beam-glow'),amb=svg.querySelector('.ambient');
+  [track,beam,glow,amb].forEach(p=>p.setAttribute('d',d));
+  track.setAttribute('stroke','var(--track)');track.setAttribute('stroke-width','3');track.setAttribute('stroke-linecap','round');track.setAttribute('stroke-linejoin','round');track.setAttribute('stroke-dasharray','1 9');
+  beam.setAttribute('stroke','url(#eg)');beam.setAttribute('stroke-width','3.4');beam.setAttribute('stroke-linecap','round');beam.setAttribute('stroke-linejoin','round');
+  glow.setAttribute('stroke','url(#eg)');glow.setAttribute('stroke-width','9');glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');glow.setAttribute('filter','url(#blur)');glow.setAttribute('opacity','.55');
+  amb.setAttribute('stroke','url(#eg)');amb.setAttribute('stroke-width','3.4');amb.setAttribute('stroke-linecap','round');amb.setAttribute('stroke-linejoin','round');amb.style.opacity='0';
+
+  pathEl=track;
+  totalLen=track.getTotalLength();
+  cumLen=[0];for(let i=1;i<nodePts.length;i++){const a=nodePts[i-1],b=nodePts[i];cumLen[i]=cumLen[i-1]+Math.hypot(b.x-a.x,b.y-a.y);}
+
+  // 初始化光束為未繪製
+  beam.style.strokeDasharray=totalLen;beam.style.strokeDashoffset=totalLen;
+  glow.style.strokeDasharray=totalLen;glow.style.strokeDashoffset=totalLen;
+  nodeEls.forEach(el=>el.classList.remove('lit','flash'));
+  anim.done=false;
+  amb.classList.remove('on');
+}
+
+/* ===================== 分支圖 ===================== */
+function buildGraph(){
+  graphMode=true;grid.className='flow-grid graph-mode';grid.style.width='';
+  gNodes=state.graph.nodes.map(n=>Object.assign({},n));
+  gEdges=state.graph.edges.map(e=>Object.assign({},e));
+  gById={};gNodes.forEach(n=>gById[n.id]=n);
+  $('#meta').textContent=gNodes.length+' 節點 · '+gEdges.length+' 連線';
+  grid.innerHTML='';
+  // SVG
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','connectors');
+  svg.innerHTML=`<defs>
+    <linearGradient id="eg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="gs-a"/><stop offset="1" class="gs-b"/></linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
+    <g class="edges"></g><g class="labels"></g>`;
+  grid.appendChild(svg);
+  const cv=document.createElement('canvas');cv.className='fx';grid.appendChild(cv);ctx=cv.getContext('2d');
+  // 節點卡片(絕對定位)
+  // 節點卡片(絕對定位,標準流程圖形狀)
+  gNodes.forEach((n,i)=>{
+    const sh=SHAPES[n.type]||SHAPES.process;
+    const el=document.createElement('div');
+    el.className='node gnode shaped';
+    el.dataset.shape=n.type;
+    el.style.setProperty('--sc',sh.sc);
+    if(n.desc)el.title=n.desc;
+    el.innerHTML=`${shapeSVG(n.type)}
+      <span class="badge">${String(i+1).padStart(2,'0')}</span>
+      <span class="stype">${sh.name}</span>
+      <span class="dcontent"><span class="emoji">${n.emoji||sh.emoji}</span>
+      <span class="ttl">${esc(n.title||sh.name)}</span></span>`;
+    grid.appendChild(el);n.el=el;
+  });
+  requestAnimationFrame(()=>geometryGraph(svg,cv));
+}
+
+function geometryGraph(svg,cv){
+  const W=Math.max(320,(stage.clientWidth||grid.clientWidth||960)-80);
+  // 1) 分層(最長路徑)
+  const indeg={},out={},inc={};
+  gNodes.forEach(n=>{indeg[n.id]=0;out[n.id]=[];inc[n.id]=[];});
+  gEdges.forEach(e=>{out[e.from].push(e.to);inc[e.to].push(e.from);indeg[e.to]++;});
+  const depth={};gNodes.forEach(n=>depth[n.id]=0);
+  let q=gNodes.filter(n=>indeg[n.id]===0).map(n=>n.id);if(!q.length)q=[gNodes[0].id];
+  const seen=new Set(),ind={};gNodes.forEach(n=>ind[n.id]=indeg[n.id]);
+  while(q.length){const u=q.shift();if(seen.has(u))continue;seen.add(u);
+    out[u].forEach(v=>{depth[v]=Math.max(depth[v],depth[u]+1);ind[v]--;if(ind[v]<=0)q.push(v);});}
+  gNodes.forEach(n=>{if(!seen.has(n.id)){const ps=inc[n.id].map(p=>depth[p]+1);depth[n.id]=ps.length?Math.max.apply(null,ps):0;}});
+  gMaxL=Math.max(0,...gNodes.map(n=>depth[n.id]));
+  const layers=[];for(let l=0;l<=gMaxL;l++)layers[l]=[];
+  gNodes.forEach(n=>{n.depth=depth[n.id];layers[n.depth].push(n);});
+  layers.forEach(layer=>layer.forEach((n,i)=>n.ord=i));
+  for(let l=1;l<=gMaxL;l++){
+    layers[l].forEach(n=>{const ps=inc[n.id];n._b=ps.length?ps.reduce((s,p)=>s+(gById[p].ord||0),0)/ps.length:n.ord;});
+    layers[l].sort((a,b)=>a._b-b._b);layers[l].forEach((n,i)=>n.ord=i);
+  }
+  // 2) 欄寬與 x(左右填滿)
+  const colGapMin=70;
+  let cardW=gMaxL>0?Math.floor((W-gMaxL*colGapMin)/(gMaxL+1)):Math.min(280,W);
+  cardW=Math.max(166,Math.min(244,cardW));
+  const colGap=gMaxL>0?Math.max(colGapMin,(W-(gMaxL+1)*cardW)/gMaxL):0;
+  const X=l=>Math.round(l*(cardW+colGap));
+  // 3) 量測高度 → 直向堆疊置中
+  const baseH=Math.round(Math.max(96,Math.min(134,cardW*0.6)));
+  const tallH=Math.round(Math.max(120,Math.min(178,cardW*0.74)));
+  const endH=Math.round(Math.max(80,Math.min(104,cardW*0.46)));
+  gNodes.forEach(n=>{n.el.style.position='absolute';n.el.style.width=cardW+'px';n.el.style.left=X(n.depth)+'px';n.el.style.top='0px';
+    const t=n.type;
+    if(t==='decision'||t==='prepare'||t==='display'||t==='database')n.el.style.height=tallH+'px';
+    else if(t==='start'||t==='end')n.el.style.height=endH+'px';
+    else n.el.style.height=baseH+'px';});
+  const gapY=26;
+  const colH=layers.map(layer=>layer.reduce((s,n)=>s+n.el.offsetHeight,0)+Math.max(0,layer.length-1)*gapY);
+  const H=Math.max(140,...colH);
+  layers.forEach((layer,l)=>{let y=(H-colH[l])/2;layer.forEach(n=>{
+    n.w=cardW;n.h=n.el.offsetHeight;n.x=X(l);n.y=y;n.cx=n.x+n.w/2;n.cy=y+n.h/2;
+    n.el.style.top=y+'px';y+=n.h+gapY;});});
+  grid.style.height=H+'px';
+  // 4) Canvas 尺寸(用實際內容總寬度,避免超出可視範圍的連線被裁切)
+  let fullW=W;gNodes.forEach(n=>{if(n.x+n.w>fullW)fullW=n.x+n.w;});
+  fullW=Math.ceil(fullW)+1;
+  grid.style.width=fullW+'px';
+  stage.style.justifyContent=(fullW>W+4)?'flex-start':'center';
+  // 漸層改用 userSpaceOnUse 並橫跨整個流程,避免水平直線 bbox 高度為 0 導致漸層失效
+  const grad=svg.querySelector('#eg');
+  if(grad){grad.setAttribute('gradientUnits','userSpaceOnUse');
+    grad.setAttribute('x1','0');grad.setAttribute('y1','0');grad.setAttribute('x2',fullW);grad.setAttribute('y2','0');}
+  svg.setAttribute('viewBox',`0 0 ${fullW} ${H}`);
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=fullW*dpr;cv.height=H*dpr;cv.style.width=fullW+'px';cv.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
+  // 5) 邊與標籤
+  const eg=svg.querySelector('.edges'),lg=svg.querySelector('.labels');eg.innerHTML='';lg.innerHTML='';
+  gEdges.forEach(e=>{
+    const u=gById[e.from],v=gById[e.to];if(!u||!v)return;
+    let sx=u.x+u.w,sy=u.cy,exit='right';
+    const tx=v.x,ty=v.cy;
+    if(u.type==='decision'){
+      if(ty<u.cy-8){sx=u.cx;sy=u.y;exit='top';}
+      else if(ty>u.cy+8){sx=u.cx;sy=u.y+u.h;exit='bottom';}
+      else{sx=u.x+u.w;sy=u.cy;exit='right';}
+    }
+    let d;
+    if(exit==='top'){const dx=Math.max(40,(tx-sx)*0.5);d=`M${sx} ${sy} C${sx} ${sy-36}, ${tx-dx} ${ty}, ${tx} ${ty}`;}
+    else if(exit==='bottom'){const dx=Math.max(40,(tx-sx)*0.5);d=`M${sx} ${sy} C${sx} ${sy+36}, ${tx-dx} ${ty}, ${tx} ${ty}`;}
+    else if(tx>sx+8){const dx=Math.max(34,(tx-sx)*0.45);d=`M${sx} ${sy} C${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}`;}
+    else{const midy=(sy+ty)/2+Math.max(60,Math.abs(ty-sy)*0.5);d=`M${sx} ${sy} C${sx+70} ${midy}, ${tx-70} ${midy}, ${tx} ${ty}`;}
+    const track=mkPath(d,'gtrack');const beam=mkPath(d,'gbeam');eg.appendChild(track);eg.appendChild(beam);
+    e.path=beam;e.len=beam.getTotalLength();
+    beam.style.strokeDasharray=e.len;beam.style.strokeDashoffset=e.len;
+    if(e.label){const mp=beam.getPointAtLength(e.len*0.5);
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','elabel');
+      const tw=Math.min(120,e.label.length*13+16),th=20;
+      g.innerHTML=`<rect x="${(mp.x-tw/2).toFixed(1)}" y="${(mp.y-th/2).toFixed(1)}" width="${tw}" height="${th}" rx="9"/>
+        <text x="${mp.x.toFixed(1)}" y="${(mp.y+0.5).toFixed(1)}">${esc(e.label)}</text>`;
+      lg.appendChild(g);e.labelEl=g;}
+  });
+  gNodes.forEach(n=>n.el.classList.remove('lit','flash'));
+  anim.done=false;
+  applyGraphFit(fullW,H);
+}
+/* 將整個流程圖縮放置中,剛好符合右側舞台大小 */
+function applyGraphFit(fullW,H){
+  // 先還原
+  grid.style.transform='';grid.style.transformOrigin='';grid.style.position='';
+  grid.style.left='';grid.style.top='';
+  if(!graphFit){
+    stage.style.overflow='';stage.style.position='';
+    stage.style.justifyContent=(fullW>(stage.clientWidth-80)+4)?'flex-start':'center';
+    return;
+  }
+  const padX=30,padY=26;
+  const availW=Math.max(120,stage.clientWidth-padX*2);
+  const availH=Math.max(120,stage.clientHeight-padY*2);
+  let s=Math.min(availW/fullW,availH/H);
+  s=Math.min(s,1.85);            // 小流程最多放大,避免過小
+  s=Math.max(s,0.06);
+  const vw=fullW*s,vh=H*s;
+  const tx=Math.round((stage.clientWidth-vw)/2);
+  const ty=Math.round((stage.clientHeight-vh)/2);
+  stage.style.position='relative';
+  stage.style.overflow='hidden';
+  stage.style.justifyContent='center';
+  grid.style.position='absolute';grid.style.left='0';grid.style.top='0';
+  grid.style.transformOrigin='0 0';
+  grid.style.transform=`translate(${tx}px,${ty}px) scale(${s.toFixed(4)})`;
+}
+function mkPath(d,cls){const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('class',cls);p.setAttribute('d',d);p.setAttribute('fill','none');return p;}
+
+function playGraph(){
+  if(!gNodes.length)return;stopAnim();
+  gNodes.forEach(n=>{n.el.classList.remove('lit','flash');});
+  gEdges.forEach(e=>{if(e.path){e.path.style.strokeDashoffset=e.len;}if(e.labelEl)e.labelEl.classList.remove('on');});
+  sparks=[];refreshFXColors();
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const speed=parseFloat($('#speed').value)||1;
+  const dur=reduce?300:Math.max(1300,(900+gNodes.length*430)/speed);
+  anim.playing=true;anim.done=false;anim.t0=performance.now();
+  function frame(now){
+    const p=Math.min(1,(now-anim.t0)/dur);
+    const eased=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    const front=eased*(gMaxL+1);
+    gNodes.forEach(n=>{if(!n.el.classList.contains('lit')&&front>=n.depth){
+      n.el.classList.add('lit','flash');if(!reduce)burst(n.cx,n.cy,20);
+      gEdges.forEach(e=>{if(e.from===n.id&&e.labelEl)e.labelEl.classList.add('on');});}});
+    if(!reduce)clearFX();
+    gEdges.forEach(e=>{const u=gById[e.from],v=gById[e.to];if(!u||!v||!e.path)return;
+      const span=Math.max(.4,v.depth-u.depth);
+      const frac=Math.max(0,Math.min(1,(front-u.depth)/span));
+      e.path.style.strokeDashoffset=e.len*(1-frac);
+      if(!reduce&&frac>0&&frac<1){const pt=e.path.getPointAtLength(e.len*frac);drawCometRaw(pt.x,pt.y,true);}});
+    if(!reduce)updateSparks();
+    if(p<1)anim.raf=requestAnimationFrame(frame);else finishGraph();
+  }
+  if(reduce){gNodes.forEach(n=>n.el.classList.add('lit'));gEdges.forEach(e=>{if(e.path)e.path.style.strokeDashoffset=0;if(e.labelEl)e.labelEl.classList.add('on');});finishGraph();}
+  else anim.raf=requestAnimationFrame(frame);
+}
+function finishGraph(){
+  anim.playing=false;anim.done=true;
+  gEdges.forEach(e=>{if(e.path)e.path.style.strokeDashoffset=0;if(e.labelEl)e.labelEl.classList.add('on');});
+  if(!matchMedia('(prefers-reduced-motion:reduce)').matches)graphAmbient();
+  if($('#loopOn').checked)setTimeout(()=>{if($('#loopOn').checked&&graphMode)playGraph();},1500);
+}
+function graphAmbient(){
+  cancelAnimationFrame(gAmbRaf);const start=performance.now();
+  function loop(now){
+    if(anim.playing)return;
+    if(ctx)clearFX();
+    if($('#particlesOn').checked&&gEdges.length){
+      const sp=parseFloat($('#speed').value)||1;
+      gEdges.forEach((e,i)=>{if(!e.path)return;
+        const t=((now-start)*0.00012*sp+i*0.13)%1;
+        const pt=e.path.getPointAtLength(e.len*t);drawCometRaw(pt.x,pt.y,false,.6);});
+    }
+    if(ctx)updateSparks(true);
+    gAmbRaf=requestAnimationFrame(loop);
+  }
+  gAmbRaf=requestAnimationFrame(loop);
+}
+
+/* ===================== 動畫播放 ===================== */
+function play(){
+  if(!nodePts.length)return;
+  stopAnim();
+  const svg=grid.querySelector('.connectors');if(!svg)return;
+  const beam=svg.querySelector('.beam'),glow=svg.querySelector('.beam-glow'),amb=svg.querySelector('.ambient');
+  amb.style.opacity='0';
+  nodeEls.forEach(el=>el.classList.remove('lit','flash'));
+  sparks=[];
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const speed=parseFloat($('#speed').value)||1;
+  const dur=reduce?300:Math.max(1100,(700+state.steps.length*520)/speed);
+  anim.playing=true;anim.done=false;anim.t0=performance.now();
+  refreshFXColors();
+
+  function frame(now){
+    const p=Math.min(1,(now-anim.t0)/dur);
+    const eased=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2; // easeInOutQuad
+    const len=eased*totalLen;
+    beam.style.strokeDashoffset=totalLen-len;
+    glow.style.strokeDashoffset=totalLen-len;
+
+    // 點燃節點
+    for(let i=0;i<nodeEls.length;i++){
+      if(!nodeEls[i].classList.contains('lit') && len>=cumLen[i]-1){
+        nodeEls[i].classList.add('lit','flash');
+        if(!reduce)burst(nodePts[i].x,nodePts[i].y,22);
+      }
+    }
+    // 彗星與粒子
+    if(!reduce){
+      const pt=pathEl.getPointAtLength(Math.min(len,totalLen));
+      drawComet(pt.x,pt.y,p<1);
+      updateSparks();
+    }
+    if(p<1){anim.raf=requestAnimationFrame(frame);}
+    else{finishPlay();}
+  }
+  if(reduce){nodeEls.forEach(el=>el.classList.add('lit'));beam.style.strokeDashoffset=0;glow.style.strokeDashoffset=0;finishPlay();}
+  else anim.raf=requestAnimationFrame(frame);
+}
+function finishPlay(){
+  anim.playing=false;anim.done=true;
+  const svg=grid.querySelector('.connectors');if(!svg)return;
+  const amb=svg.querySelector('.ambient');amb.style.opacity='';amb.classList.add('on');
+  // 持續流動的氛圍光點
+  if(!matchMedia('(prefers-reduced-motion:reduce)').matches) ambientLoop();
+  if($('#loopOn').checked){setTimeout(()=>{ if($('#loopOn').checked) play(); },1400);}
+}
+
+/* 氛圍循環:沿路徑流動的小光點 + 殘留粒子淡出 */
+let ambRaf=0,ambStart=0;
+function ambientLoop(){
+  cancelAnimationFrame(ambRaf);
+  const svg=grid.querySelector('.connectors');if(!svg)return;
+  const amb=svg.querySelector('.ambient');
+  const dash=18,gap=46;amb.style.strokeDasharray=`${dash} ${gap}`;
+  ambStart=performance.now();
+  function loop(now){
+    if(anim.playing){return;} // 重新播放時停止
+    const off=((now-ambStart)*0.045)%(dash+gap);
+    amb.style.strokeDashoffset=-off;
+    // 流動光珠
+    if($('#particlesOn').checked && nodePts.length){
+      const cyc=(now-ambStart)*0.00009*(parseFloat($('#speed').value)||1);
+      const t=(cyc%1)*totalLen;
+      const pt=pathEl.getPointAtLength(Math.min(t,totalLen));
+      ctx&&clearFX();
+      drawComet(pt.x,pt.y,false,.7);
+      updateSparks(true);
+    }else if(ctx){clearFX();updateSparks(true);}
+    ambRaf=requestAnimationFrame(loop);
+  }
+  ambRaf=requestAnimationFrame(loop);
+}
+
+function clearFX(){const cv=grid.querySelector('.fx');if(cv)ctx.clearRect(0,0,cv.width,cv.height);}
+function stopAnim(){cancelAnimationFrame(anim.raf);cancelAnimationFrame(ambRaf);cancelAnimationFrame(gAmbRaf);anim.playing=false;if(ctx)clearFX();sparks=[];}
+
+/* ===================== Canvas 特效 ===================== */
+function drawComet(x,y,head=true,scale=1){
+  const cv=grid.querySelector('.fx');if(!cv)return;
+  clearFX();drawCometRaw(x,y,head,scale);
+}
+function drawCometRaw(x,y,head=true,scale=1){
+  if(!ctx)return;
+  const inten=parseFloat($('#intensity').value)||1;
+  ctx.globalCompositeOperation=FX.light?'source-over':'lighter';
+  // 外暈
+  const r=22*scale*inten;
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,`rgba(${FX.a},${FX.light?.85:.95})`);
+  g.addColorStop(.4,`rgba(${FX.b},${FX.light?.4:.55})`);
+  g.addColorStop(1,`rgba(${FX.b},0)`);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  // 核心
+  if(head){
+    ctx.fillStyle=FX.light?`rgba(${FX.a},1)`:'rgba(255,255,255,.95)';
+    ctx.beginPath();ctx.arc(x,y,4.2*scale,0,7);ctx.fill();
+    // 噴發粒子
+    if($('#particlesOn').checked){
+      const n=Math.round(2*inten);
+      for(let k=0;k<n;k++)sparks.push(mkSpark(x,y,1.6));
+    }
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function mkSpark(x,y,sp=1){
+  const a=Math.random()*7,v=(Math.random()*1.8+.4)*sp;
+  return{x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.3,life:1,decay:.012+Math.random()*.02,
+    size:Math.random()*2.2+.8,c:Math.random()<.5?FX.a:FX.b};
+}
+function burst(x,y,n){
+  const inten=parseFloat($('#intensity').value)||1;
+  n=Math.round(n*inten);
+  for(let k=0;k<n;k++){const a=(k/n)*7+Math.random()*.5,v=Math.random()*2.6+1;
+    sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,decay:.018+Math.random()*.02,
+      size:Math.random()*2.4+1,c:Math.random()<.5?FX.a:FX.b});}
+}
+function updateSparks(noNew=false){
+  const cv=grid.querySelector('.fx');if(!cv)return;
+  ctx.globalCompositeOperation=FX.light?'source-over':'lighter';
+  for(let i=sparks.length-1;i>=0;i--){
+    const s=sparks[i];s.x+=s.vx;s.y+=s.vy;s.vy+=0.04;s.vx*=.99;s.life-=s.decay;
+    if(s.life<=0){sparks.splice(i,1);continue;}
+    ctx.fillStyle=`rgba(${s.c},${(FX.light?.7:1)*s.life})`;
+    ctx.beginPath();ctx.arc(s.x,s.y,s.size*s.life,0,7);ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+  if(sparks.length>800)sparks.splice(0,sparks.length-800);
+}
+
+/* ===================== 控制項 ===================== */
+$('#playBtn').onclick=()=>graphMode?playGraph():play();
+$('#replayBtn').onclick=()=>{build();setTimeout(()=>graphMode?playGraph():play(),180);};
+function syncSpeed(v){$('#speed').value=v;$('#speed2').value=v;}
+$('#speed').oninput=e=>$('#speed2').value=e.target.value;
+$('#speed2').oninput=e=>$('#speed').value=e.target.value;
+$('#colSel').onchange=()=>{build();};
+$('#fitBtn').classList.toggle('on',graphFit);
+$('#fitBtn').onclick=()=>{
+  graphFit=!graphFit;localStorage.setItem(LS.fit,graphFit?'1':'0');
+  $('#fitBtn').classList.toggle('on',graphFit);
+  toast(graphFit?'已切換為:符合畫面':'已切換為:實際大小(可捲動)','');
+  build();
+};
+$('#intensity').oninput=()=>{};
+$('#fsBtn').onclick=()=>{
+  const w=$('#stageWrap');
+  if(!document.fullscreenElement){w.requestFullscreen?.().then(()=>setTimeout(()=>{build();setTimeout(()=>graphMode?playGraph():play(),300)},200)).catch(()=>{});}
+  else document.exitFullscreen?.();
+};
+document.addEventListener('fullscreenchange',()=>{setTimeout(build,150);});
+
+$('#collapseBtn').onclick=()=>{$('#app').classList.toggle('collapsed');setTimeout(build,420);};
+
+/* ===================== 影片匯出(MP4 / WebM) ===================== */
+let recording=false;
+function pickVideoMime(){
+  const cands=[
+    {type:'video/mp4;codecs=avc1.640029',ext:'mp4'},
+    {type:'video/mp4;codecs=avc1.42E01E',ext:'mp4'},
+    {type:'video/mp4',ext:'mp4'},
+    {type:'video/webm;codecs=vp9',ext:'webm'},
+    {type:'video/webm;codecs=vp8',ext:'webm'},
+    {type:'video/webm',ext:'webm'},
+  ];
+  for(const c of cands){try{if(MediaRecorder.isTypeSupported(c.type))return c;}catch{}}
+  return {type:'',ext:'webm'};
+}
+function rrPath(c,x,y,w,h,r){
+  if(c.roundRect){c.beginPath();c.roundRect(x,y,w,h,r);return;}
+  c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();
+}
+function clipText(c,t,maxw){let s=t;if(c.measureText(s).width<=maxw)return s;
+  while(s.length&&c.measureText(s+'…').width>maxw)s=s.slice(0,-1);return s+'…';}
+function wrapText(c,text,x,y,maxw,lh,maxLines){
+  let line='',ln=0;
+  for(const ch of text){
+    if(c.measureText(line+ch).width>maxw){c.fillText(line,x,y+ln*lh);line=ch;ln++;
+      if(ln>=maxLines){c.fillText(clipText(c,line+text.slice(text.indexOf(ch)+1),maxw),x,y+ln*lh);return;}}
+    else line+=ch;
+  }
+  c.fillText(line,x,y+ln*lh);
+}
+
+async function exportVideo(){
+  if(recording)return;
+  if(!nodePts.length){toast('沒有可匯出的流程');return;}
+  if(!window.MediaRecorder){toast('此瀏覽器不支援影片匯出','err');return;}
+  recording=true;$('#exportBtn').disabled=true;
+  cancelAnimationFrame(ambRaf);cancelAnimationFrame(anim.raf);
+  try{await document.fonts.ready;}catch{}
+  const mime=pickVideoMime();
+  $('#recOverlay').classList.add('on');$('#recBar').style.width='0%';
+  $('#recHint').textContent=mime.ext==='mp4'?'逐格渲染中,將輸出 MP4':'此瀏覽器不支援 MP4,將輸出 WebM';
+
+  // 幾何與內容快照
+  const W=grid.clientWidth,H=grid.clientHeight,pad=46;
+  const scale=Math.min(2,Math.max(1,1760/(W+pad*2)));
+  const cw=Math.round((W+pad*2)*scale/2)*2,ch=Math.round((H+pad*2)*scale/2)*2;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const c=cv.getContext('2d');
+  const cs=getComputedStyle(document.documentElement);
+  const light=state.theme==='light';
+  const col={
+    bg:cs.getPropertyValue('--bg').trim(),text:cs.getPropertyValue('--text').trim(),
+    muted:cs.getPropertyValue('--muted').trim(),track:cs.getPropertyValue('--track').trim(),
+    border:light?'rgba(22,32,55,.14)':'rgba(255,255,255,.12)',
+    nodeBg:light?'#ffffff':'rgba(255,255,255,.05)',
+    badgeBg:light?'#ffffff':'#0d1424'
+  };
+  refreshFXColors();
+  const nodes=nodeEls.map((el,i)=>({x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight,
+    cx:nodePts[i].x,cy:nodePts[i].y,s:state.steps[i],lit:-1}));
+  const inten=parseFloat($('#intensity').value)||1;
+  const particlesOn=$('#particlesOn').checked;
+  let sp=[];
+
+  function pointAt(len){
+    let acc=0;for(let i=1;i<nodes.length;i++){const a=nodes[i-1],b=nodes[i];
+      const seg=Math.hypot(b.cx-a.cx,b.cy-a.cy);
+      if(acc+seg>=len){const r=seg?(len-acc)/seg:0;return{x:a.cx+(b.cx-a.cx)*r,y:a.cy+(b.cy-a.cy)*r};}
+      acc+=seg;}
+    const L=nodes[nodes.length-1];return{x:L.cx,y:L.cy};
+  }
+  function strokePartial(len,width,blur){
+    c.save();c.lineCap='round';c.lineJoin='round';
+    const grad=c.createLinearGradient(0,0,W,0);
+    grad.addColorStop(0,`rgb(${FX.a})`);grad.addColorStop(1,`rgb(${FX.b})`);
+    if(blur){c.shadowColor=`rgb(${FX.b})`;c.shadowBlur=blur;}
+    c.strokeStyle=grad;c.lineWidth=width;c.beginPath();c.moveTo(nodes[0].cx,nodes[0].cy);
+    let acc=0,stop=false;
+    for(let i=1;i<nodes.length&&!stop;i++){const a=nodes[i-1],b=nodes[i];
+      const seg=Math.hypot(b.cx-a.cx,b.cy-a.cy);
+      if(acc+seg<=len){c.lineTo(b.cx,b.cy);acc+=seg;}
+      else{const r=seg?(len-acc)/seg:0;c.lineTo(a.cx+(b.cx-a.cx)*r,a.cy+(b.cy-a.cy)*r);stop=true;}}
+    c.stroke();c.restore();
+  }
+  function comet(x,y){
+    c.save();c.globalCompositeOperation=light?'source-over':'lighter';
+    const r=22*inten;const g=c.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${FX.a},${light?.85:.95})`);
+    g.addColorStop(.4,`rgba(${FX.b},${light?.4:.55})`);
+    g.addColorStop(1,`rgba(${FX.b},0)`);
+    c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill();
+    c.fillStyle=light?`rgb(${FX.a})`:'rgba(255,255,255,.95)';c.beginPath();c.arc(x,y,4.2,0,7);c.fill();
+    c.restore();
+  }
+  function spark(x,y,sp2=1){const a=Math.random()*7,v=(Math.random()*1.8+.4)*sp2;
+    return{x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.3,life:1,decay:.012+Math.random()*.02,
+      size:Math.random()*2.2+.8,col:Math.random()<.5?FX.a:FX.b};}
+  function burst(x,y,n){n=Math.round(n*inten);for(let k=0;k<n;k++){const a=(k/n)*7+Math.random()*.5,v=Math.random()*2.6+1;
+    sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,decay:.018+Math.random()*.02,
+      size:Math.random()*2.4+1,col:Math.random()<.5?FX.a:FX.b});}}
+  function drawSparks(){c.save();c.globalCompositeOperation=light?'source-over':'lighter';
+    for(let i=sp.length-1;i>=0;i--){const s=sp[i];s.x+=s.vx;s.y+=s.vy;s.vy+=.04;s.vx*=.99;s.life-=s.decay;
+      if(s.life<=0){sp.splice(i,1);continue;}
+      c.fillStyle=`rgba(${s.col},${(light?.7:1)*s.life})`;c.beginPath();c.arc(s.x,s.y,s.size*s.life,0,7);c.fill();}
+    c.restore();if(sp.length>900)sp.splice(0,sp.length-900);}
+
+  function drawFrame(now,len){
+    c.setTransform(1,0,0,1,0,0);
+    c.fillStyle=col.bg;c.fillRect(0,0,cw,ch);
+    c.save();c.globalCompositeOperation='lighter';
+    let g=c.createRadialGradient(cw*.74,-ch*.05,0,cw*.74,-ch*.05,cw*.55);
+    g.addColorStop(0,`rgba(${FX.b},${light?.05:.13})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;c.fillRect(0,0,cw,ch);
+    g=c.createRadialGradient(cw*.08,ch*1.05,0,cw*.08,ch*1.05,cw*.55);
+    g.addColorStop(0,`rgba(${FX.a},${light?.05:.1})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;c.fillRect(0,0,cw,ch);c.restore();
+
+    c.setTransform(scale,0,0,scale,pad*scale,pad*scale);
+
+    // 連線
+    c.save();c.lineCap='round';c.lineJoin='round';c.strokeStyle=col.track;c.lineWidth=3;
+    c.beginPath();c.moveTo(nodes[0].cx,nodes[0].cy);
+    for(let i=1;i<nodes.length;i++)c.lineTo(nodes[i].cx,nodes[i].cy);c.stroke();c.restore();
+    if(len>0){strokePartial(len,9,light?10:16);strokePartial(len,3.4,0);}
+
+    // 節點
+    nodes.forEach((n,i)=>{
+      const reach=len>=cumLen[i]-0.5;
+      if(reach&&n.lit<0){n.lit=now;if(particlesOn)burst(n.cx,n.cy,22);}
+      const lit=n.lit>=0;
+      c.save();
+      rrPath(c,n.x,n.y,n.w,n.h,16);c.fillStyle=col.nodeBg;c.globalAlpha=lit?1:.42;c.fill();
+      if(lit){c.save();c.shadowColor=`rgb(${FX.a})`;c.shadowBlur=22;c.strokeStyle=`rgba(${FX.a},.6)`;c.lineWidth=1.6;c.stroke();c.restore();}
+      else{c.strokeStyle=col.border;c.lineWidth=1;c.stroke();}
+      // 點燃環
+      if(lit){const dt=(now-n.lit)/700;if(dt<1){c.save();c.globalAlpha=(1-dt)*.85;
+        c.strokeStyle=`rgb(${FX.a})`;c.lineWidth=2.4*(1-dt)+.4;
+        rrPath(c,n.x-16*dt,n.y-16*dt,n.w+32*dt,n.h+32*dt,16+8*dt);c.stroke();c.restore();}}
+      // 編號徽章
+      const bw=34,bh=20;rrPath(c,n.x+14,n.y-10,bw,bh,7);c.fillStyle=col.badgeBg;c.globalAlpha=1;c.fill();
+      c.strokeStyle=lit?`rgba(${FX.a},.5)`:col.border;c.lineWidth=1;c.stroke();
+      c.fillStyle=lit?`rgb(${FX.a})`:col.muted;c.font='900 12px "Noto Serif TC",serif';
+      c.textBaseline='middle';c.textAlign='center';c.fillText(String(i+1).padStart(2,'0'),n.x+14+bw/2,n.y);
+      // emoji
+      c.textAlign='left';c.textBaseline='alphabetic';c.globalAlpha=lit?1:.5;
+      c.font='30px "Noto Sans TC",sans-serif';c.fillText(n.s.emoji||'🔹',n.x+16,n.y+46);
+      // 標題
+      c.fillStyle=col.text;c.font='900 16px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;
+      c.fillText(clipText(c,n.s.title||'步驟',n.w-32),n.x+16,n.y+74);
+      // 說明
+      if(n.s.desc){c.fillStyle=col.muted;c.font='400 12.5px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.38;
+        const maxLines=Math.max(2,Math.floor((n.h-90)/17));
+        wrapText(c,n.s.desc,n.x+16,n.y+95,n.w-32,17,maxLines);}
+      c.restore();
+    });
+
+    // 彗星與粒子
+    drawSparks();
+    if(len<totalLen-0.5){const pt=pointAt(len);comet(pt.x,pt.y);
+      if(particlesOn)for(let k=0;k<Math.round(2*inten);k++)sp.push(spark(pt.x,pt.y,1.6));}
+  }
+
+  const stream=cv.captureStream(30);
+  const opt=mime.type?{mimeType:mime.type,videoBitsPerSecond:9e6}:{videoBitsPerSecond:9e6};
+  let rec;try{rec=new MediaRecorder(stream,opt);}catch{rec=new MediaRecorder(stream);}
+  const chunks=[];rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+  const stopped=new Promise(r=>rec.onstop=r);
+  rec.start();
+
+  const speed=parseFloat($('#speed').value)||1;
+  const dur=Math.max(1100,(700+state.steps.length*520)/speed);
+  const tail=1100,total=dur+tail,t0=performance.now();
+  await new Promise(res=>{
+    function loop(now){
+      const t=now-t0,p=Math.min(1,t/dur);
+      const eased=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      drawFrame(now,eased*totalLen);
+      $('#recBar').style.width=Math.round(Math.min(1,t/total)*100)+'%';
+      if(t<total)requestAnimationFrame(loop);else{setTimeout(()=>{rec.stop();res();},120);}
+    }
+    requestAnimationFrame(loop);
+  });
+  await stopped;
+
+  $('#recOverlay').classList.remove('on');recording=false;$('#exportBtn').disabled=false;
+  if(anim.done)ambientLoop();
+  const blob=new Blob(chunks,{type:mime.type||'video/webm'});
+  if(!blob.size){toast('錄製失敗,請再試一次','err');return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='流程動畫_'+Date.now()+'.'+mime.ext;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast(mime.ext==='mp4'?'已匯出 MP4':'瀏覽器不支援 MP4,已匯出 WebM(可播放,可再轉檔)',mime.ext==='mp4'?'ok':'');
+}
+$('#exportBtn').onclick=()=>graphMode?exportGraphVideo():exportVideo();
+
+async function exportGraphVideo(){
+  if(recording)return;
+  if(!gNodes.length){toast('沒有可匯出的流程');return;}
+  if(!window.MediaRecorder){toast('此瀏覽器不支援影片匯出','err');return;}
+  recording=true;$('#exportBtn').disabled=true;
+  cancelAnimationFrame(gAmbRaf);cancelAnimationFrame(anim.raf);
+  try{await document.fonts.ready;}catch{}
+  const mime=pickVideoMime();
+  $('#recOverlay').classList.add('on');$('#recBar').style.width='0%';
+  $('#recHint').textContent=mime.ext==='mp4'?'逐格渲染分支流程,將輸出 MP4':'此瀏覽器不支援 MP4,將輸出 WebM';
+  const W=grid.clientWidth,H=grid.clientHeight,pad=46;
+  const hasTitle=!!state.flowTitle, titleH=hasTitle?70:0;
+  const scale=Math.min(2,Math.max(1,1760/(W+pad*2)));
+  const cw=Math.round((W+pad*2)*scale/2)*2,ch=Math.round((H+pad*2+titleH)*scale/2)*2;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;const c=cv.getContext('2d');
+  const cs=getComputedStyle(document.documentElement),light=state.theme==='light';
+  const col={bg:cs.getPropertyValue('--bg').trim(),text:cs.getPropertyValue('--text').trim(),
+    muted:cs.getPropertyValue('--muted').trim(),track:cs.getPropertyValue('--track').trim(),
+    border:light?'rgba(22,32,55,.14)':'rgba(255,255,255,.12)',nodeBg:light?'#ffffff':'rgba(255,255,255,.05)',
+    badgeBg:light?'#ffffff':'#0d1424',panel:cs.getPropertyValue('--panel').trim(),
+    panel2:cs.getPropertyValue('--panel-2').trim()};
+  const dec=light?'226,59,78':'255,107,114';
+  refreshFXColors();
+  const inten=parseFloat($('#intensity').value)||1,particlesOn=$('#particlesOn').checked;
+  // 取樣每條邊
+  const edges=gEdges.filter(e=>e.path).map(e=>{const L=e.path.getTotalLength();const N=Math.max(10,Math.round(L/10));
+    const pts=[];for(let i=0;i<=N;i++)pts.push(e.path.getPointAtLength(L*i/N));
+    return{from:e.from,to:e.to,label:e.label,pts,N};});
+  const nodes=gNodes.map(n=>({x:n.x,y:n.y,w:n.w,h:n.h,cx:n.cx,cy:n.cy,depth:n.depth,type:n.type,
+    emoji:n.emoji,title:n.title,desc:n.desc,lit:-1}));
+  const byId={};nodes.forEach((n,i)=>byId[gNodes[i].id]=n);
+  let sp=[];
+  function spark(x,y,s2=1){const a=Math.random()*7,v=(Math.random()*1.8+.4)*s2;
+    return{x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.3,life:1,decay:.012+Math.random()*.02,size:Math.random()*2.2+.8,col:Math.random()<.5?FX.a:FX.b};}
+  function burstL(x,y,n){n=Math.round(n*inten);for(let k=0;k<n;k++){const a=(k/n)*7+Math.random()*.5,v=Math.random()*2.6+1;
+    sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,decay:.018+Math.random()*.02,size:Math.random()*2.4+1,col:Math.random()<.5?FX.a:FX.b});}}
+  function drawSparks(){c.save();c.globalCompositeOperation=light?'source-over':'lighter';
+    for(let i=sp.length-1;i>=0;i--){const s=sp[i];s.x+=s.vx;s.y+=s.vy;s.vy+=.04;s.vx*=.99;s.life-=s.decay;
+      if(s.life<=0){sp.splice(i,1);continue;}c.fillStyle=`rgba(${s.col},${(light?.7:1)*s.life})`;c.beginPath();c.arc(s.x,s.y,s.size*s.life,0,7);c.fill();}
+    c.restore();if(sp.length>900)sp.splice(0,sp.length-900);}
+  function comet(x,y){c.save();c.globalCompositeOperation=light?'source-over':'lighter';
+    const r=20*inten,g=c.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${FX.a},${light?.85:.95})`);g.addColorStop(.4,`rgba(${FX.b},${light?.4:.55})`);g.addColorStop(1,`rgba(${FX.b},0)`);
+    c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill();
+    c.fillStyle=light?`rgb(${FX.a})`:'rgba(255,255,255,.95)';c.beginPath();c.arc(x,y,4,0,7);c.fill();c.restore();}
+  function edgeGrad(){const g=c.createLinearGradient(0,0,W,0);g.addColorStop(0,`rgb(${FX.a})`);g.addColorStop(1,`rgb(${FX.b})`);return g;}
+
+  function drawFrame(now,front){
+    c.setTransform(1,0,0,1,0,0);c.fillStyle=col.bg;c.fillRect(0,0,cw,ch);
+    c.save();c.globalCompositeOperation='lighter';
+    let g=c.createRadialGradient(cw*.74,-ch*.05,0,cw*.74,-ch*.05,cw*.55);
+    g.addColorStop(0,`rgba(${FX.b},${light?.05:.13})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,cw,ch);
+    g=c.createRadialGradient(cw*.08,ch*1.05,0,cw*.08,ch*1.05,cw*.55);
+    g.addColorStop(0,`rgba(${FX.a},${light?.05:.1})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,cw,ch);c.restore();
+    if(hasTitle){
+      c.setTransform(1,0,0,1,0,0);c.textAlign='center';c.textBaseline='middle';
+      const midx=cw/2, ty=titleH*scale*0.52;
+      c.font='900 '+Math.round(27*scale)+'px "Noto Serif TC",serif';c.fillStyle=col.text;
+      const tt=clipText(c,state.flowTitle,cw-90*scale);c.fillText(tt,midx,ty);
+      const uw=Math.min(cw*0.46,Math.max(60*scale,c.measureText(tt).width*0.62));
+      const uy=titleH*scale-11*scale;
+      const lg=c.createLinearGradient(midx-uw/2,0,midx+uw/2,0);
+      lg.addColorStop(0,'rgba(0,0,0,0)');lg.addColorStop(.32,`rgb(${FX.a})`);lg.addColorStop(.68,`rgb(${FX.b})`);lg.addColorStop(1,'rgba(0,0,0,0)');
+      c.strokeStyle=lg;c.lineWidth=2.4*scale;c.beginPath();c.moveTo(midx-uw/2,uy);c.lineTo(midx+uw/2,uy);c.stroke();
+    }
+    c.setTransform(scale,0,0,scale,pad*scale,(pad+titleH)*scale);
+    // 邊:track + 漸層填充
+    c.lineCap='round';c.lineJoin='round';
+    edges.forEach(e=>{c.strokeStyle=col.track;c.lineWidth=2.6;c.setLineDash([1,7]);
+      c.beginPath();e.pts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.setLineDash([]);});
+    const grad=edgeGrad();
+    edges.forEach(e=>{const u=byId[e.from],v=byId[e.to];if(!u||!v)return;
+      const span=Math.max(.4,v.depth-u.depth),frac=Math.max(0,Math.min(1,(front-u.depth)/span));
+      if(frac<=0)return;const upto=Math.max(1,Math.floor(frac*e.N));
+      c.save();c.shadowColor=`rgb(${FX.b})`;c.shadowBlur=light?6:10;c.strokeStyle=grad;c.lineWidth=3.2;
+      c.beginPath();for(let i=0;i<=upto;i++){const p=e.pts[i];i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);}c.stroke();c.restore();
+      if(frac>0&&frac<1){const p=e.pts[Math.min(e.pts.length-1,upto)];comet(p.x,p.y);}});
+    // 節點
+    nodes.forEach((n,i)=>{const reach=front>=n.depth;if(reach&&n.lit<0){n.lit=now;if(particlesOn)burstL(n.cx,n.cy,20);}
+      const lit=n.lit>=0;c.save();
+      if(n.type==='decision'){
+        const path=()=>{c.beginPath();c.moveTo(n.x+n.w/2,n.y);c.lineTo(n.x+n.w,n.y+n.h/2);c.lineTo(n.x+n.w/2,n.y+n.h);c.lineTo(n.x,n.y+n.h/2);c.closePath();};
+        path();c.fillStyle=col.panel2;c.globalAlpha=lit?1:.55;c.fill();
+        if(lit){c.save();c.shadowColor=`rgb(${dec})`;c.shadowBlur=20;c.strokeStyle=`rgb(${dec})`;c.lineWidth=2.2;c.stroke();c.restore();}
+        else{c.strokeStyle=`rgba(${dec},.55)`;c.lineWidth=1.6;c.stroke();}
+        if(lit){const dt=(now-n.lit)/700;if(dt<1){c.save();c.globalAlpha=(1-dt)*.85;c.strokeStyle=`rgb(${dec})`;c.lineWidth=2.2*(1-dt)+.4;
+          const g=18*dt;c.beginPath();c.moveTo(n.x+n.w/2,n.y-g);c.lineTo(n.x+n.w+g,n.y+n.h/2);c.lineTo(n.x+n.w/2,n.y+n.h+g);c.lineTo(n.x-g,n.y+n.h/2);c.closePath();c.stroke();c.restore();}}
+        c.globalAlpha=1;c.textAlign='center';c.textBaseline='alphabetic';
+        c.font='22px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;c.fillText(n.emoji||'❓',n.cx,n.cy-4);
+        c.fillStyle=col.text;c.font='900 13px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;
+        c.fillText(clipText(c,n.title||'判斷',n.w*0.56),n.cx,n.cy+18);
+        const bw=34,bh=20;rrPath(c,n.cx-bw/2,n.y-10,bw,bh,7);c.fillStyle=col.badgeBg;c.globalAlpha=1;c.fill();
+        c.strokeStyle=lit?`rgba(${dec},.55)`:col.border;c.lineWidth=1;c.stroke();
+        c.fillStyle=lit?`rgb(${dec})`:col.muted;c.font='900 12px "Noto Serif TC",serif';c.textBaseline='middle';
+        c.fillText(String(i+1).padStart(2,'0'),n.cx,n.y);
+        c.restore();return;
+      }
+      if(n.type==='start'||n.type==='end'){
+        c.beginPath();c.ellipse(n.cx,n.cy,n.w/2,n.h/2,0,0,7);
+        c.fillStyle=col.panel2;c.globalAlpha=lit?1:.55;c.fill();
+        if(lit){c.save();c.shadowColor=`rgb(${FX.b})`;c.shadowBlur=20;c.strokeStyle=`rgb(${FX.b})`;c.lineWidth=2;c.stroke();c.restore();}
+        else{c.strokeStyle=`rgba(${FX.b},.5)`;c.lineWidth=1.5;c.stroke();}
+        if(lit){const dt=(now-n.lit)/700;if(dt<1){c.save();c.globalAlpha=(1-dt)*.85;c.strokeStyle=`rgb(${FX.b})`;c.lineWidth=2.2*(1-dt)+.4;
+          c.beginPath();c.ellipse(n.cx,n.cy,n.w/2+16*dt,n.h/2+16*dt,0,0,7);c.stroke();c.restore();}}
+        c.globalAlpha=1;c.textAlign='center';c.textBaseline='alphabetic';
+        c.font='22px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;c.fillText(n.emoji||(n.type==='start'?'🟢':'🏁'),n.cx,n.cy-3);
+        c.fillStyle=col.text;c.font='900 14px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;
+        c.fillText(clipText(c,n.title||(n.type==='start'?'開始':'結束'),n.w*0.7),n.cx,n.cy+19);
+        const bw=34,bh=20;rrPath(c,n.cx-bw/2,n.y-10,bw,bh,7);c.fillStyle=col.badgeBg;c.globalAlpha=1;c.fill();
+        c.strokeStyle=lit?`rgba(${FX.b},.55)`:col.border;c.lineWidth=1;c.stroke();
+        c.fillStyle=lit?`rgb(${FX.b})`:col.muted;c.font='900 12px "Noto Serif TC",serif';c.textBaseline='middle';
+        c.fillText(String(i+1).padStart(2,'0'),n.cx,n.y);
+        c.restore();return;
+      }
+      rrPath(c,n.x,n.y,n.w,n.h,16);c.fillStyle=col.nodeBg;c.globalAlpha=lit?1:.42;c.fill();
+      if(lit){c.save();c.shadowColor=`rgb(${FX.a})`;c.shadowBlur=22;c.strokeStyle=`rgba(${FX.a},.6)`;c.lineWidth=1.6;c.stroke();c.restore();}
+      else{c.strokeStyle=col.border;c.lineWidth=1;c.stroke();}
+      if(lit){const dt=(now-n.lit)/700;if(dt<1){c.save();c.globalAlpha=(1-dt)*.85;c.strokeStyle=`rgb(${FX.a})`;c.lineWidth=2.4*(1-dt)+.4;
+        rrPath(c,n.x-16*dt,n.y-16*dt,n.w+32*dt,n.h+32*dt,16+8*dt);c.stroke();c.restore();}}
+      const bw=34,bh=20;rrPath(c,n.x+14,n.y-10,bw,bh,7);c.fillStyle=col.badgeBg;c.globalAlpha=1;c.fill();
+      c.strokeStyle=lit?`rgba(${FX.a},.5)`:col.border;c.lineWidth=1;c.stroke();
+      c.fillStyle=lit?`rgb(${FX.a})`:col.muted;c.font='900 12px "Noto Serif TC",serif';c.textBaseline='middle';c.textAlign='center';
+      c.fillText(String(i+1).padStart(2,'0'),n.x+14+bw/2,n.y);
+      const tag=n.type==='start'?'起點':n.type==='end'?'結束':'';
+      if(tag){c.font='800 10.5px "Noto Sans TC",sans-serif';const tw=tag.length*11+14;
+        rrPath(c,n.x+n.w-14-tw,n.y-10,tw,18,7);c.fillStyle=col.panel;c.fill();
+        c.strokeStyle=`rgba(${FX.b},.5)`;c.lineWidth=1;c.stroke();
+        c.fillStyle=`rgb(${FX.b})`;c.textAlign='center';c.fillText(tag,n.x+n.w-14-tw/2,n.y-1);}
+      c.textAlign='left';c.textBaseline='alphabetic';c.globalAlpha=lit?1:.5;
+      c.font='28px "Noto Sans TC",sans-serif';c.fillText(n.emoji||'🔹',n.x+16,n.y+46);
+      c.fillStyle=col.text;c.font='900 15.5px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.5;
+      c.fillText(clipText(c,n.title||'步驟',n.w-32),n.x+16,n.y+72);
+      if(n.desc){c.fillStyle=col.muted;c.font='400 12px "Noto Sans TC",sans-serif';c.globalAlpha=lit?1:.38;
+        const ml=Math.max(2,Math.floor((n.h-86)/16));wrapText(c,n.desc,n.x+16,n.y+92,n.w-32,16,ml);}
+      c.restore();});
+    // 條件標籤
+    c.textAlign='center';c.textBaseline='middle';
+    edges.forEach(e=>{if(!e.label)return;const u=byId[e.from];const on=u&&u.lit>=0;
+      const mp=e.pts[Math.floor(e.pts.length/2)];const tw=Math.min(120,e.label.length*13+16);
+      rrPath(c,mp.x-tw/2,mp.y-10,tw,20,9);c.fillStyle=col.panel;c.fill();
+      c.strokeStyle=on?`rgba(${FX.a},.6)`:col.border;c.lineWidth=1;c.stroke();
+      c.fillStyle=on?`rgb(${FX.a})`:col.muted;c.font='700 11.5px "Noto Sans TC",sans-serif';c.fillText(e.label,mp.x,mp.y+.5);});
+    drawSparks();
+  }
+
+  const stream=cv.captureStream(30);
+  const opt=mime.type?{mimeType:mime.type,videoBitsPerSecond:9e6}:{videoBitsPerSecond:9e6};
+  let rec;try{rec=new MediaRecorder(stream,opt);}catch{rec=new MediaRecorder(stream);}
+  const chunks=[];rec.ondataavailable=ev=>{if(ev.data&&ev.data.size)chunks.push(ev.data);};
+  const stopped=new Promise(r=>rec.onstop=r);rec.start();
+  const speed=parseFloat($('#speed').value)||1;
+  const dur=Math.max(1300,(900+gNodes.length*430)/speed),tail=1100,total=dur+tail,t0=performance.now();
+  await new Promise(res=>{function loop(now){const t=now-t0,p=Math.min(1,t/dur);
+    const eased=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;drawFrame(now,eased*(gMaxL+1));
+    $('#recBar').style.width=Math.round(Math.min(1,t/total)*100)+'%';
+    if(t<total)requestAnimationFrame(loop);else{setTimeout(()=>{rec.stop();res();},120);}}requestAnimationFrame(loop);});
+  await stopped;
+  $('#recOverlay').classList.remove('on');recording=false;$('#exportBtn').disabled=false;
+  if(anim.done)graphAmbient();
+  const blob=new Blob(chunks,{type:mime.type||'video/webm'});
+  if(!blob.size){toast('錄製失敗,請再試一次','err');return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=(state.flowTitle?state.flowTitle.replace(/[\\/:*?"<>|]/g,'').slice(0,30):'分支流程動畫')+'_'+Date.now()+'.'+mime.ext;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast(mime.ext==='mp4'?'已匯出 MP4':'瀏覽器不支援 MP4,已匯出 WebM',mime.ext==='mp4'?'ok':'');
+}
+
+/* 設定 Modal */
+function openModal(){
+  $('#keysInput').value=localStorage.getItem(LS.keys)||'';
+  $('#modelsInput').value=localStorage.getItem(LS.models)||DEFAULT_MODELS.join('\n');
+  $('#vmodelsInput').value=localStorage.getItem(LS.vmodels)||DEFAULT_VISION.join('\n');
+  $('#modalBg').classList.add('open');
+}
+$('#settingsBtn').onclick=openModal;
+$('#modalCancel').onclick=()=>$('#modalBg').classList.remove('open');
+$('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))$('#modalBg').classList.remove('open');};
+$('#modalSave').onclick=()=>{
+  localStorage.setItem(LS.keys,$('#keysInput').value.trim());
+  localStorage.setItem(LS.models,$('#modelsInput').value.trim());
+  localStorage.setItem(LS.vmodels,$('#vmodelsInput').value.trim());
+  $('#modalBg').classList.remove('open');toast('已儲存設定','ok');
+};
+
+/* 視窗縮放重建 */
+let rsz;new ResizeObserver(()=>{clearTimeout(rsz);rsz=setTimeout(()=>{if(!anim.playing)build();},250);}).observe(stage);
+
+/* ===================== 初始化 ===================== */
+$('#detailSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.detail===state.detail));
+applyTheme();
+build();
+setTimeout(()=>{ if(!matchMedia('(prefers-reduced-motion:reduce)').matches){ graphMode?playGraph():play(); } },500);
+</script>
+</body>
+</html>

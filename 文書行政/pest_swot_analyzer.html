@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECF 企業策略分析｜PEST × SWOT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.3/html2pdf.bundle.min.js"></script>
+<style>
+  :root{
+    --bg:#070b16; --bg2:#0d1424; --panel:#111a2e; --panel2:#162038;
+    --line:#243352; --ink:#e8ecf5; --ink-dim:#9aa7c2;
+    --gold:#d4af37; --gold-bright:#f2cf6b; --gold-deep:#9a7d28;
+    --jade:#4fb89a; --red:#c8553d; --blue:#5aa0d8; --violet:#9b7ed8; --shadow:rgba(0,0,0,.55);
+    --chart-surface:#0d1424;
+    --p:#5aa0d8; --e:#e7c14c; --s:#4fb89a; --t:#9b7ed8;
+    --sw-s:#4fb89a; --sw-w:#c8553d; --sw-o:#5aa0d8; --sw-t:#d4af37;
+    --body-bg:radial-gradient(1200px 600px at 80% -10%, rgba(212,175,55,.10), transparent 60%),
+              radial-gradient(900px 500px at -10% 110%, rgba(79,184,154,.08), transparent 55%),
+              linear-gradient(160deg,#070b16,#0d1424);
+  }
+  html[data-theme="light"]{
+    --bg:#f3ecdd; --bg2:#e9dfca; --panel:#fffdf8; --panel2:#f8f1e3;
+    --line:#ddd0b6; --ink:#2c2618; --ink-dim:#6a5f47;
+    --gold:#a9821f; --gold-bright:#8a6914; --gold-deep:#c9ad5e;
+    --jade:#2f8d72; --red:#b8442c; --blue:#3f7fb8; --violet:#7a5fc0; --shadow:rgba(120,100,40,.16);
+    --chart-surface:#0d1424;
+    --p:#3f7fb8; --e:#b8920f; --s:#2f8d72; --t:#7a5fc0;
+    --sw-s:#2f8d72; --sw-w:#b8442c; --sw-o:#3f7fb8; --sw-t:#a9821f;
+    --body-bg:radial-gradient(1200px 600px at 80% -10%, rgba(212,175,55,.16), transparent 60%),
+              radial-gradient(900px 500px at -10% 110%, rgba(79,184,154,.10), transparent 55%),
+              linear-gradient(160deg,#f8f2e6,#ece1cc);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans TC",sans-serif;
+    background:var(--body-bg);
+    color:var(--ink); min-height:100vh; line-height:1.75; font-size:16px;
+    background-attachment:fixed;
+  }
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.035;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .wrap{max-width:1360px;margin:0 auto;padding:30px 28px 80px;position:relative;z-index:1}
+
+  header{text-align:center;padding:24px 0 8px;position:relative}
+  #themeToggle{position:absolute;top:16px;right:0;z-index:5;border:1px solid var(--gold-deep);
+    background:var(--panel);color:var(--gold-bright);border-radius:20px;padding:7px 14px;font-size:13px;
+    font-weight:700;cursor:pointer;font-family:inherit;transition:.18s;box-shadow:0 2px 10px var(--shadow)}
+  #themeToggle:hover{background:var(--panel2);transform:translateY(-1px)}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-size:14px;letter-spacing:.34em;
+    color:var(--gold);border:1px solid var(--gold-deep);padding:5px 16px;border-radius:30px;
+    background:rgba(212,175,55,.06);text-transform:uppercase}
+  h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(28px,5vw,44px);
+    letter-spacing:.1em;margin:16px 0 6px;
+    background:linear-gradient(180deg,#fff,var(--gold-bright) 60%,var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  html[data-theme="light"] h1{background:linear-gradient(180deg,var(--gold),var(--gold-bright) 55%,var(--gold-deep));-webkit-background-clip:text;background-clip:text}
+  .sub{color:var(--ink-dim);font-size:16px;letter-spacing:.18em}
+  .divider{width:120px;height:1px;margin:22px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+  .layout{display:grid;grid-template-columns:minmax(340px,380px) minmax(0,1fr);gap:22px;align-items:start}
+  .layout>div{min-width:0}
+  @media(max-width:980px){.layout{grid-template-columns:1fr}}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:18px;padding:26px;margin-bottom:22px;
+    box-shadow:0 18px 40px -24px var(--shadow),inset 0 1px 0 rgba(255,255,255,.03)}
+  .card-h{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .card-h .num{font-family:"Noto Serif TC",serif;font-weight:900;font-size:18px;color:var(--bg);
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));box-shadow:0 4px 10px rgba(212,175,55,.3)}
+  .card-h h2{font-family:"Noto Serif TC",serif;font-size:23px;font-weight:600;letter-spacing:.05em}
+  .card-h .hint{margin-left:auto;font-size:14px;color:var(--ink-dim)}
+
+  label{display:block;font-size:15px;color:var(--ink-dim);margin:0 0 7px;letter-spacing:.04em}
+  input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);
+    color:var(--ink);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:16px;transition:.18s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.14)}
+  input::placeholder,textarea::placeholder{color:#566480}
+  textarea{resize:vertical;line-height:1.7}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  @media(max-width:480px){.g2{grid-template-columns:1fr}}
+
+  .tabs{display:flex;gap:8px;margin-bottom:18px;background:var(--bg);padding:6px;border-radius:12px;border:1px solid var(--line)}
+  .tab{flex:1;text-align:center;padding:12px 6px;border-radius:8px;cursor:pointer;font-size:15px;color:var(--ink-dim);transition:.18s;font-weight:500}
+  .tab.on{background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));color:var(--bg);font-weight:700;box-shadow:0 4px 12px rgba(212,175,55,.25)}
+  .pane{display:none}.pane.on{display:block}
+
+  .drop{border:1.5px dashed var(--gold-deep);border-radius:14px;padding:30px 18px;text-align:center;cursor:pointer;
+    background:rgba(212,175,55,.04);transition:.2s}
+  .drop:hover{background:rgba(212,175,55,.08);border-color:var(--gold)}
+  .drop.dragover{background:rgba(212,175,55,.14);border-color:var(--gold)}
+  .drop .ic{font-size:32px;margin-bottom:8px}
+  .drop p{color:var(--ink-dim);font-size:14px}
+  .drop b{color:var(--gold)}
+  .filelist{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .fileitem{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);
+    border-radius:10px;padding:9px 12px;font-size:13px;color:var(--ink-dim)}
+  .fileitem .x{margin-left:auto;cursor:pointer;color:var(--red);font-weight:700;font-size:15px}
+  .fileitem .ok{color:var(--jade)}
+
+  .go{width:100%;padding:18px;border:none;border-radius:14px;cursor:pointer;margin-top:18px;
+    font-family:"Noto Serif TC",serif;font-size:21px;font-weight:700;letter-spacing:.16em;color:var(--bg);
+    background:linear-gradient(145deg,var(--gold-bright),var(--gold),var(--gold-deep));
+    box-shadow:0 10px 28px -8px rgba(212,175,55,.5);transition:.2s;position:relative;overflow:hidden}
+  .go:hover{transform:translateY(-2px);box-shadow:0 14px 34px -8px rgba(212,175,55,.65)}
+  .go:active{transform:translateY(0)}
+  .go:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .spinner{display:inline-block;width:18px;height:18px;border:2.5px solid rgba(7,11,22,.3);
+    border-top-color:var(--bg);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .err{background:rgba(200,85,61,.12);border:1px solid var(--red);color:#f0a99a;padding:14px;border-radius:12px;font-size:14px;margin-top:14px;display:none}
+  .small{font-size:13px;color:var(--ink-dim);margin-top:8px;line-height:1.7}
+  .key-status{font-size:13px;color:var(--ink-dim);margin-top:11px}
+  .key-status b{color:var(--gold-bright)}
+
+  /* API 金鑰設定 */
+  .apikey-box{margin-top:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+  .apikey-head{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;font-size:14px;
+    color:var(--ink);font-weight:500;user-select:none;transition:.16s}
+  .apikey-head:hover{background:var(--panel2)}
+  .apikey-head .kc{margin-left:auto;font-size:12.5px;color:var(--gold-bright)}
+  .apikey-head .chev{transition:.2s;color:var(--ink-dim)}
+  .apikey-box.open .chev{transform:rotate(180deg)}
+  .apikey-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+  .apikey-box.open .apikey-body{display:block}
+  .apikey-body label{margin-top:12px}
+  .apikey-body textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.6}
+  .apikey-actions{display:flex;gap:10px;margin-top:10px}
+  .apikey-actions button{flex:1;padding:11px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.16s}
+  #apikeySave{border:none;background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));color:var(--bg)}
+  #apikeySave:hover{filter:brightness(1.08)}
+  #apikeyClear{border:1px solid var(--line);background:transparent;color:var(--ink-dim)}
+  #apikeyClear:hover{border-color:var(--red);color:#f0a99a}
+  .apikey-msg{font-size:13px;margin-top:8px;min-height:16px;color:var(--jade)}
+  .footer{text-align:center;color:#56627d;font-size:12px;margin-top:40px;letter-spacing:.1em}
+  a{color:var(--gold)}
+
+  .placeholder{text-align:center;color:#56627d;padding:70px 16px;font-size:16px;line-height:2}
+  .placeholder .pic{font-size:44px;margin-bottom:10px;opacity:.5}
+  .meta-line{font-size:14px;color:var(--ink-dim);margin-bottom:16px;letter-spacing:.02em}
+  .stage{font-size:13px;color:var(--gold-bright);margin-top:10px;min-height:18px;letter-spacing:.04em}
+
+  /* 綜合評分儀表 */
+  .overview{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:center}
+  @media(max-width:560px){.overview{grid-template-columns:1fr}}
+  #gaugeCanvas{width:200px;height:160px;display:block;margin:0 auto}
+  .verdict{font-size:15px;line-height:2;color:var(--ink)}
+  .verdict .vbig{font-family:"Noto Serif TC",serif;font-size:22px;color:var(--gold-bright);font-weight:700;display:block;margin-bottom:6px}
+
+  /* PEST */
+  .pest-wrap{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+  @media(max-width:760px){.pest-wrap{grid-template-columns:1fr}}
+  #pestRadar{width:300px;height:300px;display:block;margin:0 auto;background:var(--chart-surface);border-radius:12px;border:1px solid var(--line)}
+  .pest-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.pest-grid{grid-template-columns:1fr}}
+  .quad{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px;border-top:3px solid var(--ink)}
+  .quad.p{border-top-color:var(--p)} .quad.e{border-top-color:var(--e)}
+  .quad.s{border-top-color:var(--s)} .quad.t{border-top-color:var(--t)}
+  .quad-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .quad-tag{font-family:"Noto Serif TC",serif;font-size:22px;font-weight:900;width:36px;height:36px;border-radius:9px;
+    display:grid;place-items:center;color:#fff}
+  .quad.p .quad-tag{background:var(--p)} .quad.e .quad-tag{background:var(--e)}
+  .quad.s .quad-tag{background:var(--s)} .quad.t .quad-tag{background:var(--t)}
+  .quad-h .qt{font-family:"Noto Serif TC",serif;font-size:16px;font-weight:600}
+  .quad-h .qs{margin-left:auto;font-size:13px;color:var(--ink-dim)}
+  .quad-h .qs b{font-size:18px;color:var(--gold-bright)}
+  .quad ul{list-style:none;margin:0}
+  .quad li{font-size:14px;line-height:1.75;padding-left:16px;position:relative;margin-bottom:6px;color:var(--ink)}
+  .quad li::before{content:"▸";position:absolute;left:0;color:var(--gold)}
+  .quad .qsum{font-size:13px;color:var(--ink-dim);margin-top:10px;border-top:1px dashed var(--line);padding-top:9px;line-height:1.7}
+
+  /* SWOT 矩陣 */
+  .swot-matrix{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.swot-matrix{grid-template-columns:1fr}}
+  .sw{border-radius:14px;padding:18px;border:1px solid var(--line);background:var(--bg);position:relative;overflow:hidden}
+  .sw::before{content:"";position:absolute;inset:0;opacity:.07;pointer-events:none}
+  .sw.s::before{background:var(--sw-s)} .sw.w::before{background:var(--sw-w)}
+  .sw.o::before{background:var(--sw-o)} .sw.t::before{background:var(--sw-t)}
+  .sw-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;position:relative}
+  .sw-letter{font-family:"Noto Serif TC",serif;font-size:30px;font-weight:900;line-height:1}
+  .sw.s .sw-letter{color:var(--sw-s)} .sw.w .sw-letter{color:var(--sw-w)}
+  .sw.o .sw-letter{color:var(--sw-o)} .sw.t .sw-letter{color:var(--sw-t)}
+  .sw-h .swt{font-family:"Noto Serif TC",serif;font-size:17px;font-weight:600}
+  .sw-h .sws{margin-left:auto;font-size:13px;color:var(--ink-dim)}
+  .sw ul{list-style:none;position:relative}
+  .sw li{font-size:14px;line-height:1.75;padding-left:16px;position:relative;margin-bottom:7px}
+  .sw li::before{content:"●";position:absolute;left:0;font-size:8px;top:6px}
+  .sw.s li::before{color:var(--sw-s)} .sw.w li::before{color:var(--sw-w)}
+  .sw.o li::before{color:var(--sw-o)} .sw.t li::before{color:var(--sw-t)}
+
+  /* SWOT 評分長條 */
+  .sw-bars{display:flex;flex-direction:column;gap:11px;margin-top:6px}
+  .sw-bar{display:flex;align-items:center;gap:12px;font-size:14px}
+  .sw-bar .nm{width:78px;font-weight:600}
+  .sw-bar .track{flex:1;height:16px;background:var(--bg);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .sw-bar .fill{height:100%;border-radius:9px;transition:width .7s ease}
+  .sw-bar .val{width:42px;text-align:right;color:var(--ink-dim);font-size:13px}
+
+  /* TOWS 策略矩陣 */
+  .tows{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.tows{grid-template-columns:1fr}}
+  .tcell{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .tcell h4{font-family:"Noto Serif TC",serif;font-size:15px;margin-bottom:10px;letter-spacing:.04em;
+    display:flex;align-items:center;gap:8px}
+  .tcell .tg{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.05em}
+  .tg.so{background:rgba(79,184,154,.16);color:var(--jade);border:1px solid rgba(79,184,154,.4)}
+  .tg.st{background:rgba(212,175,55,.14);color:var(--gold-bright);border:1px solid var(--gold-deep)}
+  .tg.wo{background:rgba(90,160,216,.16);color:var(--blue);border:1px solid rgba(90,160,216,.4)}
+  .tg.wt{background:rgba(200,85,61,.14);color:#f0a99a;border:1px solid rgba(200,85,61,.45)}
+  .tcell ol{margin-left:18px;font-size:14px;line-height:1.8}
+  .tcell li{margin-bottom:5px}
+
+  /* 重點討論 prose */
+  .mini-btn{padding:7px 14px;border-radius:9px;border:1px solid var(--gold-deep);background:rgba(212,175,55,.08);
+    color:var(--gold-bright);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.16s}
+  .mini-btn:hover{background:rgba(212,175,55,.18)}
+  .mini-btn:disabled{opacity:.5;cursor:not-allowed}
+  .prose{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:22px 24px;
+    font-size:15.5px;line-height:2;letter-spacing:.01em}
+  .prose h3{font-family:"Noto Serif TC",serif;color:var(--gold-bright);font-size:18px;margin:18px 0 8px;
+    border-left:3px solid var(--gold);padding-left:12px}
+  .prose h3:first-child{margin-top:0}
+  .prose ul,.prose ol{margin:6px 0 12px 22px}
+  .prose li{margin-bottom:5px}
+  .prose b,.prose strong{color:var(--gold-bright)}
+  .prose p{margin-bottom:10px}
+
+  /* 聊天 */
+  .chat-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chat-quick .qchip{padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg);
+    cursor:pointer;font-size:13px;color:var(--ink-dim);transition:.16s}
+  .chat-quick .qchip:hover{border-color:var(--gold-deep);color:var(--ink)}
+  .chat-log{display:flex;flex-direction:column;gap:11px;margin-bottom:14px;max-height:440px;overflow-y:auto;padding-right:4px}
+  .chat-log::-webkit-scrollbar{width:8px}
+  .chat-log::-webkit-scrollbar-thumb{background:var(--gold-deep);border-radius:8px}
+  .chat-empty{text-align:center;color:#56627d;padding:30px 10px;font-size:14px;line-height:1.9}
+  .bubble{padding:12px 16px;border-radius:14px;font-size:15px;line-height:1.9;max-width:88%;white-space:pre-wrap}
+  .bubble.u{align-self:flex-end;background:linear-gradient(145deg,var(--gold-deep),#7a6320);color:#fff;border-bottom-right-radius:4px}
+  .bubble.a{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .bubble.a b{color:var(--gold-bright)}
+  .bubble.think{color:var(--ink-dim);font-style:italic}
+  .chat-input{display:flex;gap:10px;align-items:flex-end}
+  .chat-input textarea{flex:1}
+  .chat-input button{padding:13px 22px;border-radius:11px;border:none;cursor:pointer;
+    background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));color:var(--bg);font-weight:700;
+    font-family:inherit;font-size:15px;white-space:nowrap;transition:.16s}
+  .chat-input button:hover{filter:brightness(1.08)}
+  .chat-input button:disabled{opacity:.5;cursor:not-allowed}
+
+  /* 戰略定位象限 */
+  .posture-wrap{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:center}
+  @media(max-width:760px){.posture-wrap{grid-template-columns:1fr}}
+  #postureCanvas{width:300px;height:300px;display:block;margin:0 auto;background:var(--chart-surface);border-radius:12px;border:1px solid var(--line)}
+  .posture-verdict{font-size:15px;line-height:1.9}
+  .posture-verdict .pbig{font-family:"Noto Serif TC",serif;font-size:20px;font-weight:700;color:var(--gold-bright);display:block;margin-bottom:8px}
+  .posture-verdict .tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;margin-bottom:10px;
+    background:rgba(212,175,55,.12);color:var(--gold-bright);border:1px solid var(--gold-deep)}
+
+  /* 風險熱力圖 */
+  .heat-wrap{display:grid;grid-template-columns:1fr 150px;gap:18px;align-items:center}
+  @media(max-width:680px){.heat-wrap{grid-template-columns:1fr}}
+  #riskHeat{width:100%;max-width:480px;height:auto;display:block;background:var(--chart-surface);border-radius:12px;border:1px solid var(--line)}
+  .heat-legend{font-size:13px;line-height:1.9;color:var(--ink-dim)}
+  .heat-legend .hi{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .heat-legend .dot{width:14px;height:14px;border-radius:4px;flex:0 0 auto}
+  .heat-legend .ri{font-size:12.5px;margin-bottom:5px;padding-left:18px;position:relative}
+  .heat-legend .ri b{position:absolute;left:0;color:var(--gold-bright)}
+
+  /* 執行策略 */
+  .exec-methods{display:flex;flex-direction:column;gap:14px}
+  .em{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px 18px;border-left:3px solid var(--jade)}
+  .em h4{font-family:"Noto Serif TC",serif;font-size:16px;color:var(--gold-bright);margin-bottom:7px;display:flex;align-items:center;gap:8px}
+  .em h4 .n{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;color:var(--bg);
+    background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));flex:0 0 auto}
+  .em p{font-size:14px;line-height:1.8;color:var(--ink);margin-bottom:8px}
+  .em .kpi{font-size:13px;color:var(--jade);background:rgba(79,184,154,.08);border:1px solid rgba(79,184,154,.3);
+    border-radius:8px;padding:6px 11px;display:inline-block}
+  .em .kpi b{color:var(--jade)}
+
+  /* 甘特圖 */
+  .gantt-wrap{overflow-x:auto;background:var(--chart-surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+  #ganttCanvas{display:block;min-width:600px}
+  .gantt-detail{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .gd{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+  .gd .gh{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+  .gd .gh .ph{font-family:"Noto Serif TC",serif;font-size:15px;color:var(--gold-bright);font-weight:600}
+  .gd .gh .pr{margin-left:auto;font-size:12.5px;color:var(--ink-dim)}
+  .gd ul{list-style:none;margin:0}
+  .gd li{font-size:13.5px;line-height:1.7;padding-left:15px;position:relative;color:var(--ink)}
+  .gd li::before{content:"▸";position:absolute;left:0;color:var(--jade)}
+
+  .sec-title{font-family:"Noto Serif TC",serif;font-size:16px;color:var(--gold-bright);margin:22px 0 12px;
+    border-left:3px solid var(--gold);padding-left:12px;letter-spacing:.05em}
+  .sec-title:first-child{margin-top:0}
+
+  /* 結果分頁 */
+  .rtabs{display:flex;gap:8px;margin:4px 0 20px;background:var(--bg);padding:6px;border-radius:12px;border:1px solid var(--line);flex-wrap:wrap}
+  .rtab{flex:1;min-width:78px;text-align:center;padding:12px 6px;border-radius:8px;cursor:pointer;font-size:15px;
+    color:var(--ink-dim);transition:.18s;font-weight:500;font-family:"Noto Serif TC",serif;letter-spacing:.05em}
+  .rtab.on{background:linear-gradient(145deg,var(--gold-bright),var(--gold-deep));color:var(--bg);font-weight:700;box-shadow:0 4px 12px rgba(212,175,55,.25)}
+  .rpane{display:none;animation:fade .3s ease}
+  .rpane.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .reco{background:rgba(79,184,154,.06);border:1px solid rgba(79,184,154,.3);border-radius:12px;
+    padding:16px 18px;font-size:15px;line-height:2;margin-top:6px}
+  .reco li{margin-bottom:6px}
+
+  .dl{display:flex;gap:12px;margin-top:8px}
+  .dl button{flex:1;padding:14px;border-radius:11px;border:1px solid var(--gold-deep);background:rgba(212,175,55,.07);
+    color:var(--gold-bright);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:.16s;letter-spacing:.05em}
+  .dl button:hover{background:rgba(212,175,55,.16)}
+
+  /* PDF/列印：避免圖表與區塊被分頁切斷（跨頁時整塊下移、上方留白） */
+  .overview,.posture-wrap,.pest-wrap,.heat-wrap,.gantt-wrap,.sw-bars,
+  .swot-matrix,.tows,.exec-methods,.gantt-detail,.reco,
+  .quad,.sw,.tcell,.em,.gd,.bubble,canvas{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .sec-title{break-after:avoid;page-break-after:avoid}
+
+  /* PDF 匯出模式：固定寬度排版，避免右側被裁切 */
+  body.pdf-mode .gantt-wrap{overflow:visible}
+  body.pdf-mode #ganttCanvas{max-width:100%;min-width:0;width:100%;height:auto}
+  body.pdf-mode #riskHeat{max-width:100%}
+  body.pdf-mode .sec-title{break-after:avoid;page-break-after:avoid}
+
+  @media print{
+    body{background:#fff;color:#000}
+    .grain,.tabs,.go,.dl,#themeToggle,.layout>div:first-child,header .divider,.stage,.rtabs{display:none!important}
+    .rpane{display:block!important;animation:none!important;break-inside:avoid}
+    .layout{grid-template-columns:1fr;display:block}
+    .card{border:1px solid #ccc;box-shadow:none;break-inside:avoid;background:#fff}
+    h1{-webkit-text-fill-color:#9a7d28;color:#9a7d28}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="wrap">
+  <header>
+    <button id="themeToggle">☀️ 淺色</button>
+    <span class="badge">ECF · STRATEGY LAB</span>
+    <h1>企業策略分析儀</h1>
+    <div class="sub">PEST 總體環境 × SWOT 競爭態勢 × TOWS 策略矩陣</div>
+    <div class="divider"></div>
+  </header>
+
+  <div class="layout">
+    <!-- 左：輸入 -->
+    <div>
+      <div class="card">
+        <div class="card-h"><span class="num">1</span><h2>資料來源</h2></div>
+
+        <div class="tabs">
+          <div class="tab on" data-tab="url">🔗 網址連結</div>
+          <div class="tab" data-tab="file">📄 上傳檔案</div>
+          <div class="tab" data-tab="text">✍️ 手動輸入</div>
+        </div>
+
+        <div class="pane on" data-pane="url">
+          <label>公司資料連結（官網／公開簡介頁）</label>
+          <input id="urlInput" type="url" placeholder="https://company.com/about">
+          <p class="small">系統會嘗試多組代理抓取頁面文字；若該站封鎖跨域，請改用「上傳檔案」或「手動輸入」。可一行一個貼多個網址。</p>
+        </div>
+
+        <div class="pane" data-pane="file">
+          <div class="drop" id="drop">
+            <div class="ic">📑</div>
+            <p><b>點擊或拖曳</b>上傳公司簡介<br>支援 PDF · 圖片(JPG/PNG) · TXT</p>
+          </div>
+          <input id="fileInput" type="file" accept=".pdf,.txt,.md,image/*" multiple hidden>
+          <div class="filelist" id="filelist"></div>
+        </div>
+
+        <div class="pane" data-pane="text">
+          <label>公司簡介／資料（直接貼上）</label>
+          <textarea id="textInput" rows="7" placeholder="貼上公司簡介、產品線、財報摘要、產業背景等任何文字資料…"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><span class="num">2</span><h2>分析設定</h2></div>
+        <div class="grid g2">
+          <div>
+            <label>公司名稱</label>
+            <input id="coName" placeholder="例：台積電">
+          </div>
+          <div>
+            <label>所屬產業</label>
+            <input id="coIndustry" placeholder="例：半導體製造">
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label>主要市場 / 地區</label>
+          <input id="coMarket" placeholder="例：台灣、美國、全球供應鏈">
+        </div>
+        <div style="margin-top:14px">
+          <label>分析重點（選填）</label>
+          <input id="coFocus" placeholder="例：AI 算力需求、地緣政治風險、ESG 轉型…">
+        </div>
+
+        <button class="go" id="goBtn">開 始 分 析</button>
+        <div class="stage" id="stage"></div>
+        <div class="err" id="errBox"></div>
+
+        <div class="apikey-box" id="apikeyBox">
+          <div class="apikey-head" id="apikeyToggle">
+            🔑 API 金鑰設定<span class="kc" id="keyCount">內建 2 把</span><span class="chev">▾</span>
+          </div>
+          <div class="apikey-body">
+            <label>分析模型</label>
+            <select id="modelSelect">
+              <option value="auto" selected>🔄 自動（額度或格式出問題時自動換模型）</option>
+              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile（品質佳，每日 10 萬 token）</option>
+              <option value="llama-3.1-8b-instant">llama-3.1-8b-instant（快速，每日額度大）</option>
+              <option value="openai/gpt-oss-120b">openai/gpt-oss-120b（品質佳，每日 20 萬 token）</option>
+              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b（輕量，較易格式錯誤）</option>
+            </select>
+            <p class="small" style="margin-top:6px">自動模式依序嘗試 70b → gpt-oss-120b → 8b-instant，各模型有獨立每日額度。</p>
+            <label style="margin-top:14px">自訂 Groq API Key（每行一把；留空則使用內建金鑰）</label>
+            <textarea id="apikeyInput" rows="4" placeholder="gsk_xxxxxxxx&#10;gsk_yyyyyyyy"></textarea>
+            <div class="apikey-actions">
+              <button id="apikeySave">💾 儲存</button>
+              <button id="apikeyClear">清除</button>
+            </div>
+            <div class="apikey-msg" id="apikeyMsg"></div>
+            <p class="small">金鑰只存在你目前的瀏覽器（localStorage），不會上傳。可至 <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a> 免費申請。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：結果 -->
+    <div>
+      <div class="card" id="result">
+        <div class="card-h"><span class="num">3</span><h2>分析結果</h2><span class="hint">PEST · SWOT · TOWS</span></div>
+        <div class="placeholder" id="placeholder">
+          <div class="pic">📊</div>
+          填入公司資料來源後<br>點擊「開始分析」<br>策略圖表將顯示於此
+        </div>
+        <div id="resultArea" style="display:none">
+          <div class="meta-line" id="metaLine"></div>
+
+          <div class="rtabs">
+            <div class="rtab on" data-rtab="ov">綜合</div>
+            <div class="rtab" data-rtab="pest">PEST</div>
+            <div class="rtab" data-rtab="swot">SWOT</div>
+            <div class="rtab" data-rtab="tows">TOWS</div>
+            <div class="rtab" data-rtab="exec">執行策略</div>
+            <div class="rtab" data-rtab="focus">重點討論</div>
+            <div class="rtab" data-rtab="chat">AI 提問</div>
+          </div>
+
+          <!-- 綜合評估 -->
+          <div class="rpane on" data-rpane="ov">
+            <div class="sec-title">綜合策略評估</div>
+            <div class="overview">
+              <canvas id="gaugeCanvas" width="400" height="320"></canvas>
+              <div class="verdict" id="verdict"></div>
+            </div>
+            <div class="sec-title">戰略定位象限</div>
+            <div class="posture-wrap">
+              <canvas id="postureCanvas" width="560" height="560"></canvas>
+              <div class="posture-verdict" id="postureVerdict"></div>
+            </div>
+            <div class="sec-title">優先行動建議</div>
+            <ul class="reco" id="recoBox"></ul>
+          </div>
+
+          <!-- PEST -->
+          <div class="rpane" data-rpane="pest">
+            <div class="sec-title">PEST 總體環境分析</div>
+            <div class="pest-wrap">
+              <canvas id="pestRadar" width="600" height="600"></canvas>
+              <div class="pest-grid" id="pestGrid"></div>
+            </div>
+          </div>
+
+          <!-- SWOT -->
+          <div class="rpane" data-rpane="swot">
+            <div class="sec-title">SWOT 競爭態勢矩陣</div>
+            <div class="swot-matrix" id="swotMatrix"></div>
+            <div class="sw-bars" id="swotBars" style="margin-top:18px"></div>
+            <div class="sec-title">風險熱力圖（劣勢 × 威脅）</div>
+            <div class="heat-wrap">
+              <canvas id="riskHeat" width="620" height="560"></canvas>
+              <div class="heat-legend" id="riskLegend"></div>
+            </div>
+          </div>
+
+          <!-- TOWS -->
+          <div class="rpane" data-rpane="tows">
+            <div class="sec-title">TOWS 策略矩陣</div>
+            <div class="tows" id="towsGrid"></div>
+          </div>
+
+          <!-- 執行策略 -->
+          <div class="rpane" data-rpane="exec">
+            <div class="sec-title">建議策略執行辦法</div>
+            <div class="exec-methods" id="execMethods"></div>
+            <div class="sec-title">專案時程規劃</div>
+            <div class="gantt-wrap"><canvas id="ganttCanvas" width="900" height="360"></canvas></div>
+            <div class="gantt-detail" id="ganttDetail"></div>
+          </div>
+
+          <!-- 重點討論 -->
+          <div class="rpane" data-rpane="focus">
+            <div class="sec-title" style="display:flex;align-items:center">
+              <span id="focusTitle">分析重點深入討論</span>
+              <button class="mini-btn" id="focusRegen" style="margin-left:auto;display:none">↻ 重新生成</button>
+            </div>
+            <div class="prose" id="focusContent">
+              <div class="placeholder" style="padding:40px 12px"><div class="pic">🔍</div>切換到此分頁將自動針對「分析重點」展開深入討論</div>
+            </div>
+          </div>
+
+          <!-- AI 提問 -->
+          <div class="rpane" data-rpane="chat">
+            <div class="sec-title">向 AI 追問</div>
+            <div class="chat-quick" id="chatQuick"></div>
+            <div class="chat-log" id="chatLog"></div>
+            <div class="chat-input">
+              <textarea id="chatQ" rows="2" placeholder="針對此分析提出問題，例如：最該優先處理的風險是什麼？"></textarea>
+              <button id="chatSend">送出</button>
+            </div>
+          </div>
+
+          <div class="dl" style="margin-top:22px">
+            <button onclick="window.print()">🖨️ 列印 / 存 PDF</button>
+            <button id="dlPdf">📄 下載 PDF</button>
+            <button id="dlTxt">📝 下載文字</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">ECF Strategy Lab · 本分析由 AI 生成，僅供決策參考，非投資建議</div>
+</div>
+
+<script>
+/* ===== Groq 金鑰池：8 組輪流 ===== */
+const BUILTIN_KEYS=[
+  "",
+  ""
+];
+let _keyIdx=Math.floor(Math.random()*BUILTIN_KEYS.length);
+let CUSTOM_KEYS=[];
+const LS_KEY="pestswot_groq_keys";
+function activeKeys(){return CUSTOM_KEYS.length?CUSTOM_KEYS:BUILTIN_KEYS;}
+function nextKey(){const pool=activeKeys();const k=pool[_keyIdx%pool.length];_keyIdx=(_keyIdx+1)%pool.length;return k;}
+let TEXT_MODEL="auto";
+const AUTO_CHAIN=["llama-3.3-70b-versatile","openai/gpt-oss-120b","llama-3.1-8b-instant"];
+const FALLBACK_TEXT="llama-3.1-8b-instant";
+const VISION_MODEL="meta-llama/llama-4-scout-17b-16e-instruct";
+function pickModel(){return TEXT_MODEL==="auto"?AUTO_CHAIN[0]:TEXT_MODEL;}
+const GROQ_URL="https://api.groq.com/openai/v1/chat/completions";
+
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ===== 主題切換 ===== */
+const html=document.documentElement;
+document.getElementById("themeToggle").onclick=()=>{
+  const dark=html.getAttribute("data-theme")!=="light";
+  html.setAttribute("data-theme",dark?"light":"dark");
+  document.getElementById("themeToggle").textContent=dark?"🌙 深色":"☀️ 淺色";
+  if(lastData) renderAll(lastData,lastMeta); // 重繪圖表配色
+};
+
+/* ===== Tab 切換 ===== */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".pane").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on");
+  document.querySelector(`.pane[data-pane="${t.dataset.tab}"]`).classList.add("on");
+});
+
+/* ===== 結果分頁切換 ===== */
+function bindResultTabs(){
+  document.querySelectorAll(".rtab").forEach(t=>t.onclick=()=>{
+    document.querySelectorAll(".rtab").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".rpane").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on");
+    document.querySelector(`.rpane[data-rpane="${t.dataset.rtab}"]`).classList.add("on");
+    if(t.dataset.rtab==="focus"&&lastData&&!focusGenerated) generateFocus();
+  });
+}
+bindResultTabs();
+
+/* ===== API 金鑰設定 ===== */
+function parseKeys(t){return t.split(/[\n,\s]+/).map(s=>s.trim()).filter(Boolean);}
+function updateKeyCount(){
+  const el=document.getElementById("keyCount");
+  el.textContent=CUSTOM_KEYS.length?`自訂 ${CUSTOM_KEYS.length} 把`:`內建 ${BUILTIN_KEYS.length} 把`;
+}
+function loadKeys(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){CUSTOM_KEYS=JSON.parse(raw)||[];document.getElementById("apikeyInput").value=CUSTOM_KEYS.join("\n");}
+  }catch(e){}
+  updateKeyCount();
+}
+document.getElementById("apikeyToggle").onclick=()=>document.getElementById("apikeyBox").classList.toggle("open");
+document.getElementById("apikeySave").onclick=()=>{
+  const keys=parseKeys(document.getElementById("apikeyInput").value);
+  const msg=document.getElementById("apikeyMsg");
+  CUSTOM_KEYS=keys;_keyIdx=0;
+  try{
+    if(keys.length) localStorage.setItem(LS_KEY,JSON.stringify(keys));
+    else localStorage.removeItem(LS_KEY);
+    msg.style.color="var(--jade)";
+    msg.textContent=keys.length?`✓ 已儲存 ${keys.length} 把自訂金鑰`:"✓ 已清空，將改用內建金鑰";
+  }catch(e){
+    msg.style.color="#f0a99a";
+    msg.textContent="⚠ 此環境無法寫入儲存，金鑰僅在本次有效";
+  }
+  updateKeyCount();
+  setTimeout(()=>msg.textContent="",3000);
+};
+document.getElementById("apikeyClear").onclick=()=>{
+  CUSTOM_KEYS=[];_keyIdx=0;document.getElementById("apikeyInput").value="";
+  try{localStorage.removeItem(LS_KEY);}catch(e){}
+  const msg=document.getElementById("apikeyMsg");
+  msg.style.color="var(--ink-dim)";msg.textContent="已清除，改用內建金鑰";
+  updateKeyCount();setTimeout(()=>msg.textContent="",3000);
+};
+loadKeys();
+document.getElementById("modelSelect").onchange=e=>{TEXT_MODEL=e.target.value;};
+
+/* ===== 檔案上傳 ===== */
+const drop=document.getElementById("drop"),fileInput=document.getElementById("fileInput");
+let uploadedFiles=[]; // {name, type, text?, image?{mime,b64}, status}
+drop.onclick=()=>fileInput.click();
+["dragover","dragenter"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("dragover")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("dragover")}));
+drop.addEventListener("drop",ev=>handleFiles(ev.dataTransfer.files));
+fileInput.onchange=()=>handleFiles(fileInput.files);
+
+function renderFileList(){
+  const box=document.getElementById("filelist");
+  box.innerHTML=uploadedFiles.map((f,i)=>`<div class="fileitem">
+    <span>${f.type==="image"?"🖼️":f.type==="pdf"?"📕":"📄"}</span>
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+    <span class="${f.status==='ok'?'ok':''}">${f.status==='ok'?'✓':f.status==='loading'?'…':''}</span>
+    <span class="x" data-i="${i}">✕</span>
+  </div>`).join("");
+  box.querySelectorAll(".x").forEach(b=>b.onclick=()=>{uploadedFiles.splice(+b.dataset.i,1);renderFileList();});
+}
+async function handleFiles(list){
+  for(const file of list){
+    const isImg=file.type.startsWith("image/");
+    const isPdf=file.type==="application/pdf"||file.name.toLowerCase().endsWith(".pdf");
+    const rec={name:file.name,type:isImg?"image":isPdf?"pdf":"text",status:"loading"};
+    uploadedFiles.push(rec);renderFileList();
+    try{
+      if(isImg){
+        rec.image=await fileToB64(file);
+      }else if(isPdf){
+        rec.text=await pdfToText(file);
+      }else{
+        rec.text=await file.text();
+      }
+      rec.status="ok";
+    }catch(e){rec.status="err";rec.text="(讀取失敗："+file.name+")";}
+    renderFileList();
+  }
+}
+function fileToB64(file){return new Promise((res,rej)=>{const r=new FileReader();
+  r.onload=()=>res({mime:file.type,b64:r.result.split(",")[1]});r.onerror=rej;r.readAsDataURL(file);});}
+async function pdfToText(file){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let out="";
+  const max=Math.min(pdf.numPages,20);
+  for(let i=1;i<=max;i++){
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    out+=tc.items.map(x=>x.str).join(" ")+"\n";
+  }
+  return out.trim();
+}
+
+/* ===== 網址抓取（多代理輪替） ===== */
+const PROXIES=[
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+  u=>`https://thingproxy.freeboard.io/fetch/${u}`,
+  u=>u
+];
+async function fetchUrlText(url){
+  for(const mk of PROXIES){
+    try{
+      const r=await fetch(mk(url),{signal:AbortSignal.timeout(15000)});
+      if(!r.ok) continue;
+      const htmlText=await r.text();
+      const txt=htmlToText(htmlText);
+      if(txt&&txt.length>120) return txt;
+    }catch(e){}
+  }
+  throw new Error("無法抓取網址內容（可能被跨域封鎖），請改用上傳檔案或手動貼上");
+}
+function htmlToText(h){
+  const doc=new DOMParser().parseFromString(h,"text/html");
+  doc.querySelectorAll("script,style,noscript,svg,nav,footer,header,iframe").forEach(n=>n.remove());
+  return (doc.body?.innerText||doc.body?.textContent||"").replace(/\s{3,}/g," ").replace(/\n{3,}/g,"\n\n").trim().slice(0,9000);
+}
+
+/* ===== 蒐集所有來源文字 ===== */
+async function gatherSource(setStage){
+  const activeTab=document.querySelector(".tab.on").dataset.tab;
+  let parts=[],images=[];
+  // 永遠也納入手動文字
+  const t=document.getElementById("textInput").value.trim();
+  if(t) parts.push("【手動輸入資料】\n"+t);
+
+  if(activeTab==="url"||document.getElementById("urlInput").value.trim()){
+    const urls=document.getElementById("urlInput").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    for(const u of urls){
+      setStage(`抓取網址：${u.slice(0,40)}…`);
+      try{const txt=await fetchUrlText(u);parts.push(`【網址：${u}】\n${txt}`);}
+      catch(e){parts.push(`（網址抓取失敗：${u}）`);}
+    }
+  }
+  for(const f of uploadedFiles){
+    if(f.type==="image"&&f.image) images.push(f.image);
+    else if(f.text) parts.push(`【檔案：${f.name}】\n${f.text}`);
+  }
+  return {text:parts.join("\n\n").slice(0,8000),images};
+}
+
+/* ===== Groq 呼叫 ===== */
+/* ===== Groq 呼叫（含退避重試） ===== */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function callGroq(messages,model,opts={}){
+  const maxTokens=opts.maxTokens||4096;
+  const onStatus=opts.onStatus||(()=>{});
+  const validate=opts.validate;  // 若提供，回傳內容需通過驗證（如 JSON 解析），否則視為失敗並換模型
+  const chain=opts.modelChain||(opts.fallbackModel?[model,opts.fallbackModel]:[model]);
+  const pool=activeKeys();
+  const maxRetry=pool.length+chain.length+6;
+  let mi=0,curModel=chain[0],lastErr,_429=0;
+  function nextModel(reason){
+    if(mi<chain.length-1){mi++;curModel=chain[mi];_429=0;onStatus(`${reason}，改用模型 ${curModel.split("/").pop()}…`);return true;}
+    return false;
+  }
+  for(let i=0;i<maxRetry;i++){
+    const key=nextKey();
+    try{
+      const r=await fetch(GROQ_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+        body:JSON.stringify({model:curModel,messages,temperature:0.4,max_tokens:maxTokens,
+          ...(opts.jsonMode?{response_format:{type:"json_object"}}:{})})
+      });
+      if(r.ok){
+        const d=await r.json();
+        const content=d.choices?.[0]?.message?.content||"";
+        if(validate){
+          try{validate(content);}
+          catch(ve){ lastErr=new Error("格式解析失敗"); if(nextModel("格式解析失敗"))continue; continue; }
+        }
+        return content;
+      }
+      if(r.status===401){lastErr=new Error("金鑰無效(401)");continue;}        // 壞鑰，立即換下一把
+      if(r.status===429||r.status===503){
+        _429++;
+        let body="";try{body=await r.text();}catch(e){}
+        const mm=body.match(/"message"\s*:\s*"([^"]+)"/);
+        lastErr=new Error(mm?mm[1]:("速率限制 "+r.status));
+        // 先嘗試切換到下一個模型（各模型有獨立額度池，最快）
+        if(nextModel("此模型達上限"))continue;
+        // 已是鏈上最後一個模型：輪完金鑰後退避等待
+        if(i>=pool.length-1){
+          const ra=parseFloat(r.headers.get("retry-after"));
+          let wait=(ra&&ra>0)?Math.min(ra*1000,15000):Math.min(1500*(_429-pool.length+1),8000);
+          onStatus(`金鑰皆忙碌，${Math.round(wait/1000)} 秒後重試…（${i+1}/${maxRetry}）`);
+          await sleep(wait);
+        }
+        continue;
+      }
+      const tx=await r.text();throw new Error(`API ${r.status}：${tx.slice(0,160)}`);
+    }catch(e){
+      if(e.name==="AbortError"){lastErr=new Error("連線逾時");}else lastErr=e;
+    }
+  }
+  throw new Error(`分析失敗：${lastErr?.message||"未知錯誤"}\n可在「🔑 API 金鑰設定」改用其他模型，或貼上其他 Groq 帳號的金鑰。`);
+}
+function extractJSON(s){
+  s=s.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const start=s.indexOf("{");
+  if(start<0) return JSON.parse(s);
+  let depth=0,inStr=false,escp=false,end=-1;
+  for(let i=start;i<s.length;i++){
+    const ch=s[i];
+    if(inStr){ if(escp)escp=false; else if(ch==="\\")escp=true; else if(ch==='"')inStr=false; }
+    else { if(ch==='"')inStr=true; else if(ch==="{")depth++; else if(ch==="}"){depth--; if(depth===0){end=i;break;}} }
+  }
+  return JSON.parse(end>start?s.slice(start,end+1):s.slice(start));
+}
+
+/* ===== 主流程 ===== */
+let lastData=null,lastMeta=null;
+const goBtn=document.getElementById("goBtn"),stageEl=document.getElementById("stage"),errBox=document.getElementById("errBox");
+function setStage(s){stageEl.textContent=s;}
+function showErr(m){errBox.textContent=m;errBox.style.display="block";}
+
+goBtn.onclick=async()=>{
+  errBox.style.display="none";
+  const co=document.getElementById("coName").value.trim();
+  goBtn.disabled=true;goBtn.innerHTML='<span class="spinner"></span>分析中…';
+  try{
+    setStage("彙整資料來源…");
+    const {text,images}=await gatherSource(setStage);
+    if(!text&&images.length===0&&!co){throw new Error("請至少提供：網址、檔案、貼上文字，或填寫公司名稱");}
+
+    const meta={
+      co:co||"（未命名公司）",
+      industry:document.getElementById("coIndustry").value.trim()||"未指定",
+      market:document.getElementById("coMarket").value.trim()||"未指定",
+      focus:document.getElementById("coFocus").value.trim()||"全面評估"
+    };
+
+    setStage(images.length?"AI 判讀圖像與資料中…":"AI 進行 PEST／SWOT 分析中…");
+    const sys=buildSystemPrompt();
+    const userText=buildUserPrompt(meta,text);
+
+    let messages,model,mopts;
+    const baseChain=TEXT_MODEL==="auto"?{modelChain:AUTO_CHAIN}:{fallbackModel:FALLBACK_TEXT};
+    if(images.length){
+      model=VISION_MODEL;
+      const content=[{type:"text",text:userText}];
+      images.slice(0,3).forEach(im=>content.push({type:"image_url",image_url:{url:`data:${im.mime};base64,${im.b64}`}}));
+      messages=[{role:"system",content:sys},{role:"user",content}];
+      mopts={maxTokens:4096,onStatus:setStage,jsonMode:true,validate:extractJSON};  // 視覺模型不切換
+    }else{
+      model=pickModel();
+      messages=[{role:"system",content:sys},{role:"user",content:userText}];
+      mopts={maxTokens:4096,onStatus:setStage,jsonMode:true,validate:extractJSON,...baseChain};
+    }
+
+    const raw=await callGroq(messages,model,mopts);  // callGroq 已內建限額/格式失敗自動換模型
+    setStage("產生策略圖表…");
+    let data;
+    try{data=extractJSON(raw);}
+    catch(e){throw new Error("AI 回傳格式解析失敗，請再按一次開始分析。");}
+
+    lastData=data;lastMeta=meta;
+    renderAll(data,meta);
+    setStage("");
+  }catch(err){
+    showErr(err.message||"發生未知錯誤");
+    setStage("");
+  }finally{
+    goBtn.disabled=false;goBtn.textContent="開 始 分 析";
+  }
+};
+
+function buildSystemPrompt(){
+  return `你是資深企業策略顧問，精通 PEST 總體環境分析與 SWOT 競爭態勢分析。
+請依使用者提供的公司資料，輸出**嚴格 JSON**（不得有任何 JSON 以外的文字、不得有 markdown 標記）。
+所有文字內容一律使用繁體中文（台灣用語）。每個分數為 0–100 的整數（risks 的 likelihood/impact 為 1–5）。
+JSON 結構如下：
+{
+  "company":"公司名稱",
+  "overall":{"score":整數0-100,"verdict":"一句話策略總評(20字內)","summary":"3-4句綜合評估"},
+  "pest":{
+    "political":{"score":整數,"items":["要點1","要點2","要點3"],"summary":"1句小結"},
+    "economic":{"score":整數,"items":[...],"summary":""},
+    "social":{"score":整數,"items":[...],"summary":""},
+    "technological":{"score":整數,"items":[...],"summary":""}
+  },
+  "swot":{
+    "strengths":{"score":整數,"items":["優勢1","優勢2","優勢3","優勢4"]},
+    "weaknesses":{"score":整數,"items":[...]},
+    "opportunities":{"score":整數,"items":[...]},
+    "threats":{"score":整數,"items":[...]}
+  },
+  "tows":{
+    "SO":["進攻策略1","進攻策略2","進攻策略3","進攻策略4","進攻策略5"],
+    "ST":["防禦策略1",... 共5項],
+    "WO":["改善策略1",... 共5項],
+    "WT":["規避策略1",... 共5項]
+  },
+  "risks":[
+    {"name":"風險項目(20字內)","source":"劣勢"或"威脅","likelihood":1-5整數,"impact":1-5整數}
+    ... 請列 6-9 項，取自 weaknesses 與 threats，likelihood=發生機率、impact=衝擊程度
+  ],
+  "execution":{
+    "methods":[
+      {"title":"策略名稱","approach":"具體執行辦法(40-70字)","kpi":"關鍵衡量指標"}
+      ... 列 4-5 項，須對應 TOWS 中最關鍵的策略
+    ],
+    "timeline":[
+      {"phase":"階段名稱","startMonth":起始月份整數,"durationMonths":持續月數整數,"tasks":["任務1","任務2","任務3"]}
+      ... 列 4-5 個階段，月份以專案啟動為第1月，總時程約 12-18 個月，階段可重疊
+    ]
+  },
+  "recommendations":["優先行動1","優先行動2","優先行動3","優先行動4"]
+}
+PEST 各面向 score 代表「該環境對公司之有利程度」(分數越高越有利)。
+SWOT 各象限 score 代表「該象限之強度/重要性」。
+TOWS 每格務必各 5 項，具體可執行。
+items 每點 15-35 字，具體、可佐證。若資料不足請依產業常識合理推斷，並在 summary 註明為推斷。`;
+}
+function buildUserPrompt(m,text){
+  return `公司名稱：${m.co}
+所屬產業：${m.industry}
+主要市場：${m.market}
+分析重點：${m.focus}
+
+【參考資料】
+${text||"（無附加文字資料，請依公司名稱與產業之公開常識進行分析，並於 summary 標註為一般性推斷）"}
+
+請輸出符合指定結構的 JSON。`;
+}
+
+/* ===== 渲染 ===== */
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function renderAll(d,m){
+  document.getElementById("placeholder").style.display="none";
+  document.getElementById("resultArea").style.display="block";
+  // 重設回「綜合」分頁
+  document.querySelectorAll(".rtab").forEach((x,i)=>x.classList.toggle("on",i===0));
+  document.querySelectorAll(".rpane").forEach((x,i)=>x.classList.toggle("on",i===0));
+  document.getElementById("metaLine").textContent=
+    `${d.company||m.co}　|　產業：${m.industry}　|　市場：${m.market}　|　模型：${TEXT_MODEL.split("-").slice(0,3).join("-")}`;
+
+  // 綜合評分
+  const ov=d.overall||{score:60,verdict:"",summary:""};
+  drawGauge("gaugeCanvas",ov.score||0);
+  document.getElementById("verdict").innerHTML=
+    `<span class="vbig">${ov.verdict||"策略總評"}（${ov.score||0} 分）</span>${ov.summary||""}`;
+  drawPosture(d.swot||{});
+
+  // PEST
+  drawRadar("pestRadar",d.pest||{});
+  renderPestGrid(d.pest||{});
+
+  // SWOT
+  renderSwot(d.swot||{});
+  renderSwotBars(d.swot||{});
+  if(!d.risks||!d.risks.length) d.risks=synthRisks(d.swot||{});  // AI 未給風險時自動合成
+  drawRiskHeat(d.risks||[]);
+
+  // TOWS
+  renderTows(d.tows||{});
+
+  // 執行策略
+  renderExecution(d.execution||{});
+
+  // 重置重點討論與聊天
+  focusGenerated=false;
+  document.getElementById("focusRegen").style.display="none";
+  document.getElementById("focusContent").innerHTML=
+    '<div class="placeholder" style="padding:40px 12px"><div class="pic">🔍</div>切換到此分頁將自動針對「分析重點」展開深入討論</div>';
+  initChat(d,m);
+
+  // 建議
+  document.getElementById("recoBox").innerHTML=(d.recommendations||[]).map(r=>`<li>${esc(r)}</li>`).join("")||"<li>—</li>";
+
+  if(window.innerWidth<=980) document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+const PEST_LABELS={political:["P","政治 Political","p"],economic:["E","經濟 Economic","e"],social:["S","社會 Social","s"],technological:["T","科技 Technological","t"]};
+function renderPestGrid(p){
+  const order=["political","economic","social","technological"];
+  document.getElementById("pestGrid").innerHTML=order.map(k=>{
+    const o=p[k]||{score:0,items:[],summary:""};const L=PEST_LABELS[k];
+    return `<div class="quad ${L[2]}">
+      <div class="quad-h"><div class="quad-tag">${L[0]}</div>
+        <div class="qt">${L[1]}</div>
+        <div class="qs">有利度 <b>${o.score||0}</b></div></div>
+      <ul>${(o.items||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+      ${o.summary?`<div class="qsum">${esc(o.summary)}</div>`:""}
+    </div>`;
+  }).join("");
+}
+const SW_MAP={strengths:["S","優勢 Strengths","s"],weaknesses:["W","劣勢 Weaknesses","w"],opportunities:["O","機會 Opportunities","o"],threats:["T","威脅 Threats","t"]};
+function renderSwot(s){
+  const order=["strengths","weaknesses","opportunities","threats"];
+  document.getElementById("swotMatrix").innerHTML=order.map(k=>{
+    const o=s[k]||{score:0,items:[]};const L=SW_MAP[k];
+    return `<div class="sw ${L[2]}">
+      <div class="sw-h"><span class="sw-letter">${L[0]}</span><span class="swt">${L[1]}</span><span class="sws">強度 ${o.score||0}</span></div>
+      <ul>${(o.items||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+    </div>`;
+  }).join("");
+}
+function renderSwotBars(s){
+  const order=[["strengths","優勢","--sw-s"],["weaknesses","劣勢","--sw-w"],["opportunities","機會","--sw-o"],["threats","威脅","--sw-t"]];
+  document.getElementById("swotBars").innerHTML=order.map(([k,nm,v])=>{
+    const sc=(s[k]||{}).score||0;
+    return `<div class="sw-bar"><span class="nm">${nm}</span>
+      <span class="track"><span class="fill" style="width:0;background:var(${v})" data-w="${sc}"></span></span>
+      <span class="val">${sc}</span></div>`;
+  }).join("");
+  requestAnimationFrame(()=>document.querySelectorAll("#swotBars .fill").forEach(f=>f.style.width=f.dataset.w+"%"));
+}
+function renderTows(t){
+  const cells=[
+    ["SO","so","SO 進攻｜以優勢抓機會"],
+    ["ST","st","ST 防禦｜以優勢抗威脅"],
+    ["WO","wo","WO 改善｜補劣勢搶機會"],
+    ["WT","wt","WT 規避｜減劣勢避威脅"]
+  ];
+  document.getElementById("towsGrid").innerHTML=cells.map(([k,c,title])=>{
+    const arr=t[k]||[];
+    return `<div class="tcell"><h4><span class="tg ${c}">${k}</span>${title.split("｜")[1]}</h4>
+      <ol>${arr.map(x=>`<li>${esc(x)}</li>`).join("")||"<li>—</li>"}</ol></div>`;
+  }).join("");
+}
+
+/* ===== Canvas：儀表 ===== */
+function drawGauge(id,score){
+  const c=document.getElementById(id),ctx=c.getContext("2d");
+  const W=c.width,H=c.height,cx=W/2,cy=H*0.78,R=Math.min(W,H*1.4)/2-30;
+  ctx.clearRect(0,0,W,H);
+  const start=Math.PI,end=2*Math.PI;
+  // 底弧
+  ctx.lineWidth=26;ctx.lineCap="round";
+  ctx.strokeStyle=cssVar("--line");
+  ctx.beginPath();ctx.arc(cx,cy,R,start,end);ctx.stroke();
+  // 數值弧（漸層）
+  const frac=Math.max(0,Math.min(1,score/100));
+  const g=ctx.createLinearGradient(cx-R,0,cx+R,0);
+  g.addColorStop(0,cssVar("--red"));g.addColorStop(.55,cssVar("--gold"));g.addColorStop(1,cssVar("--jade"));
+  ctx.strokeStyle=g;
+  ctx.beginPath();ctx.arc(cx,cy,R,start,start+(end-start)*frac);ctx.stroke();
+  // 中央數字
+  ctx.fillStyle=cssVar("--gold-bright");ctx.textAlign="center";
+  ctx.font="900 64px 'Noto Serif TC',serif";
+  ctx.fillText(score,cx,cy-6);
+  ctx.fillStyle=cssVar("--ink-dim");ctx.font="500 22px 'Noto Sans TC',sans-serif";
+  ctx.fillText("綜合策略分數",cx,cy+30);
+}
+
+/* ===== Canvas：PEST 雷達 ===== */
+function drawRadar(id,p){
+  const c=document.getElementById(id),ctx=c.getContext("2d");
+  const W=c.width,H=c.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-90;
+  ctx.clearRect(0,0,W,H);
+  const axes=[
+    ["政治","political",cssVar("--p")],
+    ["經濟","economic",cssVar("--e")],
+    ["社會","social",cssVar("--s")],
+    ["科技","technological",cssVar("--t")]
+  ];
+  const N=axes.length,step=(Math.PI*2)/N,off=-Math.PI/2;
+  // 同心格線
+  ctx.strokeStyle=cssVar("--line");ctx.lineWidth=1;
+  for(let g=1;g<=4;g++){
+    ctx.beginPath();
+    for(let i=0;i<=N;i++){const a=off+step*i,r=R*g/4;
+      const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();
+  }
+  // 軸線 + 標籤
+  ctx.fillStyle=cssVar("--ink");ctx.font="600 17px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  axes.forEach((ax,i)=>{
+    const a=off+step*i;
+    ctx.strokeStyle=cssVar("--line");ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();
+    const lx=cx+Math.cos(a)*(R+34),ly=cy+Math.sin(a)*(R+34);
+    const sc=(p[ax[1]]||{}).score||0;
+    ctx.fillStyle=ax[2];ctx.font="700 18px 'Noto Sans TC',sans-serif";
+    ctx.fillText(ax[0],lx,ly-9);
+    ctx.fillStyle=cssVar("--ink-dim");ctx.font="500 14px 'Noto Sans TC',sans-serif";
+    ctx.fillText(sc+"分",lx,ly+11);
+  });
+  // 數據多邊形
+  const pts=axes.map((ax,i)=>{const a=off+step*i,sc=((p[ax[1]]||{}).score||0)/100;
+    return [cx+Math.cos(a)*R*sc,cy+Math.sin(a)*R*sc];});
+  ctx.beginPath();pts.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.closePath();
+  ctx.fillStyle="rgba(212,175,55,.18)";ctx.fill();
+  ctx.strokeStyle=cssVar("--gold");ctx.lineWidth=2.5;ctx.stroke();
+  pts.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],5,0,7);ctx.fillStyle=axes[i][2];ctx.fill();
+    ctx.strokeStyle=cssVar("--bg");ctx.lineWidth=2;ctx.stroke();});
+}
+
+/* ===== Canvas：戰略定位象限 ===== */
+function drawPosture(s){
+  const c=document.getElementById("postureCanvas"),ctx=c.getContext("2d");
+  const W=c.width,H=c.height,pad=70,cx=W/2,cy=H/2,half=(W-pad*2)/2;
+  ctx.clearRect(0,0,W,H);
+  const ix=((s.strengths?.score||0)-(s.weaknesses?.score||0)); // 內部 -100..100
+  const ex=((s.opportunities?.score||0)-(s.threats?.score||0)); // 外部 -100..100
+  // 象限底色
+  const quads=[
+    [cx,pad,half,half,cssVar("--sw-s"),"SO 進攻"],      // 右上
+    [pad,pad,half,half,cssVar("--sw-o"),"WO 扭轉"],     // 左上
+    [pad,cy,half,half,cssVar("--sw-w"),"WT 防禦"],      // 左下
+    [cx,cy,half,half,cssVar("--sw-t"),"ST 多角"]        // 右下
+  ];
+  quads.forEach(q=>{ctx.fillStyle=hexA(q[4],.10);ctx.fillRect(q[0],q[1],q[2],q[3]);});
+  // 象限文字
+  ctx.font="700 16px 'Noto Serif TC',serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillStyle=hexA(cssVar("--sw-s"),.85);ctx.fillText("SO 進攻",cx+half/2,pad+22);
+  ctx.fillStyle=hexA(cssVar("--sw-o"),.85);ctx.fillText("WO 扭轉",pad+half/2,pad+22);
+  ctx.fillStyle=hexA(cssVar("--sw-w"),.85);ctx.fillText("WT 防禦",pad+half/2,H-pad-22);
+  ctx.fillStyle=hexA(cssVar("--sw-t"),.85);ctx.fillText("ST 多角",cx+half/2,H-pad-22);
+  // 軸
+  ctx.strokeStyle=cssVar("--ink-dim");ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad,cy);ctx.lineTo(W-pad,cy);ctx.moveTo(cx,pad);ctx.lineTo(cx,H-pad);ctx.stroke();
+  // 軸標籤
+  ctx.fillStyle=cssVar("--ink-dim");ctx.font="500 13px 'Noto Sans TC',sans-serif";
+  ctx.fillText("外部機會 ▲",cx,pad-16);ctx.fillText("▼ 外部威脅",cx,H-pad+16);
+  ctx.save();ctx.translate(pad-18,cy);ctx.rotate(-Math.PI/2);ctx.fillText("內部優勢 ▶",0,0);ctx.restore();
+  ctx.save();ctx.translate(W-pad+18,cy);ctx.rotate(-Math.PI/2);ctx.fillText("◀ 內部劣勢",0,0);ctx.restore();
+  // 落點
+  const px=cx+(ix/100)*half,py=cy-(ex/100)*half;
+  ctx.beginPath();ctx.arc(px,py,11,0,7);ctx.fillStyle=cssVar("--gold");ctx.fill();
+  ctx.strokeStyle=cssVar("--bg");ctx.lineWidth=3;ctx.stroke();
+  ctx.beginPath();ctx.arc(px,py,18,0,7);ctx.strokeStyle=hexA(cssVar("--gold"),.5);ctx.lineWidth=2;ctx.stroke();
+  // 結論
+  let posture,desc;
+  if(ix>=0&&ex>=0){posture="SO 進攻型（成長）";desc="內部具優勢、外部多機會，宜積極擴張、搶占市場。";}
+  else if(ix<0&&ex>=0){posture="WO 扭轉型（補強）";desc="外部機會佳但內部能力不足，宜先補強弱項再搶機會。";}
+  else if(ix<0&&ex<0){posture="WT 防禦型（保守）";desc="內外皆弱，宜縮減、止血、聚焦核心或策略撤退。";}
+  else{posture="ST 多角型（守勢）";desc="內部有優勢但外部威脅大，宜以優勢分散風險、多角化布局。";}
+  document.getElementById("postureVerdict").innerHTML=
+    `<span class="tag">${posture}</span><span class="pbig">內部 ${ix>0?'+':''}${ix}　外部 ${ex>0?'+':''}${ex}</span>${desc}`;
+}
+function hexA(hex,a){
+  hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+  const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  return `rgba(${r||90},${g||160},${b||150},${a})`;
+}
+
+/* ===== Canvas：風險熱力圖 ===== */
+function clampN(n,a,b){return Math.max(a,Math.min(b,Math.round(n)));}
+function synthRisks(swot){
+  const out=[],w=swot.weaknesses||{},t=swot.threats||{};
+  const wI=clampN((w.score||50)/22+1,2,5),tI=clampN((t.score||50)/22+1,2,5);
+  (w.items||[]).forEach((name,i)=>out.push({name,source:"劣勢",likelihood:clampN(2+(i%3),1,5),impact:clampN(wI-(i%2),1,5)}));
+  (t.items||[]).forEach((name,i)=>out.push({name,source:"威脅",likelihood:clampN(3+(i%3),1,5),impact:clampN(tI-(i%2),1,5)}));
+  return out;
+}
+function drawRiskHeat(risks){
+  const c=document.getElementById("riskHeat"),ctx=c.getContext("2d");
+  const W=c.width,H=c.height,padL=70,padB=56,padT=20,padR=20;
+  const gw=(W-padL-padR)/5,gh=(H-padT-padB)/5;
+  ctx.clearRect(0,0,W,H);
+  // 5x5 色塊：機率(x) × 衝擊(y)
+  for(let xi=0;xi<5;xi++)for(let yi=0;yi<5;yi++){
+    const sev=(xi+1)*(yi+1); // 1..25
+    let col;
+    if(sev<=4)col="#3f8d72";else if(sev<=9)col="#caa24a";else if(sev<=16)col="#d98b3a";else col="#c8553d";
+    ctx.fillStyle=hexA(col,.32);
+    const x=padL+xi*gw,y=padT+(4-yi)*gh;
+    ctx.fillRect(x+2,y+2,gw-4,gh-4);
+  }
+  // 軸標籤
+  ctx.fillStyle=cssVar("--ink-dim");ctx.font="500 13px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  for(let i=0;i<5;i++)ctx.fillText(i+1,padL+gw*i+gw/2,H-padB+18);
+  ctx.fillText("發生機率 →",padL+(W-padL-padR)/2,H-padB+38);
+  ctx.textAlign="right";
+  for(let i=0;i<5;i++)ctx.fillText(i+1,padL-10,padT+(4-i)*gh+gh/2);
+  ctx.save();ctx.translate(22,padT+(H-padT-padB)/2);ctx.rotate(-Math.PI/2);ctx.textAlign="center";ctx.fillText("衝擊程度 →",0,0);ctx.restore();
+  // 點：同一格內自動分散成小網格，避免重疊
+  const groups={};
+  risks.forEach((r,idx)=>{
+    const lx=Math.max(1,Math.min(5,r.likelihood||1)),iy=Math.max(1,Math.min(5,r.impact||1));
+    const key=lx+"_"+iy;
+    (groups[key]=groups[key]||[]).push({idx,r,lx,iy});
+  });
+  Object.values(groups).forEach(arr=>{
+    const n=arr.length,cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
+    const {lx,iy}=arr[0];
+    const cellX=padL+(lx-1)*gw,cellY=padT+(5-iy)*gh;
+    const spotW=gw/cols,spotH=gh/rows;
+    const rad=Math.max(8,Math.min(13,Math.min(spotW,spotH)/2-3));
+    arr.forEach((o,k)=>{
+      const ci=k%cols,ri=Math.floor(k/cols);
+      const cxp=cellX+spotW*(ci+0.5),cyp=cellY+spotH*(ri+0.5);
+      const isThreat=(o.r.source||"").includes("威脅");
+      ctx.beginPath();ctx.arc(cxp,cyp,rad,0,7);
+      ctx.fillStyle=isThreat?cssVar("--red"):cssVar("--gold");ctx.fill();
+      ctx.strokeStyle=cssVar("--bg");ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle="#fff";ctx.font=`700 ${Math.round(rad*0.92)}px 'Noto Sans TC',sans-serif`;
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(o.idx+1,cxp,cyp);
+    });
+  });
+  // 圖例 + 風險清單
+  const leg=document.getElementById("riskLegend");
+  if(!risks.length){ leg.innerHTML='<div class="small">（無劣勢／威脅資料可繪製）</div>'; return; }
+  let h=`<div class="hi"><span class="dot" style="background:${cssVar("--red")}"></span>威脅</div>
+         <div class="hi"><span class="dot" style="background:${cssVar("--gold")}"></span>劣勢</div>
+         <div style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px"></div>`;
+  h+=risks.map((r,i)=>`<div class="ri"><b>${i+1}</b>${esc(r.name)}</div>`).join("");
+  leg.innerHTML=h;
+}
+
+/* ===== 執行策略 + 甘特圖 ===== */
+function renderExecution(ex){
+  const methods=ex.methods||[],timeline=ex.timeline||[];
+  document.getElementById("execMethods").innerHTML=methods.map((m,i)=>`
+    <div class="em"><h4><span class="n">${i+1}</span>${esc(m.title||"策略")}</h4>
+      <p>${esc(m.approach||"")}</p>
+      ${m.kpi?`<span class="kpi"><b>KPI：</b>${esc(m.kpi)}</span>`:""}</div>`).join("")||"<p class='small'>—</p>";
+  drawGantt(timeline);
+  document.getElementById("ganttDetail").innerHTML=timeline.map((t,i)=>{
+    const s=t.startMonth||1,d=t.durationMonths||1;
+    return `<div class="gd"><div class="gh"><span class="ph">${i+1}. ${esc(t.phase||"")}</span>
+      <span class="pr">第 ${s}–${s+d-1} 月</span></div>
+      <ul>${(t.tasks||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  }).join("");
+}
+function drawGantt(timeline){
+  const c=document.getElementById("ganttCanvas"),ctx=c.getContext("2d");
+  const rows=timeline.length||1;
+  const maxMonth=Math.max(12,...timeline.map(t=>(t.startMonth||1)+(t.durationMonths||1)-1));
+  const padL=150,padT=40,padR=20,padB=14,rowH=46;
+  c.height=padT+rows*rowH+padB;
+  const W=c.width,H=c.height;
+  const plotW=W-padL-padR;
+  ctx.clearRect(0,0,W,H);
+  // 月份格線 + 標題
+  ctx.font="500 12px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  for(let m=0;m<=maxMonth;m++){
+    const x=padL+plotW*m/maxMonth;
+    ctx.strokeStyle=hexA(cssVar("--line"),.7);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,padT-6);ctx.lineTo(x,H-padB);ctx.stroke();
+    if(m<maxMonth){ctx.fillStyle=cssVar("--ink-dim");ctx.fillText("M"+(m+1),padL+plotW*(m+0.5)/maxMonth,padT-18);}
+  }
+  const cols=[cssVar("--jade"),cssVar("--gold"),cssVar("--blue"),cssVar("--violet"),cssVar("--gold-bright")];
+  timeline.forEach((t,i)=>{
+    const s=(t.startMonth||1)-1,d=t.durationMonths||1;
+    const x=padL+plotW*s/maxMonth,w=plotW*d/maxMonth,y=padT+i*rowH+8,bh=rowH-20;
+    // 階段名
+    ctx.fillStyle=cssVar("--ink");ctx.font="600 13px 'Noto Sans TC',sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";
+    const nm=(t.phase||"階段"+(i+1)).slice(0,9);
+    ctx.fillText(nm,padL-12,y+bh/2);
+    // bar
+    const col=cols[i%cols.length];
+    const g=ctx.createLinearGradient(x,0,x+w,0);g.addColorStop(0,hexA(col,.9));g.addColorStop(1,hexA(col,.55));
+    ctx.fillStyle=g;roundRect(ctx,x,y,Math.max(w,8),bh,7);ctx.fill();
+    ctx.fillStyle="#fff";ctx.font="700 12px 'Noto Sans TC',sans-serif";ctx.textAlign="center";
+    ctx.fillText(d+"個月",x+Math.max(w,8)/2,y+bh/2);
+  });
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+/* ===== 重點討論 + AI 提問 ===== */
+let focusGenerated=false;
+let chatMessages=[];
+
+function mdToHtml(t){
+  let h=esc(t)
+    .replace(/^###\s*(.+)$/gm,'<h3>$1</h3>')
+    .replace(/^##\s*(.+)$/gm,'<h3>$1</h3>')
+    .replace(/^[◆■▶]\s*(.+)$/gm,'<h3>$1</h3>')
+    .replace(/^(?:一|二|三|四|五|六|七|八|九|十)、(.+)$/gm,'<h3>$&</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  // 條列
+  h=h.replace(/^(?:\s*[-*•]\s+.+(?:\n|$))+/gm,m=>{
+    const lis=m.trim().split("\n").map(l=>"<li>"+l.replace(/^\s*[-*•]\s+/,"")+"</li>").join("");
+    return "<ul>"+lis+"</ul>";
+  });
+  h=h.replace(/^(?:\s*\d+\.\s+.+(?:\n|$))+/gm,m=>{
+    const lis=m.trim().split("\n").map(l=>"<li>"+l.replace(/^\s*\d+\.\s+/,"")+"</li>").join("");
+    return "<ol>"+lis+"</ol>";
+  });
+  // 段落
+  h=h.split(/\n{2,}/).map(b=>/^<(h3|ul|ol)/.test(b.trim())?b:`<p>${b.replace(/\n/g,"<br>")}</p>`).join("");
+  return h;
+}
+
+function buildContext(d,m){
+  const pl={political:"政治",economic:"經濟",social:"社會",technological:"科技"};
+  const sl={strengths:"優勢",weaknesses:"劣勢",opportunities:"機會",threats:"威脅"};
+  let c=`公司：${d.company||m.co}｜產業：${m.industry}｜市場：${m.market}\n`;
+  c+=`綜合評分 ${d.overall?.score}：${d.overall?.verdict}。${d.overall?.summary}\n`;
+  c+="PEST：";
+  for(const k in pl) c+=`[${pl[k]}${d.pest?.[k]?.score}] ${(d.pest?.[k]?.items||[]).join("；")}。`;
+  c+="\nSWOT：";
+  for(const k in sl) c+=`[${sl[k]}] ${(d.swot?.[k]?.items||[]).join("；")}。`;
+  c+="\nTOWS：";
+  for(const k of["SO","ST","WO","WT"]) c+=`[${k}] ${(d.tows?.[k]||[]).join("；")}。`;
+  if(d.risks?.length) c+="\n風險："+d.risks.map(r=>`${r.name}(機率${r.likelihood}衝擊${r.impact})`).join("、");
+  return c.slice(0,6000);
+}
+
+async function generateFocus(){
+  if(!lastData) return;
+  focusGenerated=true;
+  const box=document.getElementById("focusContent");
+  box.innerHTML='<div class="placeholder" style="padding:40px 12px"><span class="spinner" style="border-top-color:var(--gold)"></span> AI 深入分析中…</div>';
+  const focus=lastMeta.focus&&lastMeta.focus!=="全面評估"?lastMeta.focus:null;
+  const sys=`你是資深企業策略顧問。依據以下分析背景，${focus?`針對使用者指定的分析重點「${focus}」`:"針對公司最關鍵的策略議題"}撰寫一篇深入專業的討論。
+要求：繁體中文（台灣用語）；用「## 標題」分 3-4 個小節（如背景研判、關鍵影響、機會與風險、具體建議）；可用條列；務實具體、可佐證；約 500-700 字。只輸出討論內容本身。
+【分析背景】\n${buildContext(lastData,lastMeta)}`;
+  try{
+    const raw=await callGroq([{role:"system",content:sys},{role:"user",content:focus?`請深入討論：${focus}`:"請深入討論本公司最關鍵的策略重點。"}],pickModel(),{maxTokens:2200,...(TEXT_MODEL==="auto"?{modelChain:AUTO_CHAIN}:{fallbackModel:FALLBACK_TEXT}),onStatus:s=>{box.querySelector(".placeholder")&&(box.innerHTML=`<div class="placeholder" style="padding:40px 12px"><span class="spinner" style="border-top-color:var(--gold)"></span> ${s}</div>`);}});
+    document.getElementById("focusTitle").textContent=focus?`重點討論：${focus}`:"關鍵策略重點討論";
+    box.innerHTML=mdToHtml(raw);
+    document.getElementById("focusRegen").style.display="inline-block";
+  }catch(e){
+    focusGenerated=false;
+    box.innerHTML=`<div class="err" style="display:block">生成失敗：${esc(e.message)}　請點「重新生成」再試</div>`;
+    document.getElementById("focusRegen").style.display="inline-block";
+  }
+}
+document.getElementById("focusRegen").onclick=()=>{focusGenerated=false;generateFocus();};
+
+const QUICK_QS=["最該優先處理的風險是什麼？","三個月內可立即執行的行動有哪些？","主要競爭優勢能維持多久？","如果只能投資一個方向，該選哪個？"];
+function initChat(d,m){
+  chatMessages=[{role:"system",content:`你是資深企業策略顧問，正在與使用者討論以下企業分析結果。請用繁體中文（台灣用語）簡潔、具體、有條理地回答，必要時引用分析中的數據或項目。避免空泛。
+【分析背景】\n${buildContext(d,m)}`}];
+  const log=document.getElementById("chatLog");
+  log.innerHTML='<div class="chat-empty">分析已就緒，可在下方輸入問題，或點選快速提問 👇</div>';
+  document.getElementById("chatQuick").innerHTML=QUICK_QS.map(q=>`<span class="qchip">${q}</span>`).join("");
+  document.querySelectorAll("#chatQuick .qchip").forEach(c=>c.onclick=()=>{document.getElementById("chatQ").value=c.textContent;sendChat();});
+}
+function addBubble(text,role){
+  const log=document.getElementById("chatLog");
+  const empty=log.querySelector(".chat-empty");if(empty)empty.remove();
+  const div=document.createElement("div");
+  div.className="bubble "+role+(role==="think"?" a":"");
+  div.innerHTML=role==="a"?mdToHtml(text):esc(text);
+  log.appendChild(div);log.scrollTop=log.scrollHeight;
+  return div;
+}
+async function sendChat(){
+  if(!lastData){addBubble("請先於左側執行分析。","a");return;}
+  const inp=document.getElementById("chatQ"),btn=document.getElementById("chatSend");
+  const q=inp.value.trim();if(!q)return;
+  inp.value="";addBubble(q,"u");
+  chatMessages.push({role:"user",content:q});
+  btn.disabled=true;
+  const thinking=addBubble("思考中…","think");
+  try{
+    const raw=await callGroq(chatMessages,pickModel(),{maxTokens:1600,...(TEXT_MODEL==="auto"?{modelChain:AUTO_CHAIN}:{fallbackModel:FALLBACK_TEXT}),onStatus:s=>{thinking.textContent=s;}});
+    thinking.remove();
+    addBubble(raw,"a");
+    chatMessages.push({role:"assistant",content:raw});
+  }catch(e){
+    thinking.remove();addBubble("回覆失敗："+e.message,"a");
+    chatMessages.pop();
+  }finally{btn.disabled=false;}
+}
+document.getElementById("chatSend").onclick=sendChat;
+document.getElementById("chatQ").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}
+});
+
+/* ===== 下載 ===== */
+document.getElementById("dlTxt").onclick=()=>{
+  if(!lastData) return;
+  const d=lastData,m=lastMeta;
+  let s=`企業策略分析報告\n公司：${d.company||m.co}　產業：${m.industry}　市場：${m.market}\n${"=".repeat(40)}\n\n`;
+  s+=`【綜合策略評估】分數：${d.overall?.score}\n${d.overall?.verdict}\n${d.overall?.summary}\n\n`;
+  s+=`【PEST 總體環境分析】\n`;
+  const pl={political:"政治",economic:"經濟",social:"社會",technological:"科技"};
+  for(const k in pl){const o=d.pest?.[k]||{};s+=`◆ ${pl[k]}（有利度 ${o.score}）\n`+(o.items||[]).map(i=>"  - "+i).join("\n")+`\n  小結：${o.summary||""}\n\n`;}
+  s+=`【SWOT 競爭態勢】\n`;
+  const sl={strengths:"優勢",weaknesses:"劣勢",opportunities:"機會",threats:"威脅"};
+  for(const k in sl){const o=d.swot?.[k]||{};s+=`◆ ${sl[k]}（${o.score}）\n`+(o.items||[]).map(i=>"  - "+i).join("\n")+"\n\n";}
+  s+=`【TOWS 策略矩陣】\n`;
+  for(const k of["SO","ST","WO","WT"]){s+=`◆ ${k}\n`+((d.tows?.[k])||[]).map(i=>"  - "+i).join("\n")+"\n\n";}
+  if(d.risks?.length){
+    s+=`【風險熱力圖】（機率×衝擊，1-5）\n`+d.risks.map((r,i)=>`  ${i+1}. ${r.name}（${r.source} 機率${r.likelihood}/衝擊${r.impact}）`).join("\n")+"\n\n";
+  }
+  if(d.execution){
+    s+=`【建議策略執行辦法】\n`+(d.execution.methods||[]).map((m,i)=>`  ${i+1}. ${m.title}\n     ${m.approach}\n     KPI：${m.kpi||"-"}`).join("\n")+"\n\n";
+    s+=`【專案時程規劃】\n`+(d.execution.timeline||[]).map((t,i)=>{const st=t.startMonth||1,du=t.durationMonths||1;
+      return `  階段${i+1}：${t.phase}（第${st}-${st+du-1}月）\n`+(t.tasks||[]).map(x=>"     - "+x).join("\n");}).join("\n")+"\n\n";
+  }
+  s+=`【優先行動建議】\n`+(d.recommendations||[]).map((r,i)=>`  ${i+1}. ${r}`).join("\n");
+  const blob=new Blob([s],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`策略分析_${(d.company||m.co).replace(/\s/g,"")}.txt`;a.click();
+};
+document.getElementById("dlPdf").onclick=()=>{
+  if(!lastData) return;
+  const el=document.getElementById("result");
+  const panes=[...document.querySelectorAll(".rpane")];
+  const tabsEl=document.querySelector(".rtabs");
+  const layout=document.querySelector(".layout");
+  const leftCol=layout?layout.children[0]:null;
+  // 記錄原狀態
+  const prevPane=panes.map(p=>p.className);
+  const prevDisplay=layout?layout.style.display:"";
+  const prevLeft=leftCol?leftCol.style.display:"";
+  const prevTabs=tabsEl?tabsEl.style.display:"";
+  const prevW=el.style.width,prevMax=el.style.maxWidth,prevMargin=el.style.margin;
+  // 匯出版面：展開全部分頁、隱藏左欄與分頁列、固定寬度（避免桌機寬版被裁切）
+  document.body.classList.add("pdf-mode");
+  panes.forEach(p=>p.classList.add("on"));
+  if(tabsEl) tabsEl.style.display="none";
+  if(layout) layout.style.display="block";
+  if(leftCol) leftCol.style.display="none";
+  el.style.width="720px";el.style.maxWidth="720px";el.style.margin="0 auto";
+  const restore=()=>{
+    document.body.classList.remove("pdf-mode");
+    panes.forEach((p,i)=>p.className=prevPane[i]);
+    if(tabsEl) tabsEl.style.display=prevTabs;
+    if(layout) layout.style.display=prevDisplay;
+    if(leftCol) leftCol.style.display=prevLeft;
+    el.style.width=prevW;el.style.maxWidth=prevMax;el.style.margin=prevMargin;
+  };
+  setTimeout(()=>{
+    html2pdf().set({margin:[8,8,10,8],filename:`策略分析_${(lastData.company||lastMeta.co).replace(/\s/g,"")}.pdf`,
+      image:{type:"jpeg",quality:.95},
+      html2canvas:{scale:2,backgroundColor:cssVar("--panel")||"#111a2e",useCORS:true},
+      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+      pagebreak:{mode:["css","legacy"]}}).from(el).save().then(restore).catch(restore);
+  },150);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ 撲克占卜術 v3 ✦</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#d4a849;--gold-light:#f0d78c;--gold-dark:#8b6914;--bg:#0a0a12;--red:#e84040;--panel-bg:rgba(255,255,255,.02)}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:#e8e0d0;font-family:'Noto Serif TC',serif;overflow-x:hidden;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,168,73,.06),transparent 70%),
+  radial-gradient(ellipse 60% 80% at 20% 100%,rgba(100,60,180,.04),transparent 60%);pointer-events:none;z-index:0}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.particle{position:absolute;width:2px;height:2px;background:var(--gold);border-radius:50%;opacity:0;animation:floatUp linear infinite}
+@keyframes floatUp{0%{opacity:0;transform:translateY(100vh) scale(0)}10%{opacity:.6}90%{opacity:.3}100%{opacity:0;transform:translateY(-10vh) scale(1.5)}}
+.container{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:16px;max-width:1100px;margin:0 auto}
+
+/* Header */
+.header{text-align:center;margin:8px 0 12px}
+.header h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,3.5vw,2.6rem);
+  background:linear-gradient(135deg,var(--gold-light),var(--gold),var(--gold-dark),var(--gold-light));
+  background-size:300% 300%;animation:shimmer 4s ease infinite;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.15em}
+.header .subtitle{font-size:.8rem;color:rgba(212,168,73,.5);margin-top:8px;letter-spacing:.3em}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* ═══ TAB NAV ═══ */
+.tab-nav{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap;justify-content:center;width:100%}
+.tab-btn{padding:9px 16px;border:none;border-radius:10px 10px 0 0;cursor:pointer;
+  font-family:'Noto Serif TC',serif;font-size:.78rem;letter-spacing:.05em;
+  transition:all .3s;position:relative;
+  background:linear-gradient(180deg,rgba(40,35,60,.8),rgba(20,18,35,.9));
+  color:rgba(212,168,73,.5);border-top:1px solid rgba(255,255,255,.04);
+  box-shadow:0 -1px 4px rgba(0,0,0,.2)}
+.tab-btn:hover{color:var(--gold);background:linear-gradient(180deg,rgba(55,48,75,.9),rgba(30,25,50,.95))}
+.tab-btn.active{color:var(--gold-light);
+  background:linear-gradient(180deg,rgba(80,65,35,.9),rgba(40,32,18,.95));
+  border-top:1px solid rgba(212,168,73,.2);box-shadow:0 -2px 8px rgba(212,168,73,.1)}
+.tab-panel{display:none;width:100%;animation:fadeIn .4s}
+.tab-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ Shared Components ═══ */
+.section-box{padding:20px 24px;border-radius:16px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.1);margin-bottom:16px;position:relative;overflow:hidden}
+.section-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold-dark),transparent);opacity:.3}
+.section-title{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);letter-spacing:.12em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.gold-divider{width:100px;height:1px;margin:10px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.input-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.input-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px}
+.input-group label{font-size:.7rem;color:var(--gold);letter-spacing:.12em;opacity:.6}
+.input-group input,.input-group select{padding:9px 12px;
+  background:linear-gradient(180deg,rgba(40,35,60,.9),rgba(25,20,42,.95));
+  border:none;border-top:1px solid rgba(255,255,255,.05);border-radius:8px;
+  color:#e8e0d0;font-family:'Noto Serif TC',serif;font-size:.85rem;outline:none;
+  box-shadow:0 2px 4px rgba(0,0,0,.3),inset 0 1px 2px rgba(0,0,0,.2);
+  transition:all .3s;appearance:none;-webkit-appearance:none}
+.input-group select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d4a849' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.input-group select option{background:#1a1a2e;color:#e8e0d0}
+.input-group input:focus,.input-group select:focus{box-shadow:0 2px 4px rgba(0,0,0,.3),0 0 10px rgba(212,168,73,.1)}
+.input-group input::placeholder{color:rgba(212,168,73,.2)}
+
+/* 3D Buttons */
+.btn3d{padding:12px 28px;border:none;border-radius:28px;cursor:pointer;
+  font-family:'Noto Serif TC',serif;font-size:.88rem;letter-spacing:.1em;
+  transition:all .3s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px}
+.btn3d.gold{background:linear-gradient(180deg,rgba(180,140,50,.85),rgba(120,90,20,.95),rgba(80,60,10,1));
+  color:#faf0d4;box-shadow:0 3px 6px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.22);
+  text-shadow:0 1px 2px rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.12)}
+.btn3d.dark{background:linear-gradient(180deg,rgba(60,50,80,.9),rgba(30,25,50,.95));
+  color:rgba(212,168,73,.7);box-shadow:0 2px 4px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);
+  border-top:1px solid rgba(255,255,255,.04)}
+.btn3d.sm{padding:8px 18px;font-size:.78rem;border-radius:20px}
+.btn3d::before{content:'';position:absolute;top:0;left:10%;right:10%;height:45%;
+  background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);border-radius:28px 28px 50% 50%;pointer-events:none}
+.btn3d:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.btn3d:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 2px 4px rgba(0,0,0,.3)}
+
+/* Instructions */
+.instruct{text-align:center;padding:8px 20px;border-radius:24px;background:rgba(212,168,73,.04);
+  border:1px solid rgba(212,168,73,.1);font-size:.82rem;color:var(--gold);margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;justify-content:center}
+.instruct .key{padding:2px 8px;border-radius:5px;background:linear-gradient(180deg,rgba(55,48,75,.9),rgba(30,25,50,.95));
+  border-top:1px solid rgba(255,255,255,.08);box-shadow:0 2px 3px rgba(0,0,0,.3);font-size:.72rem;color:var(--gold-light)}
+
+/* ═══ Stage ═══ */
+.stage{width:100%;min-height:280px;display:flex;justify-content:center;align-items:center;gap:36px;margin:8px 0 16px;flex-wrap:wrap}
+.stage.cross-layout{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;gap:12px;justify-items:center;max-width:520px;margin:8px auto 16px}
+.stage.cross-layout .card-slot:nth-child(1){grid-column:2;grid-row:1} /* top */
+.stage.cross-layout .card-slot:nth-child(2){grid-column:1;grid-row:2} /* left */
+.stage.cross-layout .card-slot:nth-child(3){grid-column:2;grid-row:2} /* center */
+.stage.cross-layout .card-slot:nth-child(4){grid-column:3;grid-row:2} /* right */
+.stage.cross-layout .card-slot:nth-child(5){grid-column:2;grid-row:3} /* bottom */
+.card-slot{display:flex;flex-direction:column;align-items:center;gap:8px}
+.slot-label{font-size:.72rem;color:rgba(212,168,73,.45);letter-spacing:.15em;min-height:18px}
+
+/* ═══ Card ═══ */
+.card-wrap{width:130px;height:182px;perspective:800px;position:relative}
+.card-flip{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.23,1,.32,1)}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;overflow:hidden}
+.card-back{background:linear-gradient(145deg,#1a1032,#0d0d20);border:2px solid rgba(212,168,73,.35);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.card-back-inner{width:78%;height:84%;border:1px solid rgba(212,168,73,.2);border-radius:6px;
+  background:repeating-conic-gradient(rgba(212,168,73,.06) 0% 25%,transparent 0% 50%) 0 0/16px 16px;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.card-back-inner::before{content:'✦';font-size:2rem;color:var(--gold);opacity:.35}
+.card-front{transform:rotateY(180deg);background:#faf5eb;border:2px solid #c8b88a;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.card-front.red-card{color:var(--red)}
+.card-front.black-card{color:#1a1a30}
+.corner{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:1;gap:1px;z-index:2}
+.corner-tl{top:5px;left:7px}.corner-br{bottom:5px;right:7px;transform:rotate(180deg)}
+.c-rank{font-family:'Cinzel',serif;font-size:.7rem;font-weight:900}.c-suit{font-size:.6rem}
+.pip-zone{position:absolute;top:22px;bottom:22px;left:20px;right:20px}
+.pip{position:absolute;font-size:1.05rem;line-height:1;transform:translate(-50%,-50%)}
+.pip.usd{transform:translate(-50%,-50%) rotate(180deg)}
+.ace-big{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3.2rem;opacity:.85}
+.face-display{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px}
+.face-letter{font-family:'Cinzel',serif;font-size:2rem;font-weight:900;line-height:1}.face-suit-big{font-size:1.2rem}
+
+/* Card States */
+.card-wrap.idle{opacity:.25;filter:grayscale(.5)}
+.card-wrap.bouncing .card-flip{animation:bounce .35s cubic-bezier(.36,.07,.19,.97) infinite alternate}
+@keyframes bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-22px) rotateZ(1deg) scale(1.02)}}
+.card-wrap.bouncing{filter:drop-shadow(0 10px 20px rgba(212,168,73,.15))}
+.card-wrap.bouncing::after{content:'';position:absolute;inset:-5px;border-radius:16px;border:1px solid rgba(212,168,73,.25);animation:glow 1.5s ease infinite;pointer-events:none;z-index:5}
+@keyframes glow{0%,100%{box-shadow:0 0 6px rgba(212,168,73,.08)}50%{box-shadow:0 0 18px rgba(212,168,73,.25)}}
+.card-wrap.stopping .card-flip{animation:stopA .5s cubic-bezier(.23,1,.32,1) forwards}
+@keyframes stopA{0%{transform:translateY(-22px) rotateZ(1deg) scale(1.02)}50%{transform:translateY(-32px) scale(1.05)}100%{transform:translateY(0) scale(1)}}
+.card-wrap.flipping .card-flip{animation:flipA .9s cubic-bezier(.23,1,.32,1) forwards}
+@keyframes flipA{0%{transform:rotateY(0) scale(1)}40%{transform:rotateY(90deg) scale(1.06)}100%{transform:rotateY(180deg) scale(1)}}
+.card-wrap.done .card-flip{transform:rotateY(180deg)}
+
+/* ═══ Reading Results ═══ */
+.reading-panel{width:100%;margin-top:8px;opacity:0;transform:translateY(20px);transition:all .6s;pointer-events:none}
+.reading-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.reading-header{text-align:center;margin-bottom:16px}
+.reading-header h2{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--gold);letter-spacing:.12em}
+.q-echo{margin-top:10px;font-size:.9rem;color:rgba(232,224,208,.55);font-style:italic}
+.profile-echo{margin-top:4px;font-size:.72rem;color:rgba(212,168,73,.35);letter-spacing:.08em}
+.overview-box{padding:16px 22px;border-radius:14px;margin-bottom:14px;background:rgba(212,168,73,.04);border:1px solid rgba(212,168,73,.1);text-align:center;font-size:.88rem}
+.card-readings{display:flex;flex-direction:column;gap:12px}
+.card-reading{padding:16px 20px;border-radius:14px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.08);position:relative;overflow:hidden}
+.card-reading::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold-dark),transparent);opacity:.3}
+.pos-label{font-size:.7rem;color:var(--gold);letter-spacing:.18em;margin-bottom:4px}
+.card-name{font-size:1.05rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.meaning{font-size:.85rem;line-height:1.7;color:rgba(232,224,208,.7)}
+.meaning b{color:#e8e0d0}
+.q-interp{margin-top:8px;padding:10px 14px;border-radius:8px;background:rgba(212,168,73,.03);border-left:3px solid rgba(212,168,73,.25)}
+.narrative-box,.cross-box,.synthesis{margin-top:14px;padding:18px 22px;border-radius:14px;border:1px solid rgba(212,168,73,.12)}
+.narrative-box{background:var(--panel-bg)}
+.cross-box{background:linear-gradient(135deg,rgba(100,60,180,.04),rgba(212,168,73,.03));border-color:rgba(100,60,180,.12)}
+.synthesis{background:linear-gradient(135deg,rgba(212,168,73,.05),rgba(100,60,180,.03))}
+.narr-content,.synthesis p,.cross-box p{font-size:.85rem;line-height:1.8;color:rgba(232,224,208,.75)}
+.final-advice{margin-top:12px;padding:12px 16px;border-radius:10px;background:rgba(212,168,73,.05);border:1px solid rgba(212,168,73,.12);line-height:1.8}
+.zodiac-tag{display:inline-block;padding:2px 8px;border-radius:16px;background:rgba(212,168,73,.08);border:1px solid rgba(212,168,73,.15);font-size:.78rem;color:var(--gold)}
+
+/* ═══ Daily Card ═══ */
+.daily-card-display{display:flex;flex-direction:column;align-items:center;gap:16px}
+.daily-fortune{font-size:.9rem;line-height:1.8;color:rgba(232,224,208,.75);max-width:600px;text-align:center}
+.daily-fortune b{color:var(--gold)}
+
+/* ═══ History ═══ */
+.history-list{display:flex;flex-direction:column;gap:10px;max-height:500px;overflow-y:auto}
+.history-item{padding:14px 18px;border-radius:12px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.08);cursor:pointer;transition:all .3s}
+.history-item:hover{border-color:rgba(212,168,73,.25);background:rgba(212,168,73,.04)}
+.history-item .hi-date{font-size:.7rem;color:rgba(212,168,73,.4)}
+.history-item .hi-q{font-size:.88rem;margin:4px 0}
+.history-item .hi-cards{font-size:.82rem;color:rgba(232,224,208,.5)}
+.empty-state{text-align:center;padding:40px;color:rgba(212,168,73,.3);font-size:.9rem}
+
+/* ═══ Stats ═══ */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat-card{padding:16px;border-radius:14px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.08);text-align:center}
+.stat-card .stat-val{font-size:2rem;font-weight:900;color:var(--gold);font-family:'Cinzel',serif}
+.stat-card .stat-label{font-size:.72rem;color:rgba(212,168,73,.5);margin-top:4px;letter-spacing:.1em}
+.bar-chart{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-label{width:50px;font-size:.75rem;color:rgba(212,168,73,.6);text-align:right}
+.bar-track{flex:1;height:22px;background:rgba(255,255,255,.03);border-radius:11px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:11px;transition:width .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:.7rem;color:#faf0d4}
+.bar-fill.hearts{background:linear-gradient(90deg,rgba(232,64,64,.3),rgba(232,64,64,.7))}
+.bar-fill.diamonds{background:linear-gradient(90deg,rgba(232,64,64,.2),rgba(232,64,64,.5))}
+.bar-fill.clubs{background:linear-gradient(90deg,rgba(100,100,160,.3),rgba(100,100,160,.7))}
+.bar-fill.spades{background:linear-gradient(90deg,rgba(80,80,140,.3),rgba(80,80,140,.7))}
+
+/* ═══ Dual/Relationship ═══ */
+.dual-section{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dual-person{padding:16px;border-radius:14px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.08)}
+.dual-person h4{font-size:.85rem;color:var(--gold);margin-bottom:10px;text-align:center;letter-spacing:.1em}
+.dual-stage{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.compat-result{padding:18px 22px;border-radius:14px;background:linear-gradient(135deg,rgba(212,168,73,.05),rgba(180,60,120,.04));border:1px solid rgba(212,168,73,.15);margin-top:14px}
+
+/* ═══ Export ═══ */
+.export-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+
+/* ═══ Sound Toggle ═══ */
+.sound-toggle{position:fixed;top:14px;right:14px;z-index:100;padding:6px 10px;border-radius:20px;
+  background:rgba(30,25,50,.8);border:1px solid rgba(212,168,73,.2);color:var(--gold);
+  font-size:.75rem;cursor:pointer;backdrop-filter:blur(8px)}
+
+/* ═══ AI Settings ═══ */
+.ai-settings{margin-bottom:14px;padding:14px 18px;border-radius:14px;background:rgba(60,180,100,.03);border:1px solid rgba(60,180,100,.12);width:100%}
+.ai-settings .section-title{color:#5ce08a;font-size:.88rem}
+.ai-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.ai-row .input-group{min-width:200px}
+.ai-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.ai-toggle input[type=checkbox]{display:none}
+.ai-switch{width:42px;height:22px;border-radius:11px;background:rgba(100,100,140,.3);position:relative;transition:all .3s;border:1px solid rgba(255,255,255,.06)}
+.ai-switch::after{content:'';width:18px;height:18px;border-radius:50%;background:#888;position:absolute;top:1px;left:1px;transition:all .3s}
+.ai-toggle input:checked+.ai-switch{background:rgba(60,180,100,.4);border-color:rgba(60,180,100,.3)}
+.ai-toggle input:checked+.ai-switch::after{left:21px;background:#5ce08a}
+.ai-label{font-size:.78rem;color:rgba(212,168,73,.6)}
+.api-key-input{font-family:monospace!important;font-size:.75rem!important;letter-spacing:.05em}
+.ai-loading{text-align:center;padding:30px 20px;color:rgba(60,180,100,.7);font-size:.88rem}
+.ai-loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(60,180,100,.2);border-top-color:#5ce08a;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-response{padding:20px 24px;border-radius:14px;background:rgba(60,180,100,.03);border:1px solid rgba(60,180,100,.1);margin-top:14px;position:relative;overflow:hidden}
+.ai-response::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#5ce08a,transparent);opacity:.4}
+.ai-response .ai-badge{display:inline-block;padding:2px 10px;border-radius:12px;background:rgba(60,180,100,.1);border:1px solid rgba(60,180,100,.2);font-size:.7rem;color:#5ce08a;margin-bottom:10px;letter-spacing:.1em}
+.ai-response .ai-text{font-size:.88rem;line-height:1.9;color:rgba(232,224,208,.8);white-space:pre-line}
+.ai-response .ai-text b{color:#e8e0d0}
+.ai-model-info{font-size:.68rem;color:rgba(60,180,100,.3);margin-top:10px;text-align:right}
+.groq-model-sel{min-width:180px!important}
+
+/* ═══ Reversed Cards ═══ */
+.card-content{width:100%;height:100%;position:relative}
+.card-front.reversed .card-content{transform:rotate(180deg)}
+.reversed-badge{position:absolute;top:3px;right:3px;background:rgba(180,30,30,.88);color:#fff;font-size:.48rem;padding:1px 5px;border-radius:4px;z-index:10;font-family:'Noto Serif TC',serif;font-weight:700;letter-spacing:.05em;pointer-events:none}
+
+/* ═══ Card Themes ═══ */
+.card-back{background:linear-gradient(145deg,#1a1032,#0d0d20);border:2px solid rgba(212,168,73,.35);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.card-back.theme-mystic{background:linear-gradient(145deg,#1a0830,#0a0818);border-color:rgba(150,80,220,.45)}
+.card-back.theme-mystic .card-back-inner{background:repeating-conic-gradient(rgba(150,80,220,.07) 0% 25%,transparent 0% 50%) 0 0/16px 16px;border-color:rgba(150,80,220,.2)}
+.card-back.theme-mystic .card-back-inner::before{color:rgba(170,100,255,.5);content:'✦'}
+.card-back.theme-classic{background:linear-gradient(145deg,#1a0808,#0d0405);border-color:rgba(200,50,50,.45)}
+.card-back.theme-classic .card-back-inner{background:repeating-linear-gradient(45deg,rgba(200,50,50,.06) 0 2px,transparent 2px 10px);border-color:rgba(200,50,50,.2)}
+.card-back.theme-classic .card-back-inner::before{color:rgba(200,50,50,.4);content:'♠'}
+.card-back.theme-forest{background:linear-gradient(145deg,#081a08,#040d04);border-color:rgba(60,160,60,.35)}
+.card-back.theme-forest .card-back-inner{background:repeating-conic-gradient(rgba(60,160,60,.07) 0% 25%,transparent 0% 50%) 0 0/16px 16px;border-color:rgba(60,160,60,.2)}
+.card-back.theme-forest .card-back-inner::before{color:rgba(60,160,60,.45);content:'✤'}
+.card-back.theme-gold{background:linear-gradient(145deg,#1a1208,#0d0b04);border-color:rgba(212,168,73,.55)}
+.card-back.theme-gold .card-back-inner{background:repeating-linear-gradient(-45deg,rgba(212,168,73,.09) 0 2px,transparent 2px 12px);border-color:rgba(212,168,73,.3)}
+
+/* ═══ Theme Picker ═══ */
+.theme-picker{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.theme-swatch{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid rgba(255,255,255,.06);transition:all .2s;position:relative;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.theme-swatch.active{border-color:var(--gold);box-shadow:0 0 8px rgba(212,168,73,.3)}
+.theme-swatch-label{font-size:.65rem;color:rgba(212,168,73,.5);letter-spacing:.05em}
+
+/* ═══ Horseshoe (七星牌陣) ═══ */
+.stage.horseshoe{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(4,auto);gap:8px 4px;max-width:700px;margin:8px auto 16px;padding:8px 0}
+.horseshoe .card-slot:nth-child(1){grid-area:1/1}
+.horseshoe .card-slot:nth-child(2){grid-area:2/2}
+.horseshoe .card-slot:nth-child(3){grid-area:3/3}
+.horseshoe .card-slot:nth-child(4){grid-area:4/4}
+.horseshoe .card-slot:nth-child(5){grid-area:3/5}
+.horseshoe .card-slot:nth-child(6){grid-area:2/6}
+.horseshoe .card-slot:nth-child(7){grid-area:1/7}
+
+/* ═══ Annual 12-Month ═══ */
+.annual-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.month-cell{border-radius:12px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.08);padding:10px 8px;text-align:center;transition:all .3s}
+.month-cell:hover{border-color:rgba(212,168,73,.22)}
+.month-cell .month-lbl{font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);letter-spacing:.15em;margin-bottom:5px}
+.month-cell .card-wrap{width:68px;height:95px;margin:0 auto}
+.month-cell .pip{font-size:.62rem}.month-cell .ace-big{font-size:1.75rem}.month-cell .face-letter{font-size:1.05rem}
+.month-cell .c-rank{font-size:.42rem}.month-cell .c-suit{font-size:.38rem}
+.month-cell .corner-tl{top:3px;left:5px}.month-cell .corner-br{bottom:3px;right:5px}
+.month-reading-txt{font-size:.65rem;color:rgba(212,168,73,.55);line-height:1.4;margin-top:5px}
+.month-reading-txt small{color:rgba(232,224,208,.38);font-size:.58rem;display:block}
+.annual-summary{margin-top:14px;padding:16px 20px;border-radius:14px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.1)}
+
+/* ═══ YES / NO ═══ */
+.yesno-stage{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:240px;padding:10px 0}
+.yesno-verdict-wrap{text-align:center;opacity:0;transform:scale(.8);transition:all .5s cubic-bezier(.23,1,.32,1)}
+.yesno-verdict-wrap.show{opacity:1;transform:scale(1)}
+.yesno-verdict{font-family:'Cinzel',serif;font-size:3rem;font-weight:900;letter-spacing:.25em;margin:10px 0 6px}
+.yesno-verdict.yes{color:#5ce87a;text-shadow:0 0 30px rgba(92,232,122,.35)}
+.yesno-verdict.maybe{color:var(--gold);text-shadow:0 0 30px rgba(212,168,73,.35)}
+.yesno-verdict.no{color:var(--red);text-shadow:0 0 30px rgba(232,64,64,.35)}
+.yesno-strength{font-size:.7rem;letter-spacing:.3em;opacity:.55;margin-bottom:10px}
+.yesno-reason{font-size:.88rem;line-height:1.85;color:rgba(232,224,208,.72);max-width:480px;margin:0 auto;padding:14px 18px;border-radius:12px;background:rgba(212,168,73,.04);border:1px solid rgba(212,168,73,.1);text-align:center}
+
+/* ═══ Lucky Box ═══ */
+.lucky-box{margin-top:14px;padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(212,168,73,.06),rgba(180,120,255,.03));border:1px solid rgba(212,168,73,.15)}
+.lucky-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.lucky-item{text-align:center;padding:10px 6px;border-radius:10px;background:rgba(212,168,73,.04);border:1px solid rgba(212,168,73,.07)}
+.lucky-icon{font-size:1.15rem;margin-bottom:3px}
+.lucky-val{font-size:.9rem;font-weight:700;color:var(--gold)}
+.lucky-name{font-size:.6rem;color:rgba(212,168,73,.45);margin-top:2px;letter-spacing:.08em}
+
+/* ═══ Lunar Bar ═══ */
+.lunar-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 18px;border-radius:20px;background:rgba(212,168,73,.04);border:1px solid rgba(212,168,73,.1);font-size:.75rem;color:rgba(212,168,73,.7);margin-bottom:12px;flex-wrap:wrap}
+.lunar-item{display:flex;align-items:center;gap:4px}
+.lunar-sep{opacity:.3}
+.solar-term-badge{padding:2px 8px;border-radius:12px;background:rgba(212,168,73,.1);border:1px solid rgba(212,168,73,.2);font-size:.68rem;color:var(--gold)}
+
+/* ═══ Dictionary ═══ */
+.dict-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.dict-search-input{flex:1;min-width:180px;padding:8px 14px;background:linear-gradient(180deg,rgba(40,35,60,.9),rgba(25,20,42,.95));border:none;border-top:1px solid rgba(255,255,255,.05);border-radius:20px;color:#e8e0d0;font-family:'Noto Serif TC',serif;font-size:.82rem;outline:none;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.dict-search-input::placeholder{color:rgba(212,168,73,.25)}
+.suit-filter{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border:none;border-radius:16px;cursor:pointer;font-family:'Noto Serif TC',serif;font-size:.75rem;transition:all .25s;background:rgba(40,35,60,.9);color:rgba(212,168,73,.5);border-top:1px solid rgba(255,255,255,.04)}
+.filter-btn.active,.filter-btn:hover{background:linear-gradient(180deg,rgba(80,65,35,.9),rgba(40,32,18,.95));color:var(--gold-light)}
+.dict-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:580px;overflow-y:auto;padding-right:4px}
+.dict-card{padding:10px 12px;border-radius:10px;background:var(--panel-bg);border:1px solid rgba(212,168,73,.07);cursor:pointer;transition:all .25s}
+.dict-card:hover{border-color:rgba(212,168,73,.25);background:rgba(212,168,73,.04)}
+.dict-card-name{font-size:.88rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.dict-card-meaning{font-size:.72rem;color:rgba(232,224,208,.55);line-height:1.5}
+.dict-card-rev{font-size:.68rem;color:rgba(180,80,80,.55);margin-top:4px;line-height:1.4}
+.dict-card-rev::before{content:'↺ 逆位：';color:rgba(180,80,80,.45)}
+
+/* ═══ Ambient Music Button ═══ */
+#bgMusicBtn{position:fixed;top:14px;right:96px;z-index:100;padding:6px 10px;border-radius:20px;background:rgba(30,25,50,.8);border:1px solid rgba(212,168,73,.2);color:rgba(212,168,73,.55);font-size:.75rem;cursor:pointer;backdrop-filter:blur(8px);transition:all .3s}
+#bgMusicBtn.active{border-color:rgba(60,180,120,.4);color:#5ce0a0;background:rgba(20,35,30,.8)}
+
+/* ═══ Responsive ═══ */
+@media(max-width:640px){
+  .card-wrap{width:100px;height:140px}
+  .pip{font-size:.8rem}.ace-big{font-size:2.2rem}.face-letter{font-size:1.4rem}
+  .c-rank{font-size:.55rem}.c-suit{font-size:.5rem}
+  .corner-tl{top:4px;left:5px}.corner-br{bottom:4px;right:5px}
+  .stage{gap:16px}.stage.cross-layout{gap:8px;max-width:360px}
+  .tab-btn{padding:7px 10px;font-size:.7rem}
+  .dual-section{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr}
+  .section-box{padding:14px 16px}
+  .dual-stage .card-wrap{width:80px;height:112px}
+  .lucky-grid{grid-template-columns:repeat(2,1fr)}
+  .annual-grid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .month-cell .card-wrap{width:54px;height:76px}
+  .dict-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .stage.horseshoe{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,auto);max-width:380px}
+  .horseshoe .card-slot:nth-child(1){grid-area:1/1}.horseshoe .card-slot:nth-child(2){grid-area:1/2}
+  .horseshoe .card-slot:nth-child(3){grid-area:2/1}.horseshoe .card-slot:nth-child(4){grid-area:2/2}
+  .horseshoe .card-slot:nth-child(5){grid-area:2/3}.horseshoe .card-slot:nth-child(6){grid-area:3/2}
+  .horseshoe .card-slot:nth-child(7){grid-area:3/3}
+  #bgMusicBtn{right:80px;font-size:.65rem;padding:5px 7px}
+}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+<button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊 音效</button>
+<button id="bgMusicBtn" onclick="toggleBgMusic()">🎵 神秘音樂</button>
+
+<div class="container">
+  <div class="header"><h1>POKER DIVINATION</h1><div class="subtitle">撲 克 占 卜 術 ｜ V 3 . 0</div></div>
+
+  <!-- AI Settings -->
+  <div class="ai-settings" id="aiSettings">
+    <div class="section-title">🤖 AI 智慧解讀（GROQ API）</div>
+    <div class="ai-row">
+      <label class="ai-toggle"><input type="checkbox" id="aiToggle" onchange="onAiToggle()"><span class="ai-switch"></span><span class="ai-label" id="aiStatusLabel">關閉</span></label>
+      <div class="input-group" style="flex:2"><label>API Key</label><input type="password" id="groqApiKey" class="api-key-input" placeholder="輸入你的 GROQ API Key..." onchange="saveApiKey()"></div>
+      <div class="input-group"><label>模型</label><select id="groqModel" class="groq-model-sel" onchange="saveApiKey()">
+        <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
+        <option value="llama-3.1-8b-instant">Llama 3.1 8B (快速)</option>
+        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+        <option value="gemma2-9b-it">Gemma2 9B</option>
+        <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 70B</option>
+      </select></div>
+    </div>
+    <p style="font-size:.7rem;color:rgba(232,224,208,.3);margin-top:6px">啟用後，占卜解讀將由 AI 根據你的問題、牌面、個人資料生成深度個人化分析。<a href="https://console.groq.com/keys" target="_blank" style="color:rgba(60,180,100,.4)">取得免費 API Key →</a></p>
+    <!-- Reversal & Theme Row -->
+    <div class="ai-row" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.04)">
+      <label class="ai-toggle" title="30% 機率抽到逆位牌，解讀意義改變">
+        <input type="checkbox" id="reversalToggle" onchange="onReversalToggle()">
+        <span class="ai-switch"></span>
+        <span class="ai-label">🔄 逆位牌</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="ai-label">🎨 牌背主題：</span>
+        <div class="theme-picker">
+          <div class="theme-swatch active" data-theme="starry" style="background:linear-gradient(145deg,#1a1032,#0d0d20)" title="星空" onclick="setTheme('starry',this)"></div>
+          <div class="theme-swatch" data-theme="mystic" style="background:linear-gradient(145deg,#1a0830,#0a0818)" title="神秘紫" onclick="setTheme('mystic',this)"></div>
+          <div class="theme-swatch" data-theme="classic" style="background:linear-gradient(145deg,#1a0808,#0d0405)" title="古典紅" onclick="setTheme('classic',this)"></div>
+          <div class="theme-swatch" data-theme="forest" style="background:linear-gradient(145deg,#081a08,#040d04)" title="翠林綠" onclick="setTheme('forest',this)"></div>
+          <div class="theme-swatch" data-theme="gold" style="background:linear-gradient(145deg,#1a1208,#0d0b04)" title="金龍" onclick="setTheme('gold',this)"></div>
+          <span class="theme-swatch-label" id="themeLabel">星空</span>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('daily')">🌅 每日一牌</button>
+    <button class="tab-btn" onclick="switchTab('yesno')">🎯 是非快占</button>
+    <button class="tab-btn" onclick="switchTab('three')">🎴 三牌占卜</button>
+    <button class="tab-btn" onclick="switchTab('cross')">✚ 十字牌陣</button>
+    <button class="tab-btn" onclick="switchTab('seven')">🌙 七星牌陣</button>
+    <button class="tab-btn" onclick="switchTab('annual')">📅 年度運勢</button>
+    <button class="tab-btn" onclick="switchTab('dual')">💕 雙人占卜</button>
+    <button class="tab-btn" onclick="switchTab('history')">📜 歷史紀錄</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 統計分析</button>
+    <button class="tab-btn" onclick="switchTab('dict')">📖 牌義字典</button>
+  </div>
+
+  <!-- ═══ DAILY ═══ -->
+  <div class="tab-panel active" id="panel-daily">
+    <div id="lunarBar" class="lunar-bar" style="display:none"></div>
+    <div class="section-box">
+      <div class="section-title">🌅 今日運勢牌</div>
+      <div class="daily-card-display" id="dailyDisplay">
+        <div id="dailyStage"></div>
+        <div class="daily-fortune" id="dailyFortune"></div>
+        <button class="btn3d gold" id="dailyBtn" onclick="drawDaily()">✦ 抽取今日牌</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ THREE CARD ═══ -->
+  <div class="tab-panel" id="panel-three">
+    <div class="section-box">
+      <div class="input-row" style="margin-bottom:10px">
+        <button class="btn3d dark sm mode-sel active" data-mode="timeline" onclick="setMode('timeline',this)">✦ 過去—現在—未來</button>
+        <button class="btn3d dark sm mode-sel" data-mode="strategy" onclick="setMode('strategy',this)">✦ 狀況—阻礙—建議</button>
+      </div>
+      <div class="input-row" style="margin-bottom:8px">
+        <div class="input-group"><label>性別</label><select id="genderInput"><option value="">不指定</option><option value="male">男性</option><option value="female">女性</option><option value="other">其他</option></select></div>
+        <div class="input-group"><label>出生年</label><input type="number" id="birthYearInput" placeholder="1990" min="1940" max="2015"></div>
+        <div class="input-group"><label>星座</label><select id="zodiacInput"><option value="">不指定</option>
+          <option value="aries">♈ 牡羊座</option><option value="taurus">♉ 金牛座</option><option value="gemini">♊ 雙子座</option>
+          <option value="cancer">♋ 巨蟹座</option><option value="leo">♌ 獅子座</option><option value="virgo">♍ 處女座</option>
+          <option value="libra">♎ 天秤座</option><option value="scorpio">♏ 天蠍座</option><option value="sagittarius">♐ 射手座</option>
+          <option value="capricorn">♑ 摩羯座</option><option value="aquarius">♒ 水瓶座</option><option value="pisces">♓ 雙魚座</option>
+        </select></div>
+      </div>
+      <div class="input-row"><div class="input-group" style="min-width:100%"><label>你的問題</label><input type="text" id="questionInput" placeholder="請輸入你想問的問題..." style="text-align:center"></div></div>
+    </div>
+    <div class="instruct" id="threeInstruct">按下 <span class="key">開始占卜</span> 開啟牌局</div>
+    <div class="stage" id="threeStage"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <button class="btn3d gold" id="threeStartBtn" onclick="startThree()">✦ 開始占卜</button>
+      <button class="btn3d dark" id="threeResetBtn" onclick="resetThree()" style="display:none">✦ 重新占卜</button>
+    </div>
+    <div class="reading-panel" id="threeReading"></div>
+  </div>
+
+  <!-- ═══ CROSS ═══ -->
+  <div class="tab-panel" id="panel-cross">
+    <div class="section-box">
+      <div class="section-title">✚ 十字牌陣（五張）</div>
+      <p style="font-size:.82rem;color:rgba(232,224,208,.5);margin-bottom:10px">五個位置：上方（理想）、左方（過去）、中央（現在）、右方（未來）、下方（潛意識）</p>
+      <div class="input-row"><div class="input-group" style="min-width:100%"><label>你的問題</label><input type="text" id="crossQuestion" placeholder="請輸入你想問的問題..." style="text-align:center"></div></div>
+    </div>
+    <div class="instruct" id="crossInstruct">按下 <span class="key">開始占卜</span> 開啟十字牌陣</div>
+    <div class="stage cross-layout" id="crossStage"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <button class="btn3d gold" id="crossStartBtn" onclick="startCross()">✦ 開始占卜</button>
+      <button class="btn3d dark" id="crossResetBtn" onclick="resetCross()" style="display:none">✦ 重新占卜</button>
+    </div>
+    <div class="reading-panel" id="crossReading"></div>
+  </div>
+
+  <!-- ═══ DUAL ═══ -->
+  <div class="tab-panel" id="panel-dual">
+    <div class="section-box">
+      <div class="section-title">💕 雙人關係占卜</div>
+      <div class="dual-section">
+        <div><div class="input-row"><div class="input-group"><label>人物 A 名稱</label><input type="text" id="dualNameA" placeholder="例：我"></div></div></div>
+        <div><div class="input-row"><div class="input-group"><label>人物 B 名稱</label><input type="text" id="dualNameB" placeholder="例：對方"></div></div></div>
+      </div>
+      <div class="input-row" style="margin-top:10px"><div class="input-group" style="min-width:100%"><label>關係問題</label><input type="text" id="dualQuestion" placeholder="想了解這段關係的什麼？" style="text-align:center"></div></div>
+    </div>
+    <div class="instruct" id="dualInstruct">按下開始，雙方各抽 3 張牌進行關係配對分析</div>
+    <div class="dual-section" id="dualStageWrap" style="display:none">
+      <div class="dual-person"><h4 id="dualLabelA">人物 A</h4><div class="dual-stage" id="dualStageA"></div></div>
+      <div class="dual-person"><h4 id="dualLabelB">人物 B</h4><div class="dual-stage" id="dualStageB"></div></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin:14px 0">
+      <button class="btn3d gold" id="dualStartBtn" onclick="startDual()">✦ 開始雙人占卜</button>
+      <button class="btn3d dark" id="dualResetBtn" onclick="resetDual()" style="display:none">✦ 重新占卜</button>
+    </div>
+    <div class="reading-panel" id="dualReading"></div>
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div class="tab-panel" id="panel-history">
+    <div class="section-box">
+      <div class="section-title">📜 占卜歷史紀錄</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end">
+        <button class="btn3d dark sm" onclick="clearHistory()">清除全部</button>
+      </div>
+      <div id="historyList" class="history-list"><div class="empty-state">尚無占卜紀錄</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ STATS ═══ -->
+  <div class="tab-panel" id="panel-stats">
+    <div class="section-box">
+      <div class="section-title">📊 個人能量統計</div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-val" id="statTotal">0</div><div class="stat-label">總占卜次數</div></div>
+        <div class="stat-card"><div class="stat-val" id="statRedRate">-</div><div class="stat-label">紅牌比例</div></div>
+        <div class="stat-card"><div class="stat-val" id="statTopSuit">-</div><div class="stat-label">最常出現花色</div></div>
+        <div class="stat-card"><div class="stat-val" id="statTopNum">-</div><div class="stat-label">最常出現數字</div></div>
+      </div>
+      <div class="section-box" style="margin-top:14px">
+        <div class="section-title">花色分佈</div>
+        <div class="bar-chart" id="suitChart"></div>
+      </div>
+      <div class="section-box" style="margin-top:14px">
+        <div class="section-title">數字分佈</div>
+        <div class="bar-chart" id="numChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export bar -->
+  <div class="export-btns" id="exportBar" style="display:none">
+    <button class="btn3d dark sm" onclick="exportImage()">📷 匯出圖片</button>
+  </div>
+
+  <!-- ═══ YES/NO ═══ -->
+  <div class="tab-panel" id="panel-yesno">
+    <div class="section-box">
+      <div class="section-title">🎯 是非快速占</div>
+      <div class="input-row"><div class="input-group" style="min-width:100%"><label>你的是非問題（可選）</label><input type="text" id="yesnoQuestion" placeholder="這件事能成功嗎？ / 他喜歡我嗎？" style="text-align:center"></div></div>
+    </div>
+    <div class="yesno-stage" id="yesnoStage">
+      <p style="color:rgba(212,168,73,.35);font-size:.88rem">心中默想你的問題，按下按鈕抽牌</p>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <button class="btn3d gold" id="yesnoBtn" onclick="startYesNo()">✦ 抽取命運牌</button>
+      <button class="btn3d dark" id="yesnoResetBtn" onclick="resetYesNo()" style="display:none">✦ 再問一次</button>
+    </div>
+    <div class="reading-panel" id="yesnoReading"></div>
+  </div>
+
+  <!-- ═══ SEVEN STAR ═══ -->
+  <div class="tab-panel" id="panel-seven">
+    <div class="section-box">
+      <div class="section-title">🌙 七星牌陣（馬蹄形）</div>
+      <p style="font-size:.82rem;color:rgba(232,224,208,.5);margin-bottom:10px">七個位置排列成馬蹄形：過去→現在→未來的完整脈絡，加上根因、環境、行動與結果</p>
+      <div class="input-row"><div class="input-group" style="min-width:100%"><label>你的問題</label><input type="text" id="sevenQuestion" placeholder="請輸入你想深入探索的問題..." style="text-align:center"></div></div>
+    </div>
+    <div class="instruct" id="sevenInstruct">按下 <span class="key">開始占卜</span> 開啟七星牌陣</div>
+    <div class="stage horseshoe" id="sevenStage"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px">
+      <button class="btn3d gold" id="sevenStartBtn" onclick="startSeven()">✦ 開始七星占卜</button>
+      <button class="btn3d dark" id="sevenResetBtn" onclick="resetSeven()" style="display:none">✦ 重新占卜</button>
+    </div>
+    <div class="reading-panel" id="sevenReading"></div>
+  </div>
+
+  <!-- ═══ ANNUAL ═══ -->
+  <div class="tab-panel" id="panel-annual">
+    <div class="section-box">
+      <div class="section-title">📅 年度十二月運勢</div>
+      <p style="font-size:.82rem;color:rgba(232,224,208,.5);margin-bottom:10px">一次抽出12張牌，預覽每個月的運勢走向</p>
+      <div class="input-row"><div class="input-group" style="min-width:100%"><label>今年的核心問題或目標（可選）</label><input type="text" id="annualQuestion" placeholder="例：今年事業/感情/財運如何？" style="text-align:center"></div></div>
+    </div>
+    <div id="annualGrid" class="annual-grid"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin:14px 0">
+      <button class="btn3d gold" id="annualDrawBtn" onclick="drawAnnual()">✦ 展開年度牌局</button>
+      <button class="btn3d dark" id="annualResetBtn" onclick="resetAnnual()" style="display:none">✦ 重新展開</button>
+    </div>
+    <div class="reading-panel" id="annualReading"></div>
+  </div>
+
+  <!-- ═══ DICTIONARY ═══ -->
+  <div class="tab-panel" id="panel-dict">
+    <div class="section-box">
+      <div class="section-title">📖 52張牌義完整字典</div>
+      <div class="dict-controls">
+        <input type="text" id="dictSearch" class="dict-search-input" placeholder="🔍 搜尋牌義關鍵字..." oninput="filterDict()">
+        <div class="suit-filter">
+          <button class="filter-btn active" data-suit="all" onclick="setDictFilter('all',this)">全部</button>
+          <button class="filter-btn" data-suit="♥" onclick="setDictFilter('♥',this)">♥ 紅心</button>
+          <button class="filter-btn" data-suit="♦" onclick="setDictFilter('♦',this)">♦ 方塊</button>
+          <button class="filter-btn" data-suit="♣" onclick="setDictFilter('♣',this)">♣ 梅花</button>
+          <button class="filter-btn" data-suit="♠" onclick="setDictFilter('♠',this)">♠ 黑桃</button>
+        </div>
+      </div>
+      <div class="dict-grid" id="dictGrid"></div>
+    </div>
+  </div>
+
+</div><!-- /.container -->
+
+<canvas id="exportCanvas" style="display:none"></canvas>
+
+<script>
+/* ═══════════════════════════════════════
+   CORE DATA (preserved from original)
+   ═══════════════════════════════════════ */
+const SUITS=['♥','♦','♣','♠'];
+const SUIT_NAMES={'♥':'紅心','♦':'方塊','♣':'梅花','♠':'黑桃'};
+const SUIT_COLORS={'♥':'red','♦':'red','♣':'black','♠':'black'};
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUIT_THEMES={
+  '♥':{theme:'愛情、情緒、家庭、人際',icon:'❤️',domain:'感情與人際'},
+  '♦':{theme:'金錢、資源、工作成果',icon:'💎',domain:'財務與事業'},
+  '♣':{theme:'行動、計畫、學習、努力',icon:'🍀',domain:'行動與學習'},
+  '♠':{theme:'壓力、衝突、變化、挑戰',icon:'⚔️',domain:'挑戰與轉變'}
+};
+const NUM_MEANINGS={
+  'A':'新的開始','2':'選擇與雙重','3':'發展延伸','4':'穩定結構','5':'變動考驗',
+  '6':'調整平衡','7':'省思壓力','8':'能量集中','9':'接近完成','10':'階段圓滿',
+  'J':'年輕力量','Q':'內在智慧','K':'權威決斷'
+};
+const CARD_DETAILS={
+  '♥A':'新的情感萌芽，心靈重新出發。','♥2':'兩種情感間搖擺，需做選擇。','♥3':'情感進一步發展，社交圈擴展。',
+  '♥4':'感情穩定期，家庭和諧。','♥5':'關係中的變化與小衝突。','♥6':'關係趨於平衡，修復的好兆頭。',
+  '♥7':'對關係產生疑慮與省思。','♥8':'情感轉變，迎向新方向。','♥9':'情感願望即將實現。',
+  '♥10':'家庭幸福，情感圓滿。','♥J':'溫暖浪漫的年輕人出現。','♥Q':'感性直覺的力量湧現。','♥K':'慷慨成熟的守護力量。',
+  '♦A':'新的財務機會出現。','♦2':'財務上需做選擇。','♦3':'資源有進展但心思分散。',
+  '♦4':'財務穩定有儲蓄基礎。','♦5':'財務變動或損失。','♦6':'財務好轉，獲得幫助。',
+  '♦7':'投資需重新評估。','♦8':'工作忙碌，技能提升期。','♦9':'財務豐收在望。',
+  '♦10':'事業階段性成功。','♦J':'務實勤奮的年輕力量。','♦Q':'理財智慧，務實經營。','♦K':'事業上的權威貴人。',
+  '♣A':'新計畫啟動，行動力種子。','♣2':'合作中需協調。','♣3':'團隊合作展開，創意發酵。',
+  '♣4':'計畫進入穩定軌道。','♣5':'工作中競爭或衝突。','♣6':'克服困難取得進展。',
+  '♣7':'行動遇壓力，需重新評估。','♣8':'事務繁忙，快速推進。','♣9':'計畫接近完成。',
+  '♣10':'計畫圓滿完成。','♣J':'充滿幹勁的助手出現。','♣Q':'善於組織推動事務。','♣K':'行動上的領導決策者。',
+  '♠A':'深層轉變開始，蛻變起點。','♠2':'內心矛盾與猶豫。','♠3':'傷痛中的療癒成長。',
+  '♠4':'暫時休息與沉澱。','♠5':'衝突挫敗，學會放下。','♠6':'困境中找到出路。',
+  '♠7':'需要更深層的自我誠實。','♠8':'感覺受限，需突破思維。','♠9':'壓力焦慮，需正視問題。',
+  '♠10':'舊循環結束，黎明前黑暗。','♠J':'帶來挑戰的年輕力量。','♠Q':'深沉洞察，面對真相。','♠K':'外在壓力與權威考驗。'
+};
+const MODE_LABELS={timeline:['過去','現在','未來'],strategy:['狀況','阻礙','建議']};
+const CROSS_LABELS=['理想/期望','過去影響','現在核心','未來走向','潛意識/根源'];
+const PIP_MAP={
+  2:[[50,8,false],[50,92,true]],3:[[50,8,false],[50,50,false],[50,92,true]],
+  4:[[30,8,false],[70,8,false],[30,92,true],[70,92,true]],
+  5:[[30,8,false],[70,8,false],[50,50,false],[30,92,true],[70,92,true]],
+  6:[[30,8,false],[70,8,false],[30,50,false],[70,50,false],[30,92,true],[70,92,true]],
+  7:[[30,8,false],[70,8,false],[50,29,false],[30,50,false],[70,50,false],[30,92,true],[70,92,true]],
+  8:[[30,8,false],[70,8,false],[50,29,false],[30,50,false],[70,50,false],[50,71,true],[30,92,true],[70,92,true]],
+  9:[[30,8,false],[70,8,false],[30,35,false],[70,35,false],[50,50,false],[30,65,true],[70,65,true],[30,92,true],[70,92,true]],
+  10:[[30,8,false],[70,8,false],[50,22,false],[30,35,false],[70,35,false],[30,65,true],[70,65,true],[50,78,true],[30,92,true],[70,92,true]]
+};
+const ZODIAC_DATA={
+  aries:{name:'牡羊座',symbol:'♈',element:'火',trait:'衝勁直率'},taurus:{name:'金牛座',symbol:'♉',element:'土',trait:'穩重務實'},
+  gemini:{name:'雙子座',symbol:'♊',element:'風',trait:'聰明善變'},cancer:{name:'巨蟹座',symbol:'♋',element:'水',trait:'敏感顧家'},
+  leo:{name:'獅子座',symbol:'♌',element:'火',trait:'自信慷慨'},virgo:{name:'處女座',symbol:'♍',element:'土',trait:'細膩分析'},
+  libra:{name:'天秤座',symbol:'♎',element:'風',trait:'優雅公平'},scorpio:{name:'天蠍座',symbol:'♏',element:'水',trait:'深沉洞察'},
+  sagittarius:{name:'射手座',symbol:'♐',element:'火',trait:'樂觀冒險'},capricorn:{name:'摩羯座',symbol:'♑',element:'土',trait:'務實紀律'},
+  aquarius:{name:'水瓶座',symbol:'♒',element:'風',trait:'獨立創新'},pisces:{name:'雙魚座',symbol:'♓',element:'水',trait:'直覺夢幻'}
+};
+const GENDER_LABELS={male:'男性',female:'女性',other:'其他'};
+
+/* ═══ Topic Detection ═══ */
+const Q_TOPICS={
+  love:['感情','愛情','喜歡','暗戀','告白','分手','復合','對象','交往','戀','另一半','男友','女友','老公','老婆','婚','前任','曖昧','緣分','桃花','約會','劈腿','出軌','冷戰','吵架','相親','脫單','單身','追','心儀'],
+  work:['工作','升遷','加薪','老闆','同事','面試','轉職','換工作','職場','事業','創業','公司','專案','項目','績效','離職','主管','部門','跳槽','裁員','offer','錄取','調職'],
+  money:['錢','財運','投資','股票','理財','薪水','收入','買房','開支','存錢','財務','借貸','債','基金','虧','賺','房貸','貸款','副業'],
+  study:['考試','學業','讀書','升學','畢業','學習','課程','證照','研究所','留學','補習','論文','成績'],
+  health:['健康','身體','生病','手術','復原','壓力','睡眠','運動','減肥','焦慮','憂鬱','看醫生','檢查'],
+  life:['搬家','旅行','選擇','決定','方向','未來','運勢','計畫','移民','出國','人生']
+};
+const TOPIC_NAMES={love:'感情',work:'工作',money:'財務',study:'學業',health:'健康',life:'生活方向',general:'綜合'};
+function detectTopic(q){if(!q)return null;for(const[t,kw]of Object.entries(Q_TOPICS)){if(kw.some(k=>q.includes(k)))return t}return 'general'}
+
+/* ═══ Question-Aware Card Interpretation ═══ */
+function qInterp(card, posLabel, question, topic){
+  const s=card.suit, r=card.rank, isRed=SUIT_COLORS[s]==='red';
+  const sn=SUIT_NAMES[s], dom=SUIT_THEMES[s].domain, detail=CARD_DETAILS[cardKey(card)]||'';
+  const num=cardNum(card);
+  const q=question||'';
+  const qShort=q.length>20?q.substring(0,20)+'…':q;
+  const tp=topic||'general';
+  const tpN=TOPIC_NAMES[tp]||'';
+
+  // No question → generic
+  if(!q) return `<b>${posLabel}：${sn}${r}</b> ${isRed?'🔴':'⚫'}<br>${SUIT_THEMES[s].icon} ${dom} ｜ ${r}＝${NUM_MEANINGS[r]}<br>${detail}`;
+
+  let L=[];
+  L.push(`<b>${posLabel}：${sn}${r}</b> ${isRed?'🔴':'⚫'}`);
+
+  // ═══ Position-specific question framing ═══
+  const posType=posLabel.includes('過去')||posLabel.includes('狀況')||posLabel.includes('影響')?'past':
+    posLabel.includes('現在')||posLabel.includes('核心')?'now':
+    posLabel.includes('未來')||posLabel.includes('走向')?'future':
+    posLabel.includes('阻礙')||posLabel.includes('盲點')?'block':
+    posLabel.includes('建議')||posLabel.includes('行動')?'advice':
+    posLabel.includes('理想')||posLabel.includes('期望')?'ideal':
+    posLabel.includes('潛意識')||posLabel.includes('根源')?'subcon':'other';
+
+  // ═══ LOVE ═══
+  if(tp==='love'){
+    const posFrame={
+      past:`關於「${qShort}」，${sn}${r}揭示了這段感情的背景——`,
+      now:`回到「${qShort}」，${sn}${r}反映你此刻的感情狀態——`,
+      future:`展望「${qShort}」的走向，${sn}${r}指出——`,
+      block:`在「${qShort}」中，${sn}${r}揭示最大的感情障礙——`,
+      advice:`針對「${qShort}」，${sn}${r}的建議是——`,
+      ideal:`關於「${qShort}」，你心中理想的感情狀態是——`,
+      subcon:`在「${qShort}」這件事上，你潛意識中真正渴望的是——`,
+      other:`針對「${qShort}」，${sn}${r}傳達的訊息是——`
+    };
+    L.push(posFrame[posType]||posFrame.other);
+    if(s==='♥') L.push(`紅心直接命中感情核心。${detail} ${isRed?'感情方面有正面的發展跡象':'但需要更多溝通與理解'}。${num>=7?'情感能量強烈，這段關係對你的影響很深。':'情感在醞釀中，給彼此時間。'}`);
+    else if(s==='♦') L.push(`方塊出現在感情問題中，代表現實條件（金錢、距離、家庭背景）正在影響「${qShort}」。${posType==='block'?'物質面的差距或經濟壓力是你們之間最大的隱性障礙。':'先處理好現實面的問題，感情才能更穩固。'}`);
+    else if(s==='♣') L.push(`梅花暗示你可能在用理性方式處理「${qShort}」這個感情問題。${posType==='advice'?'把經營感情當成計畫來執行，主動安排約會、製造驚喜。':'感情有時不能只靠「做對的事」，更要「說對的話」。'}`);
+    else L.push(`黑桃揭示「${qShort}」中${posType==='past'?'曾經存在的':'潛藏的'}壓力與挑戰。${num>=7?'這段關係的壓力不小，需要雙方共同正視。':'挑戰存在但可以克服，關鍵在你的態度。'} ${detail}`);
+  }
+  // ═══ WORK / STUDY ═══
+  else if(tp==='work'||tp==='study'){
+    const posFrame={
+      past:`關於「${qShort}」，${sn}${r}揭示了你職場/學業的背景因素——`,
+      now:`在「${qShort}」這件事上，${sn}${r}反映你目前的工作狀態——`,
+      future:`展望「${qShort}」的發展，${sn}${r}預示——`,
+      block:`「${qShort}」最大的阻礙，${sn}${r}指出——`,
+      advice:`要突破「${qShort}」的困境，${sn}${r}建議——`,
+      ideal:`關於「${qShort}」，你理想中的結果是——`,
+      subcon:`在「${qShort}」這件事上，你內心深處真正在意的是——`,
+      other:`針對「${qShort}」，${sn}${r}的訊息——`
+    };
+    L.push(posFrame[posType]||posFrame.other);
+    if(s==='♣') L.push(`梅花直接呼應行動與努力。${detail} ${num>=7?'你的努力即將看到成果。':'需要更多持續的投入。'} 針對「${qShort}」，${posType==='advice'?'立即行動比等待更有效。':'你的執行力是關鍵因素。'}`);
+    else if(s==='♦') L.push(`方塊聚焦在實質成果與回報。關於「${qShort}」，${isRed?'財務面或成果面有正面發展':'短期的物質回報可能不如預期'}。${detail} ${num>=8?'影響範圍不小。':'循序漸進中。'}`);
+    else if(s==='♥') L.push(`紅心出現在工作問題中，代表人際關係是影響「${qShort}」成敗的關鍵。${posType==='block'?'人際摩擦或溝通不良是最大的卡點。':'善用你的人脈和溝通能力來推進事情。'} ${detail}`);
+    else L.push(`黑桃揭示「${qShort}」中的壓力和挑戰。${num>=7?'壓力不低，需要提前準備應對方案。':'適度的壓力反而能推動你成長。'} ${detail} ${posType==='advice'?'接受挑戰，將壓力轉化為動力。':''}`);
+  }
+  // ═══ MONEY ═══
+  else if(tp==='money'){
+    const posFrame={
+      past:`關於「${qShort}」，${sn}${r}揭示了你財務的歷史脈絡——`,
+      now:`在「${qShort}」上，${sn}${r}反映你目前的財務狀態——`,
+      future:`「${qShort}」的財務走勢，${sn}${r}指出——`,
+      block:`「${qShort}」最大的財務障礙是——`,
+      advice:`要改善「${qShort}」，${sn}${r}建議——`,
+      ideal:`你對「${qShort}」的財務期望是——`,
+      subcon:`在「${qShort}」背後，你真正在意的是——`,
+      other:`針對「${qShort}」——`
+    };
+    L.push(posFrame[posType]||posFrame.other);
+    if(s==='♦') L.push(`方塊直接命中財務核心。${detail} ${isRed?`「${qShort}」有正面的財務能量，${num>=7?'金額或影響不小':'穩步提升中'}`:`「${qShort}」需要更謹慎的財務態度，${num>=7?'風險不低':'保守為上'}`}。`);
+    else if(s==='♣') L.push(`梅花提示你的行動力和技能是改善「${qShort}」的核心手段。${posType==='advice'?'靠自己的努力和專業是最可靠的增收方式。':'目前的工作方式直接影響財務表現。'} ${detail}`);
+    else if(s==='♥') L.push(`紅心揭示人際和情感因素正在影響「${qShort}」。${posType==='block'?'可能因人情或感情因素做出不理性的財務決定。':'身邊的人可能是你的財務貴人。'} ${detail}`);
+    else L.push(`黑桃對「${qShort}」發出警示。${num>=7?'財務壓力較大，需要立即檢視並制定計畫。':'風險存在但可控。'} ${detail}`);
+  }
+  // ═══ HEALTH ═══
+  else if(tp==='health'){
+    L.push(`針對「${qShort}」，${sn}${r}在${posLabel}位置傳達的訊息——`);
+    if(s==='♥') L.push(`紅心將焦點放在心理與情緒層面。${detail} 關於「${qShort}」，${isRed?'保持正面心態是最好的療癒':'注意情緒壓力對身體的影響'}。`);
+    else if(s==='♠') L.push(`黑桃是嚴肅的健康提醒。${num>=7?'身體正承受顯著壓力，不要再拖延。':'有些不適信號出現。'} 關於「${qShort}」，正視問題是第一步。${detail}`);
+    else if(s==='♣') L.push(`梅花聚焦在生活習慣。關於「${qShort}」，${posType==='advice'?'建立規律的運動和作息是關鍵。':'你的生活節奏直接影響健康。'} ${detail}`);
+    else L.push(`方塊從物質條件角度看「${qShort}」——${posType==='block'?'經濟壓力可能讓你忽略了健康投資。':'善用可取得的醫療資源。'} ${detail}`);
+  }
+  // ═══ LIFE ═══
+  else if(tp==='life'){
+    L.push(`關於「${qShort}」，${sn}${r}在${posLabel}位置顯示——`);
+    L.push(`${dom}方面的能量${posType==='advice'?'可作為你做決定的重要參考':'是影響你當前狀態的關鍵因素'}。${detail} ${isRed?'整體方向帶有正面能量。':'提醒你保持務實。'} ${num>=7?'影響深遠，值得慎重。':'不必過度焦慮。'}`);
+  }
+  // ═══ GENERAL (有問題但無法分類) ═══
+  else{
+    L.push(`針對「${qShort}」，${sn}${r}在${posLabel}位置傳達——`);
+    L.push(`${dom}方面的能量${isRed?'帶來正向推動':'提示需要留意的課題'}。${detail} 結合你的問題，${posType==='past'||posType==='now'?'這正是影響目前局面的核心因素':posType==='block'?'這是你優先需要克服的障礙':posType==='advice'||posType==='future'?'這指向一個值得嘗試的突破方向':'這是牌面給你的重要訊息'}。`);
+  }
+
+  return L.join('<br>');
+}
+const DAILY_ADVICE={
+  '♥':['今天適合表達愛意，對身邊的人多說溫暖的話。','人際關係是今日的重點，用心傾聽他人。','今天的情緒敏感度較高，對自己溫柔一些。'],
+  '♦':['財務上可能有好消息，留意新的機會。','今天適合處理金錢相關事務。','物質面的滿足會帶來安全感。'],
+  '♣':['今天行動力充沛，適合推進計畫。','學習新事物的好日子，保持好奇心。','團隊合作會比單打獨鬥更有效率。'],
+  '♠':['今天可能遇到小挑戰，保持冷靜應對。','適合反思和沉澱，不必急於行動。','壓力之下往往藏著成長的契機。']
+};
+
+/* ═══════════════════════════════════════
+   SOUND SYSTEM (Web Audio API)
+   ═══════════════════════════════════════ */
+let soundEnabled=true;
+let audioCtx=null;
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundEnabled=!soundEnabled;document.getElementById('soundToggle').textContent=soundEnabled?'🔊 音效':'🔇 靜音'}
+
+function playSound(type){
+  if(!soundEnabled)return;
+  try{
+    const ctx=getAudioCtx();
+    if(type==='shuffle'){
+      for(let i=0;i<5;i++){setTimeout(()=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type='sine';o.frequency.value=800+Math.random()*600;
+        g.gain.setValueAtTime(.03,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.06);
+        o.connect(g);g.connect(ctx.destination);o.start(ctx.currentTime);o.stop(ctx.currentTime+.06);
+      },i*40)}
+    }
+    else if(type==='flip'){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.setValueAtTime(600,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(1200,ctx.currentTime+.15);
+      g.gain.setValueAtTime(.06,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);
+      o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.2);
+    }
+    else if(type==='reveal'){
+      [523,659,784].forEach((f,i)=>{setTimeout(()=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type='sine';o.frequency.value=f;
+        g.gain.setValueAtTime(.05,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);
+        o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.3);
+      },i*120)});
+    }
+    else if(type==='stop'){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='triangle';o.frequency.value=440;
+      g.gain.setValueAtTime(.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.12);
+      o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.12);
+    }
+  }catch(e){}
+}
+
+/* ═══════════════════════════════════════
+   GROQ AI API
+   ═══════════════════════════════════════ */
+let aiEnabled=false;
+
+function onAiToggle(){
+  aiEnabled=document.getElementById('aiToggle').checked;
+  document.getElementById('aiStatusLabel').textContent=aiEnabled?'已啟用':'關閉';
+  localStorage.setItem('pokerAiEnabled',aiEnabled?'1':'0');
+}
+function saveApiKey(){
+  localStorage.setItem('pokerGroqKey',document.getElementById('groqApiKey').value);
+  localStorage.setItem('pokerGroqModel',document.getElementById('groqModel').value);
+}
+function loadAiSettings(){
+  const key=localStorage.getItem('pokerGroqKey')||'';
+  const model=localStorage.getItem('pokerGroqModel')||'llama-3.3-70b-versatile';
+  const enabled=localStorage.getItem('pokerAiEnabled')==='1';
+  document.getElementById('groqApiKey').value=key;
+  document.getElementById('groqModel').value=model;
+  document.getElementById('aiToggle').checked=enabled;
+  aiEnabled=enabled;
+  document.getElementById('aiStatusLabel').textContent=enabled?'已啟用':'關閉';
+}
+
+async function callGroqAI(systemPrompt, userPrompt){
+  const key=document.getElementById('groqApiKey').value.trim();
+  const model=document.getElementById('groqModel').value;
+  if(!key) throw new Error('請先輸入 GROQ API Key');
+
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({
+      model:model,
+      messages:[
+        {role:'system',content:systemPrompt},
+        {role:'user',content:userPrompt}
+      ],
+      temperature:0.8,
+      max_tokens:2000
+    })
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||'API 請求失敗 ('+res.status+')')}
+  const data=await res.json();
+  return data.choices?.[0]?.message?.content||'AI 未返回內容';
+}
+
+function buildAiPrompt(type, cards, labels, question, profile){
+  const cardDesc=cards.map((c,i)=>`${labels[i]||'第'+(i+1)+'張'}：${SUIT_NAMES[c.suit]}${c.rank}（${SUIT_COLORS[c.suit]==='red'?'紅色/正面':'黑色/考驗'}，花色領域：${SUIT_THEMES[c.suit].domain}，數字意涵：${NUM_MEANINGS[c.rank]}，牌意：${CARD_DETAILS[cardKey(c)]||''}）`).join('\n');
+
+  const sys=`你是一位專業的撲克牌占卜師，擅長解讀撲克牌的象徵意義。你的風格溫暖而有洞察力，像一位智慧的朋友給予真誠的建議。
+規則：
+- 所有解讀必須 100% 圍繞使用者提出的問題，每一段都要引用和回應問題
+- 使用繁體中文回答
+- 紅色牌(♥♦)代表正面能量，黑色牌(♣♠)代表挑戰
+- ♥紅心=感情人際 ♦方塊=財務事業 ♣梅花=行動學習 ♠黑桃=挑戰轉變
+- 數字 A=新開始 2-4=初期發展 5-7=中段考驗 8-10=接近完成 JQK=成熟力量
+- 回應格式：使用 **粗體** 標記重點，分段清晰，最後給出具體可執行的建議
+- 語氣溫暖正面但誠實，不要過度美化壞牌，也不要誇大好牌`;
+
+  let user='';
+  if(question) user+=`🔮 問題：「${question}」\n\n`;
+  else user+=`🔮 （使用者未指定問題，請做綜合運勢解讀）\n\n`;
+
+  if(profile){
+    const pp=[];
+    if(profile.gender) pp.push('性別：'+GENDER_LABELS[profile.gender]);
+    if(profile.birthYear) pp.push('出生年：'+profile.birthYear+'（'+( new Date().getFullYear()-parseInt(profile.birthYear))+'歲）');
+    if(profile.zodiac&&ZODIAC_DATA[profile.zodiac]) pp.push('星座：'+ZODIAC_DATA[profile.zodiac].symbol+' '+ZODIAC_DATA[profile.zodiac].name+'（'+ZODIAC_DATA[profile.zodiac].element+'象，'+ZODIAC_DATA[profile.zodiac].trait+'）');
+    if(pp.length) user+=`👤 個人資料：${pp.join(' ｜ ')}\n\n`;
+  }
+
+  user+=`🎴 牌陣類型：${type}\n\n`;
+  user+=`抽到的牌：\n${cardDesc}\n\n`;
+
+  if(question){
+    user+=`請針對「${question}」這個問題，結合每張牌的位置、花色、數字，給出完整的深度解讀。
+
+請依序回答：
+1. 【總覽】先直接回應問題的結論傾向（正面/需注意/挑戰）
+2. 【逐牌解析】每張牌針對問題的具體解讀（每張牌都要連結回問題）
+3. 【三牌連讀】將所有牌串成一個完整的故事，解釋因果脈絡
+4. 【具體建議】給出 3 個可執行的行動建議，都要跟問題直接相關
+${profile?.zodiac?'5. 【星座加持】結合星座特質給出額外的個人化建議':''}`;
+  } else {
+    user+=`請做綜合運勢解讀，包含：
+1. 【總覽】整體能量判讀
+2. 【逐牌解析】每張牌的意義
+3. 【綜合分析】牌面故事線
+4. 【行動建議】3 個具體建議`;
+  }
+
+  return {sys,user};
+}
+
+async function getAiReading(type, cards, labels, question, profile, targetEl){
+  if(!aiEnabled) return false;
+  const key=document.getElementById('groqApiKey').value.trim();
+  if(!key){alert('請先輸入 GROQ API Key');return false}
+
+  // Show loading
+  const loadingHtml=`<div class="ai-loading"><span class="spinner"></span>AI 正在為你解讀牌面，請稍候...</div>`;
+  targetEl.insertAdjacentHTML('beforeend', loadingHtml);
+  targetEl.classList.add('visible');
+
+  try{
+    const {sys,user}=buildAiPrompt(type,cards,labels,question,profile);
+    const result=await callGroqAI(sys,user);
+
+    // Remove loading, add AI response
+    const loading=targetEl.querySelector('.ai-loading');
+    if(loading) loading.remove();
+
+    // Format markdown-like bold
+    const formatted=result.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+
+    const model=document.getElementById('groqModel').value;
+    const aiHtml=`<div class="ai-response">
+      <div class="ai-badge">🤖 AI 智慧解讀</div>
+      <div class="ai-text">${formatted}</div>
+      <div class="ai-model-info">Powered by GROQ · ${model}</div>
+    </div>`;
+    targetEl.insertAdjacentHTML('beforeend', aiHtml);
+    return true;
+  }catch(err){
+    const loading=targetEl.querySelector('.ai-loading');
+    if(loading) loading.remove();
+    targetEl.insertAdjacentHTML('beforeend',
+      `<div class="ai-response" style="border-color:rgba(232,64,64,.2);background:rgba(232,64,64,.03)">
+        <div class="ai-badge" style="color:#e84040;border-color:rgba(232,64,64,.2);background:rgba(232,64,64,.05)">⚠️ AI 解讀失敗</div>
+        <div class="ai-text" style="color:rgba(232,64,64,.7)">${err.message}<br><br>已顯示內建解讀結果。</div>
+      </div>`);
+    return false;
+  }
+}
+/* ═══════════════════════════════════════
+   CARD THEME SYSTEM
+   ═══════════════════════════════════════ */
+let currentTheme = localStorage.getItem('cardTheme') || 'starry';
+const THEME_NAMES = { starry:'星空', mystic:'神秘紫', classic:'古典紅', forest:'翠林綠', gold:'金龍' };
+
+function setTheme(theme, el) {
+  currentTheme = theme;
+  localStorage.setItem('cardTheme', theme);
+  document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+  const lbl = document.getElementById('themeLabel');
+  if (lbl) lbl.textContent = THEME_NAMES[theme] || theme;
+  document.querySelectorAll('.card-back').forEach(b => {
+    b.className = 'card-back theme-' + theme;
+  });
+}
+
+function initTheme() {
+  const lbl = document.getElementById('themeLabel');
+  if (lbl) lbl.textContent = THEME_NAMES[currentTheme] || currentTheme;
+  document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === currentTheme));
+}
+
+/* ═══════════════════════════════════════
+   REVERSAL SYSTEM
+   ═══════════════════════════════════════ */
+let reversalEnabled = localStorage.getItem('reversalEnabled') === '1';
+
+function onReversalToggle() {
+  reversalEnabled = document.getElementById('reversalToggle').checked;
+  localStorage.setItem('reversalEnabled', reversalEnabled ? '1' : '0');
+}
+
+function applyReversal(card) {
+  if (reversalEnabled) card.reversed = Math.random() < 0.28;
+  else card.reversed = false;
+  return card;
+}
+
+/* ═══════════════════════════════════════
+   LUCKY SUGGESTIONS
+   ═══════════════════════════════════════ */
+const LUCKY_COLORS = {
+  '♥': ['玫瑰紅','珊瑚橙','粉紅'], '♦': ['金黃','翡翠綠','橙色'],
+  '♣': ['翠綠','深藍','薰衣紫'], '♠': ['銀灰','靛藍','深紫']
+};
+const LUCKY_DIRS = {
+  '♥': ['南方','東南'], '♦': ['東方','東北'], '♣': ['東南','南方'], '♠': ['北方','西北']
+};
+const LUCKY_ELEMENTS = { '♥':'水', '♦':'土', '♣':'木', '♠':'金' };
+
+function getLucky(cards) {
+  const sc = {};
+  cards.forEach(c => sc[c.suit] = (sc[c.suit]||0) + 1);
+  const topSuit = Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][0];
+  const nums = cards.map(cardNum);
+  const sum = nums.reduce((a,b)=>a+b, 0);
+  const luckyNum = (sum % 9) || 9;
+  const reds = cards.filter(c => SUIT_COLORS[c.suit]==='red').length;
+  const luckyTime = reds >= cards.length/2 ? '上午（6-12時）' : '傍晚（17-21時）';
+  const cols = LUCKY_COLORS[topSuit];
+  const dirs = LUCKY_DIRS[topSuit];
+  return {
+    number: luckyNum,
+    color: cols[Math.floor(Math.random() * cols.length)],
+    direction: dirs[Math.floor(Math.random() * dirs.length)],
+    element: LUCKY_ELEMENTS[topSuit],
+    time: luckyTime
+  };
+}
+
+function renderLuckyBox(cards) {
+  const lucky = getLucky(cards);
+  return `<div class="lucky-box">
+    <div class="section-title">✨ 幸運能量提示</div>
+    <div class="lucky-grid">
+      <div class="lucky-item"><div class="lucky-icon">🔢</div><div class="lucky-val">${lucky.number}</div><div class="lucky-name">幸運數字</div></div>
+      <div class="lucky-item"><div class="lucky-icon">🎨</div><div class="lucky-val">${lucky.color}</div><div class="lucky-name">幸運顏色</div></div>
+      <div class="lucky-item"><div class="lucky-icon">🧭</div><div class="lucky-val">${lucky.direction}</div><div class="lucky-name">吉祥方位</div></div>
+      <div class="lucky-item"><div class="lucky-icon">⏰</div><div class="lucky-val">${lucky.time}</div><div class="lucky-name">能量時段</div></div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════
+   LUNAR CALENDAR & SOLAR TERMS
+   ═══════════════════════════════════════ */
+const LUNAR_DATA = {
+  2023: { cny:[0,22], months:[29,30,29,29,30,29,30,29,30,30,29,30,29], leap:2, zodiac:'癸卯年（兔）' },
+  2024: { cny:[1,10], months:[29,30,29,30,29,30,29,30,30,29,30,29,30], leap:0, zodiac:'甲辰年（龍）' },
+  2025: { cny:[0,29], months:[30,29,30,29,30,29,30,30,29,30,29,30,29], leap:6, zodiac:'乙巳年（蛇）' },
+  2026: { cny:[1,17], months:[30,29,30,29,30,29,30,29,30,30,29,30],   leap:0, zodiac:'丙午年（馬）' },
+};
+const LUNAR_MN = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','臘月'];
+const LUNAR_DN = ['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','廿','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+
+function getLunarDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const data = LUNAR_DATA[year];
+  const prevData = LUNAR_DATA[year-1];
+  if (!data && !prevData) return '';
+  
+  let activeData = data;
+  let cnyDate = data ? new Date(year, data.cny[0], data.cny[1]) : null;
+  
+  if (!cnyDate || today < cnyDate) {
+    if (!prevData) return '';
+    activeData = prevData;
+    cnyDate = new Date(year-1, prevData.cny[0], prevData.cny[1]);
+  }
+  
+  let days = Math.floor((today - cnyDate) / 86400000);
+  let mi = 0;
+  for (let i = 0; i < activeData.months.length; i++) {
+    if (days < activeData.months[i]) { mi = i; break; }
+    days -= activeData.months[i];
+  }
+  if (days < 0) days = 0;
+  return `${activeData.zodiac} ${LUNAR_MN[mi%12]}${LUNAR_DN[Math.min(days,29)]}`;
+}
+
+const SOLAR_TERMS_2025 = {
+  '小寒':[2025,0,5],'大寒':[2025,0,20],'立春':[2025,1,3],'雨水':[2025,1,18],
+  '驚蟄':[2025,2,5],'春分':[2025,2,20],'清明':[2025,3,4],'穀雨':[2025,3,20],
+  '立夏':[2025,4,5],'小滿':[2025,4,21],'芒種':[2025,5,5],'夏至':[2025,5,21],
+  '小暑':[2025,6,7],'大暑':[2025,6,22],'立秋':[2025,7,7],'處暑':[2025,7,22],
+  '白露':[2025,8,7],'秋分':[2025,9,22],'寒露':[2025,9,8],'霜降':[2025,9,23],
+  '立冬':[2025,10,7],'小雪':[2025,10,22],'大雪':[2025,11,7],'冬至':[2025,11,21],
+};
+const SOLAR_TERMS_2026 = {
+  '小寒':[2026,0,5],'大寒':[2026,0,20],'立春':[2026,1,4],'雨水':[2026,1,19],
+  '驚蟄':[2026,2,6],'春分':[2026,2,20],'清明':[2026,3,5],'穀雨':[2026,3,20],
+  '立夏':[2026,4,5],'小滿':[2026,4,21],'芒種':[2026,5,6],'夏至':[2026,5,21],
+  '小暑':[2026,6,7],'大暑':[2026,6,23],'立秋':[2026,7,7],'處暑':[2026,7,23],
+  '白露':[2026,8,8],'秋分':[2026,8,23],'寒露':[2026,9,8],'霜降':[2026,9,23],
+  '立冬':[2026,10,7],'小雪':[2026,10,22],'大雪':[2026,11,7],'冬至':[2026,11,22],
+};
+const SOLAR_TERM_MEANINGS = {
+  '小寒':'寒氣漸深，適合養精蓄銳。','大寒':'考驗頂點，撐過即是春天。','立春':'萬象更新，啟動新計畫的最佳時機！',
+  '雨水':'萬物滋潤，感情溝通有良好發展。','驚蟄':'沉睡力量甦醒，勇敢行動！','春分':'陰陽平衡，評估與調整方向。',
+  '清明':'思緒清晰，適合做重要決定。','穀雨':'好雨滋養，努力開始有所收穫。','立夏':'能量充沛，行動力最強季節！',
+  '小滿':'小有成就但未圓滿，繼續努力。','芒種':'農忙時節，勤奮耕耘有回報。','夏至':'能量巔峰，注意保持冷靜。',
+  '小暑':'暑氣漸強，避免衝動決策。','大暑':'最熱考驗期，靜待時機。','立秋':'收穫沉澱的季節開始了。',
+  '處暑':'暑氣退去，蓄積的能量可以發揮了。','白露':'秋意漸深，適合深度交流。','秋分':'反思收穫，再次陰陽平衡。',
+  '寒露':'寒意漸生，未完成的事要抓緊。','霜降':'為冬天的休養做準備。','立冬':'收藏休養，不宜過度消耗。',
+  '小雪':'靜謐的力量，適合規劃明年。','大雪':'靜默中積蓄力量。','冬至':'一陽復始！低谷轉折，明天起好轉。',
+};
+
+function getSolarTermInfo() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const terms = year === 2025 ? SOLAR_TERMS_2025 : year === 2026 ? SOLAR_TERMS_2026 : null;
+  if (!terms) return null;
+  let currentTerm = null, nextTerm = null, nextDays = 999;
+  for (const [name, [y,m,d]] of Object.entries(terms)) {
+    const td = new Date(y,m,d);
+    const diff = Math.floor((today - td) / 86400000);
+    if (diff >= 0 && diff <= 14 && (!currentTerm || diff < currentTerm.days)) currentTerm = {name, days:diff};
+    if (diff < 0 && -diff < nextDays) { nextDays = -diff; nextTerm = {name, days:-diff}; }
+  }
+  return { current: currentTerm, next: nextTerm };
+}
+
+function renderLunarBar() {
+  const lunarEl = document.getElementById('lunarBar');
+  if (!lunarEl) return;
+  const lunar = getLunarDate();
+  const term = getSolarTermInfo();
+  if (!lunar && !term) return;
+  let html = '';
+  if (lunar) html += `<span class="lunar-item">🌙 ${lunar}</span>`;
+  if (term) {
+    if (term.current) {
+      html += `<span class="lunar-sep">｜</span><span class="solar-term-badge">${term.current.days===0?'今日':'近期'}「${term.current.name}」${term.current.days>0?term.current.days+'天前':''}</span>`;
+      const meaning = SOLAR_TERM_MEANINGS[term.current.name];
+      if (meaning) html += `<span class="lunar-item" style="font-size:.7rem;opacity:.6">— ${meaning}</span>`;
+    } else if (term.next) {
+      html += `<span class="lunar-sep">｜</span><span class="lunar-item">距「${term.next.name}」還有 ${term.next.days} 天</span>`;
+    }
+  }
+  lunarEl.innerHTML = html;
+  lunarEl.style.display = 'flex';
+}
+
+/* ═══════════════════════════════════════
+   AMBIENT BACKGROUND MUSIC
+   ═══════════════════════════════════════ */
+const bgAudio = { playing:false, ctx:null, nodes:[], bellTimer:null };
+
+function toggleBgMusic() {
+  if (bgAudio.playing) stopBgMusic(); else startBgMusic();
+}
+
+function startBgMusic() {
+  if (bgAudio.playing) return;
+  bgAudio.playing = true;
+  if (!bgAudio.ctx) bgAudio.ctx = getAudioCtx();
+  const ctx = bgAudio.ctx;
+  bgAudio.nodes = [];
+
+  const master = ctx.createGain(); master.gain.value = 0;
+  master.connect(ctx.destination);
+  master.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 2.5);
+  bgAudio.nodes.push(master);
+
+  // Two-tap delay reverb
+  const dl1 = ctx.createDelay(3); dl1.delayTime.value = 1.3;
+  const dl2 = ctx.createDelay(5); dl2.delayTime.value = 2.6;
+  const dg1 = ctx.createGain(); dg1.gain.value = 0.28;
+  const dg2 = ctx.createGain(); dg2.gain.value = 0.18;
+  dl1.connect(dg1); dg1.connect(master);
+  dl2.connect(dg2); dg2.connect(master);
+  bgAudio.nodes.push(dl1,dl2,dg1,dg2);
+
+  // Low drone A1 55Hz
+  const drone = ctx.createOscillator(); drone.type='sine'; drone.frequency.value=55;
+  const droneG = ctx.createGain(); droneG.gain.value = 0.09;
+  drone.connect(droneG); droneG.connect(master); droneG.connect(dl1);
+  drone.start(); bgAudio.nodes.push(drone, droneG);
+
+  // Detuned pair A2 110Hz for beating
+  const p1 = ctx.createOscillator(); p1.type='triangle'; p1.frequency.value=110.4;
+  const p2 = ctx.createOscillator(); p2.type='triangle'; p2.frequency.value=109.6;
+  const padG = ctx.createGain(); padG.gain.value = 0.028;
+  p1.connect(padG); p2.connect(padG); padG.connect(master); padG.connect(dl2);
+  p1.start(); p2.start(); bgAudio.nodes.push(p1,p2,padG);
+
+  // 5th harmonic A3 165Hz (soft)
+  const h1 = ctx.createOscillator(); h1.type='sine'; h1.frequency.value=165;
+  const hg = ctx.createGain(); hg.gain.value = 0.012;
+  h1.connect(hg); hg.connect(master); h1.start(); bgAudio.nodes.push(h1,hg);
+
+  // Slow LFO for pitch sway
+  const lfo = ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.08;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 0.9;
+  lfo.connect(lfoG); lfoG.connect(drone.frequency); lfo.start(); bgAudio.nodes.push(lfo,lfoG);
+
+  // Lowpass filter for warmth
+  const filt = ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=600; filt.Q.value=0.7;
+  droneG.connect(filt); filt.connect(master); bgAudio.nodes.push(filt);
+
+  scheduleBells(ctx, master, dl1);
+  document.getElementById('bgMusicBtn').textContent = '🎵 停止音樂';
+  document.getElementById('bgMusicBtn').classList.add('active');
+}
+
+function scheduleBells(ctx, master, delay) {
+  if (!bgAudio.playing) return;
+  const PENTA = [261.6, 329.6, 392, 523.3, 659.3, 783.9, 1046.5];
+  const t0 = ctx.currentTime + 3 + Math.random()*5;
+  const noteCount = 2 + Math.floor(Math.random()*3);
+  for (let i=0; i<noteCount; i++) {
+    const freq = PENTA[Math.floor(Math.random()*PENTA.length)];
+    const t = t0 + i * (0.25 + Math.random()*0.3);
+    const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.028, t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t+2.8);
+    o.connect(g); g.connect(master); g.connect(delay);
+    o.start(t); o.stop(t+3.5);
+  }
+  bgAudio.bellTimer = setTimeout(()=>scheduleBells(ctx,master,delay), (t0-ctx.currentTime+3)*1000);
+}
+
+function stopBgMusic() {
+  bgAudio.playing = false;
+  clearTimeout(bgAudio.bellTimer);
+  const now = bgAudio.ctx?.currentTime || 0;
+  bgAudio.nodes.forEach(n => { try{ if(n.gain) n.gain.linearRampToValueAtTime(0, now+1); }catch(e){} });
+  setTimeout(()=>{ bgAudio.nodes.forEach(n=>{ try{n.stop?.();n.disconnect?.();}catch(e){} }); bgAudio.nodes=[]; },1500);
+  document.getElementById('bgMusicBtn').textContent='🎵 神秘音樂';
+  document.getElementById('bgMusicBtn').classList.remove('active');
+}
+
+/* ═══════════════════════════════════════
+   REVERSED CARD MEANINGS
+   ═══════════════════════════════════════ */
+const CARD_REVERSED_TEMPLATES = {
+  '♥': (detail) => `（逆位）${detail.replace(/。$/,'')}——情感能量受阻，可能面臨誤解、冷淡或內心抗拒，需要主動溝通化解。`,
+  '♦': (detail) => `（逆位）${detail.replace(/。$/,'')}——財務或事業上的進展受阻，可能有延誤、損失或機會流失，宜保守應對。`,
+  '♣': (detail) => `（逆位）${detail.replace(/。$/,'')}——行動受挫或計畫執行不順，暫時的努力未見回報，需調整策略再出發。`,
+  '♠': (detail) => `（逆位）挑戰加倍——${detail.replace(/。$/,'')}——壓力更加深重，但逆境往往是蛻變的前奏，保持信念。`,
+};
+
+function getReversedMeaning(card) {
+  const detail = CARD_DETAILS[cardKey(card)] || SUIT_THEMES[card.suit].domain;
+  return CARD_REVERSED_TEMPLATES[card.suit]?.(detail) || detail;
+}
+
+/* ═══════════════════════════════════════
+   YES / NO DIVINATION
+   ═══════════════════════════════════════ */
+let yesnoCard = null, yesnoActive = false;
+
+function startYesNo() {
+  if (yesnoActive) return;
+  yesnoActive = true;
+  playSound('shuffle');
+  const deck = buildDeck();
+  yesnoCard = applyReversal(deck[0]);
+  
+  const stage = document.getElementById('yesnoStage');
+  stage.innerHTML = buildCardSlot('yn', '命運牌');
+  document.getElementById('yesnoBtn').style.display='none';
+  
+  const wrap = document.getElementById('cw_yn');
+  wrap.className = 'card-wrap bouncing';
+  setTimeout(()=>{
+    playSound('stop'); wrap.className='card-wrap stopping';
+    setTimeout(()=>{
+      renderFront(document.getElementById('ft_yn'), yesnoCard);
+      playSound('flip'); wrap.className='card-wrap flipping'; burst(wrap);
+      setTimeout(()=>{
+        playSound('reveal'); wrap.className='card-wrap done';
+        showYesNoResult();
+        document.getElementById('yesnoResetBtn').style.display='';
+      },900);
+    },500);
+  },1400);
+}
+
+function showYesNoResult() {
+  const card = yesnoCard;
+  const q = document.getElementById('yesnoQuestion').value.trim();
+  const isRed = SUIT_COLORS[card.suit]==='red';
+  const num = cardNum(card);
+  
+  let verdict, strength, reason, icon;
+  const base = CARD_DETAILS[cardKey(card)] || SUIT_THEMES[card.suit].domain;
+  
+  if (card.reversed) {
+    if (isRed && num >= 7) {
+      verdict='YES'; strength='weak'; icon='💛'; reason=`${SUIT_NAMES[card.suit]}${card.rank}逆位——正面能量受到阻礙，答案傾向「是」但過程有波折，需要更多耐心與努力。`;
+    } else if (isRed) {
+      verdict='MAYBE'; strength='uncertain'; icon='💙'; reason=`${SUIT_NAMES[card.suit]}${card.rank}逆位——能量猶疑，時機尚未成熟。建議再等待或重新評估。${base}`;
+    } else {
+      verdict='NO'; strength=card.suit==='♠'&&num>=7?'strong':'normal'; icon='❌'; reason=`${SUIT_NAMES[card.suit]}${card.rank}逆位——阻力明確。${base} 建議暫緩行動或調整策略。`;
+    }
+  } else {
+    if (isRed && (num>=8 || card.rank==='A')) {
+      verdict='YES'; strength='strong'; icon='✅'; reason=`${SUIT_NAMES[card.suit]}${card.rank}——${base} 能量非常正面，牌面強力支持！`;
+    } else if (isRed) {
+      verdict='YES'; strength='normal'; icon='💚'; reason=`${SUIT_NAMES[card.suit]}${card.rank}——${base} 整體傾向正面，可以積極前進。`;
+    } else if (card.suit==='♣' || 'JQK'.includes(card.rank)) {
+      verdict='MAYBE'; strength='uncertain'; icon='💛'; reason=`${SUIT_NAMES[card.suit]}${card.rank}——${base} 結果取決於你的行動力與準備程度，努力則成。`;
+    } else if (card.suit==='♠' && num>=7) {
+      verdict='NO'; strength='strong'; icon='🚫'; reason=`${SUIT_NAMES[card.suit]}${card.rank}——${base} 阻力較強，建議先解決障礙再行動。`;
+    } else {
+      verdict='NO'; strength='normal'; icon='❌'; reason=`${SUIT_NAMES[card.suit]}${card.rank}——${base} 目前時機不佳，先沉澱思考再做決定。`;
+    }
+  }
+  
+  const strengthMap = { strong:'非常確定', normal:'傾向', weak:'略傾向', uncertain:'不確定' };
+  const panel = document.getElementById('yesnoReading');
+  let html = `<div style="text-align:center">`;
+  if (q) html += `<div class="q-echo" style="margin-bottom:12px">「${q}」</div>`;
+  html += `<div class="yesno-verdict-wrap" id="ynVerdictWrap">
+    <div style="font-size:2rem">${icon}</div>
+    <div class="yesno-verdict ${verdict.toLowerCase()}">${verdict}</div>
+    <div class="yesno-strength">${strengthMap[strength]}</div>
+    <div class="yesno-reason">${reason}</div>
+  </div></div>`;
+  html += renderLuckyBox([card]);
+  panel.innerHTML = html;
+  panel.classList.add('visible');
+  setTimeout(()=> document.getElementById('ynVerdictWrap')?.classList.add('show'), 100);
+  saveToHistory('yesno', '是非占', [card], q);
+  if (aiEnabled) {
+    const sys='你是一位撲克牌占卜師，請針對是非問題給出簡潔的分析（200字以內），繁體中文回答。';
+    const user=`問題：「${q||'這件事能成功嗎？'}」\n抽到的牌：${SUIT_NAMES[card.suit]}${card.rank}${card.reversed?'（逆位）':''}（${base}）\n目前判定：${verdict}\n請進一步說明這張牌對此問題的啟示，以及建議的行動。`;
+    callGroqAI(sys, user).then(r=>{
+      const formatted=r.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+      panel.insertAdjacentHTML('beforeend',`<div class="ai-response"><div class="ai-badge">🤖 AI 深度解析</div><div class="ai-text">${formatted}</div></div>`);
+    }).catch(()=>{});
+  }
+}
+
+function resetYesNo() {
+  yesnoActive=false; yesnoCard=null;
+  document.getElementById('yesnoStage').innerHTML='<p style="color:rgba(212,168,73,.35);font-size:.88rem">心中默想你的問題，按下按鈕抽牌</p>';
+  document.getElementById('yesnoReading').classList.remove('visible');
+  document.getElementById('yesnoReading').innerHTML='';
+  document.getElementById('yesnoBtn').style.display='';
+  document.getElementById('yesnoResetBtn').style.display='none';
+}
+
+/* ═══════════════════════════════════════
+   SEVEN STAR HORSESHOE
+   ═══════════════════════════════════════ */
+const HORSESHOE_LABELS = ['過去影響','眼前狀況','潛在力量','根本原因','外在環境','你的行動','最終結果'];
+const HORSESHOE_DESC = [
+  '揭示過去的背景，是如何形成今日的狀況',
+  '目前正在面對的實際處境與挑戰',
+  '內心潛藏的力量或尚未意識到的資源',
+  '問題的根本原因或核心驅動力',
+  '外部環境的影響——他人、時機或機緣',
+  '你可以或應該採取的行動方向',
+  '順此發展下去，最可能的最終結果'
+];
+let sevenCards=[], sevenIdx=-1, sevenActive=false, sevenDeck=[];
+
+function startSeven() {
+  playSound('shuffle');
+  sevenDeck=buildDeck(); sevenCards=[];
+  document.getElementById('sevenStartBtn').style.display='none';
+  document.getElementById('sevenResetBtn').style.display='none';
+  document.getElementById('sevenReading').classList.remove('visible');
+  document.getElementById('sevenReading').innerHTML='';
+  document.getElementById('exportBar').style.display='none';
+  const stage=document.getElementById('sevenStage');
+  stage.innerHTML=''; stage.className='stage horseshoe';
+  for(let i=0;i<7;i++) stage.innerHTML+=buildCardSlot('s'+i, HORSESHOE_LABELS[i]);
+  setTimeout(()=>beginSevenBounce(0), 200);
+}
+
+function beginSevenBounce(idx) {
+  sevenIdx=idx; sevenActive=true;
+  for(let i=0;i<7;i++){const w=document.getElementById('cw_s'+i);if(!w)continue;
+    if(i<idx)w.className='card-wrap done';else if(i===idx)w.className='card-wrap bouncing';else w.className='card-wrap idle'}
+  document.getElementById('sevenInstruct').innerHTML=`第 ${idx+1}/7 張（${HORSESHOE_LABELS[idx]}）... 按 <span class="key">空白鍵</span> 或點擊牌停止`;
+}
+
+function stopSevenCard() {
+  if(!sevenActive) return; sevenActive=false; playSound('stop');
+  const card = applyReversal(sevenDeck[sevenCards.length]);
+  sevenCards.push(card);
+  const idx=sevenIdx, wrap=document.getElementById('cw_s'+idx);
+  wrap.className='card-wrap stopping';
+  setTimeout(()=>{
+    renderFront(document.getElementById('ft_s'+idx), card);
+    playSound('flip'); wrap.className='card-wrap flipping'; burst(wrap);
+    setTimeout(()=>{ wrap.className='card-wrap done';
+      if(idx<6){setTimeout(()=>beginSevenBounce(idx+1),400)}
+      else{playSound('reveal');
+        document.getElementById('sevenInstruct').innerHTML='七星牌陣完整揭曉 ✦';
+        document.getElementById('sevenResetBtn').style.display='';
+        document.getElementById('exportBar').style.display='flex';
+        setTimeout(()=>showSevenReading(),600)}
+    },900)},500);
+}
+
+function showSevenReading() {
+  const q=document.getElementById('sevenQuestion').value.trim();
+  const topic=detectTopic(q);
+  const reds=sevenCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+  const reversed=sevenCards.filter(c=>c.reversed).length;
+  const qShort=q?(q.length>22?q.substring(0,22)+'…':q):'';
+
+  let html=`<div class="reading-header"><h2>🌙 七星牌陣解讀 ✦</h2><div class="gold-divider"></div>`;
+  if(q) html+=`<div class="q-echo">「${q}」</div>`;
+  html+=`</div>`;
+
+  html+=`<div class="overview-box">${reds>=5?'🔴 五張以上紅牌——能量非常強勁！':reds>=4?'🔴 整體偏正面，有充足的支持能量。':reds>=3?'均衡局面，機會與挑戰並存。':'⚫ 黑牌偏多，此時需謹慎沉澱。'}${reversed>0?`<br><span style="font-size:.78rem;opacity:.55">（含${reversed}張逆位牌，能量方向有所調整）</span>`:''}</div>`;
+
+  html+='<div class="card-readings">';
+  sevenCards.forEach((card,i)=>{
+    const isRev = card.reversed;
+    html+=`<div class="card-reading"><div class="pos-label">${HORSESHOE_LABELS[i]}</div>
+      <div class="card-name"><span style="color:${SUIT_COLORS[card.suit]==='red'?'var(--red)':'#8888aa'}">${card.suit}</span> ${cardLabel(card)}${isRev?' <span style="font-size:.65rem;color:rgba(180,80,80,.7);padding:1px 5px;border-radius:4px;background:rgba(180,80,80,.1)">逆位</span>':''}</div>
+      <div class="meaning"><b>${HORSESHOE_DESC[i]}</b><br><br>
+      <div class="q-interp">${isRev ? getReversedMeaning(card) : qInterp(card, HORSESHOE_LABELS[i], q, topic)}</div></div></div>`;
+  });
+  html+='</div>';
+
+  // Seven-card narrative
+  const outcome = sevenCards[6];
+  html+=`<div class="synthesis"><div class="section-title">🌟 七星綜合—命運之弧</div>`;
+  html+=`<p><b>起點（過去）→ 核心（現在）→ 終點（結果）：</b><br>`;
+  html+=`${cardLabel(sevenCards[0])}→${cardLabel(sevenCards[1])}→${cardLabel(sevenCards[6])} `;
+  html+=SUIT_COLORS[outcome.suit]==='red'&&!outcome.reversed?'結果牌正面，局勢朝好的方向發展。':'結果牌提醒你——仍有些功課需要完成。';
+  html+=`</p><p style="margin-top:8px"><b>潛在力量（第3位）：</b>${cardLabel(sevenCards[2])}——你擁有${SUIT_THEMES[sevenCards[2].suit].domain}方面的內在資源，${sevenCards[2].reversed?'目前被壓抑，需要主動發掘。':'善加運用會是你的關鍵優勢。'}</p>`;
+  html+=`<p style="margin-top:8px"><b>根本原因（第4位）：</b>${cardLabel(sevenCards[3])}——問題的核心在${SUIT_THEMES[sevenCards[3].suit].domain}方面，${CARD_DETAILS[cardKey(sevenCards[3])]||'這是需要面對的核心課題。'}</p>`;
+  if(q){
+    html+=`<div class="final-advice"><b>🎯 針對「${qShort}」的七星總結：</b><br><br>`;
+    html+=`行動建議（第6位${cardLabel(sevenCards[5])}）：${SUIT_COLORS[sevenCards[5].suit]==='red'&&!sevenCards[5].reversed?'從'+SUIT_THEMES[sevenCards[5].suit].domain+'方面主動出擊，時機成熟。':'先處理'+SUIT_THEMES[sevenCards[3].suit].domain+'方面的根本問題，再採取行動。'}`;
+    html+=`<br><br>最終結果（${cardLabel(outcome)}${outcome.reversed?' 逆位':''}）：${SUIT_COLORS[outcome.suit]==='red'&&!outcome.reversed?'✅ 前景正面，你的努力將看到成果。':'⚠️ 仍有挑戰，但每一次的考驗都是成長的契機。'}</div>`;
+  }
+  html+=`</div>`;
+  html += renderLuckyBox(sevenCards);
+
+  const panel=document.getElementById('sevenReading');
+  panel.innerHTML=html; panel.classList.add('visible');
+  saveToHistory('seven','七星牌陣',sevenCards,q);
+  if(aiEnabled) getAiReading('七星馬蹄牌陣',sevenCards,HORSESHOE_LABELS,q,null,panel);
+}
+
+function resetSeven() {
+  sevenActive=false;sevenCards=[];sevenIdx=-1;
+  document.getElementById('sevenReading').classList.remove('visible');
+  document.getElementById('sevenStartBtn').style.display='';
+  document.getElementById('sevenResetBtn').style.display='none';
+  document.getElementById('exportBar').style.display='none';
+  document.getElementById('sevenInstruct').innerHTML='按下 <span class="key">開始占卜</span> 開啟七星牌陣';
+  document.getElementById('sevenStage').innerHTML='';
+}
+
+/* ═══════════════════════════════════════
+   ANNUAL 12-MONTH READING
+   ═══════════════════════════════════════ */
+let annualCards = [];
+const MONTH_NAMES = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+const MONTH_THEMES = ['適合新計畫','情感與溝通','行動與拼搏','沉澱與反思','財務機會','人際互動','成長挑戰','收穫時期','評估方向','準備蓄力','突破困境','年末圓滿'];
+
+function drawAnnual() {
+  playSound('shuffle');
+  const deck=buildDeck();
+  annualCards=deck.slice(0,12).map(c=>applyReversal(c));
+  document.getElementById('annualDrawBtn').style.display='none';
+  document.getElementById('annualResetBtn').style.display='';
+  document.getElementById('annualReading').classList.remove('visible');
+  document.getElementById('annualReading').innerHTML='';
+
+  const grid=document.getElementById('annualGrid');
+  grid.innerHTML='';
+  annualCards.forEach((card,i)=>{
+    const div=document.createElement('div');
+    div.className='month-cell';
+    div.innerHTML=`<div class="month-lbl">${MONTH_NAMES[i]}</div>
+      ${buildCardSlot('an'+i,'')}
+      <div id="amr_${i}" class="month-reading-txt"></div>`;
+    grid.appendChild(div);
+  });
+
+  annualCards.forEach((card,i)=>{
+    setTimeout(()=>{
+      const wrap=document.getElementById('cw_an'+i);if(!wrap)return;
+      wrap.className='card-wrap bouncing';
+      setTimeout(()=>{
+        wrap.className='card-wrap stopping';
+        setTimeout(()=>{
+          renderFront(document.getElementById('ft_an'+i),card);
+          playSound(i===11?'reveal':'flip');
+          wrap.className='card-wrap flipping';burst(wrap);
+          setTimeout(()=>{
+            wrap.className='card-wrap done';
+            const rEl=document.getElementById('amr_'+i);
+            if(rEl){
+              const isRed=SUIT_COLORS[card.suit]==='red';
+              rEl.innerHTML=`${card.reversed?'<span style="color:rgba(180,80,80,.6);font-size:.6rem">逆位</span><br>':''}<span style="color:${isRed?'var(--red)':'#8888aa'}">${card.suit}</span>${SUIT_NAMES[card.suit]}${card.rank}<small>${CARD_DETAILS[cardKey(card)]?.substring(0,18)||SUIT_THEMES[card.suit].domain}</small>`;
+            }
+          },900);
+        },300);
+      },350+i*30);
+    },i*200);
+  });
+
+  setTimeout(()=>showAnnualSummary(), 12*200+1500);
+}
+
+function showAnnualSummary() {
+  const q=document.getElementById('annualQuestion').value.trim();
+  const reds=annualCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+  const revCount=annualCards.filter(c=>c.reversed).length;
+  const qStr=q?`「${q}」方面，`:'' ;
+  
+  // Quarter analysis
+  const quarters=[annualCards.slice(0,3),annualCards.slice(3,6),annualCards.slice(6,9),annualCards.slice(9,12)];
+  const qNames=['第一季（1-3月）','第二季（4-6月）','第三季（7-9月）','第四季（10-12月）'];
+  
+  let html=`<div class="reading-header"><h2>📅 年度十二月運勢解讀 ✦</h2><div class="gold-divider"></div>`;
+  if(q) html+=`<div class="q-echo">「${q}」</div>`;
+  html+=`</div>`;
+  html+=`<div class="overview-box">${qStr}今年整體紅牌比例 <b>${Math.round(reds/12*100)}%</b> — ${reds>=8?'整年能量充沛，好好把握機遇！':reds>=6?'正負均衡，主動出擊可創造好局。':reds>=4?'挑戰偏多，但峰谷之後必有轉機。':'今年考驗較多，專注蓄積實力。'}${revCount>0?`<br><span style="font-size:.78rem;opacity:.5">（含${revCount}張逆位牌，相關月份需特別注意）</span>`:''}</div>`;
+
+  html+=`<div class="annual-summary"><div class="section-title">📊 季度分析</div>`;
+  quarters.forEach((qCards,qi)=>{
+    const qReds=qCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+    const topSuit=Object.entries(qCards.reduce((a,c)=>{a[c.suit]=(a[c.suit]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1])[0];
+    html+=`<div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;border-left:3px solid ${qReds>=2?'rgba(212,168,73,.4)':'rgba(100,100,160,.3)'};background:rgba(212,168,73,.02)">
+      <b style="color:var(--gold)">${qNames[qi]}</b> — ${SUIT_THEMES[topSuit[0]].icon} ${SUIT_THEMES[topSuit[0]].domain}主導<br>
+      <span style="font-size:.82rem;color:rgba(232,224,208,.6)">${qReds>=2?'🔴 能量充沛，適合積極行動':'⚫ 需謹慎應對，著重準備'}　${qCards.map(c=>cardLabel(c)).join('、')}</span>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Key months highlights
+  html+=`<div class="card-readings" style="margin-top:12px">`;
+  const bestMonth=annualCards.reduce((best,c,i)=>(SUIT_COLORS[c.suit]==='red'&&cardNum(c)>best.val)?{idx:i,val:cardNum(c)}:best,{idx:-1,val:0});
+  const warnMonth=annualCards.reduce((worst,c,i)=>(SUIT_COLORS[c.suit]==='black'&&cardNum(c)>worst.val)?{idx:i,val:cardNum(c)}:worst,{idx:-1,val:0});
+  if(bestMonth.idx>=0){
+    html+=`<div class="card-reading"><div class="pos-label">✨ 全年最強能量月</div>
+      <div class="card-name">${MONTH_NAMES[bestMonth.idx]}（${cardLabel(annualCards[bestMonth.idx])}）</div>
+      <div class="meaning">${MONTH_THEMES[bestMonth.idx]}。${CARD_DETAILS[cardKey(annualCards[bestMonth.idx])]||''}</div></div>`;
+  }
+  if(warnMonth.idx>=0){
+    html+=`<div class="card-reading"><div class="pos-label">⚠️ 需特別留意的月份</div>
+      <div class="card-name">${MONTH_NAMES[warnMonth.idx]}（${cardLabel(annualCards[warnMonth.idx])}${annualCards[warnMonth.idx].reversed?' 逆位':''}）</div>
+      <div class="meaning">${CARD_DETAILS[cardKey(annualCards[warnMonth.idx])]||''} 此月宜謹慎應對，勿衝動行事。</div></div>`;
+  }
+  html+=`</div>`;
+  html += renderLuckyBox(annualCards);
+
+  const panel=document.getElementById('annualReading');
+  panel.innerHTML=html; panel.classList.add('visible');
+  saveToHistory('annual','年度十二月運勢',annualCards,q);
+}
+
+function resetAnnual(){
+  annualCards=[];
+  document.getElementById('annualGrid').innerHTML='';
+  document.getElementById('annualReading').classList.remove('visible');
+  document.getElementById('annualDrawBtn').style.display='';
+  document.getElementById('annualResetBtn').style.display='none';
+}
+
+/* ═══════════════════════════════════════
+   CARD DICTIONARY
+   ═══════════════════════════════════════ */
+let dictFilter='all';
+
+function buildDict() {
+  const grid=document.getElementById('dictGrid');
+  if(!grid || grid.children.length) return; // already built
+  let html='';
+  SUITS.forEach(suit=>{
+    RANKS.forEach(rank=>{
+      const card={suit,rank};
+      const key=suit+rank;
+      const isRed=SUIT_COLORS[suit]==='red';
+      const upright=CARD_DETAILS[key]||SUIT_THEMES[suit].domain+'方面的能量。';
+      const reversed=CARD_REVERSED_TEMPLATES[suit]?.(upright.replace(/。$/,''))||'';
+      html+=`<div class="dict-card" data-suit="${suit}" data-rank="${rank}" data-text="${upright} ${reversed}">
+        <div class="dict-card-name"><span style="color:${isRed?'var(--red)':'#8888aa'}">${suit}</span>${SUIT_NAMES[suit]}${rank}</div>
+        <div class="dict-card-meaning">${upright}</div>
+        <div class="dict-card-rev">${reversed.replace(/^（逆位）/,'').substring(0,40)}...</div>
+      </div>`;
+    });
+  });
+  grid.innerHTML=html;
+}
+
+function setDictFilter(suit,btn){
+  dictFilter=suit;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.suit===suit));
+  filterDict();
+}
+
+function filterDict(){
+  const q=(document.getElementById('dictSearch')?.value||'').toLowerCase();
+  document.querySelectorAll('.dict-card').forEach(el=>{
+    const suitMatch = dictFilter==='all' || el.dataset.suit===dictFilter;
+    const textMatch = !q || el.dataset.text.includes(q) || el.dataset.rank.toLowerCase()===q || SUIT_NAMES[el.dataset.suit].includes(q);
+    el.style.display = suitMatch&&textMatch ? '' : 'none';
+  });
+}
+function buildDeck(){
+  const d=[];for(const s of SUITS)for(const r of RANKS)d.push({suit:s,rank:r});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
+  return d;
+}
+function cardNum(c){if(c.rank==='A')return 1;if(c.rank==='J')return 11;if(c.rank==='Q')return 12;if(c.rank==='K')return 13;return parseInt(c.rank)}
+function cardLabel(c){return SUIT_NAMES[c.suit]+c.rank}
+function cardKey(c){return c.suit+c.rank}
+
+function renderFront(el,card){
+  const isRev = card && card.reversed;
+  el.className='card-face card-front '+(SUIT_COLORS[card.suit]==='red'?'red-card':'black-card')+(isRev?' reversed':'');
+  const s=card.suit,r=card.rank;
+  let inner=`<div class="corner corner-tl"><span class="c-rank">${r}</span><span class="c-suit">${s}</span></div>`;
+  inner+=`<div class="corner corner-br"><span class="c-rank">${r}</span><span class="c-suit">${s}</span></div>`;
+  if(r==='A') inner+=`<div class="ace-big">${s}</div>`;
+  else if('JQK'.includes(r)) inner+=`<div class="face-display"><span class="face-letter">${r}</span><span class="face-suit-big">${s}</span></div>`;
+  else{const n=parseInt(r);const pips=PIP_MAP[n];if(pips){inner+='<div class="pip-zone">';for(const p of pips){inner+=`<div class="pip${p[2]?' usd':''}" style="left:${p[0]}%;top:${p[1]}%">${s}</div>`}inner+='</div>'}}
+  let h=`<div class="card-content">${inner}</div>`;
+  if(isRev) h+=`<div class="reversed-badge">逆位</div>`;
+  el.innerHTML=h;
+}
+
+function buildCardSlot(id,label){
+  return `<div class="card-slot"><div class="slot-label" id="lb_${id}">${label||''}</div>
+  <div class="card-wrap idle" id="cw_${id}"><div class="card-flip"><div class="card-face card-back theme-${currentTheme}"><div class="card-back-inner"></div></div>
+  <div class="card-face card-front" id="ft_${id}"></div></div></div></div>`;
+}
+
+function burst(el){
+  const r=el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(let i=0;i<10;i++){const sp=document.createElement('div');
+    sp.style.cssText=`position:fixed;left:${cx}px;top:${cy}px;width:3px;height:3px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:999;transition:all .6s cubic-bezier(.23,1,.32,1);opacity:1`;
+    document.body.appendChild(sp);const a=(Math.PI*2/10)*i,d=30+Math.random()*30;
+    requestAnimationFrame(()=>{sp.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`;sp.style.opacity='0'});
+    setTimeout(()=>sp.remove(),700)}
+}
+
+function interpretCard(card,posLabel,question,topic){
+  return qInterp(card, posLabel, question||'', topic||detectTopic(question)||null);
+}
+
+/* ═══════════════════════════════════════
+   TAB SYSTEM
+   ═══════════════════════════════════════ */
+function switchTab(name){
+  const ALL_TABS=['daily','yesno','three','cross','seven','annual','dual','history','stats','dict'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',ALL_TABS[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+  document.getElementById('exportBar').style.display='none';
+  if(name==='history') renderHistory();
+  if(name==='stats') renderStats();
+  if(name==='daily'){checkDailyCard();renderLunarBar();}
+  if(name==='dict') buildDict();
+}
+
+/* ═══════════════════════════════════════
+   DAILY CARD
+   ═══════════════════════════════════════ */
+function checkDailyCard(){
+  const today=new Date().toISOString().slice(0,10);
+  const saved=JSON.parse(localStorage.getItem('pokerDaily')||'{}');
+  if(saved.date===today){
+    showDailyCard(saved.card,false);
+    document.getElementById('dailyBtn').style.display='none';
+  } else {
+    document.getElementById('dailyStage').innerHTML='';
+    document.getElementById('dailyFortune').innerHTML='<span style="color:rgba(212,168,73,.3)">今天還沒有抽牌，點擊下方按鈕抽取你的每日運勢牌！</span>';
+    document.getElementById('dailyBtn').style.display='';
+  }
+}
+
+function drawDaily(){
+  playSound('shuffle');
+  const deck=buildDeck();
+  const card=deck[0];
+  const today=new Date().toISOString().slice(0,10);
+  localStorage.setItem('pokerDaily',JSON.stringify({date:today,card:card}));
+  document.getElementById('dailyBtn').style.display='none';
+  setTimeout(()=>showDailyCard(card,true),300);
+}
+
+function showDailyCard(card,animate){
+  const stage=document.getElementById('dailyStage');
+  stage.innerHTML=buildCardSlot('daily','今日牌');
+  const wrap=document.getElementById('cw_daily');
+  if(animate){
+    wrap.className='card-wrap bouncing';
+    setTimeout(()=>{
+      playSound('stop');wrap.className='card-wrap stopping';
+      setTimeout(()=>{
+        renderFront(document.getElementById('ft_daily'),card);
+        playSound('flip');wrap.className='card-wrap flipping';burst(wrap);
+        setTimeout(()=>{playSound('reveal');wrap.className='card-wrap done';showDailyFortune(card)},900);
+      },500);
+    },1200);
+  } else {
+    renderFront(document.getElementById('ft_daily'),card);
+    wrap.className='card-wrap done';
+    showDailyFortune(card);
+  }
+}
+
+function showDailyFortune(card){
+  const s=card.suit,r=card.rank,isRed=SUIT_COLORS[s]==='red';
+  const advices=DAILY_ADVICE[s];
+  const advice=advices[Math.floor(cardNum(card)%advices.length)];
+  const el=document.getElementById('dailyFortune');
+  el.innerHTML=`<b style="font-size:1.1rem">${SUIT_NAMES[s]}${r}</b> ${isRed?'🔴':'⚫'}<br><br>` +
+    `<b>今日能量：</b>${SUIT_THEMES[s].icon} ${SUIT_THEMES[s].domain}<br>` +
+    `<b>數字訊息：</b>${r} — ${NUM_MEANINGS[r]}<br>` +
+    `<b>牌意：</b>${CARD_DETAILS[cardKey(card)]||''}<br><br>` +
+    `<b>✨ 今日提示：</b>${advice}<br>` +
+    `<span style="opacity:.5;font-size:.8rem">${isRed?'今天整體能量正面，適合積極行動。':'今天適合沉澱反思，穩步前行。'}</span>`;
+  // Append lucky
+  el.insertAdjacentHTML('beforeend', renderLuckyBox([card]));
+  saveToHistory('daily','每日一牌',[card],'');
+  // AI reading
+  if(aiEnabled){
+    const wrap=document.getElementById('dailyFortune');
+    getAiReading('每日一牌',[card],['今日牌'],'今天的整體運勢如何？有什麼需要注意的？',null,wrap);
+  }
+}
+
+/* ═══════════════════════════════════════
+   THREE CARD READING
+   ═══════════════════════════════════════ */
+let threeMode='timeline',threeCards=[],threeIdx=-1,threeActive=false,threeDeck=[];
+
+function setMode(m,btn){threeMode=m;document.querySelectorAll('.mode-sel').forEach(b=>b.classList.toggle('active',b.dataset.mode===m))}
+
+function startThree(){
+  playSound('shuffle');
+  threeDeck=buildDeck();threeCards=[];
+  document.getElementById('threeStartBtn').style.display='none';
+  document.getElementById('threeResetBtn').style.display='none';
+  document.getElementById('threeReading').classList.remove('visible');
+  document.getElementById('threeReading').innerHTML='';
+  document.getElementById('exportBar').style.display='none';
+  const labels=MODE_LABELS[threeMode];
+  const stage=document.getElementById('threeStage');
+  stage.innerHTML='';stage.className='stage';
+  for(let i=0;i<3;i++) stage.innerHTML+=buildCardSlot('t'+i,labels[i]);
+  setTimeout(()=>beginThreeBounce(0),200);
+}
+
+function beginThreeBounce(idx){
+  threeIdx=idx;threeActive=true;
+  for(let i=0;i<3;i++){const w=document.getElementById('cw_t'+i);if(!w)continue;
+    if(i<idx)w.className='card-wrap done';else if(i===idx)w.className='card-wrap bouncing';else w.className='card-wrap idle'}
+  document.getElementById('threeInstruct').innerHTML=`第 ${idx+1} 張牌跳動中... 按 <span class="key">空白鍵</span> 或點擊牌面停止`;
+}
+
+function stopThreeCard(){
+  if(!threeActive)return;threeActive=false;playSound('stop');
+  const card=applyReversal(threeDeck[threeCards.length]);threeCards.push(card);
+  const idx=threeIdx,wrap=document.getElementById('cw_t'+idx);
+  wrap.className='card-wrap stopping';
+  setTimeout(()=>{
+    renderFront(document.getElementById('ft_t'+idx),card);
+    playSound('flip');wrap.className='card-wrap flipping';burst(wrap);
+    setTimeout(()=>{wrap.className='card-wrap done';
+      if(idx<2){setTimeout(()=>beginThreeBounce(idx+1),400)}
+      else{playSound('reveal');
+        document.getElementById('threeInstruct').innerHTML='三張牌已揭曉 ✦';
+        document.getElementById('threeResetBtn').style.display='';
+        document.getElementById('exportBar').style.display='flex';
+        setTimeout(()=>showThreeReading(),500)}
+    },900)},500);
+}
+
+function showThreeReading(){
+  const q=document.getElementById('questionInput').value.trim();
+  const gender=document.getElementById('genderInput').value;
+  const by=document.getElementById('birthYearInput').value;
+  const zodiac=document.getElementById('zodiacInput').value;
+  const labels=MODE_LABELS[threeMode];
+  const reds=threeCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+  const nums=threeCards.map(cardNum);
+  const sc={};threeCards.forEach(c=>{sc[c.suit]=(sc[c.suit]||0)+1});
+  const topSuit=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0];
+  const topic=detectTopic(q);
+  const tpN=TOPIC_NAMES[topic]||'';
+  const qShort=q?(q.length>25?q.substring(0,25)+'…':q):'';
+
+  let html=`<div class="reading-header"><h2>✦ 占卜解讀 ✦</h2><div class="gold-divider"></div>`;
+  if(q) html+=`<div class="q-echo">「${q}」</div>`;
+  const pp=[];if(gender)pp.push(GENDER_LABELS[gender]);if(by)pp.push(by+'年生');if(zodiac)pp.push(ZODIAC_DATA[zodiac]?.symbol+' '+ZODIAC_DATA[zodiac]?.name);
+  if(pp.length) html+=`<div class="profile-echo">${pp.join(' ｜ ')}</div>`;
+  html+=`</div>`;
+
+  // Overview - question aware
+  let cm='';
+  if(q){
+    cm=reds===3?`🔴 三張紅色牌——關於「${qShort}」，牌面給出非常正面的回應！`:
+      reds===2?`🔴🔴⚫ 關於「${qShort}」，整體偏順利，但有一個風險點需留意。`:
+      reds===1?`⚫⚫🔴 關於「${qShort}」，目前挑戰較多，但仍有突破的希望。`:
+      `⚫ 關於「${qShort}」，目前正處於考驗期，需要更多耐心。`;
+  } else {
+    cm=reds===3?'🔴 三張紅色——非常正面！':reds===2?'🔴🔴⚫ 偏順利，但有一處需留意。':reds===1?'⚫⚫🔴 挑戰為主，但有希望。':'⚫ 考驗期，需要耐心。';
+  }
+  if(topic&&topic!=='general') cm+=`<br><span style="font-size:.82rem;opacity:.6">問題主題：<b>${tpN}</b> ｜ 核心花色：${SUIT_NAMES[topSuit[0]]}＝${SUIT_THEMES[topSuit[0]].domain}</span>`;
+  html+=`<div class="overview-box">${cm}</div>`;
+
+  // Per card - deeply question-aware
+  html+='<div class="card-readings">';
+  const posDesc=threeMode==='timeline'
+    ?[q?`關於「${qShort}」，形成現在局面的背景：`:'形成現在局面的背景：',
+      q?`在「${qShort}」這件事上，你目前的核心狀態：`:'目前的狀態與影響：',
+      q?`「${qShort}」短期內的走向：`:'短期走向與建議：']
+    :[q?`「${qShort}」目前面對的狀況：`:'目前面對的狀況：',
+      q?`阻擋「${qShort}」進展的最大障礙：`:'最大的阻礙與盲點：',
+      q?`要突破「${qShort}」的困境，建議：`:'可採取的行動方向：'];
+
+  threeCards.forEach((card,i)=>{
+    const isRev = card.reversed;
+    html+=`<div class="card-reading"><div class="pos-label">${labels[i]}</div>
+      <div class="card-name"><span style="color:${SUIT_COLORS[card.suit]==='red'?'var(--red)':'#8888aa'}">${card.suit}</span> ${cardLabel(card)}${isRev?' <span style="font-size:.65rem;color:rgba(180,80,80,.7);padding:1px 5px;border-radius:4px;background:rgba(180,80,80,.1)">逆位</span>':''}</div>
+      <div class="meaning"><b>${posDesc[i]}</b><br><br>
+      <div class="q-interp">${isRev ? getReversedMeaning(card) : qInterp(card, labels[i], q, topic)}</div></div></div>`;
+  });
+  html+='</div>';
+
+  // Three-card narrative connecting to question
+  if(q){
+    html+=`<div class="narrative-box"><div class="section-title">📖 三牌連讀 — 「${qShort}」完整故事線</div><div class="narr-content">`;
+    if(threeMode==='timeline'){
+      html+=`<b>【過去】</b>${cardLabel(threeCards[0])}——${SUIT_COLORS[threeCards[0].suit]==='red'?'你在「'+qShort+'」這件事上有正面的基礎':'回顧過去，「'+qShort+'」曾經歷過不少波折'}。${CARD_DETAILS[cardKey(threeCards[0])]||''}<br><br>`;
+      html+=`<b>【現在】</b>${cardLabel(threeCards[1])}——從過去發展至今，「${qShort}」的現狀是：${CARD_DETAILS[cardKey(threeCards[1])]||''} ${SUIT_COLORS[threeCards[1].suit]==='red'?'目前處境比你想的更好。':'需要正視當下的問題。'}<br><br>`;
+      html+=`<b>【未來】</b>${cardLabel(threeCards[2])}——「${qShort}」短期的走向：${SUIT_COLORS[threeCards[2].suit]==='red'?'前方道路光明，'+SUIT_THEMES[threeCards[2].suit].domain+'方面有好的進展。':'仍有挑戰需面對，但'+SUIT_THEMES[threeCards[2].suit].domain+'方面是突破口。'} ${CARD_DETAILS[cardKey(threeCards[2])]||''}<br><br>`;
+      html+=`<b>數字趨勢：</b>${nums.join('→')} ${nums[2]>nums[0]?'↑ 能量上升，「'+qShort+'」正朝好的方向發展。':nums[2]<nums[0]?'↓ 能量收斂，「'+qShort+'」需要放慢腳步沉澱。':'≈ 能量平穩，「'+qShort+'」維持現狀為主。'}`;
+    } else {
+      html+=`<b>【狀況】</b>你在「${qShort}」上面對的局面：${CARD_DETAILS[cardKey(threeCards[0])]||SUIT_THEMES[threeCards[0].suit].domain+'方面的能量正在作用'}。${SUIT_COLORS[threeCards[0].suit]==='red'?'基本面尚可。':'需要正視。'}<br><br>`;
+      html+=`<b>【阻礙】</b>「${qShort}」最大的卡點在${SUIT_THEMES[threeCards[1].suit].domain}：${CARD_DETAILS[cardKey(threeCards[1])]||''} ${nums[1]>=7?'阻力不小，需正面對決。':'可以克服。'}<br><br>`;
+      html+=`<b>【建議】</b>要突破「${qShort}」，從${SUIT_THEMES[threeCards[2].suit].domain}切入：${CARD_DETAILS[cardKey(threeCards[2])]||''} ${SUIT_COLORS[threeCards[2].suit]==='red'?'這是一條值得嘗試的路。':'不容易但方向是對的。'}`;
+      if(threeCards[1].suit!==threeCards[2].suit) html+=`<br><br>💡 建議牌（${SUIT_THEMES[threeCards[2].suit].domain}）與阻礙牌（${SUIT_THEMES[threeCards[1].suit].domain}）不同花色——突破口不在問題本身，而在「換角度切入」。`;
+    }
+    html+=`</div></div>`;
+  }
+
+  // Zodiac
+  if(zodiac&&ZODIAC_DATA[zodiac]){
+    const zd=ZODIAC_DATA[zodiac];
+    html+=`<div class="cross-box"><div class="section-title">🔮 星座交叉 — <span class="zodiac-tag">${zd.symbol} ${zd.name}</span></div>`;
+    html+=`<p>${zd.element}象星座 ｜ 特質：${zd.trait}</p>`;
+    threeCards.forEach((card,i)=>{
+      const isAff=(zd.element==='火'&&card.suit==='♣')||(zd.element==='土'&&card.suit==='♦')||(zd.element==='風'&&card.suit==='♣')||(zd.element==='水'&&card.suit==='♥');
+      html+=`<p style="margin-top:6px">• ${labels[i]}（${cardLabel(card)}）：${isAff?'<b style="color:var(--gold)">高度共振</b>——':'能量方向不同——'}${q?'對「'+qShort+'」而言，':''}${isAff?'你的星座天性是處理這方面問題的優勢。':'需要跳出慣性思維來應對。'}</p>`;
+    });
+    if(by){const age=new Date().getFullYear()-parseInt(by);html+=`<p style="margin-top:8px">${age}歲的${zd.name}${q?'面對「'+qShort+'」':''}：${age<30?'正處於探索期，大膽嘗試。':age<45?'關鍵決策期，影響深遠。':'經驗豐富，回歸內心渴望。'}</p>`}
+    html+='</div>';
+  }
+
+  // Synthesis - always tie to question
+  const trend=nums[2]>nums[0]?'能量上升 ↑':nums[2]<nums[0]?'能量收斂 ↓':'能量持平 ≈';
+  html+=`<div class="synthesis"><div class="section-title">✦ 整體分析</div>`;
+  html+=`<p><b>趨勢：</b>${trend}${q?' — 「'+qShort+'」'+(nums[2]>nums[0]?'正朝好的方向發展。':'需要更多時間醞釀。'):''}</p>`;
+
+  if(q){
+    html+=`<div class="final-advice"><b>🎯 回答你的問題「${qShort}」：</b><br><br>`;
+    // Direct answer
+    if(reds===3) html+=`<b>✅ 判定：非常正面。</b>牌面強力支持你在「${tpN||'這件事'}」上積極行動。三張紅色牌代表助力充沛，${SUIT_THEMES[threeCards[2].suit].domain}方面將是最大的支持來源。`;
+    else if(reds===2){const blackCard=threeCards.find(c=>SUIT_COLORS[c.suit]==='black');
+      html+=`<b>🔶 判定：偏正面，但需注意一個風險點。</b>關於「${tpN||'這件事'}」方向可行，但${cardLabel(blackCard)}指向${SUIT_THEMES[blackCard.suit].domain}方面的風險——優先處理它，成功率大增。`}
+    else if(reds===1){const redCard=threeCards.find(c=>SUIT_COLORS[c.suit]==='red');
+      html+=`<b>⚠️ 判定：挑戰為主，需要耐心。</b>「${tpN||'這件事'}」目前障礙不少，但${cardLabel(redCard)}（${SUIT_THEMES[redCard.suit].domain}）是你的希望所在——緊緊抓住它。`}
+    else html+=`<b>🔴 判定：考驗期，宜守不宜攻。</b>「${tpN||'這件事'}」正處於艱困時期。現在需要「沉澱、準備、等待」而非衝動行動。`;
+
+    html+=`<br><br><b>📋 具體行動建議：</b><br>`;
+    html+=`1️⃣ 立即做：${SUIT_COLORS[threeCards[1].suit]==='red'?'把握目前的好勢頭，順勢推進「'+qShort+'」。':'先解決'+SUIT_THEMES[threeCards[1].suit].domain+'方面的問題——這是「'+qShort+'」最大的卡點。'}<br>`;
+    html+=`2️⃣ 方向：將${SUIT_THEMES[threeCards[2].suit].domain}作為「${qShort}」的突破口。<br>`;
+    html+=`3️⃣ 心態：${reds>=2?'保持信心，你在「'+qShort+'」上的方向是對的。':'逆境中成長，「'+qShort+'」的挑戰會讓你更強大。'}`;
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+
+  const panel=document.getElementById('threeReading');
+  panel.innerHTML=html;panel.classList.add('visible');
+  panel.insertAdjacentHTML('beforeend', renderLuckyBox(threeCards));
+  saveToHistory('three',threeMode==='timeline'?'過去-現在-未來':'狀況-阻礙-建議',threeCards,q);
+  // AI reading
+  if(aiEnabled){
+    const profile={gender:document.getElementById('genderInput').value,birthYear:document.getElementById('birthYearInput').value,zodiac:document.getElementById('zodiacInput').value};
+    getAiReading(threeMode==='timeline'?'過去—現在—未來':'狀況—阻礙—建議',threeCards,MODE_LABELS[threeMode],q,profile,panel);
+  }
+}
+
+function resetThree(){
+  threeActive=false;threeCards=[];threeIdx=-1;
+  document.getElementById('threeReading').classList.remove('visible');
+  document.getElementById('threeStartBtn').style.display='';
+  document.getElementById('threeResetBtn').style.display='none';
+  document.getElementById('exportBar').style.display='none';
+  document.getElementById('threeInstruct').innerHTML='按下 <span class="key">開始占卜</span> 開啟牌局';
+  document.getElementById('threeStage').innerHTML='';
+}
+
+/* ═══════════════════════════════════════
+   CROSS SPREAD (5 cards)
+   ═══════════════════════════════════════ */
+let crossCards=[],crossIdx=-1,crossActive=false,crossDeck=[];
+
+function startCross(){
+  playSound('shuffle');crossDeck=buildDeck();crossCards=[];
+  document.getElementById('crossStartBtn').style.display='none';
+  document.getElementById('crossResetBtn').style.display='none';
+  document.getElementById('crossReading').classList.remove('visible');
+  document.getElementById('crossReading').innerHTML='';
+  document.getElementById('exportBar').style.display='none';
+  const stage=document.getElementById('crossStage');stage.innerHTML='';
+  stage.className='stage cross-layout';
+  const order=['理想','過去','現在','未來','潛意識'];
+  for(let i=0;i<5;i++) stage.innerHTML+=buildCardSlot('c'+i,order[i]);
+  setTimeout(()=>beginCrossBounce(0),200);
+}
+
+function beginCrossBounce(idx){
+  crossIdx=idx;crossActive=true;
+  for(let i=0;i<5;i++){const w=document.getElementById('cw_c'+i);if(!w)continue;
+    if(i<idx)w.className='card-wrap done';else if(i===idx)w.className='card-wrap bouncing';else w.className='card-wrap idle'}
+  document.getElementById('crossInstruct').innerHTML=`第 ${idx+1}/5 張牌跳動中... 按 <span class="key">空白鍵</span> 停止`;
+}
+
+function stopCrossCard(){
+  if(!crossActive)return;crossActive=false;playSound('stop');
+  const card=applyReversal(crossDeck[crossCards.length]);crossCards.push(card);
+  const idx=crossIdx,wrap=document.getElementById('cw_c'+idx);
+  wrap.className='card-wrap stopping';
+  setTimeout(()=>{
+    renderFront(document.getElementById('ft_c'+idx),card);
+    playSound('flip');wrap.className='card-wrap flipping';burst(wrap);
+    setTimeout(()=>{wrap.className='card-wrap done';
+      if(idx<4){setTimeout(()=>beginCrossBounce(idx+1),350)}
+      else{playSound('reveal');
+        document.getElementById('crossInstruct').innerHTML='五張牌已揭曉 ✦';
+        document.getElementById('crossResetBtn').style.display='';
+        document.getElementById('exportBar').style.display='flex';
+        setTimeout(()=>showCrossReading(),500)}
+    },900)},500);
+}
+
+function showCrossReading(){
+  const q=document.getElementById('crossQuestion').value.trim();
+  const topic=detectTopic(q);
+  const tpN=TOPIC_NAMES[topic]||'';
+  const qShort=q?(q.length>25?q.substring(0,25)+'…':q):'';
+  const reds=crossCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+
+  let html=`<div class="reading-header"><h2>✚ 十字牌陣解讀 ✦</h2><div class="gold-divider"></div>`;
+  if(q) html+=`<div class="q-echo">「${q}」</div>`;
+  html+=`</div>`;
+
+  // Overview tied to question
+  if(q){
+    html+=`<div class="overview-box">${reds>=3?'🔴 關於「'+qShort+'」，五張牌中多數紅色，整體能量非常正面！':reds>=2?'關於「'+qShort+'」，紅黑均衡，機會與挑戰並存。':'⚫ 關於「'+qShort+'」，黑色偏多，需謹慎應對。'}`;
+    if(topic&&topic!=='general') html+=`<br><span style="font-size:.82rem;opacity:.6">問題主題：<b>${tpN}</b></span>`;
+    html+=`</div>`;
+  } else {
+    html+=`<div class="overview-box">${reds>=3?'🔴 多數紅色，非常正面！':reds>=2?'紅黑均衡。':'⚫ 黑色偏多，需謹慎。'}</div>`;
+  }
+
+  // Per card - all tied to question via qInterp
+  html+='<div class="card-readings">';
+  const crossPosDesc=q?[
+    `關於「${qShort}」，你心中理想的狀態：`,
+    `「${qShort}」的過去背景與根源：`,
+    `「${qShort}」目前的核心狀態：`,
+    `「${qShort}」短期內的走向：`,
+    `在「${qShort}」背後，你潛意識中真正在意的：`
+  ]:[
+    '你心中理想的狀態：','過去的背景影響：','目前的核心狀態：','短期內的走向：','潛意識深層的渴望：'
+  ];
+  crossCards.forEach((card,i)=>{
+    const isRev = card.reversed;
+    html+=`<div class="card-reading"><div class="pos-label">${CROSS_LABELS[i]}</div>
+      <div class="card-name"><span style="color:${SUIT_COLORS[card.suit]==='red'?'var(--red)':'#8888aa'}">${card.suit}</span> ${cardLabel(card)}${isRev?' <span style="font-size:.65rem;color:rgba(180,80,80,.7);padding:1px 5px;border-radius:4px;background:rgba(180,80,80,.1)">逆位</span>':''}</div>
+      <div class="meaning"><b>${crossPosDesc[i]}</b><br><br>
+      <div class="q-interp">${isRev ? getReversedMeaning(card) : qInterp(card, CROSS_LABELS[i], q, topic)}</div></div></div>`;
+  });
+  html+='</div>';
+
+  // Synthesis - deeply tied to question
+  html+=`<div class="synthesis"><div class="section-title">✦ 五牌綜合分析</div>`;
+
+  if(q){
+    html+=`<p><b>理想 vs 現實：</b>關於「${qShort}」，你的理想（${cardLabel(crossCards[0])}＝${SUIT_THEMES[crossCards[0].suit].domain}）vs 現實（${cardLabel(crossCards[2])}＝${SUIT_THEMES[crossCards[2].suit].domain}）——${crossCards[0].suit===crossCards[2].suit?'你的目標與現實在同一軌道上，「'+qShort+'」的方向是對的。':'理想與現實存在落差，「'+qShort+'」需要調整期望或改變方法。'}</p>`;
+    html+=`<p style="margin-top:8px"><b>時間軸：</b>${cardLabel(crossCards[1])}→${cardLabel(crossCards[2])}→${cardLabel(crossCards[3])}，「${qShort}」${cardNum(crossCards[3])>cardNum(crossCards[1])?'的能量正在上升，未來可期。':'需放慢步調，重新定位。'}</p>`;
+    html+=`<p style="margin-top:8px"><b>潛意識：</b>在「${qShort}」背後，${cardLabel(crossCards[4])}揭示你內心深處真正渴望的是${SUIT_THEMES[crossCards[4].suit].domain}方面的滿足——${CARD_DETAILS[cardKey(crossCards[4])]||''}</p>`;
+
+    html+=`<div class="final-advice"><b>🎯 回答你的問題「${qShort}」：</b><br><br>`;
+    if(reds>=3) html+=`<b>✅ 非常正面。</b>「${qShort}」的五張牌中紅色居多，整體方向是對的。核心牌（${cardLabel(crossCards[2])}）顯示你目前的狀態${SUIT_COLORS[crossCards[2].suit]==='red'?'良好':'有挑戰但可控'}，未來牌（${cardLabel(crossCards[3])}）指向${SUIT_COLORS[crossCards[3].suit]==='red'?'光明的前景':'需要準備應對的課題'}。`;
+    else if(reds>=2) html+=`<b>🔶 偏正面，但有風險。</b>「${qShort}」整體可行，但黑色牌指出${SUIT_THEMES[crossCards.find(c=>SUIT_COLORS[c.suit]==='black')?.suit||'♠'].domain}方面有隱患需要注意。`;
+    else html+=`<b>⚠️ 挑戰較多。</b>「${qShort}」目前障礙不少，紅色牌（${crossCards.filter(c=>SUIT_COLORS[c.suit]==='red').map(c=>cardLabel(c)).join('、')||'無'}）是你僅有的支撐，善加利用。`;
+    html+=`<br><br><b>📋 具體行動建議：</b><br>`;
+    html+=`1️⃣ 最大卡點：注意${SUIT_THEMES[crossCards.filter(c=>SUIT_COLORS[c.suit]==='black')[0]?.suit||crossCards[1].suit].domain}方面的問題。<br>`;
+    html+=`2️⃣ 突破方向：從${SUIT_THEMES[crossCards[3].suit].domain}切入。<br>`;
+    html+=`3️⃣ 內心提醒：別忘了你真正在意的是${SUIT_THEMES[crossCards[4].suit].domain}（潛意識牌的訊息）。</div>`;
+  } else {
+    html+=`<p><b>理想 vs 現實：</b>${cardLabel(crossCards[0])}vs ${cardLabel(crossCards[2])}——${crossCards[0].suit===crossCards[2].suit?'方向一致。':'存在落差。'}</p>`;
+    html+=`<p><b>時間軸：</b>${cardLabel(crossCards[1])}→${cardLabel(crossCards[2])}→${cardLabel(crossCards[3])}，${cardNum(crossCards[3])>cardNum(crossCards[1])?'能量上升。':'宜放慢。'}</p>`;
+    html+=`<p><b>潛意識：</b>${cardLabel(crossCards[4])}——${SUIT_THEMES[crossCards[4].suit].domain}方面的深層渴望。</p>`;
+  }
+  html+=`</div>`;
+
+  const panel=document.getElementById('crossReading');
+  panel.innerHTML=html;panel.classList.add('visible');
+  panel.insertAdjacentHTML('beforeend', renderLuckyBox(crossCards));
+  saveToHistory('cross','十字牌陣',crossCards,q);
+  // AI reading
+  if(aiEnabled){
+    getAiReading('十字牌陣（理想/過去/現在/未來/潛意識）',crossCards,CROSS_LABELS,q,null,panel);
+  }
+}
+
+function resetCross(){
+  crossActive=false;crossCards=[];crossIdx=-1;
+  document.getElementById('crossReading').classList.remove('visible');
+  document.getElementById('crossStartBtn').style.display='';
+  document.getElementById('crossResetBtn').style.display='none';
+  document.getElementById('exportBar').style.display='none';
+  document.getElementById('crossInstruct').innerHTML='按下 <span class="key">開始占卜</span> 開啟十字牌陣';
+  document.getElementById('crossStage').innerHTML='';
+}
+
+/* ═══════════════════════════════════════
+   DUAL READING
+   ═══════════════════════════════════════ */
+let dualCardsA=[],dualCardsB=[],dualPhase='',dualIdx=-1,dualActive=false,dualDeck=[];
+
+function startDual(){
+  playSound('shuffle');dualDeck=buildDeck();dualCardsA=[];dualCardsB=[];dualPhase='A';
+  const nameA=document.getElementById('dualNameA').value||'人物 A';
+  const nameB=document.getElementById('dualNameB').value||'人物 B';
+  document.getElementById('dualLabelA').textContent=nameA;
+  document.getElementById('dualLabelB').textContent=nameB;
+  document.getElementById('dualStartBtn').style.display='none';
+  document.getElementById('dualResetBtn').style.display='none';
+  document.getElementById('dualReading').classList.remove('visible');
+  document.getElementById('dualReading').innerHTML='';
+  document.getElementById('dualStageWrap').style.display='grid';
+  const stA=document.getElementById('dualStageA'),stB=document.getElementById('dualStageB');
+  stA.innerHTML='';stB.innerHTML='';
+  for(let i=0;i<3;i++){stA.innerHTML+=buildCardSlot('da'+i,'');stB.innerHTML+=buildCardSlot('db'+i,'')}
+  setTimeout(()=>beginDualBounce(0),200);
+}
+
+function beginDualBounce(idx){
+  dualIdx=idx;dualActive=true;
+  const prefix=dualPhase==='A'?'da':'db';
+  const total=dualPhase==='A'?dualCardsA:dualCardsB;
+  for(let i=0;i<3;i++){const w=document.getElementById('cw_'+prefix+i);if(!w)continue;
+    if(i<idx)w.className='card-wrap done';else if(i===idx)w.className='card-wrap bouncing';else w.className='card-wrap idle'}
+  const nameA=document.getElementById('dualNameA').value||'A';
+  const nameB=document.getElementById('dualNameB').value||'B';
+  const who=dualPhase==='A'?nameA:nameB;
+  document.getElementById('dualInstruct').innerHTML=`${who} 的第 ${idx+1} 張牌... 按 <span class="key">空白鍵</span> 停止`;
+}
+
+function stopDualCard(){
+  if(!dualActive)return;dualActive=false;playSound('stop');
+  const cards=dualPhase==='A'?dualCardsA:dualCardsB;
+  const prefix=dualPhase==='A'?'da':'db';
+  const card=dualDeck[dualCardsA.length+dualCardsB.length-cards.length+cards.length];
+  // get next unused card
+  const usedCount=dualCardsA.length+dualCardsB.length;
+  const chosen=applyReversal(dualDeck[usedCount]);
+  cards.push(chosen);
+  const idx=dualIdx,wrap=document.getElementById('cw_'+prefix+idx);
+  wrap.className='card-wrap stopping';
+  setTimeout(()=>{
+    renderFront(document.getElementById('ft_'+prefix+idx),chosen);
+    playSound('flip');wrap.className='card-wrap flipping';burst(wrap);
+    setTimeout(()=>{wrap.className='card-wrap done';
+      if(idx<2){setTimeout(()=>beginDualBounce(idx+1),350)}
+      else if(dualPhase==='A'){dualPhase='B';setTimeout(()=>beginDualBounce(0),500)}
+      else{playSound('reveal');
+        document.getElementById('dualInstruct').innerHTML='雙方牌面已揭曉 ✦';
+        document.getElementById('dualResetBtn').style.display='';
+        document.getElementById('exportBar').style.display='flex';
+        setTimeout(()=>showDualReading(),500)}
+    },900)},500);
+}
+
+function showDualReading(){
+  const nameA=document.getElementById('dualNameA').value||'人物 A';
+  const nameB=document.getElementById('dualNameB').value||'人物 B';
+  const q=document.getElementById('dualQuestion').value.trim();
+  const topic=detectTopic(q);
+  const qShort=q?(q.length>25?q.substring(0,25)+'…':q):'';
+  const redsA=dualCardsA.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+  const redsB=dualCardsB.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+
+  // Compatibility scoring
+  let compat=50;
+  const suitsA=dualCardsA.map(c=>c.suit),suitsB=dualCardsB.map(c=>c.suit);
+  const shared=suitsA.filter(s=>suitsB.includes(s)).length;
+  compat+=shared*8;
+  compat+=(redsA+redsB)*3;
+  if(suitsA.includes('♥')||suitsB.includes('♥'))compat+=5;
+  compat=Math.min(98,Math.max(20,compat));
+
+  let html=`<div class="reading-header"><h2>💕 雙人關係解讀 ✦</h2><div class="gold-divider"></div>`;
+  if(q) html+=`<div class="q-echo">「${q}」</div>`;
+  html+=`</div>`;
+
+  // Overview tied to question
+  html+=`<div class="overview-box" style="font-size:1.1rem">`;
+  if(q) html+=`<span style="font-size:.85rem;display:block;margin-bottom:6px;opacity:.6">針對「${qShort}」的雙人分析</span>`;
+  html+=`<b>關係契合度：<span style="color:var(--gold);font-size:1.4rem">${compat}%</span></b><br>`;
+  html+=`<span style="font-size:.82rem;opacity:.6">${q
+    ?compat>=75?'💖 關於「'+qShort+'」，雙方能量高度互補，合作順利。'
+      :compat>=50?'💛 關於「'+qShort+'」，雙方需要更多溝通磨合。'
+      :'💙 關於「'+qShort+'」，雙方理解仍有距離，需要耐心。'
+    :compat>=75?'💖 高度契合。':compat>=50?'💛 中等契合。':'💙 有待磨合。'
+  }</span></div>`;
+
+  // Per person cards - tied to question
+  const dualPosLabels=q
+    ?[`${nameA}對「${qShort}」的心態`,`${nameA}在「${qShort}」中的核心`,`${nameA}對「${qShort}」的行動傾向`]
+    :['心態','核心','行動傾向'];
+  const dualPosLabelsB=q
+    ?[`${nameB}對「${qShort}」的心態`,`${nameB}在「${qShort}」中的核心`,`${nameB}對「${qShort}」的行動傾向`]
+    :['心態','核心','行動傾向'];
+
+  html+='<div class="dual-section" style="margin-bottom:14px">';
+  [['A',nameA,dualCardsA,redsA,dualPosLabels],['B',nameB,dualCardsB,redsB,dualPosLabelsB]].forEach(([side,name,cards,reds,posLabels])=>{
+    html+=`<div class="section-box"><div class="section-title">${name} 的牌面</div>`;
+    cards.forEach((c,i)=>{
+      html+=`<div style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:rgba(212,168,73,.02);border-left:3px solid ${SUIT_COLORS[c.suit]==='red'?'rgba(232,64,64,.3)':'rgba(100,100,160,.3)'}">`;
+      html+=qInterp(c, posLabels[i], q, topic);
+      html+=`</div>`;
+    });
+    html+=`<p style="margin-top:8px;font-size:.82rem;opacity:.6">${q
+      ?reds>=2?name+'對「'+qShort+'」的態度偏正面積極。':reds===1?name+'對「'+qShort+'」的感受混雜著期待與顧慮。':name+'在「'+qShort+'」上正承受較大壓力。'
+      :reds>=2?'整體能量正面。':reds===1?'機會挑戰各半。':'考驗期。'
+    }</p></div>`;
+  });
+  html+='</div>';
+
+  // Relationship cross analysis - tied to question
+  html+=`<div class="compat-result"><div class="section-title">🔮 關係交叉分析${q?' — 「'+qShort+'」':''}  </div><p>`;
+  html+=`<b>${nameA}的核心能量：</b>${SUIT_THEMES[dualCardsA[1]?.suit||'♥'].domain}　<b>${nameB}的核心能量：</b>${SUIT_THEMES[dualCardsB[1]?.suit||'♥'].domain}<br>`;
+  if(dualCardsA[1]?.suit===dualCardsB[1]?.suit){
+    html+=q?`在「${qShort}」上，雙方核心牌同為${SUIT_NAMES[dualCardsA[1].suit]}——你們的關注焦點一致，容易在這件事上達成共識。<br>`
+      :`雙方核心牌一致，容易共鳴。<br>`;
+  } else {
+    html+=q?`在「${qShort}」上，${nameA}更關注${SUIT_THEMES[dualCardsA[1]?.suit||'♥'].domain}，${nameB}更關注${SUIT_THEMES[dualCardsB[1]?.suit||'♥'].domain}——對「${qShort}」的切入角度不同，需要互相理解對方的優先順序。<br>`
+      :`雙方關注面不同，需互相理解。<br>`;
+  }
+
+  const spadesA=dualCardsA.filter(c=>c.suit==='♠').length;
+  const spadesB=dualCardsB.filter(c=>c.suit==='♠').length;
+  if(spadesA+spadesB>=3) html+=q?`⚠️ 雙方在「${qShort}」上都感受到不小壓力，需共同面對挑戰。<br>`:`⚠️ 雙方壓力較大。<br>`;
+  if(redsA+redsB>=4) html+=q?`✨ 雙方對「${qShort}」都帶有正面期待，是好的合作基礎。<br>`:`✨ 正面能量充沛。<br>`;
+
+  html+=`<br><b>${q?'🎯 針對「'+qShort+'」的建議':'建議'}：</b><br>`;
+  if(q){
+    html+=compat>=60
+      ?`在「${qShort}」這件事上，你們的基礎良好。建議${nameA}從${SUIT_THEMES[dualCardsA[2]?.suit||'♥'].domain}方面多付出，${nameB}從${SUIT_THEMES[dualCardsB[2]?.suit||'♥'].domain}方面支持——雙方各司其職，「${qShort}」就能順利推進。`
+      :`「${qShort}」需要雙方更多的溝通。${nameA}在意的是${SUIT_THEMES[dualCardsA[0]?.suit||'♥'].domain}，${nameB}在意的是${SUIT_THEMES[dualCardsB[0]?.suit||'♥'].domain}——先理解這個差異，才能找到共識。`;
+    html+=`<br><br><b>📋 具體行動：</b><br>`;
+    html+=`1️⃣ ${nameA}：在${SUIT_THEMES[dualCardsA[2]?.suit||'♥'].domain}方面主動出擊。<br>`;
+    html+=`2️⃣ ${nameB}：在${SUIT_THEMES[dualCardsB[2]?.suit||'♥'].domain}方面給予支持。<br>`;
+    html+=`3️⃣ 共同：針對「${qShort}」，${compat>=60?'保持目前的默契，朝目標前進。':'安排一次深度對話，交換彼此的想法和擔憂。'}`;
+  } else {
+    html+=compat>=60?`關係基礎良好。${nameA}多在${SUIT_THEMES[dualCardsA[2]?.suit||'♥'].domain}方面付出，${nameB}在${SUIT_THEMES[dualCardsB[2]?.suit||'♥'].domain}方面支持。`
+      :`建議從溝通開始，理解彼此需求差異。`;
+  }
+  html+=`</p></div>`;
+
+  const panel=document.getElementById('dualReading');
+  panel.innerHTML=html;panel.classList.add('visible');
+  panel.insertAdjacentHTML('beforeend', renderLuckyBox([...dualCardsA,...dualCardsB]));
+  saveToHistory('dual','雙人占卜',[...dualCardsA,...dualCardsB],q);
+  // AI reading
+  if(aiEnabled){
+    const allCards=[...dualCardsA,...dualCardsB];
+    const nameAv=document.getElementById('dualNameA').value||'A';
+    const nameBv=document.getElementById('dualNameB').value||'B';
+    const dualLabels=[nameAv+'-第1張',nameAv+'-第2張',nameAv+'-第3張',nameBv+'-第1張',nameBv+'-第2張',nameBv+'-第3張'];
+    getAiReading('雙人關係占卜（'+nameAv+' vs '+nameBv+'）',allCards,dualLabels,q||'這兩個人的關係如何？',null,panel);
+  }
+}
+
+function resetDual(){
+  dualActive=false;dualCardsA=[];dualCardsB=[];dualIdx=-1;dualPhase='';
+  document.getElementById('dualReading').classList.remove('visible');
+  document.getElementById('dualStartBtn').style.display='';
+  document.getElementById('dualResetBtn').style.display='none';
+  document.getElementById('exportBar').style.display='none';
+  document.getElementById('dualStageWrap').style.display='none';
+  document.getElementById('dualInstruct').innerHTML='按下開始，雙方各抽 3 張牌進行關係配對分析';
+}
+
+/* ═══════════════════════════════════════
+   KEYBOARD HANDLER
+   ═══════════════════════════════════════ */
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();
+    if(threeActive)stopThreeCard();
+    else if(crossActive)stopCrossCard();
+    else if(dualActive)stopDualCard();
+    else if(sevenActive)stopSevenCard();
+  }
+});
+// Click on bouncing cards
+document.addEventListener('click',e=>{
+  const cw=e.target.closest('.card-wrap.bouncing');
+  if(cw){
+    if(threeActive)stopThreeCard();
+    else if(crossActive)stopCrossCard();
+    else if(dualActive)stopDualCard();
+    else if(sevenActive)stopSevenCard();
+  }
+});
+
+/* ═══════════════════════════════════════
+   HISTORY & STORAGE
+   ═══════════════════════════════════════ */
+function getHistory(){return JSON.parse(localStorage.getItem('pokerHistory')||'[]')}
+function saveToHistory(type,mode,cards,question){
+  const h=getHistory();
+  h.unshift({type,mode,cards:cards.map(c=>({suit:c.suit,rank:c.rank})),question,date:new Date().toISOString()});
+  if(h.length>50)h.length=50;
+  localStorage.setItem('pokerHistory',JSON.stringify(h));
+}
+
+function renderHistory(){
+  const h=getHistory();
+  const el=document.getElementById('historyList');
+  if(!h.length){el.innerHTML='<div class="empty-state">尚無占卜紀錄</div>';return}
+  el.innerHTML=h.map((item,i)=>{
+    const d=new Date(item.date);
+    const ds=d.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const cs=item.cards.map(c=>SUIT_NAMES[c.suit]+c.rank).join('、');
+    return `<div class="history-item" onclick="viewHistory(${i})">
+      <div class="hi-date">${ds} ｜ ${item.mode}</div>
+      <div class="hi-q">${item.question||'（未指定問題）'}</div>
+      <div class="hi-cards">${cs}</div></div>`;
+  }).join('');
+}
+
+function viewHistory(idx){
+  const h=getHistory();if(!h[idx])return;
+  const item=h[idx];
+  alert(`📅 ${new Date(item.date).toLocaleString('zh-TW')}\n📋 模式：${item.mode}\n❓ 問題：${item.question||'未指定'}\n🎴 牌面：${item.cards.map(c=>SUIT_NAMES[c.suit]+c.rank).join('、')}`);
+}
+
+function clearHistory(){
+  if(!confirm('確定要清除所有占卜紀錄嗎？'))return;
+  localStorage.removeItem('pokerHistory');
+  renderHistory();renderStats();
+}
+
+/* ═══════════════════════════════════════
+   STATISTICS
+   ═══════════════════════════════════════ */
+function renderStats(){
+  const h=getHistory();
+  const allCards=h.flatMap(item=>item.cards);
+  const total=h.length;
+  document.getElementById('statTotal').textContent=total;
+
+  if(!allCards.length){
+    document.getElementById('statRedRate').textContent='-';
+    document.getElementById('statTopSuit').textContent='-';
+    document.getElementById('statTopNum').textContent='-';
+    document.getElementById('suitChart').innerHTML='<div class="empty-state">尚無數據</div>';
+    document.getElementById('numChart').innerHTML='<div class="empty-state">尚無數據</div>';
+    return;
+  }
+
+  const reds=allCards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+  document.getElementById('statRedRate').textContent=Math.round(reds/allCards.length*100)+'%';
+
+  const sc={};allCards.forEach(c=>{sc[c.suit]=(sc[c.suit]||0)+1});
+  const topS=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('statTopSuit').textContent=SUIT_NAMES[topS[0]]+topS[0];
+
+  const nc={};allCards.forEach(c=>{nc[c.rank]=(nc[c.rank]||0)+1});
+  const topN=Object.entries(nc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('statTopNum').textContent=topN[0];
+
+  // Suit chart
+  const maxSC=Math.max(...Object.values(sc));
+  const suitEl=document.getElementById('suitChart');
+  suitEl.innerHTML=SUITS.map(s=>{
+    const cnt=sc[s]||0;const pct=maxSC?cnt/maxSC*100:0;
+    const cls=s==='♥'?'hearts':s==='♦'?'diamonds':s==='♣'?'clubs':'spades';
+    return `<div class="bar-row"><div class="bar-label">${SUIT_NAMES[s]}${s}</div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${cnt}</div></div></div>`;
+  }).join('');
+
+  // Num chart
+  const maxNC=Math.max(...Object.values(nc));
+  const numEl=document.getElementById('numChart');
+  numEl.innerHTML=RANKS.map(r=>{
+    const cnt=nc[r]||0;const pct=maxNC?cnt/maxNC*100:0;
+    return `<div class="bar-row"><div class="bar-label">${r}</div><div class="bar-track"><div class="bar-fill hearts" style="width:${pct}%;background:linear-gradient(90deg,rgba(212,168,73,.2),rgba(212,168,73,.6))">${cnt||''}</div></div></div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   EXPORT IMAGE
+   ═══════════════════════════════════════ */
+function exportImage(){
+  const panels=document.querySelectorAll('.reading-panel.visible');
+  if(!panels.length){alert('請先完成一次占卜再匯出');return}
+  const panel=panels[0];
+  const canvas=document.getElementById('exportCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=900;
+  const PAD=50, TXT_W=W-PAD*2;
+
+  // ── Gather data ──
+  let cards=[],labels=[],modeTitle='';
+  if(threeCards.length){cards=threeCards;labels=MODE_LABELS[threeMode];modeTitle=threeMode==='timeline'?'過去—現在—未來':'狀況—阻礙—建議'}
+  else if(crossCards.length){cards=crossCards;labels=CROSS_LABELS;modeTitle='十字牌陣'}
+  else if(dualCardsA.length){cards=[...dualCardsA,...dualCardsB];
+    const nA=document.getElementById('dualNameA').value||'A',nB=document.getElementById('dualNameB').value||'B';
+    labels=[nA+'-1',nA+'-2',nA+'-3',nB+'-1',nB+'-2',nB+'-3'];modeTitle='雙人占卜'}
+
+  const q=document.getElementById('questionInput')?.value||document.getElementById('crossQuestion')?.value||document.getElementById('dualQuestion')?.value||'';
+  const reds=cards.filter(c=>SUIT_COLORS[c.suit]==='red').length;
+
+  // ── Extract AI text ──
+  const aiEl=panel.querySelector('.ai-response .ai-text');
+  const aiRaw=aiEl?aiEl.textContent.trim():'';
+
+  // ── Text wrapping helper ──
+  function wrapText(text,font,maxW){
+    ctx.font=font;
+    const lines=[];
+    const paragraphs=text.split('\n');
+    for(const para of paragraphs){
+      if(!para.trim()){lines.push('');continue}
+      let cur='';
+      for(const ch of para){
+        if(ctx.measureText(cur+ch).width>maxW){lines.push(cur);cur=ch}
+        else cur+=ch;
+      }
+      if(cur) lines.push(cur);
+    }
+    return lines;
+  }
+
+  // ── Pre-calculate height ──
+  // Phase 1: measure with a temp canvas size
+  canvas.width=W;canvas.height=2000;
+  const cardH=112,cardW=80;
+  let estY=90; // after title
+  estY+=cardH+40; // cards
+  if(q) estY+=30; // question
+  estY+=30; // color summary
+  estY+=20; // gap
+  // Built-in card detail lines
+  estY+=cards.slice(0,6).length*50+20;
+  // AI text
+  let aiLines=[];
+  if(aiRaw){
+    estY+=50; // AI header gap
+    aiLines=wrapText(aiRaw,'13px "Noto Serif TC",serif',TXT_W-20);
+    estY+=aiLines.length*22+40;
+  }
+  estY+=50; // footer
+  const H=Math.max(600, estY);
+
+  // ── Now draw ──
+  canvas.width=W;canvas.height=H;
+
+  // Background
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,W,H);
+  const grd=ctx.createRadialGradient(W/2,0,0,W/2,0,W*.8);
+  grd.addColorStop(0,'rgba(212,168,73,0.06)');grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  // side glow
+  const grd2=ctx.createRadialGradient(0,H,0,0,H,W*.5);
+  grd2.addColorStop(0,'rgba(100,60,180,0.03)');grd2.addColorStop(1,'transparent');
+  ctx.fillStyle=grd2;ctx.fillRect(0,0,W,H);
+
+  // Title
+  ctx.fillStyle='#d4a849';ctx.font='bold 26px Cinzel,serif';ctx.textAlign='center';
+  ctx.fillText('✦ POKER DIVINATION ✦',W/2,42);
+  ctx.font='13px "Noto Serif TC",serif';ctx.fillStyle='rgba(212,168,73,0.5)';
+  ctx.fillText('撲克占卜術'+(modeTitle?' ─ '+modeTitle:''),W/2,63);
+
+  // Divider
+  ctx.strokeStyle='rgba(212,168,73,0.25)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD+80,76);ctx.lineTo(W-PAD-80,76);ctx.stroke();
+
+  // ── Draw cards ──
+  let curY=95;
+  const gap=cards.length<=5?14:8;
+  const cW=cards.length<=5?80:65;
+  const cH=cards.length<=5?112:91;
+  const totalCW=cards.length*cW+(cards.length-1)*gap;
+  const startX=(W-totalCW)/2;
+  cards.forEach((card,i)=>{
+    const x=startX+i*(cW+gap);
+    // card shadow
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.beginPath();ctx.roundRect(x+3,curY+3,cW,cH,6);ctx.fill();
+    // card body
+    ctx.fillStyle='#faf5eb';ctx.strokeStyle='#c8b88a';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect(x,curY,cW,cH,6);ctx.fill();ctx.stroke();
+    // rank & suit
+    ctx.fillStyle=SUIT_COLORS[card.suit]==='red'?'#d03030':'#1a1a30';
+    ctx.font=`bold ${cW<=65?13:16}px Cinzel,serif`;ctx.textAlign='center';
+    ctx.fillText(card.rank,x+cW/2,curY+cH*.26);
+    ctx.font=`${cW<=65?18:24}px serif`;
+    ctx.fillText(card.suit,x+cW/2,curY+cH*.55);
+    // label below card
+    ctx.font=`${cW<=65?9:11}px "Noto Serif TC",serif`;ctx.fillStyle='rgba(212,168,73,0.55)';
+    ctx.fillText(labels[i]||'',x+cW/2,curY+cH+15);
+  });
+  curY+=cH+28;
+
+  // ── Question ──
+  if(q){
+    ctx.fillStyle='rgba(232,224,208,0.5)';ctx.font='italic 14px "Noto Serif TC",serif';
+    ctx.textAlign='center';
+    const qDisplay=q.length>60?q.substring(0,60)+'…':q;
+    ctx.fillText('「'+qDisplay+'」',W/2,curY);
+    curY+=26;
+  }
+
+  // ── Color summary ──
+  ctx.fillStyle='rgba(232,224,208,0.6)';ctx.font='12px "Noto Serif TC",serif';ctx.textAlign='center';
+  ctx.fillText(reds>=cards.length/2?'✨ 整體能量正面，前景光明':'⚡ 挑戰與機會並存，保持信心',W/2,curY);
+  curY+=28;
+
+  // ── Divider ──
+  ctx.strokeStyle='rgba(212,168,73,0.15)';
+  ctx.beginPath();ctx.moveTo(PAD+40,curY);ctx.lineTo(W-PAD-40,curY);ctx.stroke();
+  curY+=18;
+
+  // ── Per-card detail ──
+  ctx.textAlign='left';
+  cards.slice(0,6).forEach((card,i)=>{
+    const label=labels[i]||`第${i+1}張`;
+    const detail=CARD_DETAILS[cardKey(card)]||SUIT_THEMES[card.suit].domain;
+    // Label
+    ctx.fillStyle='#d4a849';ctx.font='bold 12px "Noto Serif TC",serif';
+    ctx.fillText(`${label}：${SUIT_NAMES[card.suit]}${card.rank}`,PAD,curY);
+    // Detail - wrap
+    ctx.fillStyle='rgba(232,224,208,0.6)';ctx.font='12px "Noto Serif TC",serif';
+    const detailLines=wrapText(detail,'12px "Noto Serif TC",serif',TXT_W-10);
+    detailLines.forEach((ln,li)=>{
+      ctx.fillText(ln,PAD+10,curY+18+li*18);
+    });
+    curY+=18+detailLines.length*18+8;
+  });
+
+  // ── AI Interpretation Section ──
+  if(aiRaw && aiLines.length){
+    curY+=10;
+    // AI section background
+    const aiBoxH=aiLines.length*22+50;
+    ctx.fillStyle='rgba(60,180,100,0.04)';
+    ctx.strokeStyle='rgba(60,180,100,0.15)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(PAD-10,curY-8,TXT_W+20,aiBoxH,10);ctx.fill();ctx.stroke();
+
+    // Green top accent line
+    ctx.fillStyle='rgba(60,180,100,0.3)';
+    ctx.fillRect(PAD-10,curY-8,TXT_W+20,2);
+
+    // AI badge
+    ctx.fillStyle='rgba(60,180,100,0.15)';
+    ctx.beginPath();ctx.roundRect(PAD+4,curY+2,120,20,10);ctx.fill();
+    ctx.fillStyle='#5ce08a';ctx.font='bold 11px "Noto Serif TC",serif';ctx.textAlign='left';
+    ctx.fillText('🤖 AI 智慧解讀',PAD+12,curY+16);
+    curY+=34;
+
+    // AI text lines
+    ctx.font='13px "Noto Serif TC",serif';
+    aiLines.forEach((line,li)=>{
+      if(!line.trim()){curY+=8;return}
+      // Detect heading lines (starts with 【)
+      const isHeading=line.trim().startsWith('【')||line.trim().startsWith('##');
+      if(isHeading){
+        ctx.fillStyle='#d4a849';ctx.font='bold 13px "Noto Serif TC",serif';
+      } else {
+        ctx.fillStyle='rgba(232,224,208,0.75)';ctx.font='13px "Noto Serif TC",serif';
+      }
+      ctx.textAlign='left';
+      ctx.fillText(line,PAD+4,curY);
+      curY+=22;
+    });
+    curY+=10;
+
+    // Model info
+    const model=document.getElementById('groqModel').value;
+    ctx.fillStyle='rgba(60,180,100,0.2)';ctx.font='9px "Noto Serif TC",serif';ctx.textAlign='right';
+    ctx.fillText('Powered by GROQ · '+model,W-PAD,curY);
+    curY+=20;
+  }
+
+  // ── Footer ──
+  curY=Math.max(curY+10,H-30);
+  ctx.strokeStyle='rgba(212,168,73,0.12)';
+  ctx.beginPath();ctx.moveTo(PAD+80,curY-8);ctx.lineTo(W-PAD-80,curY-8);ctx.stroke();
+  ctx.fillStyle='rgba(212,168,73,0.25)';ctx.textAlign='center';ctx.font='10px "Noto Serif TC",serif';
+  ctx.fillText('✦ Poker Divination 撲克占卜術 ✦ '+new Date().toLocaleDateString('zh-TW'),W/2,curY+8);
+
+  // ── Trim canvas to actual content ──
+  const finalH=curY+30;
+  if(finalH!==H){
+    const imgData=ctx.getImageData(0,0,W,Math.min(finalH,H));
+    canvas.height=finalH;
+    ctx.putImageData(imgData,0,0);
+    // Redraw background for any new area (shouldn't be needed but safe)
+  }
+
+  // ── Download ──
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='poker-divination-'+Date.now()+'.png';
+    a.click();URL.revokeObjectURL(url);
+  });
+}
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+function createParticles(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<25;i++){const p=document.createElement('div');p.className='particle';
+    p.style.left=Math.random()*100+'%';p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=Math.random()*15+'s';p.style.width=p.style.height=(1+Math.random()*2)+'px';c.appendChild(p)}
+}
+
+createParticles();
+checkDailyCard();
+loadAiSettings();
+renderLunarBar();
+initTheme();
+// Load reversal toggle state
+document.getElementById('reversalToggle').checked = reversalEnabled;
+// Init dict on first load if on dict tab (unlikely but safe)
+</script>
+</body>
+</html>
