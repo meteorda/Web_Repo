@@ -5,7 +5,7 @@
 
 ---
 
-## 📊 總覽統計：共收錄 **71** 個項目（包含 **69** 款互動工具 ＋ **2** 份研究手冊），切分為 **10** 大子分類
+## 📊 總覽統計：共收錄 **72** 個項目（包含 **70** 款互動工具 ＋ **2** 份研究手冊），切分為 **10** 大子分類
 
 > 💡 **排序說明**：全列表皆以「最後修改日期時間」由新到舊排序（最新在最上方）。
 
@@ -45,25 +45,26 @@
 | 14 | **流光 · 流程動態生成器 v12** | `2026-06-26 08:28` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/AI%E5%B7%A5%E5%85%B7/%E6%B5%81%E5%85%89%E6%B5%81%E7%A8%8B%E5%8B%95%E6%85%8B%E7%94%9F%E6%88%90%E5%99%A8_v12.html) | `AI工具/流光流程動態生成器_v12.html` |
 | 15 | **AI 辯論大亂鬥 · OmniMind (多模式版 v2)** | `2026-04-07 07:38` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/AI%E5%B7%A5%E5%85%B7/AI%E8%BE%AF%E8%AB%96%E5%A4%A7%E4%BA%82%E9%AC%A5-%E5%A4%9A%E6%A8%A1%E5%BC%8F%E7%89%88%20v2.html) | `AI工具/AI辯論大亂鬥-多模式版 v2.html` |
 
-### 📑 文書行政 (15 款)
+### 📑 文書行政 (16 款)
 
 | # | 工具名稱 | 修改時間 | 線上直接開啟 (GitHub Pages) | 檔案相對路徑 |
 |---|---|:---:|---|---|
-| 1 | **組織架構圖產生器 v17** | `2026-10-31 00:02` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E7%B5%84%E7%B9%94%E6%9E%B6%E6%A7%8B%E5%9C%96%E7%94%A2%E7%94%9F%E5%99%A8_v17.html) | `文書行政/組織架構圖產生器_v17.html` |
-| 2 | **Mermaid Editor · 企業版 v5** | `2026-10-27 20:38` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Mermaid_Editor_%E4%BC%81%E6%A5%AD%E7%89%88%20%285%29.html) | `文書行政/Mermaid_Editor_企業版 (5).html` |
-| 3 | **Spin3D 動態展演工坊** | `2026-10-26 23:12` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Spin3D%20%282%29.html) | `文書行政/Spin3D (2).html` |
-| 4 | **Markdown 編輯器 v2** | `2026-10-18 07:59` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Markdown-Editor-v2.html) | `文書行政/Markdown-Editor-v2.html` |
-| 5 | **圖表大師 v4 · ECF** | `2026-10-08 08:00` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E5%9C%96%E8%A1%A8%E5%A4%A7%E5%B8%AB%20II.html) | `文書行政/圖表大師 II.html` |
-| 6 | **職場 Agent 應用｜流光動態圖** | `2026-10-06 09:37` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%81%B7%E5%A0%B4_Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html) | `文書行政/職場_Agent_應用_流光動態圖.html` |
-| 7 | **文案策略 X 光機** | `2026-10-02 06:07` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%96%87%E6%A1%88%E7%AD%96%E7%95%A5X%E5%85%89%E6%A9%9F.html) | `文書行政/文案策略X光機.html` |
-| 8 | **星脈圖譜 · AI 關聯星圖產生器** | `2026-08-27 02:57` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/nexus_atlas-new.html) | `文書行政/nexus_atlas-new.html` |
-| 9 | **AI SWOT 分析工具 · 專業版 v3.8 (Groq)** | `2026-07-10 07:39` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/AI_SWOT%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7_%E5%B0%88%E6%A5%AD%E7%89%88_v3.8_Groq.html) | `文書行政/AI_SWOT分析工具_專業版_v3.8_Groq.html` |
-| 10 | **數據清洗、正規化 及 分析 (行政版)** | `2026-07-08 05:24` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html) | `文書行政/數據清洗正規化分析_v6.html` |
-| 11 | **ECF 企業策略分析 · PEST × SWOT 矩陣** | `2026-06-18 22:44` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/pest_swot_analyzer.html) | `文書行政/pest_swot_analyzer.html` |
-| 12 | **行銷企劃 × 示意圖提示詞生成器** | `2026-06-11 00:27` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%A1%8C%E9%8A%B7%E4%BC%81%E5%8A%83%E7%94%9F%E6%88%90%E5%99%A8.html) | `文書行政/行銷企劃生成器.html` |
-| 13 | **簡報提示詞產生器 · Slides Prompt Studio** | `2026-04-23 08:06` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/slides-prompt-generator%20.html) | `文書行政/slides-prompt-generator .html` |
-| 14 | **ECF PDF/IMG Editor v3.7 · 圖像文檔編輯器** | `2026-04-10 09:59` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/ECF_PDFIMG_Editor_v3_7.html) | `文書行政/ECF_PDFIMG_Editor_v3_7.html` |
-| 15 | **📚 PDF 自動切割工具** | `2025-09-11 22:08` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/PDF%E6%8B%86%E5%88%86%E5%B7%A5%E5%85%B7-new.html) | `文書行政/PDF拆分工具-new.html` |
+| 1 | **Gemini Markdown → Word 公式轉換器 v2.2** | `2026-11-18 18:24` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/MD_to_Word_Converter_v2_2.html) | `文書行政/MD_to_Word_Converter_v2_2.html` |
+| 2 | **組織架構圖產生器 v17** | `2026-10-31 00:02` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E7%B5%84%E7%B9%94%E6%9E%B6%E6%A7%8B%E5%9C%96%E7%94%A2%E7%94%9F%E5%99%A8_v17.html) | `文書行政/組織架構圖產生器_v17.html` |
+| 3 | **Mermaid Editor · 企業版 v5** | `2026-10-27 20:38` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Mermaid_Editor_%E4%BC%81%E6%A5%AD%E7%89%88%20%285%29.html) | `文書行政/Mermaid_Editor_企業版 (5).html` |
+| 4 | **Spin3D 動態展演工坊** | `2026-10-26 23:12` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Spin3D%20%282%29.html) | `文書行政/Spin3D (2).html` |
+| 5 | **Markdown 編輯器 v2** | `2026-10-18 07:59` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/Markdown-Editor-v2.html) | `文書行政/Markdown-Editor-v2.html` |
+| 6 | **圖表大師 v4 · ECF** | `2026-10-08 08:00` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E5%9C%96%E8%A1%A8%E5%A4%A7%E5%B8%AB%20II.html) | `文書行政/圖表大師 II.html` |
+| 7 | **職場 Agent 應用｜流光動態圖** | `2026-10-06 09:37` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%81%B7%E5%A0%B4_Agent_%E6%87%89%E7%94%A8_%E6%B5%81%E5%85%89%E5%8B%95%E6%85%8B%E5%9C%96.html) | `文書行政/職場_Agent_應用_流光動態圖.html` |
+| 8 | **文案策略 X 光機** | `2026-10-02 06:07` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%96%87%E6%A1%88%E7%AD%96%E7%95%A5X%E5%85%89%E6%A9%9F.html) | `文書行政/文案策略X光機.html` |
+| 9 | **星脈圖譜 · AI 關聯星圖產生器** | `2026-08-27 02:57` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/nexus_atlas-new.html) | `文書行政/nexus_atlas-new.html` |
+| 10 | **AI SWOT 分析工具 · 專業版 v3.8 (Groq)** | `2026-07-10 07:39` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/AI_SWOT%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7_%E5%B0%88%E6%A5%AD%E7%89%88_v3.8_Groq.html) | `文書行政/AI_SWOT分析工具_專業版_v3.8_Groq.html` |
+| 11 | **數據清洗、正規化 及 分析 (行政版)** | `2026-07-08 05:24` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E6%95%B8%E6%93%9A%E6%B8%85%E6%B4%97%E6%AD%A3%E8%A6%8F%E5%8C%96%E5%88%86%E6%9E%90_v6.html) | `文書行政/數據清洗正規化分析_v6.html` |
+| 12 | **ECF 企業策略分析 · PEST × SWOT 矩陣** | `2026-06-18 22:44` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/pest_swot_analyzer.html) | `文書行政/pest_swot_analyzer.html` |
+| 13 | **行銷企劃 × 示意圖提示詞生成器** | `2026-06-11 00:27` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/%E8%A1%8C%E9%8A%B7%E4%BC%81%E5%8A%83%E7%94%9F%E6%88%90%E5%99%A8.html) | `文書行政/行銷企劃生成器.html` |
+| 14 | **簡報提示詞產生器 · Slides Prompt Studio** | `2026-04-23 08:06` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/slides-prompt-generator%20.html) | `文書行政/slides-prompt-generator .html` |
+| 15 | **ECF PDF/IMG Editor v3.7 · 圖像文檔編輯器** | `2026-04-10 09:59` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/ECF_PDFIMG_Editor_v3_7.html) | `文書行政/ECF_PDFIMG_Editor_v3_7.html` |
+| 16 | **📚 PDF 自動切割工具** | `2025-09-11 22:08` | [🚀 開啟工具](https://meteorda.github.io/Web_Repo/%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/PDF%E6%8B%86%E5%88%86%E5%B7%A5%E5%85%B7-new.html) | `文書行政/PDF拆分工具-new.html` |
 
 ### 💼 商業 (4 款)
 
@@ -144,4 +145,4 @@
 ## 🚀 跨裝置使用指引
 - 📱 **手機與平板**：支援 iOS (Safari) 與 Android (Chrome) 直接瀏覽，可透過「加入主畫面」作為 PWA / 捷徑應用。
 - 💻 **桌機與筆電**：直接點擊首頁 [https://meteorda.github.io/Web_Repo/](https://meteorda.github.io/Web_Repo/)，內建即時關鍵字模糊搜尋與分類 Tab 切換。
-- 🕒 **最後自動同步日期**：`2026-11-11 23:59`
+- 🕒 **最後自動同步日期**：`2026-11-18 18:27`

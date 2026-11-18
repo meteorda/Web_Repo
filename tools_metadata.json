@@ -1,6 +1,19 @@
 [
   {
     "type": "tool",
+    "category": "文書行政",
+    "icon": "📐",
+    "file_name": "MD_to_Word_Converter_v2_2.html",
+    "path": "文書行政/MD_to_Word_Converter_v2_2.html",
+    "title": "Gemini Markdown → Word 公式轉換器 v2.2",
+    "desc": "將 Markdown 公式與矩陣轉為原生 OMML，支援下載 Word 2024 可編輯 docx",
+    "mtime": 1794997446.828,
+    "mtime_str": "2026-11-18 18:24",
+    "url": "%E6%96%87%E6%9B%B8%E8%A1%8C%E6%94%BF/MD_to_Word_Converter_v2_2.html",
+    "raw_url": ""
+  },
+  {
+    "type": "tool",
     "category": "商業",
     "icon": "💼",
     "file_name": "BMC商業模式畫布生成器_v3.html",
