@@ -1,0 +1,1828 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23ff7a45'/%3E%3Ctext x='20' y='29' font-size='24' text-anchor='middle' fill='white' font-style='italic' font-family='serif'%3Eƒ%3C/text%3E%3C/svg%3E">
+<title>五徑・從提問到 Agent 的五種模式</title>
+<style>
+:root{--bg:#f5f7fb;--panel:#fff;--line:#dfe4ee;--ink:#1d2433;--sub:#667085;--pri:#1a73e8;--pri2:#e8f0fe;--ok:#0f9d58;--warn:#f29900;--err:#d93025;--code:#0f172a}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=elegant]){--bg:#0f131a;--panel:#171c25;--line:#2a3140;--ink:#e6e9ef;--sub:#97a1b3;--pri:#8ab4f8;--pri2:#1f2a3d;--code:#0b0f16}}
+:root[data-theme=dark]{--bg:#0f131a;--panel:#171c25;--line:#2a3140;--ink:#e6e9ef;--sub:#97a1b3;--pri:#8ab4f8;--pri2:#1f2a3d;--code:#0b0f16}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0}
+header .tag{font-size:12px;color:var(--sub)}
+header .sp{flex:1}
+.wrap{display:grid;grid-template-columns:360px 1fr 380px;gap:14px;padding:14px;height:calc(100vh - 58px)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:0}
+.card>h2{font-size:14px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.card>h2 .sp{flex:1}
+.body{padding:12px 14px;overflow:auto;min-height:0;flex:1}
+label{display:block;font-size:12px;color:var(--sub);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+button{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;font:inherit}
+button:hover{border-color:var(--pri)}
+button.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.sm{padding:3px 8px;font-size:12px}
+.tool{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.tool .t{display:flex;align-items:center;gap:8px}
+.tool .n{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.tool .d{font-size:12px;color:var(--sub);margin-top:2px}
+.badge{font-size:11px;padding:1px 6px;border-radius:99px;background:var(--pri2);color:var(--pri)}
+#chat{flex:1;overflow:auto;padding:14px}
+.msg{max-width:88%;margin:0 0 12px;padding:10px 12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+.u{margin-left:auto;background:var(--pri);color:#fff;border-bottom-right-radius:3px}
+.m{background:var(--pri2);border-bottom-left-radius:3px}
+.fc{font-size:12.5px;border:1px dashed var(--warn);background:transparent;font-family:ui-monospace,Consolas,monospace}
+.fr{font-size:12.5px;border:1px dashed var(--ok);background:transparent;font-family:ui-monospace,Consolas,monospace;max-height:220px;overflow:auto}
+.er{border:1px solid var(--err);color:var(--err);background:transparent}
+.composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.composer textarea{font-family:inherit;font-size:14px;height:58px}
+#trace{font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-all}
+.step{border-left:3px solid var(--line);padding:4px 8px;margin-bottom:8px}
+.step.req{border-color:var(--pri)}.step.call{border-color:var(--warn)}.step.res{border-color:var(--ok)}.step.err{border-color:var(--err)}
+.step b{font-family:"Noto Sans TC",system-ui;font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}
+.chips button{font-size:12px;padding:3px 9px;border-radius:99px}
+#todoBox li{margin:2px 0}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);width:min(720px,94vw)}
+dialog::backdrop{background:#0006}
+.hint{font-size:12px;color:var(--sub)}
+.tabs{display:flex;gap:4px}.tabs button.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+@media(max-width:1100px){.wrap{grid-template-columns:1fr;height:auto}.card{min-height:420px}}
+
+[hidden]{display:none!important}
+.vtabs{display:flex;gap:4px}.vtabs button.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+.msg code{background:var(--bg);padding:0 4px;border-radius:4px;font-size:12.5px}
+#ab{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;min-height:0}
+.abcol{border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.abh{flex:none;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600;display:flex;gap:6px;align-items:center}
+.pill{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;color:#fff;font-size:12px;font-weight:700}
+.pill.a{background:#7c8799}.pill.b{background:#1a73e8}
+.abmsgs{flex:1;overflow:auto;padding:10px}
+.abmsgs .msg{max-width:100%}
+.abstat{border-top:1px solid var(--line);padding:8px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11.5px;color:var(--sub)}
+.abstat b{display:block;font-size:15px;color:var(--ink)}
+.abstat .fn{grid-column:1/-1;color:var(--ink)}
+#abSum{border-top:1px solid var(--line);padding:10px 14px;max-height:42%;overflow:auto}
+#abSum h3{font-size:13px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.cmp{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:12px;align-items:center;margin-bottom:6px}
+.bars{display:grid;gap:3px}
+.bar{height:14px;border-radius:4px;display:flex;align-items:center;padding:0 6px;color:#fff;font-size:11px;min-width:28px;white-space:nowrap}
+.bar.a{background:#7c8799}.bar.b{background:#1a73e8}
+.judge{margin-top:8px;border:1px dashed var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.judge table{width:100%;border-collapse:collapse}.judge td,.judge th{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left}
+.judge th{color:var(--sub);font-weight:500}
+.win{color:var(--ok);font-weight:700}
+/* AB 版面：比對區 2/3、差異比對 1/3 */
+.abmode #ab{flex:1 1 0;min-height:110px}
+.abmode #abSum{flex:1.3 1 0;max-height:none;min-height:170px}
+.abmode .chips{flex-wrap:nowrap;overflow-x:auto;padding-top:8px;border-top:1px solid var(--line)}
+.abmode .chips button{white-space:nowrap;flex:none}
+.abmode .composer textarea{height:44px}
+.abstat{flex:none}
+/* 防止內容撐破版面 */
+.wrap{grid-template-columns:360px minmax(0,1fr) 380px}
+.card{min-width:0}
+#ab{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.abcol,.abmsgs,#abSum,.chips,.composer{min-width:0}
+.abmsgs .msg,.abmsgs pre{overflow-wrap:anywhere}
+.abh{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.abh .hint{overflow:hidden;text-overflow:ellipsis}
+.abstat .fn{overflow-wrap:anywhere}
+.cmp{grid-template-columns:110px minmax(0,1fr)}
+.bars{min-width:0}
+.bar{max-width:100%;overflow:hidden}
+@media(max-width:1100px){.wrap{grid-template-columns:minmax(0,1fr)}#ab{grid-template-columns:minmax(0,1fr)}}
+header .logo{width:30px;height:30px;flex:none;filter:drop-shadow(0 2px 6px #ff7a4566)}
+/* 精簡統計 */
+.abstat{display:flex;flex-wrap:wrap;gap:4px 6px;padding:6px 8px}
+.abstat .k{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11.5px;color:var(--sub);white-space:nowrap}
+.abstat .k b{display:inline;font-size:12.5px;color:var(--ink);margin-left:3px}
+.abstat .fn{width:100%;font-size:11.5px;color:var(--sub)}
+.abmsgs{min-height:120px}
+.msg.empty{border:1px dashed var(--warn);background:transparent;color:var(--sub);font-size:12.5px}
+/* 欄寬調整：左右縮小，中間加寬；追蹤面板可收合 */
+.wrap{grid-template-columns:300px minmax(0,1fr) 300px}
+body.abwide .wrap{grid-template-columns:280px minmax(0,1fr) 250px}
+body.notrace .wrap{grid-template-columns:300px minmax(0,1fr)}
+body.notrace.abwide .wrap{grid-template-columns:280px minmax(0,1fr)}
+body.notrace #traceCard{display:none}
+#trace{font-size:11.5px}
+@media(max-width:1100px){.wrap,body.abwide .wrap,body.notrace .wrap{grid-template-columns:minmax(0,1fr)}}
+/* 四欄對照 */
+#ab{grid-template-columns:repeat(var(--n,2),minmax(0,1fr))}
+.pill.c{background:#0f9d58}.pill.d{background:#e8710a}
+.bar.c{background:#0f9d58}.bar.d{background:#e8710a}
+#abBar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 12px 0;font-size:12.5px;color:var(--sub)}
+#abBar label{display:inline-flex;align-items:center;gap:4px;margin:0;font-size:12.5px;color:var(--ink);cursor:pointer}
+#abBar input{width:auto;margin:0}
+.abh{font-size:13px}
+.judge td:nth-child(n+2):not(:last-child),.judge th:nth-child(n+2):not(:last-child){text-align:center;width:44px}
+@media(max-width:1100px){#ab{grid-template-columns:minmax(0,1fr)}}
+/* E 欄＋版面控制 */
+.pill.e{background:#7e57c2}.bar.e{background:#7e57c2}
+.wrap{grid-template-columns:var(--cols,300px minmax(0,1fr) 300px)!important}
+body.noside #sideCard{display:none}
+#sideCard .row{flex-wrap:wrap}#sideCard .row>*{min-width:62px}
+body.abwide #sideCard .body{padding:10px}
+.msg.react{font-size:12.5px;border:1px dashed #7e57c2;background:transparent;font-family:ui-monospace,Consolas,monospace}
+@media(max-width:1100px){.wrap{grid-template-columns:minmax(0,1fr)!important}}
+/* 同色系捲軸 */
+:root{--sb:#c3d3ee;--sbh:#8fb0e6;--sbt:transparent}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=elegant]){--sb:#2f4466;--sbh:#4a6aa0}}
+:root[data-theme=dark]{--sb:#2f4466;--sbh:#4a6aa0}
+:root[data-theme=light]{--sb:#c3d3ee;--sbh:#8fb0e6}
+*{scrollbar-width:thin;scrollbar-color:var(--sb) var(--sbt)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:var(--sbt)}
+::-webkit-scrollbar-thumb{background:var(--sb);border-radius:99px;border:2px solid var(--panel)}
+::-webkit-scrollbar-thumb:hover{background:var(--sbh)}
+::-webkit-scrollbar-corner{background:transparent}
+/* 點選放大：主欄 + 其餘合併側欄 */
+.abh{cursor:pointer;user-select:none}
+.abh:hover{background:var(--pri2)}
+.abh .zbtn{margin-left:auto;flex:none;font-size:11px;padding:1px 7px;border-radius:6px}
+#ab.focus{grid-template-columns:minmax(0,3fr) minmax(0,1fr)!important}
+.abmode #ab.focus{flex-grow:1.6}
+/* 合併單欄：五欄改為上下堆疊，全寬閱讀 */
+#ab.merge{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:none!important;overflow:auto;align-content:start}
+#ab.merge .abcol{grid-column:auto!important;grid-row:auto!important;overflow:visible;min-height:auto}
+#ab.merge .abmsgs{flex:none;overflow:visible;min-height:0}
+#ab.merge .abh{position:sticky;top:0;z-index:1;background:var(--panel)}
+#ab.merge .abmsgs .msg{max-width:100%}
+/* 上下分隔拖曳 */
+#abSplit{display:none;height:10px;flex:none;cursor:row-resize;position:relative;touch-action:none}
+#abSplit::after{content:'';position:absolute;left:50%;top:3px;width:56px;height:4px;margin-left:-28px;border-radius:4px;background:var(--line)}
+#abSplit:hover::after,#abSplit.drag::after{background:var(--pri)}
+.abmode:has(#abSum:not([hidden])) #abSplit{display:block}
+/* 收合比對區：五欄只留標題＋統計 */
+#ab.fold{flex:none!important;height:auto!important;min-height:0}
+#ab.fold .abmsgs{display:none}
+#ab.fold .abcol{grid-column:auto!important;grid-row:auto!important}
+.abmode:has(#ab.fold) #abSplit,.abmode:has(#abSum.fold) #abSplit{display:none}
+/* 收合結論 */
+#abSum.fold{flex:none!important;min-height:0;max-height:44px!important;overflow:hidden}
+.abmode:has(#abSum.fold:not([hidden])) #ab:not(.fold){flex:1 1 0}
+#abBar .tgl{margin-left:4px}#abBar .tgl.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+#ab.focus .abcol.zoom{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri2)}
+#ab.focus .abcol.zoom .abmsgs .msg{font-size:14.5px}
+#ab.focus .abcol.zoom .fr{max-height:none}
+#ab.focus .abcol.mini .abh{font-size:12px;padding:5px 8px}
+#ab.focus .abcol.mini .abh .hint{display:none}
+#ab.focus .abcol.mini .abmsgs{display:none}
+#ab.focus .abcol.mini{min-height:auto}
+#ab.focus{overflow:auto}
+#ab.focus .abcol.mini .abmsgs .msg{font-size:12px;padding:6px 8px;margin-bottom:6px}
+#ab.focus .abcol.mini .abstat{padding:4px 6px}
+#ab.focus .abcol.mini .abstat .fn{display:none}
+/* 總結結論 */
+.concl{margin-top:10px;border:1px solid var(--pri);border-radius:10px;padding:10px 12px;background:var(--pri2)}
+.concl h4{margin:0 0 6px;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.concl ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.7}
+.concl .ai{font-size:14px!important;line-height:1.75}
+/* 結論區放大檢視 */
+#sumMask{position:fixed;inset:0;background:#0008;z-index:49}
+#abSum.max{position:fixed;inset:4vh 5vw;z-index:50;background:var(--panel);border:1px solid var(--pri);border-radius:14px;box-shadow:0 24px 70px #0008;max-height:none!important;min-height:0;padding:18px 26px;overflow:auto}
+#abSum.max h3{font-size:16px;position:sticky;top:-18px;background:var(--panel);padding:6px 0;z-index:1}
+#abSum.max .concl ul{font-size:15.5px;line-height:1.85}
+#abSum.max .concl .ai{font-size:16px!important;line-height:1.85}
+#abSum.max .concl h4{font-size:16px}
+#abSum.max .cmp{grid-template-columns:140px minmax(0,1fr);font-size:13.5px}
+#abSum.max .bar{height:18px;font-size:12px}
+#abSum.max .judge{font-size:14px}
+/* 追問 */
+.fu{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.fuh{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;margin-bottom:6px;flex-wrap:wrap}
+.fuh .hint{font-weight:400}
+.fulist{max-height:340px;overflow:auto}
+#abSum.max .fulist{max-height:none}
+.fuq{margin:8px 0 4px auto;width:fit-content;max-width:85%;background:var(--pri);color:#fff;padding:6px 10px;border-radius:10px 10px 3px 10px;font-size:13.5px;white-space:pre-wrap}
+.fua{background:var(--panel);border:1px solid var(--line);padding:8px 11px;border-radius:10px 10px 10px 3px;font-size:13.5px;line-height:1.75;white-space:pre-wrap;max-width:95%}
+.fua.er{color:var(--err);border-color:var(--err)}
+#abSum.max .fuq,#abSum.max .fua{font-size:15px}
+.fuin{display:flex;gap:6px;margin-top:8px}
+.fuin button{flex:none;white-space:nowrap;padding:0 14px}
+.fuin textarea{font-family:inherit;font-size:13.5px;height:38px;resize:vertical;background:var(--panel)}
+.fuchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.fuchips button{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--panel)}
+.concl li{margin:2px 0}
+.concl .ai{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);white-space:pre-wrap;font-size:13px}
+
+/* ========== 質感淺色主題 ========== */
+:root[data-theme=elegant]{--bg:#f4f0e8;--panel:#fffdf8;--line:#e6dccb;--ink:#2e2a25;--sub:#8b8072;--pri:#2f6b66;--pri2:#e8f0ec;--ok:#4f7d5c;--warn:#b5793a;--err:#b04a3f;--code:#2e2a25;--sb:#d8ccb8;--sbh:#b9a88c;--gold:#b08d57;--paper:#faf6ee}
+[data-theme=elegant] body{background:radial-gradient(1100px 520px at 8% -8%,#fdfaf4 0,transparent 70%),linear-gradient(180deg,#f5f1ea,#eee8dd);letter-spacing:.15px}
+[data-theme=elegant] header{background:rgba(255,253,248,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);box-shadow:0 6px 18px rgba(80,60,30,.05)}
+[data-theme=elegant] header h1,[data-theme=elegant] .card>h2,[data-theme=elegant] #abSum h3,[data-theme=elegant] .concl h4,[data-theme=elegant] .fuh,[data-theme=elegant] dialog h3{font-family:"Noto Serif TC","Songti TC",serif;font-weight:600;letter-spacing:.6px}
+[data-theme=elegant] header h1{font-size:18px;padding-bottom:2px;background:linear-gradient(var(--gold),var(--gold)) left bottom/28px 2px no-repeat}
+[data-theme=elegant] header .tag{color:var(--gold);font-style:italic}
+[data-theme=elegant] header .logo{filter:drop-shadow(0 3px 8px rgba(47,107,102,.25))}
+[data-theme=elegant] #lg stop:nth-child(1){stop-color:#d6b47e}[data-theme=elegant] #lg stop:nth-child(2){stop-color:#3b817a}[data-theme=elegant] #lg stop:nth-child(3){stop-color:#24524e}
+[data-theme=elegant] .card{border-color:var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(70,50,20,.04),0 10px 28px rgba(70,50,20,.06)}
+[data-theme=elegant] .card>h2{background:linear-gradient(180deg,#fffdf8,var(--paper));border-radius:16px 16px 0 0}
+[data-theme=elegant] button{background:#fffdf8;border-color:var(--line);border-radius:10px;transition:border-color .15s,color .15s,box-shadow .15s}
+[data-theme=elegant] button:hover{border-color:var(--gold);color:var(--pri);box-shadow:0 2px 8px rgba(176,141,87,.15)}
+[data-theme=elegant] button.pri{background:linear-gradient(180deg,#37796f,#28605a);border-color:#28605a;color:#fff;box-shadow:0 3px 10px rgba(47,107,102,.28)}
+[data-theme=elegant] button.pri:hover{color:#fff;filter:brightness(1.06)}
+[data-theme=elegant] input,[data-theme=elegant] select,[data-theme=elegant] textarea{background:var(--paper);border-color:var(--line);border-radius:10px}
+[data-theme=elegant] input:focus,[data-theme=elegant] select:focus,[data-theme=elegant] textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,141,87,.15);background:#fffdf8}
+[data-theme=elegant] .tool{background:var(--paper);border-color:var(--line);border-radius:12px}
+[data-theme=elegant] .badge{background:#f1e7d6;color:#8a6a3b}
+[data-theme=elegant] .vtabs button.on,[data-theme=elegant] .tabs button.on,[data-theme=elegant] #abBar .tgl.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+[data-theme=elegant] .msg{border-radius:14px}
+[data-theme=elegant] .u{background:linear-gradient(180deg,#37796f,#2c645e);box-shadow:0 2px 8px rgba(47,107,102,.18)}
+[data-theme=elegant] .m{background:var(--paper);border:1px solid var(--line)}
+[data-theme=elegant] .fc{border-color:#d4b282}[data-theme=elegant] .fr{border-color:#9dbba5}[data-theme=elegant] .msg.react{border-color:#a99bc4}
+[data-theme=elegant] .abcol{border-color:var(--line);border-radius:14px;background:var(--panel);box-shadow:0 2px 10px rgba(70,50,20,.04)}
+[data-theme=elegant] .abh{background:var(--paper);border-bottom-color:var(--line)}
+[data-theme=elegant] .abh:hover{background:#f5eedf}
+[data-theme=elegant] #ab.focus .abcol.zoom{border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,141,87,.18)}
+[data-theme=elegant] .abstat .k{background:var(--paper);border-color:var(--line)}
+[data-theme=elegant] .pill.a,[data-theme=elegant] .bar.a{background:#8d8f94}
+[data-theme=elegant] .pill.b,[data-theme=elegant] .bar.b{background:#3f6f94}
+[data-theme=elegant] .pill.c,[data-theme=elegant] .bar.c{background:#4f8062}
+[data-theme=elegant] .pill.d,[data-theme=elegant] .bar.d{background:#bf7f3f}
+[data-theme=elegant] .pill.e,[data-theme=elegant] .bar.e{background:#7d6ca3}
+[data-theme=elegant] .bar{border-radius:6px}
+[data-theme=elegant] .concl{background:linear-gradient(180deg,#fbf6ea,#f7f0e1);border-color:#dcc8a2;box-shadow:inset 0 1px 0 #fff}
+[data-theme=elegant] .concl h4{color:#6b532e}
+[data-theme=elegant] .concl .ai,[data-theme=elegant] .fu{border-top-color:#e2d3b5}
+[data-theme=elegant] .judge{border-color:#dcc8a2;background:#fffdf8}
+[data-theme=elegant] .fuq{background:linear-gradient(180deg,#37796f,#2c645e)}
+[data-theme=elegant] .fua{background:#fffdf8;border-color:var(--line)}
+[data-theme=elegant] .fuchips button{background:#fffdf8}
+[data-theme=elegant] #abSum.max{border-color:var(--gold);background:var(--panel)}
+[data-theme=elegant] #abSum.max h3{background:var(--panel)}
+[data-theme=elegant] #sumMask{background:rgba(60,45,25,.35);backdrop-filter:blur(2px)}
+[data-theme=elegant] #abSplit::after{background:#d8c9ad}
+[data-theme=elegant] .step.req{border-color:#3f6f94}[data-theme=elegant] .step.call{border-color:#bf7f3f}[data-theme=elegant] .step.res{border-color:#4f8062}
+[data-theme=elegant] .step b{color:var(--gold)}
+[data-theme=elegant] dialog{border-radius:16px;box-shadow:0 24px 60px rgba(60,45,25,.25)}
+[data-theme=elegant] ::-webkit-scrollbar-thumb{border-color:var(--panel)}
+
+/* 對話標題列不擠壓換字 */
+.card>h2{flex-wrap:wrap;row-gap:6px}
+.card>h2 button,.card>h2 .vtabs{white-space:nowrap;flex:none}
+.card>h2 .vtabs{display:inline-flex;gap:4px}
+/* ========== 提示詞轉換 ========== */
+button.red,[data-theme] button.red{background:linear-gradient(180deg,#e5484d,#c62a2f);border:1px solid #b3242a;color:#fff;font-weight:700;letter-spacing:1px;box-shadow:0 3px 10px rgba(198,42,47,.3)}
+button.red:hover,[data-theme] button.red:hover{background:linear-gradient(180deg,#ef5a5f,#d23136);color:#fff;border-color:#b3242a;filter:none}
+button.red:disabled{opacity:.6;cursor:wait}
+#cvDlg{width:min(1180px,96vw);height:min(860px,92vh);padding:0;display:none;flex-direction:column}
+#cvDlg[open]{display:flex}
+.cvhead{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.cvhead h3{margin:0;font-size:15px}
+.cvgrid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr)}
+.cvleft{padding:12px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:auto}
+.cvleft #cvSrc{flex:1;min-height:180px;font-size:13px;line-height:1.6;resize:none}
+.cvleft .chk{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-top:8px}
+.cvleft .chk input{width:auto}
+.cvright{display:flex;flex-direction:column;min-height:0}
+.cvtabs{display:flex;gap:4px;padding:10px 12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cvtabs button{border-radius:8px 8px 0 0;border-bottom:none;display:flex;align-items:center;gap:6px;font-size:12.5px}
+.cvtabs button.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+.cvbody{flex:1;min-height:0;overflow:auto;padding:12px 16px}
+.cvbody .cvflow{font-size:12.5px;color:var(--sub);margin:0 0 8px;padding:8px 10px;border-left:3px solid var(--pri);background:var(--pri2);border-radius:6px}
+.cvbody label{display:flex;align-items:center;gap:8px}
+.cvbody label .hint{font-weight:400}
+.cvbody textarea{font-family:ui-monospace,Consolas,"Noto Sans TC",monospace;font-size:12.5px;line-height:1.6;min-height:70px}
+.cvbody textarea.big{min-height:230px}
+.cvbody .note{font-size:12.5px;margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;white-space:pre-wrap}
+.cvtbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.cvtbl th,.cvtbl td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.cvtbl th{background:var(--pri2)}
+.cvfoot{display:flex;align-items:center;gap:6px;padding:10px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+#ovrBadge{margin-left:6px;font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--pri);color:var(--pri);background:var(--pri2);cursor:pointer;white-space:nowrap}
+@media (max-width:760px){.cvgrid{grid-template-columns:1fr;overflow:auto}.cvleft{border-right:none;border-bottom:1px solid var(--line)}}
+.badge.ent{background:#fde8e8!important;color:#b42318!important}
+.tool .badge{white-space:nowrap;flex:none}.tool .t button{flex:none;white-space:nowrap}
+
+.presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.presets button{font-size:11.5px;padding:2px 8px}
+
+/* 函式工具折疊 */
+.fold{cursor:pointer;user-select:none;font-weight:600}
+.fold:hover,.tgt:hover{color:var(--pri)}
+#tools{min-width:0}
+.tool{min-width:0;overflow:hidden}
+.tool .t{min-width:0}
+.tool .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tgroup{margin-bottom:8px}
+.tgh{display:flex;align-items:center;gap:6px;padding:4px 2px;font-size:12.5px;border-bottom:1px dashed var(--line);margin-bottom:6px}
+.tgt{cursor:pointer;user-select:none;font-weight:600}
+.tgc{font-size:11px;color:var(--sub);background:var(--pri2);border-radius:99px;padding:0 7px}
+.tga{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--sub);margin:0;cursor:pointer}
+.tga input{width:auto;margin:0}
+.tgroup.folded .tgb{display:none}
+.tgroup.folded .tgh{margin-bottom:0}
+#tools.compact .tool{padding:4px 8px;margin-bottom:4px}
+#tools.compact .tool .d{display:none}
+#tools.compact .tool .t button{padding:1px 8px;font-size:11px}
+#toolCount.folded{display:none}
+#tools .tool .badge{display:none}
+#toolsCompact.on{background:var(--pri2);border-color:var(--pri);color:var(--pri)}
+
+/* 自主程度標籤 */
+.auto{display:inline-flex;align-items:center;flex:none;white-space:nowrap;font-size:11px;font-weight:700;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid;margin-left:6px;letter-spacing:.3px}
+.auto.sm{font-size:10px;padding:2px 6px;margin-left:5px}
+.auto.lv0{color:#6b7280;border-color:#9ca3af;background:#f3f4f6}
+.auto.lv1{color:#1d5b8f;border-color:#7fb0dc;background:#e8f2fb}
+.auto.lv2{color:#9a5b00;border-color:#e2b263;background:#fff4e0}
+.auto.lv3{color:#0f7a43;border-color:#5fc08f;background:#e3f7ec}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=elegant]) .auto{background:transparent}:root:not([data-theme=light]):not([data-theme=elegant]) .auto.lv0{color:#b4bcc8;border-color:#5b6472}:root:not([data-theme=light]):not([data-theme=elegant]) .auto.lv1{color:#8cc4f2;border-color:#3f6f99}:root:not([data-theme=light]):not([data-theme=elegant]) .auto.lv2{color:#f2c374;border-color:#8a6524}:root:not([data-theme=light]):not([data-theme=elegant]) .auto.lv3{color:#7fe0ad;border-color:#2f7d55}}
+:root[data-theme=dark] .auto{background:transparent}:root[data-theme=dark] .auto.lv0{color:#b4bcc8;border-color:#5b6472}:root[data-theme=dark] .auto.lv1{color:#8cc4f2;border-color:#3f6f99}:root[data-theme=dark] .auto.lv2{color:#f2c374;border-color:#8a6524}:root[data-theme=dark] .auto.lv3{color:#7fe0ad;border-color:#2f7d55}
+.autoLegend{cursor:help;white-space:nowrap}
+.abh .pill{flex:none}
+.abh .ln{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+.abh .hint{min-width:0;flex:1 1 0}
+.abh .ln{flex:0 1 auto}
+.abauto{flex:none;min-height:22px;display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:11px;color:var(--sub);border-bottom:1px dashed var(--line);white-space:nowrap;overflow:hidden}
+.abauto .auto{margin-left:0}
+.abauto>span:last-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#ab.focus .abcol.mini .abauto>span:last-child{display:none}
+#ab.focus .abcol.mini .abauto{padding:3px 8px}
+</style>
+</head>
+<body>
+<header>
+  <svg class="logo" viewBox="0 0 40 40" aria-label="函式呼叫台 Logo">
+    <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset=".55" stop-color="#ff7a45"/><stop offset="1" stop-color="#e5484d"/></linearGradient></defs>
+    <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#lg)"/>
+    <path d="M12 11c-3 0-4 1.5-4 4v2.5c0 1.3-.8 2.3-2 2.5 1.2.2 2 1.2 2 2.5V25c0 2.5 1 4 4 4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M28 11c3 0 4 1.5 4 4v2.5c0 1.3.8 2.3 2 2.5-1.2.2-2 1.2-2 2.5V25c0 2.5-1 4-4 4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M23.5 12.5c-2.6-.6-4 .6-4.4 3l-2 11.5c-.4 2.3-1.8 3.3-4 2.8M15.5 19.5h7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="27" cy="26" r="2" fill="#fff4c2"/>
+  </svg>
+  <h1>五徑</h1>
+  <span class="tag" id="provTag">從提問到 Agent 的五種模式</span>
+  <span class="sp"></span>
+  <button class="pri sm" id="upPromptBtn" title="上傳提示詞檔案（TXT／MD／JSON／YAML／DOCX），改寫成 A～E 五種模式">📄 上傳提示詞</button>
+  <button class="sm" id="sideBtn">隱藏設定</button>
+  <button class="sm" id="traceBtn">隱藏追蹤</button>
+  <select id="themeSel" class="sm" title="介面主題" style="width:auto;padding:4px 8px;font-size:12.5px"><option value="">主題：跟隨系統</option><option value="light">主題：淺色</option><option value="dark">主題：深色</option><option value="elegant">主題：質感淺色</option></select>
+</header>
+
+<div class="wrap">
+  <!-- 左：設定 + 工具 -->
+  <section class="card" id="sideCard">
+    <h2>連線設定</h2>
+    <div class="body">
+      <label>連線模式</label>
+      <select id="mode">
+        <option value="express">Agent Platform Express（API Key）</option>
+        <option value="project">Agent Platform 專案（OAuth Token）</option>
+        <option value="studio">Gemini API（AI Studio Key）</option>
+        <option value="groq">Groq（API Key）</option>
+        <option value="oai">OpenAI 相容端點（Ollama／LM Studio／OpenRouter…）</option>
+      </select>
+      <div id="keyBox"><label>API Key</label><input id="apiKey" type="password" placeholder="貼上 API Key"></div>
+      <div id="groqBox" hidden><label>Groq API Key</label><input id="groqKey" type="password" placeholder="gsk_…（console.groq.com 申請）"></div>
+      <div id="oaiBox" hidden>
+        <label>Base URL（到 /v1 為止）</label><input id="oaiBase" value="http://localhost:11434/v1">
+        <div class="presets"><button class="sm" data-b="http://localhost:11434/v1" data-m="qwen3:8b">Ollama</button><button class="sm" data-b="http://localhost:1234/v1" data-m="">LM Studio</button><button class="sm" data-b="https://openrouter.ai/api/v1" data-m="openai/gpt-oss-120b">OpenRouter</button><button class="sm" data-b="https://api.openai.com/v1" data-m="gpt-4.1-mini">OpenAI</button></div>
+        <label>API Key（本機 Ollama／LM Studio 可留空）</label><input id="oaiKey" type="password" placeholder="sk-…">
+        <p class="hint" style="margin:4px 0 0">Ollama 需允許跨來源：啟動前設定環境變數 <code>OLLAMA_ORIGINS=*</code>；LM Studio 請在 Server 設定開啟 CORS。</p>
+      </div>
+      <div id="projBox" hidden>
+        <div class="row"><div><label>Project ID</label><input id="project"></div><div><label>Location</label><input id="location" value="global"></div></div>
+        <label>Access Token（可留空，留空則改用上方 API Key）</label><input id="token" type="password">
+      </div>
+      <label>模型</label>
+      <div class="row"><input id="model" list="models" value="gemini-3.1-flash-lite"><button class="sm" id="listModels" style="flex:none" title="向目前端點取得可用模型清單">取得清單</button></div>
+      <datalist id="models">
+        <option value="gemini-3.1-flash-lite"><option value="gemini-3-flash-preview"><option value="gemini-3.1-pro-preview"><option value="gemini-3-flash"><option value="gemini-2.5-flash"><option value="gemini-2.5-pro">
+      </datalist>
+      <div class="row">
+        <div><label>呼叫模式</label><select id="fcMode"><option>AUTO</option><option>ANY</option><option>NONE</option></select></div>
+        <div><label>最多回合</label><input id="maxTurns" type="number" value="8" min="1" max="30"></div>
+        <div><label>溫度</label><input id="temp" type="number" value="0.4" step="0.1" min="0" max="2"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="seqRun" style="width:auto;margin:0"> ABCDE 依序執行（Groq 自動啟用，避開 TPM 速率限制）</label>
+      <label>系統指令</label>
+      <textarea id="sys" rows="3">你是一個會使用工具的繁體中文助理。需要即時資料、計算或操作待辦清單時，主動呼叫函式；拿到結果後用簡潔繁體中文回答。</textarea>
+      <label>C 欄額外資料（可貼文件、表格、網頁內容，會連同自動預取資料一起餵給模型）</label>
+      <textarea id="cData" rows="3" placeholder="例：本店菜單、課程價目表、會議紀錄…"></textarea>
+      <label>FinMind Token（台股函式 get_tw_stock 使用）</label>
+      <div class="row"><input id="fmToken" type="password" placeholder="貼上 FinMind API Token"><button class="sm" id="fmTest" style="flex:none">測試</button></div>
+      <p class="hint" style="margin:4px 0 0">至 finmindtrade.com 註冊後於「使用者資訊」取得 Token。</p>
+      <label>計價（估算費用用，留空＝依模型自動帶入官方單價）</label>
+      <div class="row"><div><label style="margin-top:0">輸入 US$/1M</label><input id="priceIn" type="number" step="0.01" min="0" placeholder="自動"></div><div><label style="margin-top:0">輸出 US$/1M</label><input id="priceOut" type="number" step="0.01" min="0" placeholder="自動"></div><div><label style="margin-top:0">匯率 NT$/US$</label><input id="fx" type="number" step="0.01" min="0"></div></div>
+      <p class="hint" id="priceHint" style="margin:4px 0 0"></p>
+      <div class="row" style="margin-top:10px"><button id="saveCfg">儲存設定</button><button id="testBtn">測試連線</button></div>
+      <p class="hint">金鑰只存在本機瀏覽器。Express 模式金鑰於 Google Cloud 控制台 Agent Platform 申請。</p>
+
+      <h2 class="toolsHead" style="padding:14px 0 6px;border:0;margin:0;font-size:14px;display:flex;gap:4px;flex-wrap:wrap;align-items:center"><span id="toolsFold" class="fold" title="折疊／展開函式工具">▾ 函式工具</span> <span class="sp" style="flex:1"></span><button class="sm" id="toolsCompact" title="只顯示名稱，隱藏說明">精簡</button><button class="sm" id="entAll" title="企業函式全部開啟／關閉">企業函式</button><button class="sm" id="addTool">＋ 自訂函式</button></h2>
+      <p class="hint" id="toolCount" style="margin:0 0 6px"></p>
+      <div id="tools"></div>
+
+      <h2 style="padding:10px 0 6px;border:0;margin:0;font-size:14px">待辦清單（工具可操作）</h2>
+      <ul id="todoBox" class="hint"></ul>
+      <h2 style="padding:10px 0 6px;border:0;margin:0;font-size:14px;display:flex">企業模擬資料庫 <span class="sp" style="flex:1"></span><button class="sm" id="entDl">匯出</button><button class="sm" id="entReset" style="margin-left:4px">重設</button></h2>
+      <p class="hint" id="entBox" style="margin:0"></p>
+      <p class="hint" style="margin:4px 0 0">企業函式的資料存在本機瀏覽器（範例客戶、庫存、訂單、員工、規章），可被函式查詢與修改。</p>
+    </div>
+  </section>
+
+  <!-- 中：對話 -->
+  <section class="card">
+    <h2>對話 <span class="vtabs" id="viewTabs"><button class="sm on" data-m="single">單一對話</button><button class="sm" data-m="ab">ABCDE 對照</button></span><span class="sp"></span><button class="sm" id="costChip" title="本頁所有 Gemini 呼叫的估算費用（含 AI 評審、總結、追問）；點選歸零">累計 NT$0</button><button class="sm" id="cvBtn" title="上傳或貼上提示詞，改寫成 A～E 五種模式並下載">🔁 提示詞轉五模式</button><button class="sm" id="promptBtn" title="匯出 A～E 五種做法的系統指令、使用者訊息、工具設定與請求 JSON">匯出提示詞</button><button class="sm" id="exportBtn">匯出紀錄</button><button class="sm" id="clearBtn">清空</button></h2>
+    <div id="chat"></div>
+    <div id="abBar" hidden><span>比對欄位：</span></div>
+    <div id="ab" hidden></div>
+    <div id="abSplit" title="拖曳調整上下比例，雙擊還原"></div>
+    <div id="abSum" hidden></div>
+    <div class="chips" id="chips"></div>
+    <div class="composer">
+      <textarea id="input" placeholder="輸入問題，Enter 送出，Shift+Enter 換行"></textarea>
+      <button class="pri" id="sendBtn">送出</button>
+    </div>
+  </section>
+
+  <!-- 右：追蹤 -->
+  <section class="card" id="traceCard">
+    <h2>代理迴圈追蹤 <span class="sp"></span>
+      <span class="tabs"><button class="sm on" data-v="trace">步驟</button><button class="sm" data-v="raw">原始 JSON</button></span>
+    </h2>
+    <div class="body"><div id="trace"></div></div>
+  </section>
+</div>
+
+<dialog id="cvDlg">
+  <div class="cvhead"><h3>提示詞轉換：改寫成 A～E 五種模式</h3><span style="flex:1"></span><button class="sm" id="cvClose">✕</button></div>
+  <div class="cvgrid">
+    <div class="cvleft">
+      <div class="row" style="align-items:center;gap:6px"><button class="pri sm" id="cvUp">📄 上傳檔案</button><input type="file" id="cvFile" hidden accept=".txt,.md,.markdown,.json,.yaml,.yml,.csv,.html,.htm,.prompt,.xml,.docx"><span class="hint" id="cvFname">TXT／MD／JSON／YAML／DOCX</span></div>
+      <label>原始提示詞</label>
+      <textarea id="cvSrc" placeholder="貼上原本的提示詞（系統指令、角色設定、任務說明皆可），或上傳檔案"></textarea>
+      <label>轉換方式</label>
+      <select id="cvMode"><option value="ai">AI 改寫（用目前模型重寫成五種版本，較精準）</option><option value="tpl">範本套用（不呼叫 API，原文加上各模式固定段落）</option></select>
+      <label class="chk"><input type="checkbox" id="cvTools" checked> 參考目前啟用的函式（B、E 會列出可用工具）</label>
+      <button class="red" id="cvGo" style="margin-top:10px;width:100%">轉換成五種模式</button>
+      <p class="hint" id="cvStat" style="margin:6px 0 0"></p>
+    </div>
+    <div class="cvright">
+      <div class="cvtabs" id="cvTabs"></div>
+      <div class="cvbody" id="cvBody"><div class="hint" style="padding:30px;text-align:center">左側輸入提示詞後按「轉換成五種模式」</div></div>
+    </div>
+  </div>
+  <div class="cvfoot"><span class="hint" id="cvOvr"></span><span style="flex:1"></span>
+    <button class="sm" id="cvCopy" disabled>複製本欄</button><button class="sm" id="cvTxt" disabled>下載本欄 TXT</button><button class="sm" id="cvMd" disabled>下載全部 MD</button><button class="sm" id="cvJson" disabled>下載 JSON</button><button class="pri sm" id="cvApply" disabled>套用到 ABCDE 對照</button></div>
+</dialog>
+<dialog id="dlg">
+  <h3 style="margin-top:0">自訂函式</h3>
+  <label>函式宣告（FunctionDeclaration JSON）</label>
+  <textarea id="dDecl" rows="11"></textarea>
+  <label>JavaScript 實作（可用 <code>args</code>，可 <code>await</code>，回傳物件）</label>
+  <textarea id="dCode" rows="8"></textarea>
+  <div class="row" style="margin-top:12px"><button id="dDel">刪除</button><span></span><button id="dCancel">取消</button><button class="pri" id="dOk">儲存</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{const v=localStorage.getItem('gfc_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('gfc_'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ========== 內建工具 ========== */
+let todos=store.get('todos',[]);
+const BUILTIN=[
+ {decl:{name:"get_current_time",description:"取得指定時區目前日期時間",parameters:{type:"object",properties:{timezone:{type:"string",description:"IANA 時區，如 Asia/Taipei"}}}},
+  code:`const tz=args.timezone||'Asia/Taipei';return {timezone:tz,now:new Date().toLocaleString('zh-TW',{timeZone:tz,hour12:false}),weekday:new Date().toLocaleDateString('zh-TW',{timeZone:tz,weekday:'long'})};`},
+ {decl:{name:"calculate",description:"計算數學算式，支援 + - * / ** % ( ) 與 Math 函式",parameters:{type:"object",properties:{expression:{type:"string",description:"例如 (1200*0.95)+Math.sqrt(16)"}},required:["expression"]}},
+  code:`const e=String(args.expression);if(!/^[\\d\\s+\\-*/%().,a-zA-Z_]*$/.test(e))return {error:'含不允許字元'};const r=Function('with(Math){return ('+e+')}')();return {expression:e,result:r};`},
+ {decl:{name:"get_weather",description:"查詢城市目前天氣與未來三天預報（Open-Meteo）",parameters:{type:"object",properties:{city:{type:"string",description:"城市名，中英文皆可"}},required:["city"]}},
+  code:`const g=await (await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&name='+encodeURIComponent(args.city))).json();
+if(!g.results)return {error:'找不到城市'};const p=g.results[0];
+const w=await (await fetch(\`https://api.open-meteo.com/v1/forecast?latitude=\${p.latitude}&longitude=\${p.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=3&timezone=auto\`)).json();
+return {place:p.name+(p.admin1?'，'+p.admin1:'')+'，'+(p.country||''),current:w.current,daily:w.daily};`},
+ {decl:{name:"search_wikipedia",description:"搜尋中文維基百科並回傳最相關條目摘要",parameters:{type:"object",properties:{query:{type:"string"}},required:["query"]}},
+  code:`const s=await (await fetch('https://zh.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=3&srsearch='+encodeURIComponent(args.query))).json();
+const hits=s.query.search;if(!hits.length)return {error:'無結果'};
+const sum=await (await fetch('https://zh.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(hits[0].title))).json();
+return {title:sum.title,extract:sum.extract,url:sum.content_urls?.desktop?.page,others:hits.slice(1).map(h=>h.title)};`},
+ {decl:{name:"manage_todo",description:"管理待辦清單：新增、列出、完成、刪除",parameters:{type:"object",properties:{action:{type:"string",enum:["add","list","done","remove"]},text:{type:"string",description:"add 時的內容"},index:{type:"integer",description:"done/remove 的項目編號（從 1 起）"}},required:["action"]}},
+  code:`return TODO(args);`},
+ {decl:{name:"get_tw_stock",description:"查詢台股（上市／上櫃／ETF）精準資料（FinMind）：股價與均線、三大法人買賣超、融資融券、本益比／殖利率、月營收、新聞。問到台股個股、股價、法人、營收、能否進場時使用",parameters:{type:"object",properties:{stock_id:{type:"string",description:"股票代號或名稱，如 2330、2468、台積電"},data_type:{type:"string",enum:["overview","price","institutional","margin","per","revenue","news"],description:"overview=股價＋法人＋本益比綜合（預設）"},days:{type:"integer",description:"回看交易日數，預設 20，最多 120"}},required:["stock_id"]}},
+  code:`return await TWSTOCK(args);`},
+
+ {cat:'企業',decl:{name:"crm_customer",description:"企業 CRM 客戶資料：查詢客戶（含歷史訂單）、列出客戶、找出久未聯繫客戶、新增或更新客戶",parameters:{type:"object",properties:{action:{type:"string",enum:["search","list","stale","add","update"],description:"search=查單一客戶（預設）"},customer:{type:"string",description:"客戶編號或名稱"},level:{type:"string",description:"客戶等級 A/B/C（list 篩選或 update）"},owner:{type:"string",description:"負責業務"},days:{type:"integer",description:"stale 的天數門檻，預設 30"},name:{type:"string"},contact:{type:"string"},phone:{type:"string"},email:{type:"string"},industry:{type:"string"},note:{type:"string"}}}},
+  code:`return ENT.crm(args);`},
+ {cat:'企業',decl:{name:"inventory",description:"庫存管理：查詢品項庫存、列出全部、找出低於安全存量品項與補貨建議、入庫/出庫調整",parameters:{type:"object",properties:{action:{type:"string",enum:["query","list","low_stock","adjust"]},sku:{type:"string",description:"料號或品名"},delta:{type:"integer",description:"adjust 時數量變化，正數入庫、負數出庫"},reason:{type:"string"}}}},
+  code:`return ENT.inventory(args);`},
+ {cat:'企業',decl:{name:"sales_report",description:"銷售報表：依期間、客戶、產品、業務篩選訂單，按月份/客戶/產品/業務彙總營收、毛利率與月增率",parameters:{type:"object",properties:{months:{type:"integer",description:"最近 N 個月（含本月）"},from:{type:"string",description:"起日 YYYY-MM-DD"},to:{type:"string",description:"迄日 YYYY-MM-DD"},customer:{type:"string"},product:{type:"string",description:"料號或品名"},owner:{type:"string",description:"業務姓名"},group_by:{type:"string",enum:["month","customer","product","owner"]}}}},
+  code:`return ENT.sales(args);`},
+ {cat:'企業',decl:{name:"create_quote",description:"產生報價單：依品項與數量計算小計、折扣、5% 營業稅、總額、毛利率，並依公司折扣權限判斷需誰核准",parameters:{type:"object",properties:{customer:{type:"string"},items:{type:"array",items:{type:"object",properties:{sku:{type:"string"},name:{type:"string"},qty:{type:"number"},price:{type:"number",description:"不填則用牌價"}}}},discount_pct:{type:"number",description:"折扣百分比，例 8 代表 92 折"},note:{type:"string"}},required:["items"]}},
+  code:`return ENT.quote(args);`},
+ {cat:'企業',decl:{name:"validate_tax_id",description:"驗證台灣公司統一編號（8 碼）檢查碼是否正確",parameters:{type:"object",properties:{tax_id:{type:"string"}},required:["tax_id"]}},
+  code:`return ENT.validateTaxId(args);`},
+ {cat:'企業',decl:{name:"lookup_company",description:"查詢經濟部商工登記公示資料：依統一編號或公司名稱查代表人、資本額、地址、設立日期、登記狀態",parameters:{type:"object",properties:{tax_id:{type:"string",description:"8 碼統一編號"},name:{type:"string",description:"公司名稱關鍵字"}}}},
+  code:`return await ENT.company(args);`},
+ {cat:'企業',decl:{name:"tw_workday",description:"台灣上班日計算（依人事行政總處行事曆，含國定假日與補班）：判斷某天是否上班、計算區間工作天數、推算 N 個工作天後的日期",parameters:{type:"object",properties:{action:{type:"string",enum:["check","count","add"]},date:{type:"string",description:"YYYY-MM-DD，check/add 用，預設今天"},start:{type:"string"},end:{type:"string"},days:{type:"integer",description:"add 的工作天數，可負數"}}}},
+  code:`return await ENT.workday(args);`},
+ {cat:'企業',decl:{name:"schedule_meeting",description:"會議排程：列出會議、檢查時段與與會者是否衝突、建立或取消會議",parameters:{type:"object",properties:{action:{type:"string",enum:["list","check","create","cancel"]},title:{type:"string"},date:{type:"string",description:"YYYY-MM-DD"},start:{type:"string",description:"HH:MM"},duration_min:{type:"integer"},attendees:{type:"array",items:{type:"string"}},location:{type:"string"},id:{type:"string",description:"cancel 用"},force:{type:"boolean",description:"有衝突仍建立"}}}},
+  code:`return ENT.meeting(args);`},
+ {cat:'企業',decl:{name:"hr_leave",description:"人事請假：查詢員工特休/病假餘額、送出假單（自動檢查餘額與提前天數）、列出假單",parameters:{type:"object",properties:{action:{type:"string",enum:["balance","apply","list"]},employee:{type:"string",description:"員工姓名或編號"},type:{type:"string",description:"特休/病假/事假/婚假/喪假"},start:{type:"string",description:"YYYY-MM-DD"},days:{type:"number"},reason:{type:"string"}}}},
+  code:`return ENT.leave(args);`},
+ {cat:'企業',decl:{name:"expense_claim",description:"費用報帳：依公司報帳規定檢查金額上限、發票、時效與簽核，新增報帳或彙總統計",parameters:{type:"object",properties:{action:{type:"string",enum:["check","add","list","summary"]},employee:{type:"string"},category:{type:"string",description:"交通/餐費/住宿/住宿(台北)/交際費/其他"},amount:{type:"number"},date:{type:"string"},desc:{type:"string"},has_invoice:{type:"boolean"}}}},
+  code:`return ENT.expense(args);`},
+ {cat:'企業',decl:{name:"send_email",description:"建立 Email 草稿並放入寄件匣（模擬，不會實際寄出，回傳可開啟郵件軟體的 mailto 連結），或列出寄件匣",parameters:{type:"object",properties:{action:{type:"string",enum:["draft","list"]},to:{type:"string"},cc:{type:"string"},subject:{type:"string"},body:{type:"string"}}}},
+  code:`return ENT.email(args);`},
+ {cat:'企業',decl:{name:"calc_finance",description:"財務試算：貸款月付(loan)、投資報酬率(roi)、損益兩平(break_even)、毛利(margin)、成長率與 CAGR(growth)、淨現值與 IRR(npv)",parameters:{type:"object",properties:{type:{type:"string",enum:["loan","roi","break_even","margin","growth","npv"]},principal:{type:"number"},annual_rate:{type:"number",description:"年利率或折現率 %"},months:{type:"integer"},cost:{type:"number"},gain:{type:"number"},fixed_cost:{type:"number"},price:{type:"number"},unit_cost:{type:"number"},revenue:{type:"number"},values:{type:"array",items:{type:"number"}},rate:{type:"number",description:"npv 折現率 %"},cashflows:{type:"array",items:{type:"number"}}},required:["type"]}},
+  code:`return ENT.finance(args);`},
+ {cat:'企業',decl:{name:"search_policy",description:"搜尋公司內部規章知識庫（請假、差旅報帳、報價折扣權限、退換貨、資安、採購流程），也會搜尋 C 欄額外資料",parameters:{type:"object",properties:{query:{type:"string"}},required:["query"]}},
+  code:`return ENT.kb(args);`},
+ {decl:{name:"convert_currency",description:"匯率換算（open.er-api.com 即時匯率）",parameters:{type:"object",properties:{amount:{type:"number"},from:{type:"string",description:"如 USD"},to:{type:"string",description:"如 TWD"}},required:["amount","from","to"]}},
+  code:`const r=await (await fetch('https://open.er-api.com/v6/latest/'+args.from.toUpperCase())).json();const rate=r.rates?.[args.to.toUpperCase()];if(!rate)return {error:'不支援幣別'};return {amount:args.amount,from:args.from,to:args.to,rate,result:+(args.amount*rate).toFixed(4),updated:r.time_last_update_utc};`}
+];
+/* ========== FinMind 台股 ========== */
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+async function FINMIND(dataset,p={}){
+  const tk=($('#fmToken')?.value||'').trim();
+  if(!tk)throw Error('尚未填入 FinMind Token（左側連線設定）');
+  const q=new URLSearchParams({dataset,...p,token:tk});
+  const r=await fetch('https://api.finmindtrade.com/api/v4/data?'+q);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||(j.status&&j.status!==200))throw Error(`FinMind ${dataset}：${j.msg||r.status}`);
+  return j.data||[];
+}
+let STOCK_INFO=null;
+async function resolveStock(q){
+  q=String(q||'').trim().replace(/\.(TW|TWO)$/i,'');
+  if(!STOCK_INFO)STOCK_INFO=await FINMIND('TaiwanStockInfo');
+  const m=q.match(/^\d{4,6}[A-Z]?$/i);
+  let hit=m?STOCK_INFO.find(x=>x.stock_id===q.toUpperCase()):STOCK_INFO.find(x=>x.stock_name===q)||STOCK_INFO.find(x=>x.stock_name.includes(q)||q.includes(x.stock_name));
+  if(!hit&&m)return {id:q.toUpperCase(),name:'',industry:'',market:''};
+  if(!hit)throw Error('找不到股票：'+q);
+  return {id:hit.stock_id,name:hit.stock_name,industry:hit.industry_category,market:hit.type==='twse'?'上市':hit.type==='tpex'?'上櫃':hit.type};
+}
+const r2=v=>Math.round(v*100)/100,avg=a=>a.length?r2(a.reduce((s,x)=>s+x,0)/a.length):null;
+async function TWSTOCK(a){
+  const stk=await resolveStock(a.stock_id),id=stk.id,type=a.data_type||'overview';
+  const days=Math.min(120,Math.max(5,+a.days||20));
+  const start=ymd(Date.now()-(days*1.6+45)*864e5);
+  const out={stock:stk,data_type:type,source:'FinMind',queried_at:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false})};
+  const price=async()=>{
+    const rows=await FINMIND('TaiwanStockPrice',{data_id:id,start_date:start});
+    if(!rows.length)return {error:'查無股價資料'};
+    const c=rows.map(x=>x.close),L=rows[rows.length-1],P=rows.slice(-days),pc=P.map(x=>x.close);
+    const ma=n=>c.length>=n?avg(c.slice(-n)):null;
+    return {last:{date:L.date,open:L.open,high:L.max,low:L.min,close:L.close,change:L.spread,change_pct:r2(L.spread/(L.close-L.spread)*100),volume_lots:Math.round(L.Trading_Volume/1000)},
+      ma5:ma(5),ma10:ma(10),ma20:ma(20),ma60:ma(60),
+      period:{days:P.length,from:P[0].date,high:Math.max(...P.map(x=>x.max)),low:Math.min(...P.map(x=>x.min)),return_pct:r2((L.close/P[0].close-1)*100),avg_volume_lots:Math.round(avg(P.map(x=>x.Trading_Volume))/1000)},
+      recent:rows.slice(-10).map(x=>({d:x.date,c:x.close,chg:x.spread,vol:Math.round(x.Trading_Volume/1000)})),unit:'volume 單位：張'};
+  };
+  const inst=async()=>{
+    const rows=await FINMIND('TaiwanStockInstitutionalInvestorsBuySell',{data_id:id,start_date:ymd(Date.now()-days*1.6*864e5)});
+    if(!rows.length)return {error:'查無法人資料'};
+    const g={};rows.forEach(x=>{const k=/Foreign/.test(x.name)?'foreign':/Investment_Trust/.test(x.name)?'trust':/Dealer/.test(x.name)?'dealer':'other';const d=g[x.date]||(g[x.date]={d:x.date,foreign:0,trust:0,dealer:0});if(k!=='other')d[k]+=(x.buy-x.sell)/1000});
+    const list=Object.values(g).sort((p,q)=>p.d<q.d?-1:1).map(x=>({d:x.d,foreign:Math.round(x.foreign),trust:Math.round(x.trust),dealer:Math.round(x.dealer),total:Math.round(x.foreign+x.trust+x.dealer)}));
+    const sum=k=>list.reduce((s,x)=>s+x[k],0);
+    let streak=0;for(let i=list.length-1;i>=0&&Math.sign(list[i].foreign)===Math.sign(list[list.length-1].foreign)&&list[i].foreign;i--)streak++;
+    return {unit:'買賣超，單位：張',period_sum:{days:list.length,foreign:sum('foreign'),trust:sum('trust'),dealer:sum('dealer'),total:sum('total')},foreign_streak:(list[list.length-1]?.foreign>0?'連買 ':'連賣 ')+streak+' 日',recent:list.slice(-10)};
+  };
+  const per=async()=>{const rows=await FINMIND('TaiwanStockPER',{data_id:id,start_date:ymd(Date.now()-20*864e5)});const L=rows[rows.length-1];return L?{date:L.date,PER:L.PER,PBR:L.PBR,dividend_yield:L.dividend_yield}:{error:'查無本益比資料'}};
+  const margin=async()=>{const rows=await FINMIND('TaiwanStockMarginPurchaseShortSale',{data_id:id,start_date:ymd(Date.now()-days*1.6*864e5)});if(!rows.length)return {error:'查無融資融券資料'};const F=rows[0],L=rows[rows.length-1];
+    return {unit:'張',last:{date:L.date,margin_balance:L.MarginPurchaseTodayBalance,short_balance:L.ShortSaleTodayBalance,short_margin_ratio_pct:L.MarginPurchaseTodayBalance?r2(L.ShortSaleTodayBalance/L.MarginPurchaseTodayBalance*100):null},period_change:{margin:L.MarginPurchaseTodayBalance-F.MarginPurchaseTodayBalance,short:L.ShortSaleTodayBalance-F.ShortSaleTodayBalance},recent:rows.slice(-5).map(x=>({d:x.date,margin:x.MarginPurchaseTodayBalance,short:x.ShortSaleTodayBalance}))}};
+  const revenue=async()=>{const rows=await FINMIND('TaiwanStockMonthRevenue',{data_id:id,start_date:ymd(Date.now()-430*864e5)});if(!rows.length)return {error:'查無月營收資料'};
+    const key=x=>x.revenue_year*100+x.revenue_month,map=Object.fromEntries(rows.map(x=>[key(x),x.revenue]));
+    return {unit:'營收單位：千元',recent:rows.slice(-6).map(x=>{const ly=map[key(x)-100],pm=map[x.revenue_month===1?key(x)-89:key(x)-1];return {month:`${x.revenue_year}-${String(x.revenue_month).padStart(2,'0')}`,revenue_k:Math.round(x.revenue/1000),yoy_pct:ly?r2((x.revenue/ly-1)*100):null,mom_pct:pm?r2((x.revenue/pm-1)*100):null}})}};
+  const news=async()=>{const rows=await FINMIND('TaiwanStockNews',{data_id:id,start_date:ymd(Date.now()-7*864e5)});return {recent:rows.slice(-10).reverse().map(x=>({date:x.date,title:x.title,source:x.source,link:x.link}))}};
+  const safe=async f=>{try{return await f()}catch(e){return {error:e.message}}};
+  if(type==='overview'){const [p,i,e]=await Promise.all([safe(price),safe(inst),safe(per)]);Object.assign(out,{price:p,institutional:i,valuation:e})}
+  else out[type]=await ({price,institutional:inst,margin,per,revenue,news}[type]||price)();
+  return out;
+}
+/* ========== 企業函式（瀏覽器內模擬資料庫，localStorage 保存） ========== */
+const ENT_SEED=()=>{
+  const today=new Date();const iso=d=>ymd(d);
+  const customers=[
+    {id:'C001',name:'宏遠精密工業',tax_id:'',contact:'林經理',phone:'03-5551234',email:'lin@hongyuan.example',industry:'製造',level:'A',owner:'王小明',last_contact:iso(new Date(today-12*864e5)),note:'年度內訓合約，Q4 續約洽談中'},
+    {id:'C002',name:'晨星餐飲集團',tax_id:'',contact:'陳主任',phone:'02-2777-8899',email:'chen@morningstar.example',industry:'餐飲',level:'B',owner:'李美華',last_contact:iso(new Date(today-40*864e5)),note:'詢問 POS 與 AI 客服導入'},
+    {id:'C003',name:'藍海物流',tax_id:'',contact:'張協理',phone:'04-2333-1122',email:'chang@bluesea.example',industry:'物流',level:'A',owner:'王小明',last_contact:iso(new Date(today-5*864e5)),note:'派車排程專案 PoC'},
+    {id:'C004',name:'青田教育基金會',tax_id:'',contact:'吳執行長',phone:'037-555-666',email:'wu@qingtian.example',industry:'教育',level:'C',owner:'張志豪',last_contact:iso(new Date(today-75*864e5)),note:'教師 AI 研習，預算有限'},
+    {id:'C005',name:'鼎峰建設',tax_id:'',contact:'黃副總',phone:'07-555-7788',email:'huang@dingfeng.example',industry:'營建',level:'B',owner:'李美華',last_contact:iso(new Date(today-22*864e5)),note:'工地巡檢影像辨識需求'},
+    {id:'C006',name:'聯禾生技',tax_id:'',contact:'許經理',phone:'06-299-3344',email:'hsu@lianhe.example',industry:'生技',level:'A',owner:'張志豪',last_contact:iso(new Date(today-3*864e5)),note:'法規文件 RAG 系統'}];
+  const products=[
+    {sku:'NB-14',name:'商務筆電 14 吋',qty:42,safety:20,unit:'台',price:32900,cost:26500,location:'A-01'},
+    {sku:'MN-27',name:'27 吋 4K 螢幕',qty:15,safety:20,unit:'台',price:11900,cost:8600,location:'A-02'},
+    {sku:'KB-01',name:'無線鍵盤',qty:180,safety:60,unit:'組',price:1290,cost:640,location:'B-03'},
+    {sku:'MS-02',name:'人體工學滑鼠',qty:8,safety:50,unit:'個',price:990,cost:420,location:'B-04'},
+    {sku:'CF-10',name:'視訊會議系統',qty:6,safety:5,unit:'套',price:58000,cost:41000,location:'C-01'},
+    {sku:'SV-PRO',name:'AI 平台年訂閱（Pro）',qty:9999,safety:0,unit:'席',price:12000,cost:3000,location:'雲端'},
+    {sku:'TR-AI',name:'企業 AI 內訓（半天）',qty:9999,safety:0,unit:'場',price:45000,cost:15000,location:'服務'}];
+  let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  const orders=[];
+  for(let m=5;m>=0;m--)for(let n=0;n<7+Math.round(rnd()*4);n++){
+    const d=new Date(today.getFullYear(),today.getMonth()-m,1+Math.floor(rnd()*27));if(d>today)continue;
+    const c=customers[Math.floor(rnd()*customers.length)],p=products[Math.floor(rnd()*products.length)];
+    const qty=p.unit==='場'?1:p.unit==='席'?5+Math.floor(rnd()*30):1+Math.floor(rnd()*12);
+    orders.push({no:'SO'+iso(d).replace(/-/g,'')+String(n+1).padStart(2,'0'),date:iso(d),customer_id:c.id,customer:c.name,sku:p.sku,product:p.name,qty,amount:qty*p.price,cost:qty*p.cost,owner:c.owner});
+  }
+  const employees=[
+    {id:'E01',name:'王小明',dept:'業務部',annual:14,used:5,sick:30,sick_used:2},
+    {id:'E02',name:'李美華',dept:'業務部',annual:10,used:9,sick:30,sick_used:0},
+    {id:'E03',name:'張志豪',dept:'顧問部',annual:7,used:1,sick:30,sick_used:4},
+    {id:'E04',name:'陳怡君',dept:'管理部',annual:15,used:3,sick:30,sick_used:1}];
+  const kb=[
+    {title:'請假規定',tags:'請假 特休 病假 事假 婚假 喪假 人事',body:'特休依勞基法年資計算；請假需於 3 個工作天前在系統提出，主管核准。病假全年 30 日內工資折半，3 日以上需附診斷證明。事假全年 14 日不給薪。'},
+    {title:'差旅與報帳規定',tags:'報帳 出差 差旅 費用 發票 交通 餐費 住宿',body:'報帳須於費用發生後 30 日內提出並附統一發票或收據（需有本公司統編）。上限：交通 實報實銷（高鐵標準車廂）、餐費 每餐 300 元、住宿 每晚 2,800 元（台北 3,500 元）、交際費 需事前核准。超過 5,000 元需部門主管與財務雙簽。'},
+    {title:'報價與折扣權限',tags:'報價 折扣 價格 業務 簽核 毛利',body:'業務可給 5% 內折扣；5%～15% 需業務主管核准；超過 15% 或毛利低於 20% 需總經理核准。報價單有效期 30 日，金額未稅另加 5% 營業稅。'},
+    {title:'退換貨政策',tags:'退貨 換貨 保固 客訴 售後',body:'硬體商品到貨 7 日內未拆封可退貨；瑕疵品 30 日內可換新；保固 1 年（筆電 2 年）。訂閱服務按月比例退費。客訴需 24 小時內回覆、3 個工作天內提出處理方案。'},
+    {title:'資訊安全規範',tags:'資安 密碼 個資 帳號 AI 使用',body:'密碼至少 12 碼並每 180 天更換；客戶個資不得貼入未經核准的外部 AI 服務；使用生成式 AI 產出對外文件需人工審閱。遺失設備需 1 小時內通報 IT。'},
+    {title:'採購流程',tags:'採購 請購 叫貨 庫存 供應商 安全庫存',body:'庫存低於安全存量時由倉管提出請購；10 萬元以下部門主管核准，以上需總經理核准；需比價三家供應商（緊急採購除外）。'}];
+  return {customers,products,orders,employees,kb,meetings:[],leaves:[],expenses:[],outbox:[],quotes:[],seq:{quote:1,leave:1,exp:1,mail:1,meet:1}};
+};
+let ENTDB=store.get('entdb',null)||ENT_SEED();
+const entSave=()=>{store.set('entdb',ENTDB);renderEnt()};
+const r0=v=>Math.round(v),money=v=>Math.round(v).toLocaleString('zh-TW');
+const findCust=q=>{q=String(q||'').trim();return ENTDB.customers.find(c=>c.id===q||c.name===q)||ENTDB.customers.find(c=>c.name.includes(q)||q.includes(c.name))};
+const ENT={
+  crm(a){
+    const act=a.action||'search';
+    if(act==='list')return {count:ENTDB.customers.length,customers:ENTDB.customers.filter(c=>!a.level||c.level===a.level).filter(c=>!a.owner||c.owner===a.owner).map(c=>({id:c.id,name:c.name,industry:c.industry,level:c.level,owner:c.owner,last_contact:c.last_contact}))};
+    if(act==='stale'){const days=+a.days||30,cut=Date.now()-days*864e5;return {rule:`超過 ${days} 天未聯繫`,customers:ENTDB.customers.filter(c=>new Date(c.last_contact)<cut).map(c=>({...c,days_since:Math.floor((Date.now()-new Date(c.last_contact))/864e5)}))}}
+    if(act==='add'){if(!a.name)return {error:'缺少 name'};const id='C'+String(ENTDB.customers.length+1).padStart(3,'0');const c={id,name:a.name,tax_id:a.tax_id||'',contact:a.contact||'',phone:a.phone||'',email:a.email||'',industry:a.industry||'',level:a.level||'C',owner:a.owner||'',last_contact:ymd(Date.now()),note:a.note||''};ENTDB.customers.push(c);entSave();return {ok:true,customer:c}}
+    const c=findCust(a.customer||a.name||a.query);if(!c)return {error:'找不到客戶：'+(a.customer||a.name||a.query),hint:'可用 action=list 查看全部客戶'};
+    if(act==='update'){['contact','phone','email','level','owner','note','industry','tax_id'].forEach(k=>{if(a[k]!=null)c[k]=a[k]});if(a.touch!==false)c.last_contact=ymd(Date.now());entSave();return {ok:true,customer:c}}
+    const os=ENTDB.orders.filter(o=>o.customer_id===c.id);
+    return {customer:c,orders:{count:os.length,total_amount:os.reduce((s,o)=>s+o.amount,0),last:os.slice(-5).reverse().map(o=>({no:o.no,date:o.date,product:o.product,qty:o.qty,amount:o.amount}))}};
+  },
+  inventory(a){
+    const act=a.action||'query',P=ENTDB.products,f=p=>({...p,status:p.safety&&p.qty<p.safety?'低於安全存量':'正常',short:p.safety&&p.qty<p.safety?p.safety-p.qty:0,stock_value:p.qty<9999?p.qty*p.cost:null});
+    if(act==='list')return {items:P.map(f)};
+    if(act==='low_stock'){const lows=P.filter(p=>p.safety&&p.qty<p.safety).map(f);return {count:lows.length,items:lows,suggest:lows.map(p=>`${p.name} 建議補貨 ${p.safety*2-p.qty} ${p.unit}（補到安全存量 2 倍）`)}}
+    const q=String(a.sku||a.query||'').trim(),p=P.find(x=>x.sku.toLowerCase()===q.toLowerCase())||P.find(x=>x.name.includes(q)||q.includes(x.name));
+    if(!p)return {error:'找不到品項：'+q,skus:P.map(x=>x.sku+' '+x.name)};
+    if(act==='adjust'){const d=+a.delta||0;if(!d)return {error:'adjust 需要 delta（正數入庫、負數出庫）'};if(p.qty+d<0)return {error:`庫存不足：目前 ${p.qty}${p.unit}`};p.qty+=d;entSave();return {ok:true,reason:a.reason||'',item:f(p)}}
+    return {item:f(p)};
+  },
+  sales(a){
+    let os=ENTDB.orders.slice();const from=a.from||'',to=a.to||'9999';
+    if(a.months){const d=new Date();d.setMonth(d.getMonth()-(+a.months)+1);d.setDate(1);os=os.filter(o=>o.date>=ymd(d))}
+    os=os.filter(o=>o.date>=from&&o.date<=to);
+    if(a.customer){const c=findCust(a.customer);os=c?os.filter(o=>o.customer_id===c.id):[]}
+    if(a.product)os=os.filter(o=>o.sku.toLowerCase()===String(a.product).toLowerCase()||o.product.includes(a.product));
+    if(a.owner)os=os.filter(o=>o.owner===a.owner);
+    const by=a.group_by||'month',key=o=>by==='customer'?o.customer:by==='product'?o.product:by==='owner'?o.owner:o.date.slice(0,7);
+    const g={};os.forEach(o=>{const k=key(o);const x=g[k]||(g[k]={key:k,orders:0,qty:0,amount:0,cost:0});x.orders++;x.qty+=o.qty;x.amount+=o.amount;x.cost+=o.cost});
+    let rows=Object.values(g).map(x=>({...x,gross_margin_pct:x.amount?+((1-x.cost/x.amount)*100).toFixed(1):0}));
+    rows=by==='month'?rows.sort((p,q)=>p.key<q.key?-1:1):rows.sort((p,q)=>q.amount-p.amount);
+    if(by==='month')rows.forEach((x,i)=>{if(i)x.mom_pct=rows[i-1].amount?+((x.amount/rows[i-1].amount-1)*100).toFixed(1):null});
+    const tot=os.reduce((s,o)=>s+o.amount,0),cost=os.reduce((s,o)=>s+o.cost,0);
+    return {unit:'新台幣元（未稅）',filter:{from:a.from,to:a.to,months:a.months,customer:a.customer,product:a.product,owner:a.owner},group_by:by,total:{orders:os.length,amount:tot,gross_margin_pct:tot?+((1-cost/tot)*100).toFixed(1):0},rows};
+  },
+  quote(a){
+    const items=(a.items||[]).map(it=>{const p=ENTDB.products.find(x=>x.sku===it.sku||x.name===it.name||(it.name&&x.name.includes(it.name)));const price=+it.price||(p?p.price:0),qty=+it.qty||1;return {sku:p?.sku||it.sku||'',name:p?.name||it.name||it.sku,qty,unit:p?.unit||it.unit||'',price,subtotal:price*qty,cost:(p?.cost||0)*qty}});
+    if(!items.length)return {error:'items 不可為空，例：[{"sku":"NB-14","qty":10}]',catalog:ENTDB.products.map(p=>`${p.sku} ${p.name} $${p.price}`)};
+    const sub=items.reduce((s,i)=>s+i.subtotal,0),disc=Math.min(100,Math.max(0,+a.discount_pct||0)),after=r0(sub*(1-disc/100)),tax=r0(after*0.05),cost=items.reduce((s,i)=>s+i.cost,0);
+    const gm=after?+((1-cost/after)*100).toFixed(1):0;
+    const approval=disc<=5&&gm>=20?'業務可自行核准':disc<=15&&gm>=20?'需業務主管核准':'需總經理核准';
+    const no='Q'+ymd(Date.now()).replace(/-/g,'')+'-'+String(ENTDB.seq.quote++).padStart(3,'0');
+    const q={no,date:ymd(Date.now()),valid_until:ymd(Date.now()+30*864e5),customer:(findCust(a.customer)||{}).name||a.customer||'',items:items.map(({cost,...i})=>i),subtotal:sub,discount_pct:disc,discount:sub-after,untaxed:after,tax_5pct:tax,total:after+tax,gross_margin_pct:gm,approval,note:a.note||''};
+    ENTDB.quotes.push(q);entSave();return q;
+  },
+  validateTaxId(a){
+    const id=String(a.tax_id||'').replace(/\D/g,'');if(!/^\d{8}$/.test(id))return {tax_id:a.tax_id,valid:false,reason:'統一編號須為 8 位數字'};
+    const w=[1,2,1,2,1,2,4,1];let sum=0;for(let i=0;i<8;i++){const p=+id[i]*w[i];sum+=Math.floor(p/10)+p%10}
+    const ok5=sum%5===0||(id[6]==='7'&&(sum+1)%5===0),ok10=sum%10===0||(id[6]==='7'&&(sum+1)%10===0);
+    return {tax_id:id,valid:ok5,rule:'財政部 2023 年起檢查碼改為可被 5 整除',old_rule_valid:ok10,checksum:sum};
+  },
+  async company(a){
+    const q=String(a.tax_id||a.name||'').trim();if(!q)return {error:'請提供 tax_id 或 name'};
+    const base='https://data.gcis.nat.gov.tw/od/data/api/';
+    const url=/^\d{8}$/.test(q)?`${base}5F64D864-61CB-4D0D-8AD9-492047CC1EA6?$format=json&$filter=Business_Accounting_NO eq ${q}&$skip=0&$top=5`:`${base}6BBA2268-1367-4B42-9CCA-BC17499EBE8C?$format=json&$filter=Company_Name like ${encodeURIComponent(q)} and Company_Status eq 01&$skip=0&$top=10`;
+    try{const r=await fetch(url);const t=await r.text();if(!t.trim())return {query:q,found:0,source:'經濟部商工登記公示資料'};const j=JSON.parse(t);
+      return {query:q,found:j.length,source:'經濟部商工登記公示資料（data.gcis.nat.gov.tw）',companies:j.slice(0,10).map(c=>({tax_id:c.Business_Accounting_NO,name:c.Company_Name,status:c.Company_Status_Desc,capital:c.Capital_Stock_Amount,paid_in:c.Paid_In_Capital_Amount,representative:c.Responsible_Name,address:c.Company_Location,setup_date:c.Company_Setup_Date,approved_date:c.Change_Of_Approval_Data,authority:c.Register_Organization_Desc}))}}
+    catch(e){return {error:'商工登記 API 連線失敗（可能為瀏覽器 CORS 限制或服務維護）：'+e.message,query:q,suggest:'可改用 D 欄 Google 搜尋，或至 findbiz.nat.gov.tw 查詢'}}
+  },
+  async workday(a){
+    const cache=ENT._cal||(ENT._cal={});
+    const load=async y=>{if(cache[y]!==undefined)return cache[y];try{const r=await fetch(`https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/${y}.json`);cache[y]=r.ok?Object.fromEntries((await r.json()).map(d=>[d.date,d])):null}catch(e){cache[y]=null}return cache[y]};
+    const info=async d=>{const s=ymd(d).replace(/-/g,''),cal=await load(d.getFullYear());if(cal&&cal[s])return {date:ymd(d),weekday:'日一二三四五六'[d.getDay()],workday:!cal[s].isHoliday,holiday:cal[s].description||'',source:'行政院人事行政總處行事曆'};const w=d.getDay();return {date:ymd(d),weekday:'日一二三四五六'[w],workday:w!==0&&w!==6,holiday:'',source:'無行事曆資料，僅依週末判斷'}};
+    const P=s=>{const d=s?new Date(s+'T00:00:00+08:00'):new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Taipei'}));d.setHours(0,0,0,0);return d};
+    const act=a.action||'check';
+    if(act==='check')return await info(P(a.date));
+    if(act==='count'){let d=P(a.start),e=P(a.end);if(e<d)[d,e]=[e,d];if((e-d)/864e5>800)return {error:'區間過長'};let n=0,hol=[];for(;d<=e;d=new Date(d.getTime()+864e5)){const x=await info(d);if(x.workday)n++;else if(x.holiday)hol.push(x.date+' '+x.holiday)}return {start:a.start,end:a.end,workdays:n,holidays:hol}}
+    if(act==='add'){let d=P(a.date),n=+a.days||1,step=n<0?-1:1;n=Math.abs(n);let c=0;while(c<n){d=new Date(d.getTime()+step*864e5);if((await info(d)).workday)c++}return {from:a.date||ymd(Date.now()),add_workdays:a.days,result:await info(d)}}
+    return {error:'action 需為 check／count／add'};
+  },
+  meeting(a){
+    const act=a.action||'list',M=ENTDB.meetings;
+    if(act==='list'){const from=a.date||ymd(Date.now());return {meetings:M.filter(m=>m.date>=from).sort((p,q)=>(p.date+p.start)<(q.date+q.start)?-1:1)}}
+    if(act==='cancel'){const i=M.findIndex(m=>m.id===a.id);if(i<0)return {error:'找不到會議 '+a.id};const [m]=M.splice(i,1);entSave();return {ok:true,cancelled:m}}
+    if(!a.date||!a.start)return {error:'需要 date（YYYY-MM-DD）與 start（HH:MM）'};
+    const dur=+a.duration_min||60,toMin=t=>{const [h,m]=t.split(':').map(Number);return h*60+m},s=toMin(a.start),e=s+dur;
+    const att=(a.attendees||[]).map(String);
+    const conflicts=M.filter(m=>m.date===a.date&&toMin(m.start)<e&&s<toMin(m.start)+m.duration_min&&(!att.length||m.attendees.some(x=>att.includes(x))));
+    if(act==='check'||conflicts.length&&!a.force)return {date:a.date,start:a.start,duration_min:dur,available:!conflicts.length,conflicts};
+    const m={id:'M'+String(ENTDB.seq.meet++).padStart(3,'0'),title:a.title||'會議',date:a.date,start:a.start,duration_min:dur,attendees:att,location:a.location||'線上'};M.push(m);entSave();return {ok:true,meeting:m};
+  },
+  leave(a){
+    const act=a.action||'balance',emp=ENTDB.employees.find(e=>e.id===a.employee||e.name===a.employee);
+    if(act==='list')return {leaves:ENTDB.leaves.filter(l=>!emp||l.employee===emp.name)};
+    if(!emp)return {error:'找不到員工：'+(a.employee||''),employees:ENTDB.employees.map(e=>e.name)};
+    const bal={annual_left:emp.annual-emp.used,sick_left:emp.sick-emp.sick_used};
+    if(act==='balance')return {employee:emp.name,dept:emp.dept,annual_total:emp.annual,annual_used:emp.used,...bal,sick_used:emp.sick_used};
+    if(act==='apply'){const days=+a.days||1,type=a.type||'特休';if(type==='特休'&&days>bal.annual_left)return {ok:false,reason:`特休餘額不足（剩 ${bal.annual_left} 天）`};
+      const lead=a.start?Math.ceil((new Date(a.start)-Date.now())/864e5):0;
+      const l={id:'L'+String(ENTDB.seq.leave++).padStart(3,'0'),employee:emp.name,type,start:a.start||ymd(Date.now()),days,reason:a.reason||'',status:'待主管核准',warning:lead<3?'未於 3 個工作天前提出，依規定需主管特別核准':''};
+      if(type==='特休')emp.used+=days;if(type==='病假')emp.sick_used+=days;ENTDB.leaves.push(l);entSave();return {ok:true,leave:l,balance_after:{annual_left:emp.annual-emp.used,sick_left:emp.sick-emp.sick_used}}}
+    return {error:'action 需為 balance／apply／list'};
+  },
+  expense(a){
+    const act=a.action||'list',LIM={餐費:300,住宿:2800,'住宿(台北)':3500};
+    if(act==='list'||act==='summary'){const E=ENTDB.expenses.filter(x=>!a.employee||x.employee===a.employee);const by={};E.forEach(x=>by[x.category]=(by[x.category]||0)+x.amount);return {count:E.length,total:E.reduce((s,x)=>s+x.amount,0),by_category:by,items:act==='list'?E:undefined}}
+    if(!a.amount||!a.category)return {error:'需要 category 與 amount'};
+    const amt=+a.amount,lim=LIM[a.category],issues=[];
+    if(lim&&amt>lim)issues.push(`${a.category}超過上限 ${lim} 元，超出 ${amt-lim} 元需自付或專案核准`);
+    if(a.category==='交際費')issues.push('交際費需事前核准');
+    if(amt>5000)issues.push('超過 5,000 元需部門主管與財務雙簽');
+    if(a.date&&(Date.now()-new Date(a.date))/864e5>30)issues.push('費用發生已超過 30 日，逾期報帳');
+    if(a.has_invoice===false)issues.push('缺少發票或收據');
+    const x={id:'X'+String(ENTDB.seq.exp++).padStart(3,'0'),employee:a.employee||'',category:a.category,amount:amt,date:a.date||ymd(Date.now()),desc:a.desc||'',status:issues.length?'需補件／核准':'可送出',issues};
+    if(act==='add'){ENTDB.expenses.push(x);entSave();return {ok:true,expense:x}}
+    return {check_only:true,result:x};
+  },
+  email(a){
+    if(a.action==='list')return {outbox:ENTDB.outbox.slice(-20)};
+    if(!a.to||!a.subject)return {error:'需要 to 與 subject'};
+    const m={id:'MAIL'+String(ENTDB.seq.mail++).padStart(3,'0'),to:a.to,cc:a.cc||'',subject:a.subject,body:a.body||'',created:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}),status:'草稿（模擬，未實際寄出）'};
+    m.mailto=`mailto:${encodeURIComponent(a.to)}?subject=${encodeURIComponent(a.subject)}&body=${encodeURIComponent(a.body||'')}${a.cc?'&cc='+encodeURIComponent(a.cc):''}`;
+    ENTDB.outbox.push(m);entSave();return m;
+  },
+  finance(a){
+    const t=a.type;
+    if(t==='loan'){const P=+a.principal,r=(+a.annual_rate||0)/100/12,n=+a.months;if(!P||!n)return {error:'需要 principal、months、annual_rate(%)'};const pay=r?P*r/(1-Math.pow(1+r,-n)):P/n;return {type:'等額本息貸款',monthly_payment:r0(pay),total_payment:r0(pay*n),total_interest:r0(pay*n-P)}}
+    if(t==='roi'){const c=+a.cost,g=+a.gain;return {type:'投資報酬率',roi_pct:+((g-c)/c*100).toFixed(2),profit:g-c}}
+    if(t==='break_even'){const F=+a.fixed_cost,p=+a.price,v=+a.unit_cost;if(p<=v)return {error:'售價需高於單位變動成本'};const u=Math.ceil(F/(p-v));return {type:'損益兩平',units:u,revenue:u*p,contribution_margin:p-v,contribution_margin_pct:+((p-v)/p*100).toFixed(1)}}
+    if(t==='margin'){const R=+a.revenue,C=+a.cost;return {type:'毛利',gross_profit:R-C,gross_margin_pct:+((R-C)/R*100).toFixed(2),markup_pct:+((R-C)/C*100).toFixed(2)}}
+    if(t==='growth'){const v=(a.values||[]).map(Number);if(v.length<2)return {error:'values 至少 2 個'};return {type:'成長率',period_growth_pct:v.slice(1).map((x,i)=>+((x/v[i]-1)*100).toFixed(2)),total_growth_pct:+((v.at(-1)/v[0]-1)*100).toFixed(2),cagr_pct:+((Math.pow(v.at(-1)/v[0],1/(v.length-1))-1)*100).toFixed(2)}}
+    if(t==='npv'){const r=(+a.rate||0)/100,cf=(a.cashflows||[]).map(Number);const npv=x=>cf.reduce((s,c,i)=>s+c/Math.pow(1+x,i),0);let lo=-0.99,hi=10,irr=null;if(npv(lo)*npv(hi)<0){for(let k=0;k<200;k++){const m=(lo+hi)/2;if(npv(lo)*npv(m)<=0)hi=m;else lo=m}irr=+((lo+hi)/2*100).toFixed(2)}let acc=0,pb=null;cf.forEach((c,i)=>{acc+=c;if(pb===null&&acc>=0&&i>0)pb=i});return {type:'淨現值',npv:r0(npv(r)),irr_pct:irr,payback_period:pb,note:'cashflows[0] 為期初投入（負值）'}}
+    return {error:'type 需為 loan／roi／break_even／margin／growth／npv'};
+  },
+  kb(a){
+    const q=String(a.query||'').toLowerCase(),terms=q.split(/[\s,，、。？?]+/).filter(Boolean);
+    const docs=ENTDB.kb.slice();const extra=($('#cData')?.value||'').trim();if(extra)docs.push({title:'使用者提供資料（C 欄額外資料）',tags:'',body:extra});
+    const score=d=>{const t=(d.title+' '+d.tags+' '+d.body).toLowerCase();let s=0;terms.forEach(w=>{if(t.includes(w))s+=d.title.toLowerCase().includes(w)?3:d.tags.toLowerCase().includes(w)?2:1;for(let i=0;i<w.length-1;i++)if(t.includes(w.slice(i,i+2)))s+=0.2});return s};
+    const hits=docs.map(d=>({...d,score:+score(d).toFixed(1)})).filter(d=>d.score>0).sort((x,y)=>y.score-x.score).slice(0,3);
+    return {query:a.query,found:hits.length,results:hits.map(h=>({title:h.title,content:clip(h.body,1500),score:h.score})),all_titles:hits.length?undefined:ENTDB.kb.map(d=>d.title)};
+  }
+};
+function renderEnt(){const b=$('#entBox');if(!b)return;const D=ENTDB,low=D.products.filter(p=>p.safety&&p.qty<p.safety).length;
+  b.innerHTML=`客戶 ${D.customers.length}・品項 ${D.products.length}（低庫存 ${low}）・訂單 ${D.orders.length}・員工 ${D.employees.length}・知識庫 ${D.kb.length}<br>會議 ${D.meetings.length}・假單 ${D.leaves.length}・報帳 ${D.expenses.length}・報價 ${D.quotes.length}・寄件匣 ${D.outbox.length}`}
+
+function TODO(a){
+  const i=(a.index||0)-1;
+  if(a.action==='add'&&a.text)todos.push({text:a.text,done:false});
+  else if(a.action==='done'&&todos[i])todos[i].done=true;
+  else if(a.action==='remove'&&todos[i])todos.splice(i,1);
+  store.set('todos',todos);renderTodo();
+  return {action:a.action,todos:todos.map((t,k)=>`${k+1}. ${t.done?'[✓]':'[ ]'} ${t.text}`)};
+}
+function renderTodo(){$('#todoBox').innerHTML=todos.length?todos.map(t=>`<li>${t.done?'✓ <s>':''}${esc(t.text)}${t.done?'</s>':''}</li>`).join(''):'<li>（空）</li>'}
+
+let tools=store.get('tools',null)||BUILTIN.map(t=>({...t,enabled:true,builtin:true}));
+// 內建程式碼一律以最新版為準
+tools=tools.map(t=>{const b=BUILTIN.find(x=>x.decl.name===t.decl.name);return t.builtin&&b?{...b,enabled:t.enabled,builtin:true}:t});
+// 新增的企業函式預設開啟
+BUILTIN.forEach(b=>{if(!tools.find(t=>t.decl.name===b.decl.name))tools.push({...b,enabled:true,builtin:true})});
+
+function renderTools(){
+  const groups=[['basic','一般',t=>t.builtin&&!t.cat],['ent','企業',t=>t.cat],['custom','自訂',t=>!t.builtin]];
+  const gf=store.get('toolGroupFold',{ent:true});
+  $('#tools').innerHTML=groups.map(([g,label,fn])=>{
+    const idx=tools.map((t,i)=>fn(t)?i:-1).filter(i=>i>=0);if(!idx.length)return '';
+    const on=idx.filter(i=>tools[i].enabled).length,folded=!!gf[g];
+    return `<div class="tgroup${folded?' folded':''}" data-g="${g}"><div class="tgh"><span class="tgt">${folded?'▸':'▾'} ${label}</span><span class="tgc">${on}/${idx.length}</span><span style="flex:1"></span><label class="tga" title="整組開啟／關閉"><input type="checkbox" data-ga="${g}" ${on===idx.length?'checked':''}> 全選</label></div>
+    <div class="tgb">${idx.map(i=>{const t=tools[i];return `<div class="tool"><div class="t">
+   <input type="checkbox" style="width:auto;flex:none" data-i="${i}" ${t.enabled?'checked':''}>
+   <span class="n" title="${esc(t.decl.name)}">${esc(t.decl.name)}</span>${t.cat?'<span class="badge ent">企業</span>':t.builtin?'<span class="badge">內建</span>':'<span class="badge">自訂</span>'}
+   <span style="flex:1"></span><button class="sm" data-e="${i}">編輯</button></div>
+   <div class="d">${esc(t.decl.description||'')}</div></div>`}).join('')}</div></div>`}).join('');
+  $('#tools').querySelectorAll('.tgt').forEach(h=>h.onclick=()=>{const g=h.closest('.tgroup').dataset.g,f=store.get('toolGroupFold',{ent:true});f[g]=!f[g];store.set('toolGroupFold',f);renderTools()});
+  $('#tools').querySelectorAll('[data-ga]').forEach(c=>c.onchange=()=>{const fn=groups.find(x=>x[0]===c.dataset.ga)[2];tools.forEach(t=>{if(fn(t))t.enabled=c.checked});store.set('tools',tools);renderTools()});
+  $('#tools').querySelectorAll('input[data-i]').forEach(c=>c.onchange=()=>{tools[c.dataset.i].enabled=c.checked;store.set('tools',tools);renderTools()});
+  toolCount();
+  $('#tools').querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>openDlg(+b.dataset.e));
+}
+function toolCount(){const on=tools.filter(t=>t.enabled),ent=tools.filter(t=>t.cat);$('#toolCount').textContent=`啟用 ${on.length}／${tools.length} 個（企業 ${ent.filter(t=>t.enabled).length}／${ent.length}）・函式越多，B、E 每次送出的 tokens 越多`}
+let editing=-1;
+function openDlg(i){
+  editing=i;const t=i>=0?tools[i]:{decl:{name:"my_function",description:"說明這個函式做什麼",parameters:{type:"object",properties:{text:{type:"string",description:"輸入"}},required:["text"]}},code:"return { echo: args.text, length: args.text.length };"};
+  $('#dDecl').value=JSON.stringify(t.decl,null,2);$('#dCode').value=t.code;$('#dDel').hidden=i<0;$('#dlg').showModal();
+}
+$('#addTool').onclick=()=>openDlg(-1);
+function applyToolsView(){const f=store.get('toolsFold',false),c=store.get('toolsCompact',false);$('#tools').hidden=f;$('#toolCount').classList.toggle('folded',f);$('#toolsFold').textContent=(f?'▸':'▾')+' 函式工具';$('#tools').classList.toggle('compact',c);$('#toolsCompact').classList.toggle('on',c)}
+$('#toolsFold').onclick=()=>{store.set('toolsFold',!store.get('toolsFold',false));applyToolsView()};
+$('#toolsCompact').onclick=()=>{store.set('toolsCompact',!store.get('toolsCompact',false));applyToolsView()};
+applyToolsView();
+$('#entAll').onclick=()=>{const ent=tools.filter(t=>t.cat),on=!ent.every(t=>t.enabled);ent.forEach(t=>t.enabled=on);store.set('tools',tools);renderTools();toast(on?'已開啟全部企業函式':'已關閉全部企業函式')};
+$('#entReset').onclick=()=>{if(confirm('重設企業模擬資料庫為範例資料？（會清除新增的客戶、假單、報帳、會議、報價、寄件匣）')){ENTDB=ENT_SEED();entSave();toast('已重設企業資料')}};
+$('#entDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(ENTDB,null,2)],{type:'application/json'}));a.download='企業模擬資料庫.json';a.click()};
+renderEnt();
+$('#dCancel').onclick=()=>$('#dlg').close();
+$('#dDel').onclick=()=>{tools.splice(editing,1);store.set('tools',tools);renderTools();$('#dlg').close()};
+$('#dOk').onclick=()=>{
+  try{const decl=JSON.parse($('#dDecl').value);if(!/^[a-zA-Z_][\w.-]{0,63}$/.test(decl.name))throw Error('name 格式不符');
+    new AsyncFunction('args','TODO',$('#dCode').value);
+    const t={decl,code:$('#dCode').value,enabled:true,builtin:false};
+    if(editing>=0){t.enabled=tools[editing].enabled}tools[editing>=0?editing:tools.length]=t;
+    store.set('tools',tools);renderTools();$('#dlg').close();
+  }catch(e){alert('錯誤：'+e.message)}
+};
+const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
+
+async function runTool(name,args){
+  const t=tools.find(x=>x.decl.name===name&&x.enabled);
+  if(!t)return {error:'未知或停用的函式：'+name};
+  try{const r=await new AsyncFunction('args','TODO',t.code)(args||{},TODO);return (r&&typeof r==='object'&&!Array.isArray(r))?r:{result:r}}
+  catch(e){return {error:e.message}}
+}
+
+/* ========== 設定 ========== */
+const cfgIds=['mode','apiKey','project','location','token','groqKey','oaiBase','oaiKey','model','fcMode','maxTurns','temp','sys','cData','fmToken','priceIn','priceOut'];
+function loadCfg(){const c=store.get('cfg',{});cfgIds.forEach(k=>{if(c[k]!=null)$('#'+k).value=c[k]});syncMode()}
+function saveCfg(){const c={};cfgIds.forEach(k=>c[k]=$('#'+k).value);store.set('cfg',c)}
+const PROV_DEF={gemini:'gemini-3.1-flash-lite',groq:'openai/gpt-oss-120b',oai:'qwen3:8b'};
+const PROV_MODELS={gemini:['gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.1-pro-preview','gemini-2.5-flash','gemini-2.5-pro'],groq:['openai/gpt-oss-120b','openai/gpt-oss-20b','qwen/qwen3.8-27b','llama-3.3-70b-versatile','llama-3.1-8b-instant'],oai:['qwen3:8b','qwen3:14b','llama3.1:8b','gpt-oss:20b','mistral-small3.2']};
+const provider=()=>{const m=$('#mode').value;return m==='groq'?'groq':m==='oai'?'oai':'gemini'};
+const PROV_NAME=()=>({gemini:{express:'Agent Platform',project:'Agent Platform',studio:'Gemini API'}[$('#mode').value],groq:'Groq',oai:/11434/.test($('#oaiBase').value)?'Ollama':/1234/.test($('#oaiBase').value)?'LM Studio':/openrouter/.test($('#oaiBase').value)?'OpenRouter':/openai\.com/.test($('#oaiBase').value)?'OpenAI':'OpenAI 相容'}[provider()]);
+let lastProv=null;
+function fillModels(list){$('#models').innerHTML=list.map(m=>`<option value="${esc(m)}">`).join('')}
+function syncMode(){
+  const m=$('#mode').value,pv=provider();
+  $('#projBox').hidden=m!=='project';$('#keyBox').hidden=pv!=='gemini';$('#groqBox').hidden=pv!=='groq';$('#oaiBox').hidden=pv!=='oai';
+  if(lastProv&&lastProv!==pv){store.set('model_'+lastProv,$('#model').value);$('#model').value=store.get('model_'+pv,PROV_DEF[pv])}
+  lastProv=pv;fillModels(store.get('models_'+pv,PROV_MODELS[pv]));
+  const t=$('#provTag');if(t)t.textContent=`從提問到 Agent 的五種模式 · ${PROV_NAME()}`;
+  if(typeof priceHint==='function')try{priceHint()}catch(e){}
+}
+$('#mode').onchange=()=>{syncMode();saveCfg()};
+$('#oaiBase').addEventListener('change',syncMode);
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{$('#oaiBase').value=b.dataset.b;if(b.dataset.m)$('#model').value=b.dataset.m;syncMode();saveCfg();toast('已套用 '+b.textContent+' 端點')});
+$('#listModels').onclick=async()=>{
+  const pv=provider();let url,headers={};
+  if(pv==='groq'){url='https://api.groq.com/openai/v1/models';headers.Authorization='Bearer '+$('#groqKey').value.trim()}
+  else if(pv==='oai'){url=$('#oaiBase').value.trim().replace(/\/+$/,'')+'/models';const k=$('#oaiKey').value.trim();if(k)headers.Authorization='Bearer '+k}
+  else if($('#mode').value==='studio'){url='https://generativelanguage.googleapis.com/v1beta/models?pageSize=200';headers['x-goog-api-key']=$('#apiKey').value.trim()}
+  else{toast('Agent Platform 端點不提供模型清單，請直接輸入模型名稱');return}
+  try{const r=await fetch(url,{headers});const j=await r.json();if(!r.ok)throw Error(j.error?.message||r.status);
+    let ids=(j.data||j.models||[]).map(x=>(x.id||x.name||'').replace(/^models\//,'')).filter(Boolean);
+    if(pv==='groq')ids=ids.filter(x=>!/whisper|orpheus|tts|guard/i.test(x));
+    if(pv==='gemini')ids=ids.filter(x=>/^gemini/.test(x));
+    ids.sort();store.set('models_'+pv,ids);fillModels(ids);toast(`✓ 取得 ${ids.length} 個模型，點模型欄可選擇`)}
+  catch(e){toast('✗ 取得清單失敗：'+e.message+(pv==='oai'&&/fetch/i.test(e.message)?'（本機服務未啟動或未開 CORS）':''))}
+};
+$('#fmTest').onclick=async()=>{saveCfg();STOCK_INFO=null;try{const r=await TWSTOCK({stock_id:'2330',data_type:'price',days:5});toast(r.price?.last?`✓ FinMind 連線成功：${r.stock.name} ${r.price.last.date} 收 ${r.price.last.close}`:'✗ '+(r.price?.error||'無資料'))}catch(e){toast('✗ '+e.message)}};
+$('#seqRun').checked=store.get('seqRun',false);$('#seqRun').onchange=e=>store.set('seqRun',e.target.checked);
+$('#saveCfg').onclick=()=>{saveCfg();toast('已儲存')};
+
+function endpoint(){
+  const m=$('#mode').value,model=$('#model').value.trim();
+  if(m==='express')return {url:`https://aiplatform.googleapis.com/v1/publishers/google/models/${model}:generateContent?key=${encodeURIComponent($('#apiKey').value.trim())}`,headers:{}};
+  if(m==='studio')return {url:`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,headers:{'x-goog-api-key':$('#apiKey').value.trim()}};
+  const loc=$('#location').value.trim()||'global',host=loc==='global'?'aiplatform.googleapis.com':`${loc}-aiplatform.googleapis.com`;
+  const base=`https://${host}/v1/projects/${$('#project').value.trim()}/locations/${loc}/publishers/google/models/${model}:generateContent`,tk=$('#token').value.trim();
+  return tk?{url:base,headers:{Authorization:'Bearer '+tk}}:{url:base+'?key='+encodeURIComponent($('#apiKey').value.trim()),headers:{}};
+}
+
+/* ========== 計價 ========== */
+// 官方 Gemini API 付費層標準單價（US$／1M tokens；輸出含思考 tokens）。Agent Platform 標準單價相同，實際以帳單為準
+const PRICES=[
+  [/3(\.\d)?-pro/,{in:2,out:12,inHi:4,outHi:18,sq:14,sqUnit:'query'}],
+  [/3(\.\d)?-flash-lite|flash-lite.*3/,{in:0.25,out:1.5,sq:14,sqUnit:'query'}],
+  [/3(\.\d)?-flash/,{in:0.5,out:3,sq:14,sqUnit:'query'}],
+  [/2\.5-pro/,{in:1.25,out:10,inHi:2.5,outHi:15,sq:35,sqUnit:'prompt'}],
+  [/2\.5-flash/,{in:0.3,out:2.5,sq:35,sqUnit:'prompt'}]
+];
+const GROQ_PRICES=[[/gpt-oss-120b/,0.15,0.60],[/gpt-oss-(safeguard-)?20b/,0.075,0.30],[/qwen3\.8-27b/,0.80,4.00],[/qwen3-32b/,0.29,0.59],[/llama-3\.3-70b/,0.59,0.79],[/llama-3\.1-8b/,0.05,0.08],[/llama-4-scout/,0.11,0.34],[/llama-4-maverick/,0.20,0.60],[/kimi-k2/,1.00,3.00]];
+function priceOf(model){
+  model=(model||$('#model').value).toLowerCase();const pv=provider();
+  let hit,p;
+  if(pv==='groq'){const g=GROQ_PRICES.find(([re])=>re.test(model));p={in:g?g[1]:0,out:g?g[2]:0,sq:0,known:!!g,prov:'groq'}}
+  else if(pv==='oai'){const local=/localhost|127\.0\.0\.1|192\.168\.|\.local\b/.test($('#oaiBase').value);p={in:0,out:0,sq:0,known:local,local,prov:'oai'}}
+  else{hit=PRICES.find(([re])=>re.test(model));p={...(hit?hit[1]:{in:0.5,out:3,sq:14,sqUnit:'query'}),known:!!hit,prov:'gemini'}}
+  const pi=parseFloat($('#priceIn').value),po=parseFloat($('#priceOut').value);
+  if(pi>=0){p.in=pi;p.inHi=pi;p.custom=true}if(po>=0){p.out=po;p.outHi=po;p.custom=true}
+  return p;
+}
+function callCostUSD(u){
+  const p=priceOf(),pt=u.promptTokenCount||0,ot=(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0),hi=pt>200000;
+  return (pt*(hi&&p.inHi?p.inHi:p.in)+ot*(hi&&p.outHi?p.outHi:p.out))/1e6;
+}
+const FX=()=>parseFloat($('#fx').value)||31;
+function twd(usd){const v=usd*FX();return v===0?'NT$0':v<0.01?'NT$'+v.toFixed(4):v<1?'NT$'+v.toFixed(3):'NT$'+v.toFixed(2)}
+let sess={usd:0,calls:0};
+function showSess(){const c=$('#costChip');if(c)c.textContent=`累計 ${twd(sess.usd)}（${sess.calls} 次）`}
+function addSess(usd){sess.usd+=usd;sess.calls++;showSess()}
+function priceHint(){const p=priceOf(),el=$('#priceHint');if(!el)return;
+  if(p.prov==='oai'&&p.local&&!p.custom){el.textContent=`本機模型（${PROV_NAME()}）：不計 API 費用・匯率 ${FX()}`;return}
+  if(p.prov!=='gemini'&&!p.known&&!p.custom){el.textContent=`${PROV_NAME()}・未知模型「${$('#model').value}」單價，費用暫以 0 計，請於上方自行填入・匯率 ${FX()}`;return}
+  el.textContent=`${p.custom?'自訂':'自動'}單價（${PROV_NAME()}）：輸入 $${p.in}・輸出(含思考) $${p.out} /1M tokens${p.inHi&&!p.custom?`（單次提示 >200k：$${p.inHi}/$${p.outHi}）`:''}${p.prov==='gemini'?`・Google 搜尋 $${p.sq}/千${p.sqUnit==='query'?'次查詢':'則提示'}（免費額度內不計）`:p.prov==='groq'?'・browser_search 搜尋費另計':''}${p.known||p.prov!=='gemini'?'':'・未知模型暫以 Flash 計價'}・匯率 ${FX()}`}
+async function loadFX(force){
+  const c=store.get('fx',null),today=new Date().toDateString();
+  if(c&&!force){$('#fx').value=c.rate;if(c.day===today){priceHint();return}}
+  try{const r=await (await fetch('https://open.er-api.com/v6/latest/USD')).json();const v=r.rates?.TWD;if(v){$('#fx').value=+v.toFixed(3);store.set('fx',{rate:+v.toFixed(3),day:today,manual:false})}}catch(e){if(!$('#fx').value)$('#fx').value=31}
+  priceHint();
+}
+function errHint(st,m){
+  const ex=$('#mode').value;
+  if(st===403&&/are blocked/i.test(m))return '\n→ 這把 API Key 設了「API 限制」，沒有允許 '+(/aiplatform/.test(m)?'Vertex AI API':'Generative Language API')+'。到 Google Cloud 控制台 › API 和服務 › 憑證 › 編輯金鑰 › API 限制，加入該 API（或改成不限制）；若金鑰來自 AI Studio，請把連線模式改成 Gemini API（AI Studio Key）。';
+  if(st===403&&/SERVICE_DISABLED|has not been used|disabled/i.test(m))return '\n→ 專案尚未啟用此 API，請在 Google Cloud 控制台啟用後等幾分鐘再試。';
+  if(st===403&&/billing/i.test(m))return '\n→ 專案未綁定帳單帳戶。';
+  if(st===401)return '\n→ API Key 錯誤或未填（'+PROV_NAME()+'）。';
+  if(st===404)return '\n→ 此端點找不到模型「'+$('#model').value+'」，請換模型（例：gemini-3-flash-preview）或換連線模式。';
+  if(st===429)return provider()==='groq'?'\n→ Groq 免費層每分鐘 token（TPM）上限低：已自動重試仍失敗。可關閉部分 A～E 欄、在左側「函式工具」只勾需要的函式（減少每次送出的 tokens），或改用 llama-3.1-8b-instant／升級 Dev Tier。':'\n→ 超過配額或速率限制，已自動重試仍失敗，稍候再試。';
+  if(st===400&&/API key not valid|API_KEY_INVALID/i.test(m))return '\n→ API Key 無效，或金鑰類型與連線模式不符。';
+  return '';
+}
+/* ========== OpenAI 相容轉接（Groq／Ollama／LM Studio／OpenRouter…）：內部維持 Gemini 格式，送出前轉換、回來再轉回 ========== */
+function oaiConf(){const pv=provider();return pv==='groq'?{base:'https://api.groq.com/openai/v1',key:$('#groqKey').value.trim()}:{base:$('#oaiBase').value.trim().replace(/\/+$/,''),key:$('#oaiKey').value.trim()}}
+function toOAIMessages(contents,sys){
+  const msgs=[];if(sys)msgs.push({role:'system',content:sys});
+  for(const c of contents){
+    const parts=c.parts||[];
+    if(c.role==='model'){
+      const text=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join(''),calls=parts.filter(p=>p.functionCall);
+      const m={role:'assistant',content:text||(calls.length?null:'')};
+      if(calls.length)m.tool_calls=calls.map(p=>({id:p.functionCall.id,type:'function',function:{name:p.functionCall.name,arguments:JSON.stringify(p.functionCall.args||{})}}));
+      msgs.push(m);
+    }else{
+      parts.filter(p=>p.functionResponse).forEach(p=>msgs.push({role:'tool',tool_call_id:p.functionResponse.id||'',name:p.functionResponse.name,content:JSON.stringify(p.functionResponse.response)}));
+      const text=parts.filter(p=>p.text).map(p=>p.text).join('\n');if(text)msgs.push({role:'user',content:text});
+    }
+  }
+  return msgs;
+}
+/* ========== 429 自動重試 ========== */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function waitMs(r,txt){
+  const h=r.headers.get('retry-after');if(h&&!isNaN(+h))return +h*1000;
+  const m=String(txt).match(/try again in\s*(?:(\d+)m)?\s*([\d.]+)\s*(ms|s)/i);
+  if(m)return (+(m[1]||0))*60000+(+m[2])*(m[3].toLowerCase()==='ms'?1:1000);
+  const g=String(txt).match(/retry in\s*([\d.]+)\s*s/i)||String(txt).match(/"retryDelay":\s*"([\d.]+)s"/);
+  return g?+g[1]*1000:0;
+}
+async function fetchRetry(url,opt,tag){
+  const MAX=6;
+  for(let i=0;;i++){
+    const r=await fetch(url,opt);
+    if(r.status!==429||i>=MAX)return r;
+    const txt=await r.clone().text().catch(()=>'');
+    if(/per day|TPD|RPD|quota exceeded|daily/i.test(txt)&&!/per minute|TPM|RPM/i.test(txt))return r; // 每日額度，等也沒用
+    const w=Math.min(65000,(waitMs(r,txt)||2000*(i+1))+300+Math.random()*500);
+    step('err',`[${tag||'API'}] 429 速率限制，${(w/1000).toFixed(1)}s 後自動重試（${i+1}/${MAX}）`);
+    rlChip(w);await sleep(w);
+  }
+}
+let rlTimer=null;
+function rlChip(w){const c=$('#costChip');if(!c)return;c.dataset.rl='1';c.style.borderColor='var(--warn)';clearTimeout(rlTimer);rlTimer=setTimeout(()=>{c.style.borderColor='';delete c.dataset.rl},w)}
+async function callOAI(contents,useTools,modeOverride,sysOverride,builtin,gen){
+  const pv=provider(),{base,key}=oaiConf(),model=$('#model').value.trim();
+  if(pv==='groq'&&!key)throw Error('尚未填入 Groq API Key');
+  const sys=sysOverride??$('#sys').value.trim();
+  const body={model,messages:toOAIMessages(contents,sys),temperature:+$('#temp').value};
+  const decls=tools.filter(t=>t.enabled).map(t=>t.decl);
+  if(builtin){
+    if(pv==='groq'&&/gpt-oss/.test(model)){body.tools=[{type:'browser_search'}];body.tool_choice='required'}
+    else throw Error(pv==='groq'?`Groq 內建搜尋（browser_search）只支援 openai/gpt-oss 系列，目前模型 ${model} 不支援`:'此端點沒有內建搜尋工具，D 欄不適用（可在 B／E 用函式取資料）');
+  }else if(useTools&&decls.length){
+    body.tools=decls.map(d=>({type:'function',function:{name:d.name,description:d.description||'',parameters:d.parameters||{type:'object',properties:{}}}}));
+    body.tool_choice={AUTO:'auto',ANY:'required',NONE:'none'}[modeOverride||$('#fcMode').value]||'auto';
+  }
+  if(gen?.stopSequences)body.stop=gen.stopSequences.slice(0,4);
+  if(gen?.temperature!=null)body.temperature=gen.temperature;
+  if(gen?.responseMimeType==='application/json'&&!builtin)body.response_format={type:'json_object'};
+  rawLog('REQUEST',body);
+  const headers={'Content-Type':'application/json'};if(key)headers.Authorization='Bearer '+key;
+  let r;try{r=await fetchRetry(base+'/chat/completions',{method:'POST',headers,body:JSON.stringify(body)},PROV_NAME())}
+  catch(e){throw Error('Failed to fetch：'+base+(pv==='oai'&&/localhost|127\.0\.0\.1/.test(base)?'\n→ 本機服務未啟動，或未允許跨來源（Ollama 設 OLLAMA_ORIGINS=*；LM Studio 開啟 CORS）':''))}
+  const j=await r.json().catch(()=>({}));
+  rawLog('RESPONSE',j);
+  if(!r.ok){const m=j.error?.message||j.message||r.statusText;throw Error(`HTTP ${r.status}：${m}`+errHint(r.status,m))}
+  const ch=j.choices?.[0]||{},msg=ch.message||{},parts=[];
+  let content=msg.content||'',reasoning=msg.reasoning||msg.reasoning_content||'';
+  content=content.replace(/<think>([\s\S]*?)<\/think>/g,(_,t)=>{reasoning+=(reasoning?'\n':'')+t.trim();return ''}).trim();
+  if(reasoning)parts.push({text:reasoning,thought:true});
+  if(content)parts.push({text:content});
+  (msg.tool_calls||[]).forEach(tc=>{if(tc.type&&tc.type!=='function')return;let args={};try{args=typeof tc.function.arguments==='string'?JSON.parse(tc.function.arguments||'{}'):(tc.function.arguments||{})}catch(e){args={_raw:tc.function.arguments}}
+    parts.push({functionCall:{id:tc.id||('call_'+Math.random().toString(36).slice(2,10)),name:tc.function.name,args:args||{}}})});
+  const cand={content:{role:'model',parts},finishReason:{stop:'STOP',tool_calls:'STOP',length:'MAX_TOKENS',content_filter:'SAFETY'}[ch.finish_reason]||ch.finish_reason||'STOP'};
+  if(builtin){
+    const ex=msg.executed_tools||[],qs=[],chunks=[];
+    ex.forEach(t=>{let a=t.arguments;try{a=typeof a==='string'?JSON.parse(a):a}catch(e){}const q=a?.query||a?.q;if(q)qs.push(Array.isArray(q)?q.join(' '):q);
+      (t.search_results?.results||[]).forEach(x=>chunks.push({web:{uri:x.url,title:x.title||''}}))});
+    if(!chunks.length)[...new Set((content.match(/https?:\/\/[^\s)\]】」>]+/g)||[]))].forEach(u=>chunks.push({web:{uri:u,title:''}}));
+    if(!qs.length&&ex.length)qs.push(`（browser_search ${ex.length} 次）`);
+    cand.groundingMetadata={webSearchQueries:qs,groundingChunks:chunks};
+  }
+  const u=j.usage||{},rt=u.completion_tokens_details?.reasoning_tokens||0;
+  const out={candidates:[cand],usageMetadata:{promptTokenCount:u.prompt_tokens||0,candidatesTokenCount:Math.max(0,(u.completion_tokens||0)-rt),thoughtsTokenCount:rt},modelVersion:j.model};
+  out._cost=callCostUSD(out.usageMetadata);addSess(out._cost);
+  return out;
+}
+async function callGemini(contents,useTools=true,modeOverride,sysOverride,builtin,gen){
+  if(provider()!=='gemini')return callOAI(contents,useTools,modeOverride,sysOverride,builtin,gen);
+  const {url,headers}=endpoint();
+  const decls=tools.filter(t=>t.enabled).map(t=>t.decl);
+  const body={contents,generationConfig:{temperature:+$('#temp').value,...(gen||{})}};
+  const sys=sysOverride??$('#sys').value.trim();if(sys)body.systemInstruction={role:'system',parts:[{text:sys}]};
+  if(builtin)body.tools=builtin;
+  else if(useTools&&decls.length){body.tools=[{functionDeclarations:decls}];body.toolConfig={functionCallingConfig:{mode:modeOverride||$('#fcMode').value}}}
+  rawLog('REQUEST',body);
+  const r=await fetchRetry(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)},'Gemini');
+  const j=await r.json().catch(()=>({}));
+  rawLog('RESPONSE',j);
+  if(!r.ok){const m=j.error?.message||r.statusText;throw Error(`HTTP ${r.status}：${m}`+errHint(r.status,m))}
+  j._cost=callCostUSD(j.usageMetadata||{});addSess(j._cost);
+  return j;
+}
+
+/* ========== 代理迴圈 ========== */
+let history=[],busy=false,rawLines=[];
+// 共用迴圈：hist 會被就地更新；out(cls,text) 負責顯示
+async function runLoop(hist,useTools,out,tag,modeOverride){
+  const st={calls:0,ms:0,inTok:0,outTok:0,fns:[],tools:[],answer:'',err:null};
+  const max=useTools?Math.max(1,+$('#maxTurns').value||8):1;
+  const T0=performance.now();
+  try{
+    for(let turn=1;turn<=max;turn++){
+      step('req',`[${tag}] 第 ${turn} 回合 → ${$('#model').value}${useTools?'':'（不附工具）'}`);
+      const t0=performance.now();
+      const j=await callGemini(hist,useTools,modeOverride,tag==='單一'?undefined:useTools?LS('B',undefined):LS('A',SYS_A));st.calls++;
+      const u=j.usageMetadata||{};st.inTok+=u.promptTokenCount||0;st.outTok+=u.candidatesTokenCount||0;st.think=(st.think||0)+(u.thoughtsTokenCount||0);st.usd=(st.usd||0)+(j._cost||0);
+      const cand=j.candidates?.[0];
+      if(cand?.finishReason==='MALFORMED_FUNCTION_CALL'&&!useTools){st.err='MALFORMED_FUNCTION_CALL（模型想呼叫函式但沒有工具可用）';}
+      if(!cand?.content){st.err=st.err||cand?.finishReason||j.promptFeedback?.blockReason||'無回應';step('err',`[${tag}] 無候選回應：${st.err}`);out('er','模型沒有回應（'+st.err+'）');break}
+      hist.push(cand.content); // 原樣保留（含 thoughtSignature）
+      const parts=cand.content.parts||[];
+      const calls=parts.filter(p=>p.functionCall);
+      const txt=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+      step('req',`[${tag}]   ${Math.round(performance.now()-t0)} ms · tokens 入 ${u.promptTokenCount??'-'} / 出 ${u.candidatesTokenCount??'-'} · ${cand.finishReason||''}`);
+      if(txt){out('m',txt);st.answer+=(st.answer?'\n':'')+txt}
+      if(!calls.length)break;
+      const results=await Promise.all(calls.map(async p=>{
+        const fc=p.functionCall;st.fns.push(fc.name);
+        step('call',`[${tag}] ⚙ ${fc.name}(${JSON.stringify(fc.args||{})})`);
+        out('fc',`⚙ 呼叫 ${fc.name}\n${JSON.stringify(fc.args||{},null,2)}`);
+        const t1=performance.now();const res=await runTool(fc.name,fc.args);
+        step(res.error?'err':'res',`[${tag}] ↩ ${fc.name} ${Math.round(performance.now()-t1)} ms\n${clip(JSON.stringify(res),600)}`);
+        out('fr',`↩ ${fc.name} 結果\n${clip(JSON.stringify(res,null,2),2000)}`);
+        st.tools.push({name:fc.name,args:fc.args,result:res});
+        const fr={name:fc.name,response:res};if(fc.id)fr.id=fc.id;
+        return {functionResponse:fr};
+      }));
+      hist.push({role:'user',parts:results});
+      if(turn===max)step('err',`[${tag}] 達到最多回合上限`);
+    }
+  }catch(e){st.err=e.message;step('err',`[${tag}] ${e.message}`);out('er','錯誤：'+e.message+hintFor(e.message))}
+  st.ms=Math.round(performance.now()-T0);
+  if(!st.answer&&!st.err)out('empty',`（模型沒有輸出文字回答；輸出 ${st.outTok} tokens 可能都用在思考）`);
+  return st;
+}
+function lock(v){busy=v;$('#sendBtn').disabled=v}
+async function send(text){
+  if(busy||!text.trim())return;lock(true);saveCfg();
+  addMsg('u',text);history.push({role:'user',parts:[{text}]});
+  await runLoop(history,true,addMsg,'單一');
+  lock(false);
+}
+
+/* ========== ABCD 對照 ========== */
+const LANES={
+  A:{name:'直接提問',sub:'不附工具・單次回答',lbl:'取得資料',lv:0,auto:'無',why:'問一次答一次，沒有工具，也沒有任何決策'},
+  B:{name:'Function Calling',sub:'模型決定呼叫自訂函式',lbl:'函式',lv:3,auto:'Agent',why:'模型自行決定呼叫哪個函式、看結果再決定下一步，可多回合，迴圈在你的程式'},
+  C:{name:'預先餵資料',sub:'程式先查好・單次回答',lbl:'預取',lv:1,auto:'Workflow',why:'由程式規則決定查什麼，模型只負責整理回答（預先寫好的路徑）'},
+  D:{name:'內建工具',sub:'Google 搜尋＋網址讀取',lbl:'搜尋／網址',lv:2,auto:'半 Agent',why:'模型決定搜什麼，但工具由供應商端代為執行，你只看到一次呼叫，迴圈不在你手上'},
+  E:{name:'ReAct 提示詞式',sub:'Thought→Action→Observation',lbl:'動作',lv:3,auto:'Agent',why:'模型以 Thought／Action／Observation 文字自主推進多步，程式解析並執行'}
+};
+const AUTO_LEGEND='自主程度：判斷「誰決定下一步」。無＝不用工具；Workflow＝程式預先寫好路徑；半 Agent＝模型決定但工具由供應商代跑；Agent＝模型自主多步迴圈（參考 Anthropic〈Building effective agents〉）';
+const autoTag=(k,sm)=>`<span class="auto lv${LANES[k].lv}${sm?' sm':''}" title="自主程度：${LANES[k].auto}｜${LANES[k].why}">${LANES[k].auto}</span>`;
+// 會改變資料的「行動型」呼叫
+const ACTION_CALL=(n,a={})=>({manage_todo:['add','done','remove'],crm_customer:['add','update'],inventory:['adjust'],schedule_meeting:['create','cancel'],hr_leave:['apply'],expense_claim:['add']}[n]||[]).includes(a.action)||['create_quote','send_email'].includes(n)&&a.action!=='list'||(n==='schedule_meeting'&&!a.action&&a.date&&a.start);
+const LK=Object.keys(LANES);
+let hists={A:[],B:[],C:[],D:[],E:[]},abRuns=[],viewMode='single';
+let laneOn={A:true,B:true,C:true,D:true,E:true,...store.get('lanes',{})};
+const SYS_A='你是繁體中文助理。本次對話沒有任何工具或函式可用，絕對不要嘗試呼叫函式；請只憑自身知識直接用文字回答，無法得知的即時資訊請坦白說明。';
+const SYS_C='你是繁體中文助理。使用者訊息中【預先提供的資料】由系統事先查好，請優先根據這些資料回答；資料沒有涵蓋的部分請坦白說明無法得知。不要呼叫任何函式。';
+const SYS_D='你是繁體中文助理，可以使用 Google 搜尋與讀取網址。需要即時或外部資訊時請主動搜尋或讀取網址，根據取得的內容用繁體中文回答，並在最後列出參考來源。';
+
+function buildAB(){
+  $('#abBar').innerHTML='<span>比對欄位：</span>'+LK.map(k=>`<label><input type="checkbox" data-l="${k}" ${laneOn[k]?'checked':''}><span class="pill ${k.toLowerCase()}">${k}</span>${LANES[k].name}${autoTag(k,1)}</label>`).join('')+`<span class="hint autoLegend" title="${AUTO_LEGEND}">ⓘ 自主程度：無 → Workflow → 半 Agent → Agent</span>`;
+  $('#ab').innerHTML=LK.map(k=>`<div class="abcol" data-lane="${k}"><div class="abh" title="${LANES[k].name}：${LANES[k].sub}"><span class="pill ${k.toLowerCase()}">${k}</span><span class="ln">${LANES[k].name}</span><span class="hint">${LANES[k].sub}</span><button class="sm zbtn" tabindex="-1">⤢</button></div><div class="abauto" title="${LANES[k].why}">${autoTag(k,1)}<span>${LANES[k].why}</span></div><div class="abmsgs" id="ab${k}"></div><div class="abstat" id="stat${k}"></div></div>`).join('');
+  $('#abBar').querySelectorAll('input').forEach(c=>c.onchange=()=>{laneOn[c.dataset.l]=c.checked;if(!LK.some(k=>laneOn[k])){laneOn[c.dataset.l]=true;c.checked=true}store.set('lanes',laneOn);applyLanes()});
+  $('#abBar').insertAdjacentHTML('beforeend','<span class="hint" style="margin-left:auto">點標題放大・Esc 還原・拖曳中間橫條調整高度</span><button class="sm tgl" id="mergeAb">合併單欄</button><button class="sm tgl" id="foldAb">收合比對區</button><button class="sm tgl" id="foldSum">收合結論</button>');
+  $('#mergeAb').onclick=()=>setFold('merge',!$('#ab').classList.contains('merge'));
+  $('#foldAb').onclick=()=>setFold('ab',!$('#ab').classList.contains('fold'));
+  $('#foldSum').onclick=()=>setFold('sum',!$('#abSum').classList.contains('fold'));
+  $('#ab').querySelectorAll('.abh').forEach(h=>h.onclick=()=>{const k=h.parentElement.dataset.lane;if($('#ab').classList.contains('fold')||$('#ab').classList.contains('merge')){setFold('ab',false);setFold('merge',false);zoomK=k}else zoomK=zoomK===k?null:k;applyZoom()});
+  applyLanes();showOvr&&setTimeout(showOvr,0);
+}
+let zoomK=null;
+function setFold(which,v){
+  if(which==='merge'){$('#ab').classList.toggle('merge',v);if(v){zoomK=null;applyZoom();setFold('ab',false)}$('#mergeAb').classList.toggle('on',v);$('#mergeAb').textContent=v?'還原並排':'合併單欄';return}
+  if(which==='ab'){$('#ab').classList.toggle('fold',v);if(v){zoomK=null;applyZoom();setFold('sum',false);setFold('merge',false)}$('#foldAb').classList.toggle('on',v);$('#foldAb').textContent=v?'展開比對區':'收合比對區'}
+  else{$('#abSum').classList.toggle('fold',v);if(v)setFold('ab',false);$('#foldSum').classList.toggle('on',v);$('#foldSum').textContent=v?'展開結論':'收合結論'}
+}
+(()=>{const sp=document.getElementById('abSplit');let y0=0,h0=0,maxH=0;
+  const restore=()=>{const h=store.get('abH',0);if(h)$('#ab').style.flexBasis=h+'px'};
+  sp.onpointerdown=e=>{const ab=$('#ab'),card=ab.closest('.card');y0=e.clientY;h0=ab.getBoundingClientRect().height;maxH=card.clientHeight-ab.offsetTop+card.offsetTop-260;sp.setPointerCapture(e.pointerId);sp.classList.add('drag')};
+  sp.onpointermove=e=>{if(!sp.classList.contains('drag'))return;const h=Math.max(110,Math.min(maxH,h0+e.clientY-y0));$('#ab').style.flexBasis=h+'px'};
+  sp.onpointerup=()=>{if(!sp.classList.contains('drag'))return;sp.classList.remove('drag');store.set('abH',Math.round($('#ab').getBoundingClientRect().height))};
+  sp.ondblclick=()=>{$('#ab').style.flexBasis='';store.set('abH',0)};
+  setTimeout(restore,0);})();
+function applyLanes(){
+  const on=LK.filter(k=>laneOn[k]);
+  $('#ab').style.setProperty('--n',on.length);
+  $('#ab').querySelectorAll('.abcol').forEach(c=>c.hidden=!laneOn[c.dataset.lane]);
+  applyZoom();
+}
+function applyZoom(){
+  const on=LK.filter(k=>laneOn[k]);if(zoomK&&!on.includes(zoomK))zoomK=null;
+  const ab=$('#ab'),z=!!zoomK&&on.length>1,others=on.filter(k=>k!==zoomK);
+  ab.classList.toggle('focus',z);
+  ab.style.gridTemplateRows=z?(others.length>1?`repeat(${others.length-1},max-content) minmax(max-content,1fr)`:'minmax(max-content,1fr)'):'';
+  ab.querySelectorAll('.abcol').forEach(c=>{
+    const isZ=z&&c.dataset.lane===zoomK;
+    c.classList.toggle('zoom',isZ);c.classList.toggle('mini',z&&!isZ);
+    c.style.gridColumn=z?(isZ?'1':'2'):'';c.style.gridRow=isZ?`1 / span ${others.length}`:'';
+    const b=c.querySelector('.zbtn');b.textContent=isZ?'✕ 還原':'⤢';
+    c.querySelector('.abh').title=isZ?'點選還原為並排':`點選放大 ${c.dataset.lane} 欄：${LANES[c.dataset.lane].name}`;
+  });
+}
+function sumMax(v){
+  const box=$('#abSum');box.classList.toggle('max',v);
+  let m=$('#sumMask');if(v&&!m){m=document.createElement('div');m.id='sumMask';m.onclick=()=>sumMax(false);document.body.appendChild(m)}if(!v&&m)m.remove();
+  const b=$('#sumMaxBtn');if(b)b.textContent=v?'✕ 關閉':'⤢ 放大檢視';
+  if(v)box.scrollTop=0;
+}
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||$('#dlg').open)return;if($('#abSum').classList.contains('max')){sumMax(false);return}if(zoomK){zoomK=null;applyZoom()}});
+function addTo(sel,cls,text){const box=$(sel);const d=document.createElement('div');d.className='msg '+cls;if(cls==='m')d.innerHTML=md(text);else d.textContent=text;box.appendChild(d);box.scrollTop=1e9}
+function statHTML(st,loading,k){
+  if(loading)return '<div class="fn">執行中…</div>';
+  return `<span class="k">呼叫<b>${st.calls}</b></span><span class="k">耗時<b>${(st.ms/1000).toFixed(2)}s</b></span><span class="k">入<b>${st.inTok}</b></span><span class="k">出<b>${st.outTok}</b></span>${st.think?`<span class="k">思考<b>${st.think}</b></span>`:''}<span class="k cost" title="${st.searchUsd?'含 Google 搜尋費 '+twd(st.searchUsd)+'（免費額度內為 0）':'依 token 用量估算'}">費用<b>${twd(st.usd||0)}</b></span>
+  <div class="fn">${LANES[k].lbl}：${st.fns.length?st.fns.map(esc).join('、'):'（無）'}${st.parseErr?`<br><span style="color:var(--warn)">格式偏差 ${st.parseErr} 次</span>`:''}${st.err?`<br><span style="color:var(--err)">錯誤：${esc(clip(st.err,80))}</span>`:''}</div>`;
+}
+async function implTool(name,args){ // 不受勾選影響，C 欄預取用
+  const t=tools.find(x=>x.decl.name===name);if(!t)return {error:'無此函式'};
+  try{return await new AsyncFunction('args','TODO',t.code)(args||{},TODO)}catch(e){return {error:e.message}}
+}
+/* C：程式自己判斷要先查哪些資料（刻意用簡單規則，展示「事先寫死」的侷限） */
+const CITY={'台北':'Taipei','臺北':'Taipei','新北':'New Taipei','桃園':'Taoyuan','新竹':'Hsinchu','苗栗':'Miaoli','竹南':'Zhunan','台中':'Taichung','臺中':'Taichung','彰化':'Changhua','嘉義':'Chiayi','台南':'Tainan','臺南':'Tainan','高雄':'Kaohsiung','屏東':'Pingtung','基隆':'Keelung','宜蘭':'Yilan','花蓮':'Hualien','台東':'Taitung','臺東':'Taitung','東京':'Tokyo','大阪':'Osaka','京都':'Kyoto','首爾':'Seoul','釜山':'Busan','香港':'Hong Kong','澳門':'Macau','上海':'Shanghai','北京':'Beijing','新加坡':'Singapore','曼谷':'Bangkok','紐約':'New York','倫敦':'London','巴黎':'Paris','舊金山':'San Francisco','洛杉磯':'Los Angeles','雪梨':'Sydney'};
+const CUR={'美元':'USD','美金':'USD','日圓':'JPY','日幣':'JPY','日元':'JPY','歐元':'EUR','人民幣':'CNY','港幣':'HKD','韓元':'KRW','韓幣':'KRW','英鎊':'GBP','台幣':'TWD','新台幣':'TWD'};
+const STOCK_KW=/股|台股|上市|上櫃|ETF|進場|出場|法人|外資|投信|營收|殖利率|本益比|淨值比|融資|融券|漲|跌|K線|均線|新聞|走勢|買進|賣出|能買/i;
+const STOCK_TYPE_KW={margin:/融資|融券|券資|信用交易/,revenue:/營收|月營收|業績/,news:/新聞|消息|利多|利空/};
+async function prefetch(q){
+  const jobs=[['get_current_time',{timezone:'Asia/Taipei'}]];
+  if(/天氣|氣溫|溫度|下雨|降雨|高溫|低溫|颱風|weather/i.test(q)){
+    const found=[...new Set(Object.keys(CITY).filter(c=>q.includes(c)).map(c=>CITY[c]))];
+    found.forEach(c=>jobs.push(['get_weather',{city:c}]));
+  }
+  const cm=q.match(/(\d+(?:\.\d+)?)\s*(美元|美金|日圓|日幣|日元|歐元|人民幣|港幣|韓元|韓幣|英鎊|USD|JPY|EUR|CNY|HKD|KRW|GBP)/i);
+  if(cm){const from=(CUR[cm[2]]||cm[2]).toUpperCase();const tm=q.match(/(?:換成|兌換|轉成|等於|多少)\s*(台幣|新台幣|美元|日圓|日幣|歐元|人民幣|港幣|韓元|英鎊)/);jobs.push(['convert_currency',{amount:+cm[1],from,to:tm?CUR[tm[1]]:'TWD'}])}
+  /* 台股：純規則判斷（代號／名稱對照表／關鍵字），不經模型決定 */
+  if(STOCK_KW.test(q)){
+    const ids=new Set();
+    for(const m of q.matchAll(/(?<![\d.])(\d{4,6}[A-Z]?)(?![\d.])/g)){const after=q.slice(m.index+m[1].length,m.index+m[1].length+1);if(!/[年月日元塊張%]/.test(after))ids.add(m[1])}
+    if(!ids.size&&($('#fmToken').value||'').trim()){
+      try{if(!STOCK_INFO)STOCK_INFO=await FINMIND('TaiwanStockInfo')}catch(e){}
+      if(STOCK_INFO){const hits=STOCK_INFO.filter(x=>x.stock_name.length>=2&&q.includes(x.stock_name)).sort((a,b)=>b.stock_name.length-a.stock_name.length);
+        const used=[];hits.forEach(h=>{if(!used.some(u=>u.includes(h.stock_name))){used.push(h.stock_name);ids.add(h.stock_id)}})}
+    }
+    const extra=Object.entries(STOCK_TYPE_KW).filter(([t,re])=>re.test(q)).map(([t])=>t);
+    [...ids].slice(0,3).forEach(id=>{jobs.push(['get_tw_stock',{stock_id:id,data_type:'overview'}]);extra.forEach(t=>jobs.push(['get_tw_stock',{stock_id:id,data_type:t}]))});
+  }
+  /* 企業：純規則判斷 */
+  const tax=q.match(/(?<!\d)(\d{8})(?!\d)/);
+  if(tax&&/統編|統一編號|公司|廠商|客戶/.test(q)){jobs.push(['validate_tax_id',{tax_id:tax[1]}]);jobs.push(['lookup_company',{tax_id:tax[1]}])}
+  if(/庫存|存貨|缺貨|補貨|安全存量/.test(q))jobs.push(['inventory',{action:'low_stock'}]);
+  if(/業績|營收|銷售|訂單|毛利/.test(q)&&!/台股|股票|股價|法人|外資|投信|ETF|\d{4}/.test(q)&&!jobs.some(j=>j[0]==='get_tw_stock'))jobs.push(['sales_report',{months:6,group_by:/客戶/.test(q)?'customer':/產品|品項/.test(q)?'product':/業務/.test(q)?'owner':'month'}]);
+  {const cn=ENTDB.customers.find(c=>q.includes(c.name)||q.includes(c.name.slice(0,4))||(q.includes(c.name.slice(0,2))&&/客戶|公司|買|訂單|報價/.test(q)));if(cn)jobs.push(['crm_customer',{customer:cn.name}])}
+  if(/上班日|工作天|國定假日|補班|放假/.test(q))jobs.push(['tw_workday',{action:'check'}]);
+  if(/規定|規章|政策|流程|權限|上限|可以報|能不能請/.test(q))jobs.push(['search_policy',{query:q}]);
+  if(/維基|wiki/i.test(q)){const w=q.match(/[「『"]([^」』"]+)[」』"]/);if(w)jobs.push(['search_wikipedia',{query:w[1]}])}
+  return Promise.all(jobs.map(async([n,a])=>({name:n,args:a,result:await implTool(n,a)})));
+}
+async function runC(hist,out,q){
+  const st={calls:0,ms:0,inTok:0,outTok:0,fns:[],tools:[],answer:'',err:null,fed:''};const T0=performance.now();
+  try{
+    step('call','[C] 程式依規則預先取資料…');
+    const got=await prefetch(q);st.tools=got;st.fns=got.map(g=>g.name+(g.args.city?`(${g.args.city})`:g.args.stock_id?`(${g.result?.stock?.name||g.args.stock_id}・${g.args.data_type})`:''));
+    const extra=$('#cData').value.trim();
+    st.fed=got.map(g=>`- ${g.name}(${JSON.stringify(g.args)})：${clip(JSON.stringify(g.result),1500)}`).join('\n')+(extra?`\n- 使用者提供的資料：\n${extra}`:'');
+    out('fc',`📎 程式預先取得 ${got.length} 筆資料${extra?'＋使用者提供資料':''}\n${st.fns.join('、')}`);
+    out('fr',clip(st.fed,1800));
+    hist.push({role:'user',parts:[{text:`【預先提供的資料】\n${st.fed}\n\n【問題】\n${q}`}]});
+    step('req',`[C] 第 1 回合 → ${$('#model').value}（不附工具，資料已塞入提示詞）`);
+    const j=await callGemini(hist,false,undefined,LS('C',SYS_C));st.calls++;
+    const u=j.usageMetadata||{};st.inTok+=u.promptTokenCount||0;st.outTok+=u.candidatesTokenCount||0;st.think=(st.think||0)+(u.thoughtsTokenCount||0);st.usd=(st.usd||0)+(j._cost||0);
+    const cand=j.candidates?.[0];
+    if(!cand?.content){st.err=cand?.finishReason||'無回應';out('er','模型沒有回應（'+st.err+'）')}
+    else{hist.push(cand.content);const txt=(cand.content.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');if(txt){out('m',txt);st.answer=txt}}
+  }catch(e){st.err=e.message;step('err','[C] '+e.message);out('er','錯誤：'+e.message+hintFor(e.message))}
+  st.ms=Math.round(performance.now()-T0);
+  if(!st.answer&&!st.err)out('empty','（模型沒有輸出文字回答）');
+  return st;
+}
+async function runD(hist,out){
+  const st={calls:0,ms:0,inTok:0,outTok:0,fns:[],tools:[],answer:'',err:null,sources:[]};const T0=performance.now();
+  try{
+    step('req',`[D] 第 1 回合 → ${$('#model').value}（${provider()==='gemini'?'googleSearch＋urlContext':provider()==='groq'?'Groq browser_search':'無內建搜尋'}）`);
+    let j;
+    try{j=await callGemini(hist,false,undefined,LS('D',SYS_D),[{googleSearch:{}},{urlContext:{}}])}
+    catch(e){if(provider()!=='gemini'||!/url|Unknown name|not supported|400/i.test(e.message))throw e;
+      out('fc','⚠ 此端點不支援 urlContext，改為只用 googleSearch');step('err','[D] urlContext 不支援，改用 googleSearch');
+      j=await callGemini(hist,false,undefined,LS('D',SYS_D),[{googleSearch:{}}])}
+    st.calls++;
+    const u=j.usageMetadata||{};st.inTok+=u.promptTokenCount||0;st.outTok+=u.candidatesTokenCount||0;st.think=(st.think||0)+(u.thoughtsTokenCount||0);st.usd=(st.usd||0)+(j._cost||0);
+    const cand=j.candidates?.[0];
+    if(!cand?.content){st.err=cand?.finishReason||'無回應';out('er','模型沒有回應（'+st.err+'）')}
+    else{
+      hist.push(cand.content);
+      const gm=cand.groundingMetadata||{},um=cand.urlContextMetadata||cand.url_context_metadata||{};
+      const qs=gm.webSearchQueries||[];
+      {const p=priceOf(),n=p.sqUnit==='query'?qs.length:(qs.length?1:0),c=n*p.sq/1000;st.searchUsd=c;st.usd=(st.usd||0)+c;if(c){sess.usd+=c;showSess()}}
+      const urls=(um.urlMetadata||um.url_metadata||[]).map(x=>`${x.retrievedUrl||x.retrieved_url}（${(x.urlRetrievalStatus||x.url_retrieval_status||'').replace('URL_RETRIEVAL_STATUS_','')}）`);
+      st.sources=(gm.groundingChunks||[]).map(c=>c.web&&`${c.web.title||''} ${c.web.uri||''}`.trim()).filter(Boolean);
+      st.fns=[...qs.map(x=>'🔎'+x),...urls.map(x=>'🔗'+x)];
+      if(st.fns.length)out('fc',`${provider()==='groq'?'Groq 端自動執行（browser_search）':'Google 端自動執行'}\n${qs.length?'🔎 搜尋：'+qs.join('、')+'\n':''}${urls.length?'🔗 讀取：'+urls.join('\n'):''}`.trim());
+      if(st.sources.length)out('fr','參考來源\n'+st.sources.slice(0,8).map((x,i)=>`${i+1}. ${x}`).join('\n'));
+      step('res',`[D] 搜尋 ${qs.length} 次・讀取網址 ${urls.length} 個・來源 ${st.sources.length} 筆`);
+      const txt=(cand.content.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+      if(txt){out('m',txt);st.answer=txt}
+    }
+  }catch(e){st.err=e.message;step('err','[D] '+e.message);out('er','錯誤：'+e.message+hintFor(e.message))}
+  st.ms=Math.round(performance.now()-T0);
+  if(!st.answer&&!st.err)out('empty','（模型沒有輸出文字回答）');
+  return st;
+}
+
+/* E：ReAct 提示詞式工具呼叫（不用 API 的 tools，全靠提示詞約定格式＋程式解析） */
+function sysE(){
+  const list=tools.filter(t=>t.enabled).map(t=>{const pr=t.decl.parameters?.properties||{};return `- ${t.decl.name}：${t.decl.description||''}\n  參數：${JSON.stringify(Object.fromEntries(Object.entries(pr).map(([k,v])=>[k,(v.type||'')+(v.description?'，'+v.description:'')+(v.enum?'，可選 '+v.enum.join('/'):'')])))}`}).join('\n');
+  return `你是繁體中文助理，可以使用以下工具（工具只能透過下列文字格式呼叫，系統沒有其他函式介面）：
+${list||'（目前沒有可用工具）'}
+
+請嚴格依照以下格式，一次只做一個動作：
+Thought: 思考下一步要做什麼
+Action: 工具名稱
+Action Input: {"參數名":"值"}
+
+輸出 Action Input 後立刻停止，等待系統回傳「Observation: …」。不要自己編造 Observation。
+已經能回答時，輸出：
+Thought: 我已經知道答案了
+Final Answer: 用繁體中文的最終回答`;
+}
+async function runE(hist,out){
+  const st={calls:0,ms:0,inTok:0,outTok:0,fns:[],tools:[],answer:'',err:null,parseErr:0};const T0=performance.now();
+  const max=Math.max(1,+$('#maxTurns').value||8);const sys=LS('E',sysE());
+  try{
+    for(let turn=1;turn<=max;turn++){
+      step('req',`[E] 第 ${turn} 回合 → ${$('#model').value}（不附 tools，靠提示詞格式）`);
+      const t0=performance.now();
+      let j=await callGemini(hist,false,undefined,sys,undefined,{stopSequences:['Observation:']});st.calls++;
+      let u=j.usageMetadata||{};st.inTok+=u.promptTokenCount||0;st.outTok+=u.candidatesTokenCount||0;st.think=(st.think||0)+(u.thoughtsTokenCount||0);st.usd=(st.usd||0)+(j._cost||0);
+      let cand=j.candidates?.[0];
+      if(!(cand?.content?.parts||[]).some(p=>p.text&&!p.thought&&p.text.trim())){
+        step('err','[E] 帶 stopSequences 時回應為空（思考模型常見），改為不帶停止詞重試，改由程式截斷');
+        j=await callGemini(hist,false,undefined,sys);st.calls++;
+        u=j.usageMetadata||{};st.inTok+=u.promptTokenCount||0;st.outTok+=u.candidatesTokenCount||0;st.think=(st.think||0)+(u.thoughtsTokenCount||0);st.usd=(st.usd||0)+(j._cost||0);cand=j.candidates?.[0];
+      }
+      if(!cand?.content){st.err=cand?.finishReason||'無回應';out('er','模型沒有回應（'+st.err+'）');break}
+      let txt=(cand.content.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+      const cut=txt.indexOf('Observation:');if(cut>=0){txt=txt.slice(0,cut);st.parseErr++;step('err','[E] 模型自行編造 Observation，已截斷')}
+      txt=txt.trim();
+      hist.push({role:'model',parts:[{text:txt}]});
+      step('req',`[E]   ${Math.round(performance.now()-t0)} ms · tokens 入 ${u.promptTokenCount??'-'} / 出 ${u.candidatesTokenCount??'-'}`);
+      const fa=txt.match(/Final Answer:\s*([\s\S]*)$/i);
+      const th=(txt.match(/Thought:\s*([^\n]*)/i)||[])[1];
+      const an=(txt.match(/Action:\s*([A-Za-z_][\w.-]*)/i)||[])[1];
+      if(fa){if(th)out('react','💭 '+th);st.answer=fa[1].trim();out('m',st.answer);break}
+      if(!an){ // 沒照格式：當作直接回答
+        st.parseErr++;step('err','[E] 輸出不符 ReAct 格式，視為直接回答');
+        if(txt){st.answer=txt.replace(/^Thought:\s*/i,'');out('react','⚠ 未依格式輸出');out('m',st.answer)}
+        break;
+      }
+      let args={};const im=txt.match(/Action Input:\s*(\{[\s\S]*\})/i);
+      let obs;
+      if(im){try{args=JSON.parse(im[1])}catch(e){args=null}}
+      if(args===null){st.parseErr++;obs={error:'Action Input 不是合法 JSON，請重新輸出'};out('react',`💭 ${th||''}\n⚠ Action Input 解析失敗`)}
+      else{
+        st.fns.push(an);
+        out('react',`💭 ${th||'（無 Thought）'}\n🛠 Action: ${an}\n📥 Action Input: ${JSON.stringify(args)}`);
+        step('call',`[E] 解析文字 → ${an}(${JSON.stringify(args)})`);
+        const t1=performance.now();obs=await runTool(an,args);
+        step(obs.error?'err':'res',`[E] Observation ${Math.round(performance.now()-t1)} ms\n${clip(JSON.stringify(obs),600)}`);
+        st.tools.push({name:an,args,result:obs});
+      }
+      out('fr','👀 Observation\n'+clip(JSON.stringify(obs,null,2),1500));
+      hist.push({role:'user',parts:[{text:'Observation: '+clip(JSON.stringify(obs),6000)}]});
+      if(turn===max)step('err','[E] 達到最多回合上限');
+    }
+  }catch(e){st.err=e.message;step('err','[E] '+e.message);out('er','錯誤：'+e.message+hintFor(e.message))}
+  st.ms=Math.round(performance.now()-T0);
+  if(!st.answer&&!st.err)out('empty','（沒有得到 Final Answer）');
+  return st;
+}
+async function sendAB(text){
+  if(busy||!text.trim())return;lock(true);saveCfg();
+  const on=LK.filter(k=>laneOn[k]);
+  on.forEach(k=>{addTo('#ab'+k,'u',text);$('#stat'+k).innerHTML=statHTML(0,1,k)});
+  $('#abSum').hidden=false;$('#abSum').innerHTML=`<span class="hint">${on.join('／')} 同時執行中…</span>`;
+  const bMode=$('#fcMode').value==='NONE'?'AUTO':$('#fcMode').value;
+  const outF=k=>(c,t)=>addTo('#ab'+k,c,t);
+  const runners={
+    A:()=>{hists.A.push({role:'user',parts:[{text}]});return runLoop(hists.A,false,outF('A'),'A')},
+    B:()=>{hists.B.push({role:'user',parts:[{text}]});return runLoop(hists.B,true,outF('B'),'B',bMode)},
+    C:()=>runC(hists.C,outF('C'),text),
+    D:()=>{hists.D.push({role:'user',parts:[{text}]});return runD(hists.D,outF('D'))},
+    E:()=>{hists.E.push({role:'user',parts:[{text}]});return runE(hists.E,outF('E'))}
+  };
+  const seq=provider()==='groq'||$('#seqRun')?.checked;
+  let results;
+  if(seq){results=[];for(const k of on){$('#abSum').innerHTML=`<span class="hint">依序執行（避開速率限制）：目前 ${k}／${on.join('、')}…</span>`;results.push(await runners[k]())}}
+  else results=await Promise.all(on.map(k=>runners[k]()));
+  const res={};on.forEach((k,i)=>res[k]=results[i]);
+  on.forEach(k=>{$('#stat'+k).innerHTML=statHTML(res[k],0,k);const box=$('#ab'+k),us=box.querySelectorAll('.msg.u'),last=us[us.length-1];if(last)box.scrollTop=last.offsetTop-box.offsetTop-6});
+  const run={q:text,lanes:on,res,time:new Date().toLocaleString('zh-TW',{hour12:false}),judge:null};abRuns.push(run);
+  renderSum(run);
+  lock(false);
+}
+function renderSum(run){
+  const L=run.lanes,R=run.res;
+  const rows=[['估算費用','usd',''],['API 呼叫次數','calls',''],['總耗時','ms',' ms'],['輸入 tokens','inTok',''],['輸出 tokens','outTok',''],['思考 tokens','think',''],['取得資料數','n',''],['回答字數','len',''],['格式偏差','pe','']];
+  const val=(st,f)=>f==='n'?st.fns.length:f==='len'?st.answer.length:f==='pe'?(st.parseErr||0):(st[f]||0);
+  const bar=(v,m,c,u,f)=>`<div class="bar ${c}" style="width:${m?Math.max(4,v/m*100):4}%">${f==='usd'?twd(v):v+u}</div>`;
+  const totUsd=L.reduce((a,k)=>a+(R[k].usd||0),0);
+  const cost=st=>st.inTok+st.outTok;const base=R.A&&cost(R.A);
+  const rel=base?L.filter(k=>k!=='A').map(k=>`${k} ×${(cost(R[k])/base).toFixed(1)}`).join('、'):'';
+  $('#abSum').innerHTML=`<h3>差異比對 <span class="hint">Q：${esc(clip(run.q,40))}</span><span style="flex:1"></span><button class="sm" id="judgeBtn">AI 評審</button><button class="sm" id="sumMaxBtn">${$('#abSum').classList.contains('max')?'✕ 關閉':'⤢ 放大檢視'}</button></h3>
+  ${rows.map(([l,f,u])=>{const vs=L.map(k=>val(R[k],f)),m=Math.max(...vs);return `<div class="cmp"><span>${l}</span><div class="bars">${L.map((k,i)=>bar(vs[i],m,k.toLowerCase(),u,f)).join('')}</div></div>`}).join('')}
+  <div class="hint">${L.map(k=>`<span class="pill ${k.toLowerCase()}" style="width:16px;height:16px;font-size:10px">${k}</span> ${LANES[k].name}`).join('　')}${rel?`<br>相對 A 的 token 用量：${rel}`:''}
+  <br>本輪五欄合計 <b>${twd(totUsd)}</b>；每千次同類提問約：${L.map(k=>`${k} ${twd((R[k].usd||0)*1000)}`).join('、')}
+  <br><span style="opacity:.8">費用為依 usageMetadata 與官方單價（${$('#model').value}）估算，匯率 ${FX()}；D 的搜尋費在免費額度內為 0，實際以 Google Cloud 帳單為準。</span></div>
+  <div id="judgeBox">${run.judge?judgeHTML(run.judge,L):''}</div>`;
+  $('#abSum h3').insertAdjacentHTML('afterend','<div class="concl" id="conclBox" style="margin:0 0 10px"></div>');
+  $('#judgeBtn').onclick=()=>judge(run);
+  $('#sumMaxBtn').onclick=()=>sumMax(!$('#abSum').classList.contains('max'));
+  renderConcl(run);
+}
+/* ========== 總結結論 ========== */
+function localConcl(run){
+  const L=run.lanes,R=run.res,nm=k=>`<b>${k}</b>（${LANES[k].name}）`;
+  const ok=L.filter(k=>!R[k].err&&R[k].answer),bad=L.filter(k=>!ok.includes(k));
+  const cost=k=>R[k].inTok+R[k].outTok,li=[];
+  if(!ok.length)return '<li>所有欄位都沒有得到有效回答，請檢查連線設定或換個問題。</li>';
+  const by=(f,dir)=>ok.slice().sort((a,b)=>dir*(f(a)-f(b)))[0];
+  const fast=by(k=>R[k].ms,1),cheap=by(cost,1),rich=by(k=>R[k].fns.length,-1),long=by(k=>R[k].answer.length,-1);
+  const cheapest=by(k=>R[k].usd||0,1),dear=by(k=>R[k].usd||0,-1);
+  li.push(`最快：${nm(fast)} ${(R[fast].ms/1000).toFixed(2)}s；最省 token：${nm(cheap)} ${cost(cheap)}`);
+  li.push(`最省錢：${nm(cheapest)} ${twd(R[cheapest].usd||0)}；最貴：${nm(dear)} ${twd(R[dear].usd||0)}${(R[cheapest].usd||0)>0?`（約 ${((R[dear].usd||0)/(R[cheapest].usd)).toFixed(1)} 倍）`:''}`);
+  if(R[rich].fns.length)li.push(`取得外部資料最多：${nm(rich)} ${R[rich].fns.length} 筆；回答最詳盡：${nm(long)} ${R[long].answer.length} 字`);
+  const withData=ok.filter(k=>k!=='A'&&R[k].fns.length);
+  if(R.A&&ok.includes('A')&&withData.length)li.push(`A 只憑模型記憶作答，即時性資訊不如 ${withData.join('、')} 可靠`);
+  if(R.C&&ok.includes('C')&&R.C.fns.length<=1)li.push('C 的預取規則只命中時間，問題類型超出事先寫好的規則，資料不足');
+  if(R.E&&R.E.parseErr)li.push(`E 格式偏差 ${R.E.parseErr} 次，提示詞式呼叫穩定度較低`);
+  if(R.D&&R.D.sources?.length)li.push(`D 引用 ${R.D.sources.length} 筆搜尋來源，可回頭查證`);
+  if(bad.length)li.push(`失敗或無回答：${bad.map(nm).join('、')}`);
+  const pick=run.judge?.winner&&L.includes(run.judge.winner)?run.judge.winner:(withData.length?withData.sort((a,b)=>R[b].fns.length-R[a].fns.length)[0]:fast);
+  {const ag=L.filter(k=>LANES[k].lv===3),act=L.filter(k=>(R[k].tools||[]).some(t=>ACTION_CALL(t.name,t.args||{})));
+   li.push(`自主程度：${L.map(k=>`${k}＝${LANES[k].auto}`).join('、')}${ag.length?`；真正算 Agent 的是 ${ag.join('、')}`:''}${ag.filter(k=>R[k].calls>1).length?`（本題 ${ag.filter(k=>R[k].calls>1).map(k=>k+' 跑了 '+R[k].calls+' 回合').join('、')}）`:ag.length?'（本題皆一回合結束，未展現多步決策）':''}`);
+   if(act.length)li.push(`⚠ 行動型 Agent：${act.map(k=>`${k} 執行了 ${(R[k].tools||[]).filter(t=>ACTION_CALL(t.name,t.args||{})).map(t=>t.name+(t.args?.action?'.'+t.args.action:'')).join('、')}`).join('；')}，已改變資料，實務上應加人工確認`)}
+  li.push(`建議採用：${nm(pick)}${run.judge?.winner?'（依 AI 評審）':'（依資料取得量，可按「AI 評審」確認）'}`);
+  return li.map(x=>`<li>${x}</li>`).join('');
+}
+function renderConcl(run){
+  const box=$('#conclBox');if(!box)return;
+  box.innerHTML=`<h4>📌 總結結論<span style="flex:1"></span><button class="sm" id="conclBtn">${run.concl?'重新生成 AI 總結':'AI 總結'}</button></h4>
+  <ul>${localConcl(run)}</ul>${run.concl?`<div class="ai">${md(run.concl)}</div>`:''}
+  <div class="fu"><div class="fuh">💬 追問總結資料 <span class="hint">依五欄回答、取得的工具資料與總結作答，不會重送給 A～E</span>${(run.fu||[]).length?'<span style="flex:1"></span><button class="sm" id="fuClr">清除追問</button>':''}</div>
+  <div class="fulist" id="fuList">${(run.fu||[]).map(fuItem).join('')}</div>
+  <div class="fuin"><textarea id="fuInput" rows="1" placeholder="例：五欄對 2468 的共識是什麼？哪些數據互相矛盾？外資近 10 日買賣超多少？"></textarea><button class="pri sm" id="fuSend">追問</button></div>
+  <div class="fuchips">${['各欄的共同結論是什麼？','哪些數據互相矛盾？','列出所有取得的具體數字','用三句話給我最終建議'].map(x=>`<button class="sm">${x}</button>`).join('')}</div></div>`;
+  $('#conclBtn').onclick=()=>aiConcl(run);
+  const send=()=>{const v=$('#fuInput').value.trim();if(v){$('#fuInput').value='';followUp(run,v)}};
+  $('#fuSend').onclick=send;
+  $('#fuInput').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send()}};
+  box.querySelectorAll('.fuchips button').forEach(b=>b.onclick=()=>followUp(run,b.textContent));
+  if($('#fuClr'))$('#fuClr').onclick=()=>{run.fu=[];run.fuHist=[];renderConcl(run)};
+  const l=$('#fuList');l.scrollTop=1e9;
+}
+function fuItem(x){return `<div class="fuq">${esc(x.q)}</div><div class="fua${x.err?' er':''}">${x.a==null?'<span class="hint">思考中…</span>':x.err?esc(x.a):md(x.a)}</div>`}
+function summaryContext(run){
+  const L=run.lanes,R=run.res,ev=[];
+  L.forEach(k=>{const x=R[k];
+    if(x.tools&&x.tools.length)ev.push(`${k} 工具資料：\n`+x.tools.map(t=>`${t.name}(${JSON.stringify(t.args||{})}) → ${clip(JSON.stringify(t.result),2500)}`).join('\n'));
+    if(x.sources&&x.sources.length)ev.push(`${k} 搜尋來源：\n`+x.sources.slice(0,10).join('\n'));
+    if(x.fed&&!(x.tools&&x.tools.length))ev.push(`${k} 預先餵入資料：\n`+clip(x.fed,2500));});
+  const tmp=document.createElement('div');tmp.innerHTML=localConcl(run);
+  return `原始問題：${run.q}
+提問時間：${run.time||''}
+
+${L.map(k=>`【${k}｜${LANES[k].name}（${LANES[k].sub}）｜呼叫 ${R[k].calls} 次・${(R[k].ms/1000).toFixed(2)}s・tokens 入${R[k].inTok}/出${R[k].outTok}・取得：${R[k].fns.join('、')||'無'}${R[k].err?'・錯誤：'+R[k].err:''}】\n${clip(R[k].answer||'（無回答）',3000)}`).join('\n\n')}
+
+【各欄取得的外部資料】
+${ev.join('\n\n')||'（無）'}
+
+【程式統計結論】
+${[...tmp.querySelectorAll('li')].map(li=>'- '+li.textContent).join('\n')}
+${run.judge?`\n【AI 評審】勝出：${run.judge.winner}；${run.judge.summary||''}\n`+(run.judge.scores||[]).map(x=>`${x.item}：${L.map(k=>k+'='+(x[k]??'-')).join(' ')}（${x.note||''}）`).join('\n'):''}
+${run.concl?`\n【AI 總結】\n${run.concl}`:''}`;
+}
+function fuSysText(run){return `你是繁體中文分析助理，負責回答使用者對「ABCDE 對照結果」的追問。只能根據下方【總結資料】作答（含五欄回答、工具取得的資料、統計、評審與總結），不要編造資料外的數字；資料沒有的，直接說明「總結資料中沒有」並指出哪一欄可能可以補查。引用數字時註明來自哪一欄。回答精簡，善用條列。
+
+【總結資料】
+${summaryContext(run)}`}
+function conclPromptText(run){
+  const L=run.lanes,R=run.res;
+  const now=new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});
+  return `現在時間（台北）：${now}。使用者問題：${run.q}
+
+以下是五種做法（同一模型）對同一問題的回答：
+${L.map(k=>`【${k}｜${LANES[k].name}（${LANES[k].sub}）｜取得資料：${R[k].fns.join('、')||'無'}】\n${clip(R[k].answer||'（無回答）',2500)}`).join('\n\n')}
+${run.judge?`\nAI 評審勝出：${run.judge.winner}；評語：${run.judge.summary||''}`:''}
+
+請用繁體中文寫「總結結論」，300 字內，格式：
+**綜合答案**：整合各欄有資料依據的內容，直接回答使用者問題（互相矛盾處註明）
+**做法差異**：2–3 點，說明哪種做法拿到真實資料、哪種只靠記憶
+**建議**：這類問題最適合用哪一欄的做法，以及原因`;
+}
+function judgePromptText(run){
+  const L=run.lanes,R=run.res;
+  const now=new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});
+  const ev=[];
+  if(R.B&&R.B.tools.length)ev.push('B 函式結果：\n'+R.B.tools.map(t=>`${t.name}(${JSON.stringify(t.args||{})}) → ${clip(JSON.stringify(t.result),600)}`).join('\n'));
+  if(R.C&&R.C.fed)ev.push('C 預先餵入的資料：\n'+clip(R.C.fed,1500));
+  if(R.E&&R.E.tools.length)ev.push('E 工具結果：\n'+R.E.tools.map(t=>`${t.name}(${JSON.stringify(t.args||{})}) → ${clip(JSON.stringify(t.result),600)}`).join('\n'));
+  if(R.D&&R.D.sources.length)ev.push('D 搜尋來源：\n'+R.D.sources.slice(0,8).join('\n'));
+  const keys=L.map(k=>`"${k}":0`).join(',');
+  return `你是嚴格的 AI 回答評審。現在時間（台北）：${now}。
+使用者問題：${run.q}
+
+${L.map(k=>`【${k}｜${LANES[k].name}（${LANES[k].sub}）的回答】\n${R[k].answer||'（無回答）'}`).join('\n\n')}
+
+【各方取得的外部資料（可視為事實依據）】
+${ev.join('\n\n')||'（無）'}
+
+請就以下五項替 ${L.join('、')} 各給 1–10 分：正確性、時效性、具體性、可驗證性、完整度。並給一句總結（40 字內，點出各做法的關鍵差異）與勝出者。
+只輸出 JSON：{"scores":[{"item":"正確性",${keys},"note":"簡短理由"}],"winner":"${L.join('|')}|平手","summary":"..."}`;
+}
+async function followUp(run,q){
+  if(run.fuBusy)return;run.fuBusy=true;
+  run.fu=run.fu||[];run.fuHist=run.fuHist||[];
+  const item={q,a:null};run.fu.push(item);renderConcl(run);
+  $('#fuSend').disabled=true;
+  const sys=fuSysText(run);
+  const hist=[...run.fuHist,{role:'user',parts:[{text:q}]}];
+  step('req','[追問] → '+$('#model').value+'（不附工具，依總結資料作答）');
+  try{
+    const j=await callGemini(hist,false,undefined,sys);
+    const t=(j.candidates?.[0]?.content?.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('').trim();
+    if(!t)throw Error('模型沒有輸出文字（'+(j.candidates?.[0]?.finishReason||'無回應')+'）');
+    item.a=t;run.fuHist.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text:t}]});
+  }catch(e){item.a='追問失敗：'+e.message;item.err=true;step('err','[追問] '+e.message)}
+  run.fuBusy=false;renderConcl(run);
+  const inp=$('#fuInput');if(inp)inp.focus();
+}
+async function aiConcl(run){
+  const btn=$('#conclBtn');btn.disabled=true;btn.textContent='總結中…';
+  const prompt=conclPromptText(run);
+  try{
+    const j=await callGemini([{role:'user',parts:[{text:prompt}]}],false,undefined,'你是精準的繁體中文分析助理。');
+    const t=(j.candidates?.[0]?.content?.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('').trim();
+    if(!t)throw Error('模型沒有輸出文字');run.concl=t;renderConcl(run);
+  }catch(e){btn.disabled=false;btn.textContent='AI 總結';$('#conclBox').insertAdjacentHTML('beforeend',`<div class="ai" style="color:var(--err)">總結失敗：${esc(e.message)}</div>`)}
+}
+async function judge(run){
+  const btn=$('#judgeBtn');btn.disabled=true;btn.textContent='評審中…';
+  const L=run.lanes;
+  const prompt=judgePromptText(run);
+  try{
+    const j=await callGemini([{role:'user',parts:[{text:prompt}]}],false);
+    const t=(j.candidates?.[0]?.content?.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+    const m=t.match(/\{[\s\S]*\}/);if(!m)throw Error('評審未回傳 JSON');
+    run.judge=JSON.parse(m[0]);$('#judgeBox').innerHTML=judgeHTML(run.judge,L);renderConcl(run);
+  }catch(e){$('#judgeBox').innerHTML=`<div class="judge" style="color:var(--err)">評審失敗：${esc(e.message)}</div>`}
+  btn.disabled=false;btn.textContent='重新評審';
+}
+function judgeHTML(J,L){
+  const sc=J.scores||[];const tot={};L.forEach(k=>tot[k]=sc.reduce((s,x)=>s+(+x[k]||0),0));
+  const best=(o)=>{const m=Math.max(...L.map(k=>+o[k]||0));return k=>(+o[k]||0)===m&&m>0?'win':''};
+  return `<div class="judge"><table><tr><th>項目</th>${L.map(k=>`<th>${k}</th>`).join('')}<th>理由</th></tr>
+  ${sc.map(x=>{const w=best(x);return `<tr><td>${esc(x.item)}</td>${L.map(k=>`<td class="${w(k)}">${x[k]??'-'}</td>`).join('')}<td class="hint">${esc(x.note||'')}</td></tr>`}).join('')}
+  <tr><td><b>總分</b></td>${L.map(k=>`<td class="${best(tot)(k)}"><b>${tot[k]}</b></td>`).join('')}<td>勝出：<b>${esc(J.winner||'-')}</b></td></tr></table>
+  <div style="margin-top:6px">${esc(J.summary||'')}</div></div>`;
+}
+function setView(m){
+  if(m!=='ab'&&$('#abSum').classList.contains('max'))sumMax(false);
+  viewMode=m;document.body.classList.toggle('abwide',m==='ab');$('#chat').closest('.card').classList.toggle('abmode',m==='ab');document.querySelectorAll('#viewTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  $('#chat').hidden=m!=='single';$('#ab').hidden=m!=='ab';$('#abBar').hidden=m!=='ab';$('#abSum').hidden=m!=='ab'||!abRuns.length;
+  $('#input').placeholder=m==='ab'?'輸入問題，同時送給勾選的 A～E 欄比對':'輸入問題，Enter 送出，Shift+Enter 換行';
+  store.set('view',m);layout();
+}
+document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>setView(b.dataset.m));
+function layout(){const ab=viewMode==='ab',bc=document.body.classList,c=[];if(!bc.contains('noside'))c.push(ab?'230px':'300px');c.push('minmax(0,1fr)');if(!bc.contains('notrace'))c.push(ab?'230px':'300px');$('.wrap').style.setProperty('--cols',c.join(' '))}
+function setTrace(show){document.body.classList.toggle('notrace',!show);$('#traceBtn').textContent=show?'隱藏追蹤':'顯示追蹤';store.set('trace',show);layout()}
+function setSide(show){document.body.classList.toggle('noside',!show);$('#sideBtn').textContent=show?'隱藏設定':'顯示設定';store.set('side',show);layout()}
+$('#sideBtn').onclick=()=>setSide(document.body.classList.contains('noside'));
+$('#traceBtn').onclick=()=>setTrace(document.body.classList.contains('notrace'));
+function dispatch(t){viewMode==='ab'?sendAB(t):send(t)}
+function hintFor(m){
+  if(/Failed to fetch/i.test(m))return provider()==='oai'?'':provider()==='groq'?'\n→ 網路被擋或 Groq 服務異常。':'\n→ 可能是 CORS 或網路被擋；Express 模式請確認金鑰已啟用 Agent Platform API。';
+  if(/blocked/i.test(m)&&/aiplatform/i.test(m))return '\n→ 這把金鑰不能呼叫 Agent Platform：① 若是 AI Studio 金鑰，模式改選「Gemini API（AI Studio Key）」；② 若是 Cloud 金鑰，到「API 和服務 > 憑證」編輯金鑰的 API 限制，加入 Vertex AI API（或改為不限制），並確認專案已啟用該 API。';
+  if(/blocked/i.test(m)&&/generativelanguage/i.test(m))return '\n→ 這把金鑰不能呼叫 Gemini API：模式改選 Agent Platform Express，或在金鑰限制加入 Generative Language API。';
+  if(/aiplatform\.endpoints\.predict/i.test(m))return '\n→ 身分缺少呼叫權限：① 確認 Project ID 正確、該專案已啟用 Vertex AI API 並連結帳單；② IAM 頁面替你的帳號（專案模式）或金鑰綁定的服務帳戶（金鑰模式）加上「Vertex AI 使用者」角色；③ 等 1～5 分鐘再試。';
+  if(/401|403/.test(m))return '\n→ 金鑰或 Token 無效／無權限。專案模式 Token 約 1 小時過期。';
+  if(/404/.test(m))return '\n→ 模型名稱或區域不存在，請換模型或 Location。';
+  if(/thought_signature|thoughtSignature/i.test(m))return '\n→ 對話歷程被改動，請按「清空」重來。';
+  return '';
+}
+
+/* ========== UI ========== */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function clip(s,n){return s.length>n?s.slice(0,n)+' …':s}
+function md(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/^(\s*)[*-] /gm,'$1• ').replace(/^#{1,6} (.+)$/gm,'<b>$1</b>')}
+function addMsg(cls,text){const d=document.createElement('div');d.className='msg '+cls;if(cls==='m')d.innerHTML=md(text);else d.textContent=text;$('#chat').appendChild(d);$('#chat').scrollTop=1e9}
+let view='trace';
+function step(cls,text){const d=document.createElement('div');d.className='step '+cls;d.innerHTML=`<b>${new Date().toLocaleTimeString('zh-TW',{hour12:false})}</b>\n${esc(text)}`;d.dataset.kind='trace';d.hidden=view!=='trace';$('#trace').appendChild(d);d.parentElement.parentElement.scrollTop=1e9}
+function rawLog(tag,obj){const s=JSON.stringify(obj,null,2);rawLines.push({tag,s});const d=document.createElement('div');d.className='step';d.dataset.kind='raw';d.hidden=view!=='raw';d.innerHTML=`<b>${tag}</b>\n${esc(clip(s.replace(/"data":\s*"[^"]{200,}"/g,'"data":"…"'),8000))}`;$('#trace').appendChild(d)}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$('#trace').querySelectorAll('.step').forEach(s=>s.hidden=s.dataset.kind!==view)});
+function toast(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;z-index:99';document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
+
+$('#sendBtn').onclick=()=>{const v=$('#input').value;$('#input').value='';dispatch(v)};
+$('#input').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#sendBtn').click()}};
+$('#clearBtn').onclick=()=>{if(viewMode==='ab'){hists={A:[],B:[],C:[],D:[],E:[]};abRuns=[];LK.forEach(k=>{$('#ab'+k).innerHTML='';$('#stat'+k).innerHTML=''});sumMax(false);$('#abSum').innerHTML='';$('#abSum').hidden=true}else{history=[];$('#chat').innerHTML=''}rawLines=[];$('#trace').innerHTML=''};
+/* ========== 匯出五種做法提示詞 ========== */
+function buildPromptsMD(){
+  const run=abRuns[abRuns.length-1],q=run?run.q:'{使用者問題}';
+  const F='````',fence=(lang,t)=>`${F}${lang}\n${t}\n${F}`,J=o=>fence('json',JSON.stringify(o,null,2));
+  const gen={temperature:+$('#temp').value},model=$('#model').value;
+  const decls=tools.filter(t=>t.enabled).map(t=>t.decl);
+  const sysB=LS('B',$('#sys').value.trim()),sE=LS('E',sysE()),SA=LS('A',SYS_A),SC=LS('C',SYS_C),SD=LS('D',SYS_D);
+  const bMode=$('#fcMode').value==='NONE'?'AUTO':$('#fcMode').value;
+  const userMsg=t=>({role:'user',parts:[{text:t}]});
+  const cUser=run&&run.res.C?.fed?`【預先提供的資料】\n${run.res.C.fed}\n\n【問題】\n${q}`:`【預先提供的資料】\n- get_current_time({"timezone":"Asia/Taipei"})：{…}\n- （依規則命中的函式結果，每筆一行）\n- 使用者提供的資料：（左側「C 欄額外資料」）\n\n【問題】\n${q}`;
+  const lane=(k,flow,sys,user,body,extra='')=>`## ${k}｜${LANES[k].name}（${LANES[k].sub}）
+
+**自主程度**：${LANES[k].auto}（${LANES[k].why}）
+
+**流程**：${flow}
+
+### 系統指令 systemInstruction
+${fence('text',sys||'（無）')}
+
+### 使用者訊息
+${fence('text',user)}
+${extra}
+### 第 1 回合請求 body（POST ${model}:generateContent）
+${J(body)}
+`;
+  const out=[];
+  out.push(`# 五種做法提示詞（五徑・從提問到 Agent 的五種模式）
+
+- 匯出時間：${new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false})}
+- 模型：${model}　溫度：${gen.temperature}　最多回合：${$('#maxTurns').value}
+- 套用提示詞：${LANE_OVR?LANE_OVR.title+'（由「提示詞轉換」套用）':'預設'}
+- 啟用函式：${decls.map(d=>d.name).join('、')||'（無）'}
+- ${run?`以最近一次比對的問題與實際資料填入：「${q}」`:'尚未執行比對，以下使用範本佔位符 {使用者問題}'}
+
+| 欄 | 自主程度 | 誰決定取資料 | 模型呼叫 | 送給模型的 tools |
+|---|---|---|---|---|
+| A | 無 | 無 | 1 次 | 無 |
+| B | Agent | 模型（functionCall） | 多次迴圈 | functionDeclarations |
+| C | Workflow | 程式固定規則 | 1 次 | 無（資料塞進提示詞） |
+| D | 半 Agent | 模型（供應商端執行） | 1 次 | googleSearch＋urlContext／browser_search |
+| E | Agent | 模型（文字格式，程式解析） | 多次迴圈 | 無（工具寫在系統指令） |
+
+> ${AUTO_LEGEND}
+`);
+  out.push(lane('A','直接把問題送給模型，不附任何工具，模型只憑訓練知識回答。',SA,q,{contents:[userMsg(q)],systemInstruction:{role:'system',parts:[{text:SA}]},generationConfig:gen}));
+  out.push(lane('B',`附上函式宣告，模型回傳 functionCall → 程式執行函式 → 以 functionResponse 回送 → 重複直到模型輸出文字（最多 ${$('#maxTurns').value} 回合）。`,sysB,q,
+    {contents:[userMsg(q)],systemInstruction:{role:'system',parts:[{text:sysB}]},generationConfig:gen,tools:[{functionDeclarations:decls}],toolConfig:{functionCallingConfig:{mode:bMode}}},
+    `
+### 函式回傳格式（第 2 回合起附加在 contents）
+${J([{role:'model',parts:[{functionCall:{name:'get_tw_stock',args:{stock_id:'2468',data_type:'overview'}}}]},{role:'user',parts:[{functionResponse:{name:'get_tw_stock',response:{'…':'函式回傳的 JSON'}}}]}])}
+模型回應需原樣保留（含 thoughtSignature）再接上 functionResponse。
+${run&&run.res.B?.tools?.length?`\n### 本次實際呼叫\n${fence('text',run.res.B.tools.map(t=>`${t.name}(${JSON.stringify(t.args||{})})`).join('\n'))}\n`:''}`));
+  out.push(lane('C','程式依固定規則預先執行函式，把結果與問題組成一則訊息，只呼叫模型一次，不附 tools。',SC,cUser,
+    {contents:[userMsg(cUser)],systemInstruction:{role:'system',parts:[{text:SC}]},generationConfig:gen},
+    `
+### 預取規則（程式寫死，不經模型判斷）
+- 一律：get_current_time（Asia/Taipei）
+- 天氣字眼＋城市表內城市：get_weather（每城市一次）
+- 數字＋幣別：convert_currency（預設換台幣，可辨識「換成 X」）
+- 股票字眼＋代號（或 FinMind 名稱對照）：get_tw_stock overview，最多 3 檔；另依關鍵字加抓 margin（融資/融券）、revenue（營收/業績）、news（新聞/利多/利空）
+- 「維基」＋「」括住的詞：search_wikipedia
+- 左側「C 欄額外資料」原文附上
+`));
+  const dTools=[{googleSearch:{}},{urlContext:{}}];
+  out.push(lane('D','啟用 Gemini 內建 Google 搜尋與網址讀取，由 Google 端自動搜尋／讀取後回答，回傳 groundingMetadata 來源；端點不支援 urlContext 時退回只用 googleSearch。',SD,q,
+    {contents:[userMsg(q)],systemInstruction:{role:'system',parts:[{text:SD}]},generationConfig:gen,tools:dTools}));
+  out.push(lane('E',`不使用 API 的 tools，把工具清單與 ReAct 格式寫進系統指令；模型輸出 Thought / Action / Action Input 文字 → 程式解析並執行 → 以「Observation: …」回送 → 直到輸出 Final Answer（最多 ${$('#maxTurns').value} 回合）。`,sE,q,
+    {contents:[userMsg(q)],systemInstruction:{role:'system',parts:[{text:sE}]},generationConfig:{...gen,stopSequences:['Observation:']}},
+    `
+### 程式回送的觀察訊息格式
+${fence('text','Observation: {"…":"函式回傳的 JSON"}')}
+思考模型帶 stopSequences 若回傳空內容，會改為不帶停止詞重試，並由程式在「Observation:」處截斷。
+`));
+  out.push(`## 附錄：比對後的輔助提示詞
+`);
+  if(run){
+    out.push(`### AI 評審（使用者訊息）\n${fence('text',judgePromptText(run))}\n`);
+    out.push(`### AI 總結（系統指令：你是精準的繁體中文分析助理。）\n${fence('text',conclPromptText(run))}\n`);
+    out.push(`### 追問總結資料（系統指令，使用者訊息為追問內容）\n${fence('text',fuSysText(run))}\n`);
+  }else out.push('執行一次 ABCDE 對照後，再匯出即可附上 AI 評審、AI 總結與追問的完整提示詞。\n');
+  return out.join('\n');
+}
+$('#promptBtn').onclick=()=>{let md_;try{md_=buildPromptsMD()}catch(e){toast('✗ 匯出失敗：'+e.message);console.error(e);return}const b=new Blob([md_],{type:'text/markdown;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='五種做法提示詞_'+new Date().toISOString().slice(0,16).replace(/[-:T]/g,'')+'.md';a.click();toast('已匯出提示詞')};
+
+/* ========== 提示詞轉換：改寫成五種模式 ========== */
+let LANE_OVR=store.get('laneOvr',null);
+function LS(k,def){const v=LANE_OVR&&LANE_OVR[k]&&LANE_OVR[k].system;return v&&v.trim()?v:def}
+const CV_SUFFIX={
+  A:'【本模式限制】本次對話沒有任何工具或函式可用，絕對不要嘗試呼叫函式；只憑自身知識直接用繁體中文回答，無法得知的即時或私有資訊請坦白說明，不要編造數字。',
+  B:'【工具使用】需要即時資料、計算、查詢或操作時，主動呼叫可用的函式；可連續呼叫多次，拿到函式結果後再用繁體中文整理回答，並說明資料來源。',
+  C:'【資料使用】使用者訊息中的【預先提供的資料】由系統事先查好，請優先且只根據這些資料回答；資料沒有涵蓋的部分請明說「資料未涵蓋」，不要自行推測或編造。本次沒有任何工具可呼叫。',
+  D:'【搜尋使用】可以使用 Google 搜尋與讀取網址。需要即時或外部資訊時請主動搜尋或讀取網址，根據取得的內容用繁體中文回答，並標註資訊來源與日期。'
+};
+const CV_FLOW={
+  A:'直接把問題送給模型，不附任何工具，只憑訓練知識回答。適合：觀念說明、寫作、改寫等不需即時資料的任務。',
+  B:'附上函式宣告，由模型決定何時呼叫哪個函式（functionCall），程式執行後回送結果，可多回合。適合：需要即時或私有資料、要查完再決定下一步的任務。',
+  C:'由程式依固定規則先把資料查好，塞進提示詞，只呼叫模型一次、不附工具。適合：資料來源固定、要省錢省時的任務。',
+  D:'啟用 Gemini 內建 Google 搜尋與網址讀取，由 Google 端搜尋後回答並附來源。適合：公開網路資訊、新聞、需要引用來源的任務。',
+  E:'不使用 API 的 tools，把工具清單與 Thought／Action／Observation 格式寫進系統指令，由程式解析文字後執行工具。適合：不支援 Function Calling 的模型，或教學示範推理過程。'
+};
+let CV=null,cvTab='A';
+function cvCompose(r,useTools){
+  const role=(k)=>(r[k]?.system||r.role||'').trim();
+  const out={title:r.title||'自訂提示詞',source:r.source,inputs:r.inputs||[],mode:r.mode,created:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false})};
+  const sysE_=useTools?sysE():sysE().replace(/可以使用以下工具[\s\S]*?\n\n請嚴格/,'可以使用以下工具：\n（請自行補上工具清單）\n\n請嚴格');
+  out.A={system:role('A')+'\n\n'+CV_SUFFIX.A,user:r.A?.user||'{使用者輸入}',note:r.A?.note||''};
+  out.B={system:role('B')+'\n\n'+CV_SUFFIX.B,user:r.B?.user||'{使用者輸入}',use_tools:r.B?.use_tools||(useTools?tools.filter(t=>t.enabled).map(t=>t.decl.name):[]),new_functions:r.B?.new_functions||[],note:r.B?.note||''};
+  out.C={system:role('C')+'\n\n'+CV_SUFFIX.C,user:r.C?.user||'【預先提供的資料】\n{程式預先取得的資料}\n\n【問題】\n{使用者輸入}',prefetch:r.C?.prefetch||[],note:r.C?.note||''};
+  out.D={system:role('D')+'\n\n'+CV_SUFFIX.D,user:r.D?.user||'{使用者輸入}',search_queries:r.D?.search_queries||[],note:r.D?.note||''};
+  out.E={system:role('E')+'\n\n'+sysE_,user:r.E?.user||'{使用者輸入}',note:r.E?.note||''};
+  return out;
+}
+function cvTemplate(src){
+  return {title:(src.split('\n').find(l=>l.trim())||'自訂提示詞').replace(/^[#\s>*-]+/,'').slice(0,30),source:src,mode:'範本套用',role:src.trim(),inputs:[],
+    A:{note:'原文加上「不可使用工具」段落。'},B:{note:'原文加上工具使用段落；函式由左側「函式工具」提供。'},
+    C:{note:'原文加上「只依預先提供資料」段落；需自行決定程式要預先取得哪些資料。'},D:{note:'原文加上搜尋與標註來源段落。'},E:{note:'原文後接 ReAct 工具清單與格式。'}};
+}
+async function cvAI(src,useTools){
+  const fl=useTools?tools.filter(t=>t.enabled).map(t=>`- ${t.decl.name}：${t.decl.description||''}`).join('\n'):'（不參考）';
+  const prompt=`請把下面【原始提示詞】改寫成五種執行模式各自專用的版本。五種模式說明：
+A 直接提問：沒有任何工具，只靠模型知識。
+B Function Calling：模型可自行呼叫函式（下方有現有函式清單），可多回合。
+C 預先餵資料：程式先依固定規則把資料查好塞進使用者訊息的【預先提供的資料】，模型只回答一次、不能呼叫工具。
+D 內建工具：模型可使用 Google 搜尋與讀取網址。
+E ReAct 提示詞式：工具寫在系統指令，模型用 Thought/Action/Observation 文字格式呼叫（格式段落由程式自動附加，你不用寫）。
+
+【目前可用函式】
+${fl}
+
+【原始提示詞】
+${clip(src,20000)}
+
+改寫規則：
+1. 保留原始提示詞的角色、任務、語氣、輸出格式與限制，不要遺漏重要規則。
+2. 各模式的 system 只寫「角色＋任務＋輸出格式＋該模式該怎麼取得資料」，不要寫工具呼叫語法；各模式結尾的固定限制段落由程式附加，不用重複。
+3. A 要說明哪些部分因沒有即時資料而需提醒使用者；B 要指出何時該呼叫哪些函式；C 要指出需要程式預先準備哪些資料；D 要指出搜尋什麼、如何引用來源；E 要說明何時用哪個工具。
+4. user 是使用者訊息範本，用 {變數名} 表示每次要填入的內容；C 的 user 必須包含「【預先提供的資料】」與「【問題】」兩段。
+5. 全部使用繁體中文。
+
+只輸出 JSON：
+{"title":"10 字內任務名稱","role":"整理後的共用核心角色與任務","inputs":["每次需填入的變數"],
+"A":{"system":"","user":"","note":"此模式的限制與適用情境"},
+"B":{"system":"","user":"","use_tools":["現有函式名稱"],"new_functions":[{"name":"","description":"","parameters":{"type":"object","properties":{},"required":[]}}],"note":""},
+"C":{"system":"","user":"","prefetch":[{"data":"要預先準備的資料","how":"程式如何取得（API／檔案／規則）"}],"note":""},
+"D":{"system":"","user":"","search_queries":["建議搜尋關鍵字"],"note":""},
+"E":{"system":"","user":"","note":""}}`;
+  const j=await callGemini([{role:'user',parts:[{text:prompt}]}],false,undefined,'你是資深提示詞工程師，擅長把同一份提示詞改寫成適合不同 Agent 執行模式的版本。只輸出合法 JSON。',undefined,{responseMimeType:'application/json',temperature:0.3});
+  const t=(j.candidates?.[0]?.content?.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+  const m=t.match(/\{[\s\S]*\}/);if(!m)throw Error('模型沒有回傳 JSON（'+(j.candidates?.[0]?.finishReason||'無回應')+'）');
+  const r=JSON.parse(m[0]);r.source=src;r.mode='AI 改寫（'+$('#model').value+'）';
+  if(Array.isArray(r.B?.new_functions))r.B.new_functions=r.B.new_functions.filter(f=>f&&f.name);
+  return r;
+}
+function cvRender(){
+  const tabs=[...LK.map(k=>[k,`<span class="pill ${k.toLowerCase()}" style="width:18px;height:18px;font-size:10px">${k}</span>${LANES[k].name}`]),['T','📋 對照表']];
+  $('#cvTabs').innerHTML=tabs.map(([k,h])=>`<button class="sm${cvTab===k?' on':''}" data-k="${k}">${h}</button>`).join('');
+  $('#cvTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{cvSync();cvTab=b.dataset.k;cvRender()});
+  ['cvCopy','cvTxt','cvMd','cvJson','cvApply'].forEach(id=>$('#'+id).disabled=!CV);
+  $('#cvCopy').disabled=$('#cvTxt').disabled=!CV||cvTab==='T';
+  if(!CV)return;
+  const b=$('#cvBody');
+  if(cvTab==='T'){
+    b.innerHTML=`<div class="cvflow">「${esc(CV.title)}」・${esc(CV.mode)}・${esc(CV.created)}${CV.inputs.length?'・變數：'+CV.inputs.map(esc).join('、'):''}</div>
+    <table class="cvtbl"><tr><th>模式</th><th>自主程度</th><th>誰決定取資料</th><th>模型呼叫</th><th>系統指令字數</th><th>重點</th></tr>
+    ${LK.map(k=>`<tr><td><span class="pill ${k.toLowerCase()}" style="width:18px;height:18px;font-size:10px">${k}</span> ${LANES[k].name}</td><td>${autoTag(k)}</td><td>${{A:'無',B:'模型',C:'程式規則',D:'模型（Google 端）',E:'模型（文字格式）'}[k]}</td><td>${{A:'1 次',B:'多回合',C:'1 次',D:'1 次',E:'多回合'}[k]}</td><td>${CV[k].system.length}</td><td>${esc(CV[k].note||'')}</td></tr>`).join('')}</table>
+    <label style="margin-top:12px">原始提示詞</label><textarea readonly class="big">${esc(CV.source)}</textarea>`;
+    return;
+  }
+  const L=CV[cvTab],k=cvTab;
+  let extra='';
+  if(k==='B')extra=`<label>使用的現有函式</label><input id="cvf_use" value="${esc((L.use_tools||[]).join(', '))}">
+    <label>建議新增函式 <span class="hint">FunctionDeclaration JSON，可貼到「＋自訂函式」並自行撰寫實作</span></label><textarea id="cvf_new">${esc(JSON.stringify(L.new_functions||[],null,2))}</textarea>`;
+  if(k==='C')extra=`<label>程式需預先取得的資料 <span class="hint">JSON：data／how</span></label><textarea id="cvf_pre">${esc(JSON.stringify(L.prefetch||[],null,2))}</textarea>`;
+  if(k==='D')extra=`<label>建議搜尋關鍵字 <span class="hint">每行一個</span></label><textarea id="cvf_q">${esc((L.search_queries||[]).join('\n'))}</textarea>`;
+  b.innerHTML=`<div class="cvflow">${CV_FLOW[k]}</div>
+  <label>系統指令 systemInstruction <span class="hint">${L.system.length} 字・可直接編輯</span></label><textarea id="cvf_sys" class="big">${esc(L.system)}</textarea>
+  <label>使用者訊息範本 <span class="hint">{變數} 為每次填入的內容</span></label><textarea id="cvf_user">${esc(L.user)}</textarea>
+  ${extra}<label>說明</label><textarea id="cvf_note" style="min-height:48px">${esc(L.note||'')}</textarea>`;
+}
+function cvSync(){
+  if(!CV||cvTab==='T'||!$('#cvf_sys'))return;const L=CV[cvTab];
+  L.system=$('#cvf_sys').value;L.user=$('#cvf_user').value;L.note=$('#cvf_note').value;
+  if($('#cvf_use'))L.use_tools=$('#cvf_use').value.split(/[,，\s]+/).filter(Boolean);
+  if($('#cvf_new'))try{L.new_functions=JSON.parse($('#cvf_new').value||'[]')}catch(e){}
+  if($('#cvf_pre'))try{L.prefetch=JSON.parse($('#cvf_pre').value||'[]')}catch(e){}
+  if($('#cvf_q'))L.search_queries=$('#cvf_q').value.split('\n').map(x=>x.trim()).filter(Boolean);
+}
+function cvLaneMD(k){
+  const L=CV[k],F='````',f=(l,t)=>`${F}${l}\n${t}\n${F}`;
+  const gen={temperature:+$('#temp').value};
+  const body={contents:[{role:'user',parts:[{text:L.user}]}],systemInstruction:{role:'system',parts:[{text:L.system}]},generationConfig:k==='E'?{...gen,stopSequences:['Observation:']}:gen};
+  if(k==='B'){const decls=tools.filter(t=>t.enabled&&(L.use_tools||[]).includes(t.decl.name)).map(t=>t.decl).concat(L.new_functions||[]);if(decls.length){body.tools=[{functionDeclarations:decls}];body.toolConfig={functionCallingConfig:{mode:'AUTO'}}}}
+  if(k==='D')body.tools=[{googleSearch:{}},{urlContext:{}}];
+  let ex='';
+  if(k==='B')ex=`\n### 使用的現有函式\n${(L.use_tools||[]).join('、')||'（無）'}\n${(L.new_functions||[]).length?`\n### 建議新增函式\n${f('json',JSON.stringify(L.new_functions,null,2))}\n`:''}`;
+  if(k==='C'&&(L.prefetch||[]).length)ex=`\n### 程式需預先取得的資料\n${L.prefetch.map(x=>`- ${x.data}：${x.how||''}`).join('\n')}\n`;
+  if(k==='D'&&(L.search_queries||[]).length)ex=`\n### 建議搜尋關鍵字\n${L.search_queries.map(x=>'- '+x).join('\n')}\n`;
+  return `## ${k}｜${LANES[k].name}（${LANES[k].sub}）\n\n**自主程度**：${LANES[k].auto}（${LANES[k].why}）\n\n**流程**：${CV_FLOW[k]}\n${L.note?`\n**說明**：${L.note}\n`:''}\n### 系統指令\n${f('text',L.system)}\n\n### 使用者訊息範本\n${f('text',L.user)}\n${ex}\n### 請求 body（POST ${$('#model').value}:generateContent）\n${f('json',JSON.stringify(body,null,2))}\n`;
+}
+function cvMD(){
+  return `# ${CV.title}｜五種模式提示詞\n\n- 轉換方式：${CV.mode}\n- 轉換時間：${CV.created}\n${CV.inputs.length?`- 每次需填入：${CV.inputs.join('、')}\n`:''}\n| 模式 | 自主程度 | 誰決定取資料 | 模型呼叫 | 說明 |\n|---|---|---|---|---|\n${LK.map(k=>`| ${k} ${LANES[k].name} | ${LANES[k].auto} | ${{A:'無',B:'模型',C:'程式規則',D:'模型（Google 端）',E:'模型（文字格式）'}[k]} | ${{A:'1 次',B:'多回合',C:'1 次',D:'1 次',E:'多回合'}[k]} | ${(CV[k].note||'').replace(/\n/g,' ').replace(/\|/g,'／')} |`).join('\n')}\n\n${LK.map(cvLaneMD).join('\n')}\n## 原始提示詞\n\n${'````'}text\n${CV.source}\n${'````'}\n`;
+}
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:(type||'text/plain')+';charset=utf-8'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+const cvName=ext=>(CV.title||'提示詞').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,30)+'_五種模式'+ext;
+function showOvr(){
+  const t=LANE_OVR?`🧩 已套用：${LANE_OVR.title} ✕`:'';
+  let b=$('#ovrBadge');
+  if(!LANE_OVR){if(b)b.remove()}
+  else{if(!b&&$('#abBar')){b=document.createElement('span');b.id='ovrBadge';b.title='A～E 目前使用「提示詞轉換」套用的系統指令；點選還原預設';b.onclick=()=>{if(confirm('還原 A～E 為預設系統指令？')){LANE_OVR=null;store.set('laneOvr',null);showOvr();toast('已還原預設提示詞')}};const lab=$('#abBar').querySelector('span');lab.after(b)}if(b)b.textContent=t}
+  if($('#cvOvr'))$('#cvOvr').textContent=LANE_OVR?`目前 ABCDE 套用：${LANE_OVR.title}`:'目前 ABCDE 使用預設提示詞';
+}
+async function cvReadFile(f){
+  if(/\.docx$/i.test(f.name)){
+    if(!window.JSZip)await new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=ok;sc.onerror=()=>no(Error('JSZip 載入失敗'));document.head.appendChild(sc)});
+    const z=await JSZip.loadAsync(f),x=await z.file('word/document.xml').async('string');
+    return x.replace(/<w:tab\/>/g,'\t').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/\n{3,}/g,'\n\n').trim();
+  }
+  if(/\.pdf$/i.test(f.name))throw Error('PDF 請先複製文字貼上');
+  let t=await f.text();
+  if(/\.json$/i.test(f.name))try{const o=JSON.parse(t);const pick=o.systemInstruction?.parts?.map(p=>p.text).join('\n')||o.system||o.prompt||o.instructions||(Array.isArray(o.messages)?o.messages.map(m=>`[${m.role}] ${typeof m.content==='string'?m.content:JSON.stringify(m.content)}`).join('\n\n'):null);if(pick)t=pick}catch(e){}
+  return t;
+}
+async function cvLoadFile(f){try{$('#cvSrc').value=await cvReadFile(f);$('#cvFname').textContent=f.name;if(!$('#cvDlg').open){$('#cvDlg').showModal();showOvr();cvRender()}toast('已載入 '+f.name+'，選擇轉換方式後按「轉換成五種模式」')}catch(err){toast('✗ '+err.message)}}
+$('#upPromptBtn').onclick=()=>$('#cvFile').click();
+document.addEventListener('dragover',e=>{if([...e.dataTransfer.items].some(i=>i.kind==='file'))e.preventDefault()});
+document.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f||e.target.closest('#cvDlg'))return;e.preventDefault();if(/\.(txt|md|markdown|json|ya?ml|csv|html?|prompt|xml|docx)$/i.test(f.name))cvLoadFile(f);else toast('不支援的檔案類型：'+f.name)});
+$('#cvBtn').onclick=()=>{$('#cvDlg').showModal();showOvr();cvRender()};
+$('#cvClose').onclick=()=>{cvSync();$('#cvDlg').close()};
+$('#cvUp').onclick=()=>$('#cvFile').click();
+$('#cvFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;await cvLoadFile(f);e.target.value=''};
+$('#cvSrc').addEventListener('dragover',e=>e.preventDefault());
+$('#cvSrc').addEventListener('drop',async e=>{const f=e.dataTransfer.files[0];if(!f)return;e.preventDefault();try{$('#cvSrc').value=await cvReadFile(f);$('#cvFname').textContent=f.name}catch(err){toast('✗ '+err.message)}});
+$('#cvGo').onclick=async()=>{
+  const src=$('#cvSrc').value.trim();if(!src){toast('請先輸入或上傳提示詞');return}
+  const useTools=$('#cvTools').checked,btn=$('#cvGo');btn.disabled=true;
+  try{
+    let r;
+    if($('#cvMode').value==='ai'){btn.textContent='AI 改寫中…';$('#cvStat').textContent='呼叫 '+$('#model').value+' 改寫中，約 10～40 秒';saveCfg();r=await cvAI(src,useTools)}
+    else r=cvTemplate(src);
+    CV=cvCompose(r,useTools);cvTab='A';cvRender();$('#cvStat').textContent=`✓ 完成：${CV.title}（${CV.mode}）`;
+  }catch(e){$('#cvStat').textContent='✗ '+e.message}
+  btn.disabled=false;btn.textContent='轉換成五種模式';
+};
+$('#cvCopy').onclick=async()=>{cvSync();const L=CV[cvTab];try{await navigator.clipboard.writeText(`【系統指令】\n${L.system}\n\n【使用者訊息】\n${L.user}`);toast('已複製 '+cvTab+' 欄')}catch(e){toast('複製失敗')}};
+$('#cvTxt').onclick=()=>{cvSync();const L=CV[cvTab];dl(cvName(`_${cvTab}.txt`),`# ${cvTab}｜${LANES[cvTab].name}\n\n【系統指令】\n${L.system}\n\n【使用者訊息範本】\n${L.user}\n`)};
+$('#cvMd').onclick=()=>{cvSync();dl(cvName('.md'),cvMD(),'text/markdown')};
+$('#cvJson').onclick=()=>{cvSync();dl(cvName('.json'),JSON.stringify(CV,null,2),'application/json')};
+$('#cvApply').onclick=()=>{cvSync();LANE_OVR={title:CV.title,A:{system:CV.A.system},B:{system:CV.B.system},C:{system:CV.C.system},D:{system:CV.D.system},E:{system:CV.E.system}};store.set('laneOvr',LANE_OVR);showOvr();
+  const missing=(CV.B.new_functions||[]).length;toast('已套用到 A～E'+(missing?`；B 建議新增 ${missing} 個函式需另行建立`:''));if(viewMode!=='ab')setView('ab');$('#cvDlg').close();
+  const u=CV.A.user;if(u&&!/^\{[^}]+\}$/.test(u.trim()))$('#input').value=u};
+setTimeout(showOvr,0);
+
+$('#exportBtn').onclick=()=>{const data=viewMode==='ab'?{model:$('#model').value,type:'AB',lanes:LANES,runs:abRuns.map(r=>({time:r.time,question:r.q,results:Object.fromEntries(r.lanes.map(k=>{const x=r.res[k];return [k,{answer:x.answer,calls:x.calls,ms:x.ms,inTok:x.inTok,outTok:x.outTok,data:x.fns,tools:x.tools,fed:x.fed,sources:x.sources,parseErr:x.parseErr,think:x.think,cost_usd:x.usd,cost_twd:+((x.usd||0)*FX()).toFixed(4)}]})),judge:r.judge,conclusion:r.concl||null,followups:(r.fu||[]).map(x=>({q:x.q,a:x.a}))}))}:{model:$('#model').value,history};const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(viewMode==='ab'?'gemini_ab_':'gemini_fc_')+Date.now()+'.json';a.click()};
+$('#testBtn').onclick=async()=>{saveCfg();try{const j=await callGemini([{role:'user',parts:[{text:'回覆：連線成功'}]}],false);toast('✓ '+(j.candidates?.[0]?.content?.parts?.[0]?.text||'OK').slice(0,30))}catch(e){toast('✗ 連線失敗，詳見對話區');addMsg('er','測試連線失敗：'+e.message+hintFor(e.message))}};
+function setTheme(t){const r=document.documentElement;if(t)r.dataset.theme=t;else delete r.dataset.theme;store.set('theme',t||null);$('#themeSel').value=t||''}
+$('#themeSel').onchange=e=>setTheme(e.target.value);
+setTheme(store.get('theme',null));
+{const c=store.get('fx',null);if(c&&c.manual){$('#fx').value=c.rate;setTimeout(priceHint,0)}else setTimeout(()=>loadFX(false),0)}
+
+const SAMPLES=['列出低於安全存量的品項，並草擬一封補貨 Email 給採購','宏遠精密近半年買了什麼？幫我報 10 台 NB-14 打 92 折','王小明下週一想請特休 2 天，餘額夠嗎？規定要提前幾天？','近 6 個月各月營收與毛利率趨勢，哪個月成長最多？','出差住台北一晚 3,800 元可以全額報帳嗎？','今天起算 10 個工作天後是哪一天？','台股 2468 華經，明天可以進場嗎？','台積電近 20 日法人買賣超與月營收趨勢','台北現在幾點？天氣如何？','把 350 美元換成台幣，再乘以 1.05 是多少？','查維基百科「函式呼叫」並摘要三點','幫我新增待辦：明早九點備課、寄課程報價，然後列出清單','比較東京和首爾未來三天最高溫','今天是星期幾？距離 2027 年元旦還有幾天？','高雄明天會下雨嗎？','今天台灣有哪些重要科技新聞？','整理 https://ai.google.dev/gemini-api/docs/function-calling 的三個重點'];
+$('#chips').innerHTML=SAMPLES.map(s=>`<button>${s}</button>`).join('');
+$('#chips').querySelectorAll('button').forEach(b=>b.onclick=()=>dispatch(b.textContent));
+
+$('#costChip').onclick=()=>{sess={usd:0,calls:0};$('#costChip').textContent='累計 NT$0'};
+['priceIn','priceOut','model'].forEach(id=>$('#'+id).addEventListener('input',priceHint));
+$('#fx').addEventListener('change',()=>{store.set('fx',{rate:+$('#fx').value,day:new Date().toDateString(),manual:true});priceHint()});
+loadCfg();if(!store.get('mdl31lite',false)){$('#model').value='gemini-3.1-flash-lite';saveCfg();store.set('mdl31lite',true)}renderTools();renderTodo();buildAB();setView(store.get('view','single'));setTrace(store.get('trace',true));setSide(store.get('side',true));
+addMsg('m','設定金鑰後即可開始。左側勾選要開放給模型的函式；右側可看每回合 functionCall → functionResponse 的完整迴圈。');
+</script>
+</body>
+</html>
