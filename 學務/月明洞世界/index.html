@@ -1051,6 +1051,22 @@
       updateJoystickFromPointer(curX, curY);
     }
 
+    // 漫遊模式獨立右手視角狀態機（支援左手推搖桿＋右手同步旋轉視角/仰望 63°/雙指縮放，以及電腦版滑鼠拖曳/右鍵平移/滾輪）
+    const rightPointers = new Map();
+    let prevPinchDist = null;
+    let mouseDragMode = null; // 'rotate' | 'pan'
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    renderer.domElement.addEventListener('contextmenu', (e) => {
+      if (walkMode) e.preventDefault();
+    });
+    renderer.domElement.addEventListener('wheel', (e) => {
+      if (!walkMode) return;
+      e.preventDefault();
+      gameCam.dist = Math.max(1.0, Math.min(8.5, gameCam.dist * (1 + Math.sign(e.deltaY) * 0.08)));
+    }, { passive: false });
+
     renderer.domElement.addEventListener('pointerdown', (e) => {
       if (e.button === 1 && walkMode) {
         e.preventDefault();
@@ -1058,11 +1074,18 @@
         onActionDown(e);
         return;
       }
+      if (walkMode && (e.button === 2 || (e.button === 0 && e.ctrlKey))) {
+        e.preventDefault();
+        mouseDragMode = 'pan';
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        return;
+      }
       if (e.button !== 0) return;
       downX = e.clientX;
       downY = e.clientY;
 
-      // 左下 1/3 x 1/3 熱區：檢查是否為雙擊，若非雙擊則進入待定浮動搖桿判定（先不送給 OrbitControls，免得右手變雙指縮放）
+      // 左下 1/3 x 1/3 熱區：檢查是否為雙擊，若非雙擊則進入待定浮動搖桿判定（不送給右手視角）
       if (walkMode && !pickMode && isInJoystickZone(e.clientX, e.clientY)) {
         const now = performance.now();
         const isDouble = now - lastTapTime < 350 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 36;
@@ -1077,6 +1100,21 @@
             }
           }, 130);
           pendingZoneTouch = { pointerId: pid, startX: sx, startY: sy, curX: sx, curY: sy, timer };
+          return;
+        }
+      }
+
+      if (walkMode) {
+        if (e.pointerType === 'touch') {
+          rightPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (rightPointers.size === 2) {
+            const pts = Array.from(rightPointers.values());
+            prevPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          }
+        } else {
+          mouseDragMode = 'rotate';
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
         }
       }
     }, true);
@@ -1097,6 +1135,45 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         updateJoystickFromPointer(e.clientX, e.clientY);
+        return;
+      }
+
+      if (!walkMode) return;
+      if (e.pointerType === 'touch' && rightPointers.has(e.pointerId)) {
+        e.preventDefault();
+        const prev = rightPointers.get(e.pointerId);
+        const dx = e.clientX - prev.x;
+        const dy = e.clientY - prev.y;
+        rightPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (rightPointers.size === 1) {
+          // 手機高靈敏度視角旋轉（約滑 40% 螢幕轉 180°，並支援仰望天空 63°）
+          const sens = 0.0085;
+          gameCam.yaw -= dx * sens;
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch - dy * sens * 0.85));
+        } else if (rightPointers.size === 2) {
+          const pts = Array.from(rightPointers.values());
+          const curPinch = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (prevPinchDist && curPinch > 10) {
+            gameCam.dist = Math.max(1.0, Math.min(8.5, gameCam.dist * (prevPinchDist / curPinch)));
+          }
+          prevPinchDist = curPinch;
+        }
+      } else if (mouseDragMode) {
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (mouseDragMode === 'rotate') {
+          gameCam.yaw -= dx * 0.0055;
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch - dy * 0.0048));
+        } else if (mouseDragMode === 'pan') {
+          const rightX = Math.cos(gameCam.yaw);
+          const rightZ = -Math.sin(gameCam.yaw);
+          const panScale = gameCam.dist * 0.0022;
+          gameCam.panX -= rightX * dx * panScale;
+          gameCam.panZ -= rightZ * dx * panScale;
+          gameCam.panY += dy * panScale;
+        }
       }
     }, true);
 
@@ -1109,6 +1186,11 @@
         }
         return;
       }
+      if (rightPointers.has(e.pointerId)) {
+        rightPointers.delete(e.pointerId);
+        if (rightPointers.size < 2) prevPinchDist = null;
+      }
+      if (e.button === 2 || e.button === 0) mouseDragMode = null;
       if (e.button !== 0) return;
       if (pendingZoneTouch && e.pointerId === pendingZoneTouch.pointerId) {
         clearTimeout(pendingZoneTouch.timer);
@@ -1510,13 +1592,42 @@
       loadModel(e.target.value);
     });
 
+    function syncGameCamFromCamera() {
+      const ex = explorerGroup.position.x + gameCam.panX;
+      const ey = explorerGroup.position.y + 0.52 + gameCam.panY;
+      const ez = explorerGroup.position.z + gameCam.panZ;
+      const dx = camera.position.x - ex;
+      const dy = camera.position.y - ey;
+      const dz = camera.position.z - ez;
+      const dist = Math.max(1.0, Math.min(8.5, Math.hypot(dx, dy, dz) || 2.35));
+      const horiz = Math.hypot(dx, dz) || 1e-4;
+      gameCam.yaw = gameCam.smoothYaw = Math.atan2(dx, dz);
+      gameCam.pitch = gameCam.smoothPitch = Math.max(-1.10, Math.min(1.15, Math.atan2(dy, horiz)));
+      gameCam.dist = gameCam.smoothDist = dist;
+    }
+
+    function updateCameraFov() {
+      const isPortraitWalk = walkMode && wrap.clientWidth < wrap.clientHeight;
+      const targetFov = isPortraitWalk ? 62 : 45;
+      if (camera.fov !== targetFov) {
+        camera.fov = targetFov;
+        camera.updateProjectionMatrix();
+      }
+    }
+
     window.addEventListener('resize', () => {
       camera.aspect = wrap.clientWidth / wrap.clientHeight;
+      updateCameraFov();
       camera.updateProjectionMatrix();
       renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     });
 
     const walkInput = { fwd: false, back: false, left: false, right: false, fast: false };
+    const gameCam = {
+      yaw: 0, pitch: 0.28, dist: 2.35,
+      smoothYaw: 0, smoothPitch: 0.28, smoothDist: 2.35,
+      panX: 0, panY: 0, panZ: 0,
+    };
     let walkTarget = null;
     const explorerNavState = { preferSign: 0 };
     let walkFaceTarget = null;
@@ -1687,7 +1798,8 @@
 
     function setWalkMode(on, skipCamSnap = false) {
       walkMode = on;
-      controls.enablePan = true; // Ctrl+左鍵 與 滑鼠右鍵 一律保留平移視角功能
+      controls.enabled = !on; // 漫遊模式改由 gameCam 獨立雙指狀態機接管，非漫遊模式使用 OrbitControls
+      updateCameraFov();
       explorerGroup.visible = on;
       walkPadEl.classList.toggle('show', on);
       actionBtnEl.classList.toggle('show', on);
@@ -1700,12 +1812,14 @@
         smoothSpeed = 0;
         jumpOffsetY = 0;
         jumpVelY = 0;
+        gameCam.panX = gameCam.panY = gameCam.panZ = 0;
         if (explorerAvatar?.group) explorerAvatar.group.position.y = 0;
       } else {
         const tx = Math.abs(controls.target.x) < 34 ? controls.target.x : 0.0;
         const tz = Math.abs(controls.target.z) < 34 ? controls.target.z : 1.5;
         const ty = sampleTerrainY(tx, tz, 8.2);
         explorerGroup.position.set(tx, ty, tz);
+        gameCam.panX = gameCam.panY = gameCam.panZ = 0;
         let dir = new THREE.Vector3().subVectors(controls.target, camera.position);
         dir.y = 0;
         if (dir.lengthSq() < 1e-4) dir.set(0, 0, -1);
@@ -1725,9 +1839,10 @@
         explorerGroup.rotation.y = Math.atan2(dir.x, dir.z);
         if (!skipCamSnap) {
           controls.target.set(tx, ty + 0.52, tz);
-          camera.position.set(tx - dir.x * 2.1, ty + 1.05, tz - dir.z * 2.1);
+          camera.position.set(tx - dir.x * 2.35, ty + 1.15, tz - dir.z * 2.35);
           controls.update();
         }
+        syncGameCamFromCamera();
       }
     }
 
@@ -1755,7 +1870,7 @@
       const rect = walkPadEl.getBoundingClientRect();
       const cx = rect.left + rect.width * 0.5;
       const cy = rect.top + rect.height * 0.5;
-      const maxR = rect.width * 0.34;
+      const maxR = rect.width * 0.44; // 加大至 ~42px 類比行程，微調站位更精準
       let dx = clientX - cx;
       let dy = clientY - cy;
       const dist = Math.hypot(dx, dy);
@@ -1764,10 +1879,16 @@
         dy = (dy / dist) * maxR;
       }
       joyKnobEl.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
-      const normX = dx / maxR;
-      const normY = -dy / maxR;
-      joyVec.x = Math.abs(normX) < 0.10 ? 0 : normX;
-      joyVec.y = Math.abs(normY) < 0.10 ? 0 : normY;
+      // 圓形死區 12%，消除十字軸黏滯感
+      const normMag = dist / maxR;
+      if (normMag <= 0.12 || dist < 1e-4) {
+        joyVec.x = 0;
+        joyVec.y = 0;
+      } else {
+        const scaled = (Math.min(1, normMag) - 0.12) / 0.88;
+        joyVec.x = (dx / dist) * scaled;
+        joyVec.y = (-dy / dist) * scaled;
+      }
     };
     const resetJoystick = () => {
       joyPointerId = null;
@@ -2008,14 +2129,19 @@
       const moveZ = Math.max(-1, Math.min(1, kbZ + joyVec.y));
       const moveX = Math.max(-1, Math.min(1, kbX + joyVec.x));
       const rawJoyMag = Math.min(1, Math.hypot(joyVec.x, joyVec.y));
-      const analogMag = rawJoyMag > 0.10 ? (rawJoyMag - 0.10) / 0.90 : 0;
+      // 指數響應曲線 m^1.65：微推精細走位、推滿順暢衝刺
+      const analogCurve = rawJoyMag > 0 ? Math.pow(rawJoyMag, 1.65) : 0;
 
       let moveDir = null;
       let targetSpeed = walkInput.fast
         ? 7.5
-        : (analogMag > 0 ? 1.4 + analogMag * 6.1 : 3.8);
+        : (analogCurve > 0 ? 1.2 + analogCurve * 6.3 : 4.2);
 
       if (moveZ !== 0 || moveX !== 0) {
+        // 手動移動時將平移偏移量柔和回正至主角
+        gameCam.panX *= 0.85;
+        gameCam.panY *= 0.85;
+        gameCam.panZ *= 0.85;
         // 手動操控優先，立即取消自動導航目標與轉向動畫
         hideLandmarkSignboard();
         walkTarget = null;
@@ -2045,7 +2171,10 @@
         explorerGroup.rotation.y = preWalkAnim.startYaw + preWalkAnim.dyaw * ease;
         camera.position.lerpVectors(preWalkAnim.startCam, preWalkAnim.endCam, ease);
         controls.target.lerpVectors(preWalkAnim.startTarget, preWalkAnim.endTarget, ease);
-        if (preWalkAnim.t >= 1) preWalkAnim = null;
+        if (preWalkAnim.t >= 1) {
+          preWalkAnim = null;
+          syncGameCamFromCamera();
+        }
         if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false);
         return;
       } else if (walkTarget) {
@@ -2131,6 +2260,7 @@
         if (camTurnAnim.t >= 1) {
           const cb = camTurnAnim.onDone;
           camTurnAnim = null;
+          syncGameCamFromCamera();
           if (cb) cb();
         }
         if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false, skillPose);
@@ -2141,8 +2271,8 @@
         return;
       }
 
-      // 自動導航快步加速；手動操控則保持漸進起步防頭暈
-      const accelRate = (!moveZ && !moveX && walkTarget) ? 16.0 : 6.0;
+      // 手遊級跟手反應速度（起步 15 / 轉向 12），消除滑冰延遲感
+      const accelRate = (!moveZ && !moveX && walkTarget) ? 16.0 : 15.0;
       smoothSpeed += (targetSpeed - smoothSpeed) * Math.min(1, dt * accelRate);
       const speed = smoothSpeed;
 
@@ -2196,13 +2326,43 @@
       let yawDiff = targetYaw - explorerGroup.rotation.y;
       while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
       while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
-      const yawRate = (!moveZ && !moveX && walkTarget) ? 12.0 : 6.5;
+      const yawRate = 12.0;
       explorerGroup.rotation.y += yawDiff * Math.min(1, dt * yawRate);
-
-      camera.position.x += dx;
-      camera.position.y += dy;
-      camera.position.z += dz;
       controls.target.set(nx, ny + 0.52, nz);
+    }
+
+    function applyGameCamera(dt) {
+      if (!walkMode || preWalkAnim || camTurnAnim || photoBarEl.classList.contains('show')) return;
+      const damp = Math.min(1, dt * 18.0);
+      let yawDiff = gameCam.yaw - gameCam.smoothYaw;
+      while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+      while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+      gameCam.smoothYaw += yawDiff * damp;
+      gameCam.smoothPitch += (gameCam.pitch - gameCam.smoothPitch) * damp;
+      gameCam.smoothDist += (gameCam.dist - gameCam.smoothDist) * damp;
+
+      // 仰望天空時（smoothPitch < 0）自動拉近距離靠近主角再仰望，並微抬注視焦點
+      const upRatio = gameCam.smoothPitch < 0 ? Math.min(1, -gameCam.smoothPitch / 1.10) : 0;
+      const effDist = gameCam.smoothDist * (1.0 - upRatio * 0.62);
+
+      const tx = explorerGroup.position.x + gameCam.panX;
+      const ty = explorerGroup.position.y + 0.50 + upRatio * 0.28 + gameCam.panY;
+      const tz = explorerGroup.position.z + gameCam.panZ;
+
+      const cosP = Math.cos(gameCam.smoothPitch);
+      const cx = tx + Math.sin(gameCam.smoothYaw) * cosP * effDist;
+      const cz = tz + Math.cos(gameCam.smoothYaw) * cosP * effDist;
+      let cy = ty + Math.sin(gameCam.smoothPitch) * effDist;
+
+      // 攝影機地表防穿地保護：確保仰望 63° 時也不會插到地表下方
+      const camGroundY = sampleTerrainY(cx, cz, explorerGroup.position.y);
+      if (cy < camGroundY + 0.18) {
+        cy = camGroundY + 0.18;
+      }
+
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(tx, ty, tz);
+      controls.target.set(tx, ty, tz);
     }
 
     let last = performance.now();
@@ -2211,8 +2371,9 @@
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       updateExplorer(dt, now / 1000);
+      applyGameCamera(dt);
       if (activeModelObj?.update) activeModelObj.update(dt, now / 1000);
-      controls.update();
+      if (!walkMode) controls.update();
       renderer.render(scene, camera);
     }
     requestAnimationFrame(animate);
