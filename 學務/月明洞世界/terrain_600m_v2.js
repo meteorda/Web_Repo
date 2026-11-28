@@ -790,7 +790,7 @@ export function createWolmyeongdongTerrainV2(opts = {}) {
   (async () => {
     try {
       const [glbRes, propsRes, groundTexImg] = await Promise.all([
-        fetch('./assets/models/wolmyeongdong_600m.glb?v=3'),
+        fetch('./assets/models/wolmyeongdong_600m.glb?v=4'),
         fetch('./assets/data/wolmyeongdong_600m_v2_props.json?v=2'),
         loadImageUrl(TERRAIN_V2_TEXTURES[0].url),
       ]);

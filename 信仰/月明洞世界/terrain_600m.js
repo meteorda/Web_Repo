@@ -82,7 +82,7 @@ export function createWolmyeongdongTerrain600m(opts = {}) {
     try {
       const initTexDef = TERRAIN_TEXTURES.find((s) => s.id === pendingStyleId) || TERRAIN_TEXTURES[0];
       const [res, initImg] = await Promise.all([
-        fetch('./assets/models/wolmyeongdong_600m.glb?v=3'),
+        fetch('./assets/models/wolmyeongdong_600m.glb?v=4'),
         loadImageUrl(initTexDef.url).catch(() => null),
       ]);
       if (!res.ok) throw new Error(`GLB HTTP ${res.status}`);
