@@ -67,8 +67,8 @@ export function createHall316(opts = {}) {
     root.add(waterMesh);
   }
 
-  // 湖岸護堤與造景巨石
-  addMesh(root, new THREE.BoxGeometry(20, 0.9, 13), cStoneBase, 0, 0.2, -1.5);
+  // 湖岸護堤與造景巨石（一樓最底下基座左右縮減至僅凸出建築物些許：±8.2）
+  addMesh(root, new THREE.BoxGeometry(16.4, 0.9, 13), cStoneBase, 0, 0.2, -1.5);
   // 湖岸邊立石造景（圖 2、圖 7 的岸邊石頭群）
   const shoreRocks = [
     [-7.5, 0.4, 4.8, 0.9, 1.3, 0.8],
@@ -96,12 +96,13 @@ export function createHall316(opts = {}) {
   [-6.8, -3.5, 0, 3.5, 6.8].forEach((px) => {
     addMesh(root, new THREE.BoxGeometry(0.45, 1.3, 0.45), cStoneWhite, px, 1.15, 2.4);
   });
-  // 右側向外突出觀景露台（圖 2、圖 5、圖 7 右側露台）
-  addMesh(root, new THREE.BoxGeometry(7.2, 0.28, 3.8), cStoneWhite, 3.6, Y_TERRACE_TOP, 2.5);
-  addMesh(root, new THREE.BoxGeometry(7.2, 0.24, 0.08), cStoneWarm, 3.6, Y_TERRACE_TOP + 0.26, 4.35);
+  // 右側向外突出觀景露台（往外延伸至與最底下基座右側 x=8.2、前緣 z=5.0 齊平）
+  addMesh(root, new THREE.BoxGeometry(8.2, 0.28, 4.4), cStoneWhite, 4.1, Y_TERRACE_TOP, 2.8);
+  addMesh(root, new THREE.BoxGeometry(8.2, 0.24, 0.08), cStoneWarm, 4.1, Y_TERRACE_TOP + 0.26, 4.95);
+  addMesh(root, new THREE.BoxGeometry(0.08, 0.24, 4.4), cStoneWarm, 8.16, Y_TERRACE_TOP + 0.26, 2.8);
   // 右側露台前排支撐小柱
-  [0.5, 3.6, 6.8].forEach((px) => {
-    addMesh(root, new THREE.CylinderGeometry(0.18, 0.18, 1.25, 8), cStoneWarm, px, 1.15, 4.1);
+  [0.5, 4.1, 7.7].forEach((px) => {
+    addMesh(root, new THREE.CylinderGeometry(0.18, 0.18, 1.25, 8), cStoneWarm, px, 1.15, 4.7);
   });
 
   // 左側大階梯（從岸邊斜上二樓大平台，對應圖 2、圖 7 左側大階梯）
