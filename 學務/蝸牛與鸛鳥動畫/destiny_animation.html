@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>《命運》原畫水墨有聲動畫｜2026.11.29 主日學</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at center, #2b2118 0%, #140f0a 100%);
+      font-family: "Noto Serif TC", "PingFang TC", "Microsoft JhengHei", serif;
+      color: #f5efe6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 14px;
+      overflow-x: hidden;
+    }
+    .frame-wrap {
+      position: relative;
+      width: min(940px, 96vw);
+      aspect-ratio: 828 / 536;
+      padding: 14px;
+      background: linear-gradient(135deg, #b8844c, #7c4f24 45%, #a5723d 75%, #653d18);
+      border-radius: 8px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.72), inset 0 0 0 2px rgba(255, 232, 196, 0.25);
+    }
+    .paper-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 22% 20%, rgba(255, 252, 245, 0.98), rgba(246, 239, 228, 0.98)),
+        #f6efe4;
+      overflow: hidden;
+      border-radius: 3px;
+      box-shadow: inset 0 0 32px rgba(102, 74, 42, 0.14);
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .title-badge {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      padding: 5px 14px;
+      background: rgba(30, 22, 14, 0.80);
+      color: #fef3c7;
+      border: 1px solid rgba(253, 230, 138, 0.4);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+    .award-badge {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, rgba(180, 83, 9, 0.92), rgba(120, 53, 15, 0.92));
+      color: #fef08a;
+      border: 1px solid rgba(253, 224, 71, 0.65);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .start-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 18px;
+      background: linear-gradient(to top, rgba(20, 15, 10, 0.38) 0%, transparent 40%);
+      transition: opacity 0.35s ease;
+    }
+    .start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .start-hero-btn {
+      padding: 12px 28px;
+      border-radius: 999px;
+      border: 2px solid #fde68a;
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+      font-family: inherit;
+    }
+    .start-hero-btn:hover { transform: scale(1.03); }
+    /* 字幕文字放大，方便教室遠距離觀看 */
+    .subtitle-box {
+      margin-top: 12px;
+      width: min(940px, 96vw);
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      background: rgba(24, 18, 12, 0.92);
+      border: 1px solid rgba(255, 243, 214, 0.28);
+      border-radius: 12px;
+      text-align: center;
+      font-size: clamp(19px, 2.5vw, 28px);
+      font-weight: 700;
+      line-height: 1.5;
+      color: #fffbeb;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+    }
+    .controls {
+      margin-top: 10px;
+      width: min(940px, 96vw);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 236, 200, 0.28);
+      background: rgba(45, 34, 24, 0.85);
+      color: #fef3c7;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+    .btn:hover { background: rgba(120, 82, 42, 0.9); }
+    .btn.active {
+      background: #d97706;
+      border-color: #fde68a;
+      color: #fff;
+    }
+    .progress-bar {
+      width: min(940px, 96vw);
+      height: 6px;
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f59e0b, #fde68a);
+    }
+    /* 動畫結束後才顯示的原畫解析彈窗 */
+    .guide-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 8, 6, 0.76);
+      backdrop-filter: blur(6px);
+      padding: 16px;
+    }
+    .guide-modal.open { display: flex; }
+    .guide-card {
+      width: min(680px, 95vw);
+      max-height: 86vh;
+      overflow-y: auto;
+      background: #1f1812;
+      border: 1px solid rgba(253, 230, 138, 0.4);
+      border-radius: 14px;
+      padding: 22px 24px;
+      color: #fef3c7;
+      line-height: 1.8;
+      font-size: 17px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72);
+    }
+    .guide-card h3 { color: #fde047; margin-bottom: 12px; font-size: 21px; }
+    .guide-card ul { padding-left: 22px; margin: 10px 0 16px; color: #f5efe6; }
+    .guide-card li { margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="frame-wrap">
+    <div class="paper-stage">
+      <canvas id="ink-canvas" width="828" height="536"></canvas>
+      <div class="title-badge">鄭明析牧師畫作《命運》</div>
+      <div class="award-badge" id="award-badge">🏆 獲選「阿根廷藝術展」世界級代表作品</div>
+      <div class="start-overlay" id="start-overlay">
+        <button class="start-hero-btn" id="hero-start-btn">▶ 開始播放有聲水墨動畫</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subtitle-box" id="subtitle">《命運》— 獲選世界級「阿根廷藝術展」代表作品（點擊按鈕開始欣賞故事）</div>
+
+  <div class="progress-bar" id="progress-bar" title="點擊跳轉進度">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="play-btn">▶ 開始播放</button>
+    <button class="btn" id="replay-btn">↺ 從頭重播</button>
+    <button class="btn" data-seek="0">0. 原畫與獎項</button>
+    <button class="btn" data-seek="12.8">1. 懸崖攀爬</button>
+    <button class="btn" data-seek="28.0">2. 登頂口白</button>
+    <button class="btn" data-seek="33.6">3. 鸛鳥逼近</button>
+    <button class="btn" data-seek="51.5">4. 原畫解析</button>
+    <button class="btn" id="guide-btn">📖 打開解析</button>
+    <button class="btn active" id="sound-btn">🔊 旁白：開</button>
+    <a class="btn" href="./battle_animation.html" style="text-decoration:none;background:#166534;border-color:#86efac;">⚔️ 觀看續集：鸛鳥與蝸牛爭戰</a>
+  </div>
+
+  <div class="guide-modal" id="guide-modal">
+    <div class="guide-card">
+      <h3>📖 《命運》原畫解析與話語核心</h3>
+      <ul>
+        <li><strong>耶穌賜下的構想：</strong>老師懇求耶穌：「請您透過我的手留下您的畫作」，握住耶穌賜予的毛筆瞬間畫出《命運》，並在世界級畫展<strong>「阿根廷藝術展」</strong>獲選為代表作品。</li>
+        <li><strong>做到底才能活：</strong>蝸牛即使面對強大的鸛鳥，仍因爬上懸崖、跌落又再爬的不放棄精神感動了對方，使生命從死亡中被拯救。</li>
+        <li><strong>左右命運的祕訣：</strong>即使面對強者、惡人或冤屈，只要像蝸牛一樣<strong>「做到底就能成功，靈與肉才能存活」</strong>！</li>
+      </ul>
+      <div style="text-align:right;display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn" id="replay-from-guide">↺ 再看一次動畫</button>
+        <button class="btn active" id="close-guide-btn">關閉解析</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('ink-canvas');
+    const ctx = canvas.getContext('2d');
+    const subtitleEl = document.getElementById('subtitle');
+    const playBtn = document.getElementById('play-btn');
+    const replayBtn = document.getElementById('replay-btn');
+    const soundBtn = document.getElementById('sound-btn');
+    const startOverlay = document.getElementById('start-overlay');
+    const awardBadge = document.getElementById('award-badge');
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+    const guideModal = document.getElementById('guide-modal');
+
+    const W = 828;
+    const H = 536;
+    const DURATION = 64.5;
+    let time = 0;
+    let playing = false; // 一開始定格先顯示完整原畫與得獎榮耀
+    let soundOn = true;
+    let lastTs = performance.now();
+    let activeSegIdx = -1;
+    let analysisShownAtEnd = false;
+
+    // 載入原畫分層圖
+    const layers = {};
+    const layerNames = ['cliff', 'snail', 'crane_body', 'crane_neck_only', 'crane_head', 'crane_beak', 'signature'];
+    let loadedCount = 0;
+    layerNames.forEach((name) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === layerNames.length) renderFrame(time);
+      };
+      img.src = `./assets/destiny/${name}.png?v=2`;
+      layers[name] = img;
+    });
+
+    // 載入 ElevenLabs eleven_v4 生成的 6 段繁體中文旁白與口白
+    const AUDIO_CUES = [
+      { start: 0.1, end: 12.6, src: './assets/destiny/audio/seg_0.mp3' },
+      { start: 12.9, end: 27.8, src: './assets/destiny/audio/seg_1.mp3' },
+      { start: 28.0, end: 33.5, src: './assets/destiny/audio/seg_2.mp3?v=3' },
+      { start: 33.6, end: 40.5, src: './assets/destiny/audio/seg_3.mp3' },
+      { start: 40.6, end: 51.4, src: './assets/destiny/audio/seg_4.mp3' },
+      { start: 51.5, end: 64.2, src: './assets/destiny/audio/seg_5.mp3' },
+    ];
+    const audioEls = AUDIO_CUES.map((c) => {
+      const a = new Audio(c.src);
+      a.preload = 'auto';
+      return a;
+    });
+    const aiyaAudio = new Audio('./assets/destiny/audio/aiya.mp3?v=3');
+    aiyaAudio.preload = 'auto';
+    aiyaAudio.volume = 1.0;
+    // 使用 Web Audio GainNode 額外放大 1.65 倍（突破瀏覽器 volume=1.0 上限）
+    let aiyaCtx = null;
+    function ensureAiyaGain() {
+      if (!aiyaCtx) {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) {
+            aiyaCtx = new AC();
+            const src = aiyaCtx.createMediaElementSource(aiyaAudio);
+            const gain = aiyaCtx.createGain();
+            gain.gain.value = 1.65;
+            src.connect(gain);
+            gain.connect(aiyaCtx.destination);
+          }
+        } catch {}
+      }
+      if (aiyaCtx && aiyaCtx.state === 'suspended') {
+        aiyaCtx.resume().catch(() => {});
+      }
+    }
+    let lastSlipIdx = 0;
+
+    function stopAllAudio() {
+      audioEls.forEach((a) => {
+        try { a.pause(); a.currentTime = 0; } catch {}
+      });
+      try { aiyaAudio.pause(); aiyaAudio.currentTime = 0; } catch {}
+      activeSegIdx = -1;
+      lastSlipIdx = 0;
+    }
+
+    function syncAudioForTime(t) {
+      if (!playing || !soundOn) return;
+      const idx = AUDIO_CUES.findIndex((c) => t >= c.start && t < c.end);
+      if (idx !== -1 && idx !== activeSegIdx) {
+        audioEls.forEach((a) => { try { a.pause(); a.currentTime = 0; } catch {} });
+        activeSegIdx = idx;
+        const a = audioEls[idx];
+        const offset = Math.max(0, t - AUDIO_CUES[idx].start);
+        try {
+          a.currentTime = offset;
+          a.play().catch(() => {});
+        } catch {}
+      }
+      // 蝸牛兩次下滑瞬間播放輕聲「唉呦！」背景音效
+      const ta = t - 12.8;
+      const slipIdx = (ta >= 4.5 && ta < 6.0) ? 1 : (ta >= 10.5 && ta < 11.8) ? 2 : 0;
+      if (slipIdx !== 0 && slipIdx !== lastSlipIdx) {
+        lastSlipIdx = slipIdx;
+        try {
+          ensureAiyaGain();
+          aiyaAudio.currentTime = 0;
+          aiyaAudio.play().catch(() => {});
+        } catch {}
+      } else if (slipIdx === 0) {
+        lastSlipIdx = 0;
+      }
+    }
+
+    function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+    function smooth(v) { v = clamp01(v); return v * v * (3 - 2 * v); }
+
+    const CLIFF_PATH = [
+      [272, 496], [312, 462], [346, 428], [338, 408], [362, 378],
+      [366, 350], [388, 312], [402, 272], [418, 248], [406, 232],
+      [445, 198], [492, 172], [542, 152], [576, 136], [602, 126],
+    ];
+    const SNAIL_ANCHOR_X = 602;
+    const SNAIL_ANCHOR_Y = 126;
+    const CRANE_PIVOT_X = 243;
+    const CRANE_PIVOT_Y = 392;
+
+    function sampleCliffPath(u) {
+      const segs = CLIFF_PATH.length - 1;
+      const pos = clamp01(u) * segs;
+      const i = Math.min(segs - 1, Math.floor(pos));
+      const f = pos - i;
+      const x = CLIFF_PATH[i][0] + (CLIFF_PATH[i + 1][0] - CLIFF_PATH[i][0]) * f;
+      const y = CLIFF_PATH[i][1] + (CLIFF_PATH[i + 1][1] - CLIFF_PATH[i][1]) * f;
+      const i0 = Math.max(0, i - 2);
+      const i1 = Math.min(segs, i + 2);
+      const sdx = CLIFF_PATH[i1][0] - CLIFF_PATH[i0][0];
+      const sdy = CLIFF_PATH[i1][1] - CLIFF_PATH[i0][1];
+      const slopeAngle = Math.max(-0.82, Math.min(-0.35, Math.atan2(sdy, sdx)));
+      return { x, y, slopeAngle };
+    }
+
+    // 動畫段落從 tAnim = t - 12.8 開始（0 ~ 12.8s 先展示完整原作與獎項）
+    function getSnailAnim(t) {
+      const ta = Math.max(0, t - 12.8);
+      let u = 0;
+      let flipX = 1;
+      let extraRot = 0;
+      let bob = 0;
+      let stretch = 1;
+      let slipping = false;
+
+      if (ta < 4.5) {
+        u = 0.04 + 0.44 * smooth(ta / 4.5);
+        bob = Math.sin(ta * 7) * 1.2;
+        stretch = 1 + Math.sin(ta * 6.5) * 0.06;
+      } else if (ta < 6.0) {
+        const f = smooth((ta - 4.5) / 1.5);
+        u = 0.48 - 0.28 * f;
+        extraRot = Math.sin(f * Math.PI) * 0.08;
+        slipping = true;
+      } else if (ta < 10.5) {
+        u = 0.20 + 0.56 * smooth((ta - 6.0) / 4.5);
+        bob = Math.sin(ta * 7.5) * 1.2;
+        stretch = 1 + Math.sin(ta * 7.0) * 0.06;
+      } else if (ta < 11.8) {
+        const f = smooth((ta - 10.5) / 1.3);
+        u = 0.76 - 0.22 * f;
+        extraRot = Math.sin(f * Math.PI) * 0.08;
+        slipping = true;
+      } else if (ta < 15.2) {
+        u = 0.54 + 0.46 * smooth((ta - 11.8) / 3.4);
+        bob = Math.sin(ta * 7) * 1.0;
+        stretch = 1 + Math.sin(ta * 6.5) * 0.05;
+      } else {
+        u = 1.0;
+        if (t >= 29.0 && t < 41.0) {
+          flipX = -1; // 登頂後轉頭看後面（左側大鸛鳥）
+        }
+      }
+
+      const pt = sampleCliffPath(u);
+      const flatBlend = u > 0.88 ? smooth((u - 0.88) / 0.12) : 0;
+      const rot = pt.slopeAngle * (1 - flatBlend) + extraRot;
+      // 往懸崖左上方外法線偏移 24px（rot < 0 故 Math.sin(rot) < 0 為向左、-Math.cos(rot) < 0 為向上）
+      const nx = Math.sin(rot);
+      const ny = -Math.cos(rot);
+      const offset = 24 * (1 - flatBlend);
+      return {
+        x: pt.x + nx * offset,
+        y: pt.y + ny * offset + bob,
+        rot,
+        flipX,
+        stretch,
+        slipping,
+      };
+    }
+
+    function getSubtitle(t) {
+      if (t < 12.8) return '這幅名為《命運》的畫作，是鄭明析牧師懇求耶穌後，握住耶穌賜予的毛筆瞬間畫下的，曾在世界級畫展「阿根廷藝術展」獲選為代表作品。';
+      if (t < 28.0) return '小蝸牛用盡力氣爬上陡峭的懸崖，即使在途中一次又一次失足跌落，牠依然不放棄地重新往上爬！';
+      if (t < 33.2) return '蝸牛：「呼⋯⋯我終於爬上來了！現在，活著了！」';
+      if (t < 40.5) return '不料，蝸牛轉頭一看，背後竟有一隻大鸛鳥張開長嘴，正準備吃掉牠！';
+      if (t < 51.5) return '但蝸牛在逆境中堅持到底的精神，讓鸛鳥看得入神，竟然忘了想吃牠的念頭，生命就這樣從死亡中被拯救了！';
+      return '該說這是被神預定下來的命運，還是蝸牛定下了自己的命運呢？只要像蝸牛一樣做到底，就能存活、獲得成功！';
+    }
+
+    function renderFrame(t) {
+      ctx.clearRect(0, 0, W, H);
+      if (loadedCount < layerNames.length) return;
+
+      // 序幕 (t < 12.8s)：完整顯示老師原作《命運》與得獎獎項
+      if (t < 12.8) {
+        ctx.drawImage(layers.cliff, 0, 0);
+        ctx.drawImage(layers.snail, 0, 0);
+        ctx.drawImage(layers.crane_body, 0, 0);
+        ctx.drawImage(layers.crane_neck_only, 0, 0);
+        ctx.drawImage(layers.crane_head, 0, 0);
+        ctx.drawImage(layers.crane_beak, 0, 0);
+        ctx.drawImage(layers.signature, 0, 0);
+        awardBadge.style.opacity = '1';
+      } else {
+        awardBadge.style.opacity = t > 51.5 ? '1' : '0.25';
+        const ta = t - 12.8;
+
+        // 1. 懸崖揮毫展開 (ta: 0 ~ 2.4s)
+        const cliffProg = smooth(ta / 2.4);
+        if (cliffProg > 0) {
+          ctx.save();
+          if (cliffProg < 0.99) {
+            ctx.beginPath();
+            ctx.rect(0, H * (1 - cliffProg), W * (0.25 + 0.75 * cliffProg), H * cliffProg + 20);
+            ctx.clip();
+          }
+          ctx.globalAlpha = Math.min(1, cliffProg * 1.4);
+          ctx.drawImage(layers.cliff, 0, 0);
+          ctx.restore();
+        }
+
+        // 2. 蝸牛沿懸崖外側 30px 攀爬 (ta >= 0.4s)
+        if (ta >= 0.4) {
+          const s = getSnailAnim(t);
+          ctx.save();
+          ctx.globalAlpha = smooth((ta - 0.4) / 0.6);
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.rot);
+          ctx.scale(s.flipX * s.stretch, 1);
+          ctx.drawImage(layers.snail, -SNAIL_ANCHOR_X, -SNAIL_ANCHOR_Y);
+          ctx.restore();
+
+          if (s.slipping) {
+            ctx.save();
+            // 冒汗（水滴形汗珠）
+            for (let d = 0; d < 2; d++) {
+              const p = (t * 3.2 + d * 0.45) % 1;
+              const sx = s.x - 18 - d * 18 - p * 12;
+              const sy = s.y - 42 + p * 18;
+              ctx.globalAlpha = (1 - p) * 0.88;
+              ctx.fillStyle = '#e0f2fe';
+              ctx.strokeStyle = '#181410';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(sx, sy - 9);
+              ctx.quadraticCurveTo(sx + 6, sy, sx, sy + 5);
+              ctx.quadraticCurveTo(sx - 6, sy, sx, sy - 9);
+              ctx.fill();
+              ctx.stroke();
+            }
+            // 冒泡泡（輕盈往上飄的空心小氣泡）
+            for (let b = 0; b < 3; b++) {
+              const p = (t * 2.6 + b * 0.33) % 1;
+              const bx = s.x - 28 - b * 14 + Math.sin(t * 6 + b) * 4;
+              const by = s.y - 54 - p * 34;
+              const br = 4.2 + b * 1.8 + p * 2.5;
+              ctx.globalAlpha = (1 - p) * 0.85;
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+              ctx.strokeStyle = '#181410';
+              ctx.lineWidth = 1.8;
+              ctx.beginPath();
+              ctx.arc(bx, by, br, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+        }
+
+        // 3. 鸛鳥登場 (t >= 32.8s)：長頸平滑彎曲下探 + 長喙張開欲吃，t >= 40.8s 感動合嘴定格
+        if (t >= 32.8) {
+          const craneAlpha = smooth((t - 32.8) / 1.5);
+          let lunge = 0;
+          let beakOpen = 0;
+          if (t < 35.0) {
+            lunge = -0.12 * (1 - smooth((t - 32.8) / 2.2));
+          } else if (t < 40.5) {
+            lunge = smooth((t - 35.0) / 2.4);
+            beakOpen = smooth((t - 35.6) / 1.6) * (0.85 + 0.15 * Math.sin(t * 7));
+          } else {
+            const calm = smooth((t - 40.5) / 3.0);
+            lunge = 1 - calm;
+            beakOpen = (1 - calm) * 0.85;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = craneAlpha;
+          ctx.drawImage(layers.crane_body, 0, 0);
+
+          const neckTopY = 152;
+          const neckBotY = CRANE_PIVOT_Y;
+          const slices = 80;
+          const sliceH = (neckBotY - neckTopY) / slices;
+          for (let i = 0; i < slices; i++) {
+            const sy = neckTopY + i * sliceH;
+            const k = 1 - i / slices;
+            const dx = lunge * (k * k * 48 + Math.sin(k * Math.PI) * 18);
+            const dy = lunge * (k * k * 14);
+            ctx.drawImage(layers.crane_neck_only, 0, sy, W, sliceH + 1.5, dx, sy + dy, W, sliceH + 1.5);
+          }
+
+          const headDx = lunge * 48;
+          const headDy = lunge * 14;
+          const headPivotX = 355 + headDx;
+          const headPivotY = 146 + headDy;
+
+          ctx.save();
+          ctx.translate(headPivotX, headPivotY);
+          ctx.rotate(lunge * 0.14);
+          ctx.drawImage(layers.crane_head, -355, -146);
+
+          ctx.save();
+          ctx.translate(394 - 355, 124 - 146);
+          ctx.rotate(-0.24 * beakOpen);
+          ctx.drawImage(layers.crane_beak, -394, -124);
+          ctx.restore();
+
+          if (beakOpen > 0.02) {
+            ctx.save();
+            ctx.globalAlpha = craneAlpha * Math.min(1, beakOpen * 1.4);
+            ctx.translate(394 - 355, 127 - 146);
+            ctx.rotate(0.26 * beakOpen);
+            ctx.strokeStyle = '#181410';
+            ctx.lineWidth = 6.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(45, 2, 92, -4);
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.restore();
+          ctx.restore();
+        }
+
+        // 4. 落款浮現 (t >= 44s)
+        if (t >= 44.0) {
+          ctx.save();
+          ctx.globalAlpha = smooth((t - 44.0) / 2.2);
+          ctx.drawImage(layers.signature, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      subtitleEl.textContent = getSubtitle(t);
+      progressFill.style.width = `${(t / DURATION) * 100}%`;
+    }
+
+    function startPlaybackFrom(startSec) {
+      ensureAiyaGain();
+      time = startSec;
+      playing = true;
+      analysisShownAtEnd = startSec >= DURATION;
+      startOverlay.classList.add('hidden');
+      playBtn.textContent = '⏸ 暫停播放';
+      playBtn.classList.add('active');
+      stopAllAudio();
+      syncAudioForTime(time);
+    }
+
+    function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = Math.min((now - lastTs) / 1000, 0.05);
+      lastTs = now;
+      if (playing) {
+        time += dt;
+        syncAudioForTime(time);
+        if (time >= DURATION) {
+          time = DURATION;
+          playing = false;
+          playBtn.textContent = '▶ 重播動畫';
+          playBtn.classList.remove('active');
+          if (!analysisShownAtEnd) {
+            analysisShownAtEnd = true;
+            guideModal.classList.add('open');
+          }
+        }
+      }
+      renderFrame(time);
+    }
+
+    document.getElementById('hero-start-btn').onclick = () => startPlaybackFrom(0);
+
+    playBtn.onclick = () => {
+      if (time >= DURATION) {
+        startPlaybackFrom(0);
+        return;
+      }
+      playing = !playing;
+      startOverlay.classList.add('hidden');
+      playBtn.textContent = playing ? '⏸ 暫停播放' : '▶ 繼續播放';
+      playBtn.classList.toggle('active', playing);
+      if (playing) syncAudioForTime(time);
+      else stopAllAudio();
+    };
+
+    replayBtn.onclick = () => {
+      guideModal.classList.remove('open');
+      startPlaybackFrom(0);
+    };
+
+    document.querySelectorAll('[data-seek]').forEach((btn) => {
+      btn.onclick = () => {
+        guideModal.classList.remove('open');
+        startPlaybackFrom(Number(btn.dataset.seek));
+      };
+    });
+
+    soundBtn.onclick = () => {
+      soundOn = !soundOn;
+      soundBtn.textContent = soundOn ? '🔊 旁白：開' : '🔇 旁白：關';
+      soundBtn.classList.toggle('active', soundOn);
+      if (!soundOn) stopAllAudio();
+      else if (playing) syncAudioForTime(time);
+    };
+
+    document.getElementById('guide-btn').onclick = () => guideModal.classList.add('open');
+    document.getElementById('close-guide-btn').onclick = () => guideModal.classList.remove('open');
+    document.getElementById('replay-from-guide').onclick = () => {
+      guideModal.classList.remove('open');
+      startPlaybackFrom(0);
+    };
+    guideModal.onclick = (e) => { if (e.target === guideModal) guideModal.classList.remove('open'); };
+
+    progressBar.onclick = (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const ratio = clamp01((e.clientX - rect.left) / rect.width);
+      startPlaybackFrom(ratio * DURATION);
+    };
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
