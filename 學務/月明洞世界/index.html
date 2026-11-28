@@ -1047,7 +1047,7 @@
       walkPadEl.style.bottom = 'auto';
       joyPointerId = pointerId;
       joyVec.active = true;
-      controls.enabled = false;
+      // 不關閉 controls.enabled，僅攔截 joyPointerId，讓右手可以同時旋轉視角！
       updateJoystickFromPointer(curX, curY);
     }
 
@@ -1062,11 +1062,12 @@
       downX = e.clientX;
       downY = e.clientY;
 
-      // 左下 1/3 x 1/3 熱區：檢查是否為雙擊，若非雙擊則進入待定浮動搖桿判定
-      if (walkMode && !pickMode && (e.pointerType === 'touch' || isInJoystickZone(e.clientX, e.clientY)) && isInJoystickZone(e.clientX, e.clientY)) {
+      // 左下 1/3 x 1/3 熱區：檢查是否為雙擊，若非雙擊則進入待定浮動搖桿判定（先不送給 OrbitControls，免得右手變雙指縮放）
+      if (walkMode && !pickMode && isInJoystickZone(e.clientX, e.clientY)) {
         const now = performance.now();
         const isDouble = now - lastTapTime < 350 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 36;
         if (!isDouble && !joyVec.active) {
+          e.stopImmediatePropagation();
           const pid = e.pointerId;
           const sx = e.clientX;
           const sy = e.clientY;
@@ -1082,6 +1083,8 @@
 
     renderer.domElement.addEventListener('pointermove', (e) => {
       if (pendingZoneTouch && e.pointerId === pendingZoneTouch.pointerId) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         pendingZoneTouch.curX = e.clientX;
         pendingZoneTouch.curY = e.clientY;
         if (Math.hypot(e.clientX - pendingZoneTouch.startX, e.clientY - pendingZoneTouch.startY) > 7) {
@@ -1112,6 +1115,7 @@
         pendingZoneTouch = null;
       }
       if (joyVec.active && joyPointerId === e.pointerId) {
+        e.stopImmediatePropagation();
         resetJoystick();
         return;
       }
@@ -1770,7 +1774,6 @@
       joyVec.active = false;
       joyVec.x = 0;
       joyVec.y = 0;
-      controls.enabled = true;
       joyKnobEl.style.transform = 'translate(0px, 0px)';
       walkPadEl.style.left = '';
       walkPadEl.style.top = '';
@@ -1795,8 +1798,7 @@
       }
       joyPointerId = e.pointerId;
       joyVec.active = true;
-      controls.enabled = false;
-      walkPadEl.setPointerCapture?.(e.pointerId);
+      try { walkPadEl.setPointerCapture?.(e.pointerId); } catch (_) {}
       updateJoystickFromPointer(e.clientX, e.clientY);
     });
     walkPadEl.addEventListener('pointermove', (e) => {
