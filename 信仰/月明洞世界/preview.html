@@ -1570,6 +1570,28 @@
         pickBoxEl.classList.remove('show');
       }
 
+      const captureViewBtn = document.createElement('button');
+      captureViewBtn.id = 'capture-view-btn';
+      captureViewBtn.className = 'hud-btn';
+      captureViewBtn.textContent = '📷 擷取視角';
+      captureViewBtn.onclick = async () => {
+        const cp = camera.position;
+        const ct = controls.target;
+        const fmt = (v) => `[${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}]`;
+        let info = `camPos: ${fmt(cp)} | target: ${fmt(ct)}`;
+        if (walkMode) {
+          const ep = explorerGroup.position;
+          info += `\nexplorer: ${fmt(ep)} | yaw: ${gameCam.yaw.toFixed(3)}, pitch: ${gameCam.pitch.toFixed(3)}, dist: ${gameCam.dist.toFixed(2)}`;
+        }
+        lastPickText = info;
+        pickCodeEl.textContent = info;
+        pickBoxEl.classList.add('show');
+        try { await navigator.clipboard.writeText(info); } catch {}
+        captureViewBtn.textContent = '✅ 已擷取視角';
+        setTimeout(() => { captureViewBtn.textContent = '📷 擷取視角'; }, 1500);
+      };
+      todRow.appendChild(captureViewBtn);
+
       const camRow = document.getElementById('cam-row');
       camRow.innerHTML = '';
       camRow.style.display = 'none';
