@@ -245,17 +245,23 @@
       <select id="model-select" class="model-select"></select>
     </div>
 
-    <div class="side-panel" id="master-panel" style="display:none;">
-      <div class="side-panel-head" id="master-panel-toggle">
-        <span>🎛️ 主場景設定</span>
-        <span id="master-chevron">▶</span>
+    <div style="display:flex;align-items:flex-start;gap:6px;pointer-events:auto;">
+      <div class="side-panel" id="master-panel" style="display:none;">
+        <div class="side-panel-head" id="master-panel-toggle">
+          <span>🎛️ 主場景設定</span>
+          <span id="master-chevron">▶</span>
+        </div>
+        <div class="side-panel-body collapsed" id="master-panel-body">
+          <div class="panel-group-title">選擇地圖基底：</div>
+          <div id="base-map-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+          <div class="panel-group-title">勾選顯示 3D 建物：</div>
+          <div id="landmark-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
       </div>
-      <div class="side-panel-body collapsed" id="master-panel-body">
-        <div class="panel-group-title">選擇地圖基底：</div>
-        <div id="base-map-list" style="display:flex;flex-direction:column;gap:4px;"></div>
-        <div class="panel-group-title">勾選顯示 3D 建物：</div>
-        <div id="landmark-list" style="display:flex;flex-direction:column;gap:4px;"></div>
-      </div>
+      <button type="button" class="hud-btn" id="fullscreen-btn" title="切換全螢幕" aria-label="切換全螢幕" style="padding:7px 8px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(15,23,42,0.82);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.16);box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+        <svg id="fs-icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <svg id="fs-icon-exit" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+      </button>
     </div>
 
     <div class="pick-box" id="pick-box">
@@ -331,7 +337,7 @@
     import { createWhiteSuitGentleman } from './gentleman.js?v=9';
     import { createWolmyeongdongTerrain600m, TERRAIN_TEXTURES } from './terrain_600m.js?v=5';
     import { createWolmyeongdongTerrainV2, TERRAIN_V2_TEXTURES } from './terrain_600m_v2.js?v=17';
-    import { createMasterScene, BASE_MAPS, LANDMARK_DEFS } from './main_scene.js?v=77';
+    import { createMasterScene, BASE_MAPS, LANDMARK_DEFS } from './main_scene.js?v=78';
 
     const masterState = {
       baseMapId: 'v2',
@@ -742,6 +748,25 @@
       masterChevronEl.textContent = collapsed ? '▶' : '▼';
       syncWalkPadLayer();
     };
+
+    const fsBtnEl = document.getElementById('fullscreen-btn');
+    const fsExpandEl = document.getElementById('fs-icon-expand');
+    const fsExitEl = document.getElementById('fs-icon-exit');
+    function syncFsIcon() {
+      const isFs = !!document.fullscreenElement;
+      if (fsExpandEl) fsExpandEl.style.display = isFs ? 'none' : 'block';
+      if (fsExitEl) fsExitEl.style.display = isFs ? 'block' : 'none';
+      if (fsBtnEl) fsBtnEl.title = isFs ? '退出全螢幕' : '切換全螢幕';
+    }
+    if (fsBtnEl) {
+      fsBtnEl.onclick = async () => {
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+          else await document.exitFullscreen();
+        } catch {}
+      };
+      document.addEventListener('fullscreenchange', syncFsIcon);
+    }
 
     const pickBoxEl = document.getElementById('pick-box');
     const pickCodeEl = document.getElementById('pick-code');
