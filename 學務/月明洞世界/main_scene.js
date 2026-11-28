@@ -12,8 +12,8 @@ import { createStarPeakPavilion } from './star_peak_pavilion.js?v=2';
 import { createBirthMemorial } from './birth_memorial.js';
 import { createPrayerMountain } from './prayer_mountain.js?v=7';
 import { createWhiteSuitGentleman } from './gentleman.js?v=10';
-import { createWolmyeongdongTerrain600m, TERRAIN_TEXTURES } from './terrain_600m.js?v=7';
-import { createWolmyeongdongTerrainV2, TERRAIN_V2_TEXTURES } from './terrain_600m_v2.js?v=19';
+import { createWolmyeongdongTerrain600m, TERRAIN_TEXTURES } from './terrain_600m.js?v=8';
+import { createWolmyeongdongTerrainV2, TERRAIN_V2_TEXTURES } from './terrain_600m_v2.js?v=20';
 
 export const BASE_MAPS = [
   { id: 'v1', label: '🗺️ 1 版｜實景／薩爾達貼圖沙盤', textures: TERRAIN_TEXTURES },
