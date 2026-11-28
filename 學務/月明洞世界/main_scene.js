@@ -39,7 +39,7 @@ export const LANDMARK_DEFS = [
 export const LANDMARK_PLACEMENTS = {
   jesus:              { pos: [-9.38, 8.64, 1.71],   rotY: 1.836,  scale: 0.18,   ringR: 1.55, frontDist: 2.05 },
   waterfall:          { pos: [6.02, 7.98, -0.70],   rotY: -0.247, scale: 0.221,  ringR: 2.80, frontDist: 2.25 },
-  gods_waterfall:     { pos: [-0.34, 7.97, 6.14],   rotY: 2.204,  scale: 0.1768, ringR: 2.24, frontDist: 1.15, snapY: true, yOffset: -0.61 },
+  gods_waterfall:     { pos: [-0.34, 7.97, 6.14],   rotY: 2.204,  scale: 0.1768, ringR: 2.24, frontDist: 1.15, snapY: true, yOffset: -0.36 },
   hall316:            { pos: [6.13, 8.03, 5.99],    rotY: -2.008, frontRotY: -2.55, scale: 0.175,  ringR: 1.95, frontDist: 2.35 },
   pavilion:           { pos: [2.64, 7.60, 4.88],    rotY: 1.519,  frontRotY: -2.80, scale: 0.14,   ringR: 1.75, frontDist: 2.15 },
   rockery:            { pos: [-4.53, 7.61, 3.81],   rotY: 2.733,  scale: 0.2763, ringR: 3.15, frontDist: 1.55, snapY: true, yOffset: -0.40 },
