@@ -331,7 +331,7 @@
     import { createWhiteSuitGentleman } from './gentleman.js?v=9';
     import { createWolmyeongdongTerrain600m, TERRAIN_TEXTURES } from './terrain_600m.js?v=5';
     import { createWolmyeongdongTerrainV2, TERRAIN_V2_TEXTURES } from './terrain_600m_v2.js?v=17';
-    import { createMasterScene, BASE_MAPS, LANDMARK_DEFS } from './main_scene.js?v=73';
+    import { createMasterScene, BASE_MAPS, LANDMARK_DEFS } from './main_scene.js?v=77';
 
     const masterState = {
       baseMapId: 'v2',
@@ -768,6 +768,69 @@
     let downX = 0, downY = 0;
     let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
 
+    function createOrbitAnim({ startTarget, endTarget, endCamPos, startExYaw, endExYaw, dur, groundClamp = 0.18, onDone = null }) {
+      let exDyaw = endExYaw - startExYaw;
+      while (exDyaw > Math.PI) exDyaw -= Math.PI * 2;
+      while (exDyaw < -Math.PI) exDyaw += Math.PI * 2;
+
+      const sdx = camera.position.x - startTarget.x;
+      const sdy = camera.position.y - startTarget.y;
+      const sdz = camera.position.z - startTarget.z;
+      const startDist = Math.max(0.8, Math.hypot(sdx, sdy, sdz) || 2.2);
+      const startCamYaw = Math.atan2(sdx, sdz);
+      const startCamPitch = Math.atan2(sdy, Math.hypot(sdx, sdz) || 1e-4);
+
+      const edx = endCamPos.x - endTarget.x;
+      const edy = endCamPos.y - endTarget.y;
+      const edz = endCamPos.z - endTarget.z;
+      const endDist = Math.max(0.8, Math.hypot(edx, edy, edz) || 2.2);
+      const endCamYaw = Math.atan2(edx, edz);
+      const endCamPitch = Math.atan2(edy, Math.hypot(edx, edz) || 1e-4);
+
+      let camDyaw = endCamYaw - startCamYaw;
+      while (camDyaw > Math.PI) camDyaw -= Math.PI * 2;
+      while (camDyaw < -Math.PI) camDyaw += Math.PI * 2;
+
+      return {
+        t: 0,
+        dur,
+        startExYaw,
+        exDyaw,
+        startTarget: startTarget.clone(),
+        endTarget: endTarget.clone(),
+        startCamYaw,
+        camDyaw,
+        startCamPitch,
+        endCamPitch,
+        startDist,
+        endDist,
+        groundClamp,
+        onDone,
+      };
+    }
+
+    const _orbitTmpTarget = new THREE.Vector3();
+    function stepOrbitAnim(anim, dt) {
+      anim.t = Math.min(1, anim.t + dt / anim.dur);
+      const u = anim.t;
+      const ease = u * u * (3 - 2 * u);
+      explorerGroup.rotation.y = anim.startExYaw + anim.exDyaw * ease;
+      const curYaw = anim.startCamYaw + anim.camDyaw * ease;
+      const curPitch = anim.startCamPitch + (anim.endCamPitch - anim.startCamPitch) * ease;
+      const curDist = anim.startDist + (anim.endDist - anim.startDist) * ease;
+      _orbitTmpTarget.lerpVectors(anim.startTarget, anim.endTarget, ease);
+      const cosP = Math.cos(curPitch);
+      const cx = _orbitTmpTarget.x + Math.sin(curYaw) * cosP * curDist;
+      const cz = _orbitTmpTarget.z + Math.cos(curYaw) * cosP * curDist;
+      let cy = _orbitTmpTarget.y + Math.sin(curPitch) * curDist;
+      const camGroundY = sampleTerrainY(cx, cz, _orbitTmpTarget.y - 0.5);
+      if (cy < camGroundY + anim.groundClamp) cy = camGroundY + anim.groundClamp;
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(_orbitTmpTarget);
+      controls.target.copy(_orbitTmpTarget);
+      return anim.t >= 1;
+    }
+
     function snapCameraBehindExplorerTo(tx, tz) {
       const ex = explorerGroup.position.x;
       const ey = explorerGroup.position.y;
@@ -778,20 +841,18 @@
       const dirX = dx / dlen;
       const dirZ = dz / dlen;
       const endYaw = Math.atan2(dirX, dirZ);
-      let dyaw = endYaw - explorerGroup.rotation.y;
-      while (dyaw > Math.PI) dyaw -= Math.PI * 2;
-      while (dyaw < -Math.PI) dyaw += Math.PI * 2;
-      // 行走前快速轉換到主角身後視角，轉完後立刻快步邁進
-      preWalkAnim = {
-        t: 0,
+      gameCam.panX = 0;
+      gameCam.panY = 0;
+      gameCam.panZ = 0;
+      // 行走前以球面最短角度快速環繞到主角身後視角，轉完後立刻快步邁進
+      preWalkAnim = createOrbitAnim({
+        startTarget: controls.target,
+        endTarget: new THREE.Vector3(ex, ey + 0.50, ez),
+        endCamPos: new THREE.Vector3(ex - dirX * 2.1, ey + 1.05, ez - dirZ * 2.1),
+        startExYaw: explorerGroup.rotation.y,
+        endExYaw: endYaw,
         dur: 0.35,
-        startYaw: explorerGroup.rotation.y,
-        dyaw,
-        startCam: camera.position.clone(),
-        endCam: new THREE.Vector3(ex - dirX * 2.1, ey + 1.05, ez - dirZ * 2.1),
-        startTarget: controls.target.clone(),
-        endTarget: new THREE.Vector3(ex, ey + 0.52, ez),
-      };
+      });
     }
 
     function navigateExplorerToScreenPoint(clientX, clientY) {
@@ -2165,13 +2226,7 @@
           .addScaledVector(walkRightVec, moveX)
           .normalize();
       } else if (preWalkAnim) {
-        preWalkAnim.t = Math.min(1, preWalkAnim.t + dt / preWalkAnim.dur);
-        const u = preWalkAnim.t;
-        const ease = u * u * (3 - 2 * u);
-        explorerGroup.rotation.y = preWalkAnim.startYaw + preWalkAnim.dyaw * ease;
-        camera.position.lerpVectors(preWalkAnim.startCam, preWalkAnim.endCam, ease);
-        controls.target.lerpVectors(preWalkAnim.startTarget, preWalkAnim.endTarget, ease);
-        if (preWalkAnim.t >= 1) {
+        if (stepOrbitAnim(preWalkAnim, dt)) {
           preWalkAnim = null;
           syncGameCamFromCamera();
         }
@@ -2199,21 +2254,19 @@
             const fx = fdx / flen;
             const fz = fdz / flen;
             const endYaw = Math.atan2(fx, fz);
-            let dyaw = endYaw - explorerGroup.rotation.y;
-            while (dyaw > Math.PI) dyaw -= Math.PI * 2;
-            while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+            gameCam.panX = 0;
+            gameCam.panY = 0;
+            gameCam.panZ = 0;
             if (walkFaceTarget.isPhoto) {
               const targetCamY = walkFaceTarget.camY !== undefined ? walkFaceTarget.camY : ey + 0.36;
-              camTurnAnim = {
-                t: 0,
-                dur: 1.15,
-                startYaw: explorerGroup.rotation.y,
-                dyaw,
-                startCam: camera.position.clone(),
-                // 鏡頭拉開並往下平移，微仰傾角讓人物從頭到腳全身入鏡並帶入後方景物
-                endCam: new THREE.Vector3(walkFaceTarget.camX, targetCamY, walkFaceTarget.camZ),
-                startTarget: controls.target.clone(),
+              camTurnAnim = createOrbitAnim({
+                startTarget: controls.target,
                 endTarget: new THREE.Vector3(walkFaceTarget.midX, ey + 0.36, walkFaceTarget.midZ),
+                endCamPos: new THREE.Vector3(walkFaceTarget.camX, targetCamY, walkFaceTarget.camZ),
+                startExYaw: explorerGroup.rotation.y,
+                endExYaw: endYaw,
+                dur: 1.15,
+                groundClamp: 0.16,
                 onDone: () => {
                   if (activeModelObj?.pauseTeacherForPhoto) {
                     activeModelObj.pauseTeacherForPhoto(walkFaceTarget?.camX || camera.position.x, walkFaceTarget?.camZ || camera.position.z, 16);
@@ -2225,22 +2278,20 @@
                   hideLandmarkSignboard();
                   photoBarEl.classList.add('show');
                 },
-              };
+              });
             } else {
               const arrivedLandmarkId = walkFaceTarget.landmarkId;
-              camTurnAnim = {
-                t: 0,
+              camTurnAnim = createOrbitAnim({
+                startTarget: controls.target,
+                endTarget: new THREE.Vector3(ex, ey + 0.50, ez),
+                endCamPos: new THREE.Vector3(ex - fx * 2.2, ey + 1.15, ez - fz * 2.2),
+                startExYaw: explorerGroup.rotation.y,
+                endExYaw: endYaw,
                 dur: 1.15,
-                startYaw: explorerGroup.rotation.y,
-                dyaw,
-                startCam: camera.position.clone(),
-                endCam: new THREE.Vector3(ex - fx * 2.2, ey + 1.15, ez - fz * 2.2),
-                startTarget: controls.target.clone(),
-                endTarget: new THREE.Vector3(walkFaceTarget.x, ey + 0.65, walkFaceTarget.z),
                 onDone: () => {
                   if (arrivedLandmarkId) showLandmarkSignboard(arrivedLandmarkId);
                 },
-              };
+              });
             }
             walkFaceTarget = null;
           }
@@ -2251,13 +2302,7 @@
         targetSpeed = Math.min(6.4, Math.max(3.6, dist * 1.6));
       } else if (camTurnAnim) {
         smoothSpeed = 0;
-        camTurnAnim.t = Math.min(1, camTurnAnim.t + dt / camTurnAnim.dur);
-        const u = camTurnAnim.t;
-        const ease = u * u * (3 - 2 * u);
-        explorerGroup.rotation.y = camTurnAnim.startYaw + camTurnAnim.dyaw * ease;
-        camera.position.lerpVectors(camTurnAnim.startCam, camTurnAnim.endCam, ease);
-        controls.target.lerpVectors(camTurnAnim.startTarget, camTurnAnim.endTarget, ease);
-        if (camTurnAnim.t >= 1) {
+        if (stepOrbitAnim(camTurnAnim, dt)) {
           const cb = camTurnAnim.onDone;
           camTurnAnim = null;
           syncGameCamFromCamera();

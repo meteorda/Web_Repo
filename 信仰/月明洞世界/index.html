@@ -1,0 +1,2427 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>月明洞世界｜3D 模型統一預覽中心</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; color: #f8fafc; }
+    #canvas-wrap { position: fixed; inset: 0; touch-action: none; }
+
+    .top-hud {
+      position: fixed; top: 8px; left: 10px; right: 10px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+      pointer-events: none; z-index: 30; flex-wrap: wrap;
+    }
+    .model-bar {
+      background: rgba(15, 23, 42, 0.84); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 14px;
+      padding: 7px 10px; pointer-events: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      display: flex; flex-direction: column; gap: 4px; width: 100%; max-width: 340px;
+    }
+    .model-bar-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .model-bar label { font-size: 0.74rem; color: #5eead4; font-weight: 800; }
+    .model-bar span { font-size: 0.68rem; color: #94a3b8; }
+    .model-select {
+      width: 100%; background: #1e293b; color: #f8fafc;
+      border: 1px solid rgba(94, 234, 212, 0.45); border-radius: 9px;
+      padding: 6px 10px; font-size: 0.84rem; font-weight: 800; outline: none;
+      cursor: pointer;
+    }
+
+    .bottom-hud {
+      position: fixed; bottom: 10px; left: 10px; right: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      pointer-events: none; z-index: 30;
+    }
+    .more-drawer {
+      display: none; flex-direction: column; align-items: center; gap: 6px;
+      width: 100%; max-width: 520px; pointer-events: auto;
+    }
+    .more-drawer.open { display: flex; }
+    .btn-row {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+      background: rgba(15, 23, 42, 0.84); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 14px;
+      padding: 6px 9px; pointer-events: auto; max-width: 100%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .cam-strip {
+      flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      max-width: calc(100vw - 20px);
+    }
+    .cam-strip::-webkit-scrollbar { display: none; }
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc; border-radius: 9px; padding: 6px 10px;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .hud-btn.active {
+      background: #14b8a6; border-color: #2dd4bf; color: #0f172a;
+    }
+    .hud-btn:active { transform: scale(0.95); }
+    .hud-btn.pick-on { background: #f59e0b; border-color: #fbbf24; color: #0f172a; }
+    .hud-btn.walk-on { background: #38bdf8; border-color: #7dd3fc; color: #0f172a; }
+
+    .walk-pad {
+      position: fixed; left: 14px; bottom: 70px; z-index: 15;
+      width: 96px; height: 96px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.14) 0%, rgba(15, 23, 42, 0.78) 72%);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(56, 189, 248, 0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 0 14px rgba(56, 189, 248, 0.18);
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      transition: opacity 0.15s ease;
+    }
+    .walk-pad::before {
+      content: '▲\A◀\00a0\00a0\00a0\00a0▶\A▼';
+      white-space: pre; text-align: center; line-height: 28px;
+      font-size: 9px; color: rgba(148, 163, 184, 0.55); pointer-events: none;
+    }
+    .walk-pad.show { display: flex; }
+    .walk-pad.menu-obscured, .action-btn.menu-obscured { opacity: 0; pointer-events: none; }
+    .joy-knob {
+      position: absolute; width: 42px; height: 42px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #7dd3fc, #0284c7);
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.55);
+      pointer-events: none; transform: translate(0px, 0px);
+    }
+    .action-btn {
+      position: fixed; right: 16px; bottom: 76px; z-index: 15;
+      width: 68px; height: 68px; border-radius: 50%;
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+      background: radial-gradient(circle at 35% 30%, rgba(251, 191, 36, 0.92), rgba(217, 119, 6, 0.92));
+      border: 2px solid rgba(254, 240, 138, 0.85); color: #0f172a;
+      font-weight: 900; font-size: 0.76rem; line-height: 1.1; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.42);
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+    }
+    .action-btn.show { display: flex; }
+    @media (hover: hover) and (pointer: fine) {
+      .walk-pad.show, .action-btn.show { display: none !important; }
+    }
+    .action-btn.holding {
+      transform: scale(1.08);
+      background: radial-gradient(circle at 35% 30%, #fef08a, #f59e0b);
+      box-shadow: 0 0 28px rgba(250, 204, 21, 0.9);
+    }
+    .action-btn.heart-mode {
+      background: radial-gradient(circle at 35% 30%, #fbcfe8, #ec4899);
+      border-color: #fdf2f8; color: #fff;
+      box-shadow: 0 0 28px rgba(236, 72, 153, 0.9);
+    }
+    .skill-shout {
+      position: fixed; left: 50%; top: 58px; transform: translateX(-50%);
+      z-index: 25; display: none; padding: 8px 18px; border-radius: 999px;
+      font-size: 0.9rem; font-weight: 900; letter-spacing: 0.5px; white-space: nowrap;
+      pointer-events: none; backdrop-filter: blur(8px);
+      animation: shoutPulse 0.6s ease-in-out infinite alternate;
+    }
+    .skill-shout.saiyan {
+      display: block; background: rgba(254, 240, 138, 0.92); color: #78350f;
+      border: 2px solid #facc15; box-shadow: 0 0 24px rgba(250, 204, 21, 0.85);
+    }
+    .skill-shout.heart {
+      display: block; background: rgba(253, 242, 248, 0.94); color: #9d174d;
+      border: 2px solid #f472b6; box-shadow: 0 0 24px rgba(244, 114, 182, 0.85);
+    }
+    .skill-shout.phone {
+      display: block; background: rgba(224, 242, 254, 0.95); color: #0369a1;
+      border: 2px solid #38bdf8; box-shadow: 0 0 24px rgba(56, 189, 248, 0.85);
+      max-width: min(420px, 90vw); white-space: normal; text-align: center; line-height: 1.35;
+    }
+    @keyframes shoutPulse {
+      from { transform: translateX(-50%) scale(1); }
+      to { transform: translateX(-50%) scale(1.06); }
+    }
+
+    @media (max-width: 768px) {
+      .top-hud { flex-wrap: nowrap; align-items: center; gap: 6px; }
+      .model-bar { flex: 1; min-width: 0; max-width: none; padding: 4px 7px; border-radius: 11px; }
+      .model-bar-top { display: none; }
+      .model-select { padding: 5px 8px; font-size: 0.78rem; }
+      .side-panel { flex-shrink: 0; padding: 6px 10px; border-radius: 11px; max-width: none; font-size: 0.78rem; }
+      .side-panel-head { gap: 5px; white-space: nowrap; }
+      .side-panel-body:not(.collapsed) {
+        position: fixed; top: 48px; left: 10px; right: 10px;
+        max-height: 55vh; overflow-y: auto; z-index: 40;
+        background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 14px;
+        padding: 10px 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+      }
+      #primary-bar {
+        flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+        max-width: calc(100vw - 20px); padding: 5px 8px; gap: 5px;
+      }
+      #primary-bar::-webkit-scrollbar { display: none; }
+      #primary-bar .hud-btn { flex-shrink: 0; padding: 5px 9px; font-size: 0.74rem; }
+    }
+
+    .side-panel {
+      background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 16px;
+      padding: 10px 14px; pointer-events: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      max-width: 310px; font-size: 0.82rem; display: flex; flex-direction: column; gap: 8px;
+    }
+    .side-panel-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-weight: 800; color: #5eead4; cursor: pointer;
+    }
+    .side-panel-body { display: flex; flex-direction: column; gap: 6px; }
+    .side-panel-body.collapsed { display: none; }
+    .panel-group-title { font-size: 0.74rem; color: #94a3b8; font-weight: 700; margin-top: 2px; }
+    .chk-item {
+      display: flex; align-items: center; gap: 7px; cursor: pointer;
+      padding: 4px 6px; border-radius: 8px; background: rgba(255,255,255,0.05);
+    }
+    .chk-item input { accent-color: #14b8a6; width: 15px; height: 15px; cursor: pointer; }
+    .pick-box {
+      background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px);
+      border: 1px solid rgba(251, 191, 36, 0.55); border-radius: 14px;
+      padding: 10px 12px; pointer-events: auto; max-width: 340px;
+      display: none; flex-direction: column; gap: 6px; font-size: 0.78rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .pick-box.show { display: flex; }
+    .pick-code {
+      background: #020617; color: #fde68a; padding: 7px 9px; border-radius: 8px;
+      font-family: ui-monospace, monospace; font-size: 0.72rem; line-height: 1.4;
+      user-select: text; word-break: break-all;
+    }
+    .photo-bar {
+      position: fixed; top: 82px; left: 50%; transform: translateX(-50%); z-index: 25;
+      display: none; align-items: center; gap: 8px;
+      background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px);
+      border: 1px solid rgba(251, 191, 36, 0.7); border-radius: 999px;
+      padding: 7px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+    .photo-bar.show { display: flex; }
+    .photo-modal {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      align-items: center; justify-content: center; padding: 16px;
+      background: rgba(2, 6, 23, 0.78); backdrop-filter: blur(8px);
+    }
+    .photo-modal.show { display: flex; }
+    .photo-card {
+      background: #ffffff; color: #0f172a; border-radius: 14px; padding: 12px 12px 14px;
+      max-width: 360px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .photo-card img { width: 100%; border-radius: 8px; display: block; }
+    .photo-flash {
+      position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 60;
+      transition: opacity 0.25s ease;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three-lite.js",
+        "three/addons/controls/OrbitControls.js": "./vendor/three-lite.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+
+  <div class="top-hud">
+    <div class="model-bar">
+      <div class="model-bar-top">
+        <label for="model-select">🏝️ 選擇 3D 預覽模型</label>
+        <span>單指旋轉｜雙指縮放｜雙擊自動走過去</span>
+      </div>
+      <select id="model-select" class="model-select"></select>
+    </div>
+
+    <div class="side-panel" id="master-panel" style="display:none;">
+      <div class="side-panel-head" id="master-panel-toggle">
+        <span>🎛️ 主場景設定</span>
+        <span id="master-chevron">▶</span>
+      </div>
+      <div class="side-panel-body collapsed" id="master-panel-body">
+        <div class="panel-group-title">選擇地圖基底：</div>
+        <div id="base-map-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div class="panel-group-title">勾選顯示 3D 建物：</div>
+        <div id="landmark-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+    </div>
+
+    <div class="pick-box" id="pick-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <strong style="color:#fbbf24;">📍 已擷取地表位置與朝向</strong>
+        <button class="hud-btn" id="copy-pick-btn" style="padding:4px 9px;font-size:0.75rem;">📋 複製座標</button>
+      </div>
+      <div class="pick-code" id="pick-code">點擊地表任意處即可擷取…</div>
+    </div>
+  </div>
+
+  <div class="walk-pad" id="walk-pad">
+    <div class="joy-knob" id="joy-knob"></div>
+  </div>
+  <button class="action-btn" id="action-btn" title="短按跳躍／長按發動技能">
+    <span style="font-size:1.25rem;">⬆️</span>
+    <span>跳／技</span>
+  </button>
+  <div class="skill-shout" id="skill-shout"></div>
+
+  <div class="photo-bar" id="photo-bar">
+    <span style="font-size:0.82rem;font-weight:800;color:#fde68a;">👨‍🏫 已追上老師！</span>
+    <button class="hud-btn" id="snap-photo-btn" style="background:#f59e0b;border-color:#fbbf24;color:#0f172a;">📸 跟老師拍張照</button>
+    <button class="hud-btn" id="close-photo-bar" style="padding:5px 9px;">✕</button>
+  </div>
+
+  <div class="photo-modal" id="photo-modal">
+    <div class="photo-card">
+      <img id="photo-preview-img" alt="與老師合照紀念" />
+      <div style="font-size:0.84rem;font-weight:800;color:#1e293b;">🏝️ 2026.11.29 月明洞世界｜與老師合照</div>
+      <div style="display:flex;gap:8px;width:100%;justify-content:center;">
+        <a id="download-photo-btn" class="hud-btn" download="月明洞_與老師合照.png" style="background:#14b8a6;border-color:#2dd4bf;color:#0f172a;text-decoration:none;">💾 下載紀念照</a>
+        <button class="hud-btn" id="close-photo-modal" style="background:#334155;color:#fff;">繼續探索</button>
+      </div>
+    </div>
+  </div>
+  <div class="photo-flash" id="photo-flash"></div>
+
+  <div class="bottom-hud">
+    <div class="more-drawer" id="more-drawer">
+      <div class="btn-row" id="tex-row" style="display:none;"></div>
+      <div class="btn-row" id="tod-row"></div>
+    </div>
+    <div class="btn-row cam-strip" id="cam-row"></div>
+    <div class="btn-row" id="primary-bar"></div>
+  </div>
+
+  <script>
+    window.addEventListener('error', (e) => {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;top:90px;left:12px;right:12px;background:#dc2626;color:#fff;padding:10px;border-radius:8px;z-index:999;font-size:12px;';
+      el.textContent = '3D 載入錯誤: ' + (e.message || e);
+      document.body.appendChild(el);
+    });
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { createOctagonalPavilion } from './pavilion.js';
+    import { createHall316 } from './hall316.js';
+    import { createHolySpiritWaterfall } from './waterfall.js?v=8';
+    import { createGodsWaterfall } from './gods_waterfall.js';
+    import { createJesusStatue } from './jesus_statue.js';
+    import { createAmbitionRockery } from './rockery.js?v=8';
+    import { createCheonggiwaHouse } from './cheonggiwa.js';
+    import { createGodsTemple } from './gods_temple.js';
+    import { createWonsanPavilion } from './wonsan_pavilion.js';
+    import { createStarPeakPavilion } from './star_peak_pavilion.js?v=2';
+    import { createBirthMemorial } from './birth_memorial.js';
+    import { createPrayerMountain } from './prayer_mountain.js?v=6';
+    import { createStudentAvatar, STUDENT_VARIANTS } from './students.js?v=9';
+    import { createWhiteSuitGentleman } from './gentleman.js?v=9';
+    import { createWolmyeongdongTerrain600m, TERRAIN_TEXTURES } from './terrain_600m.js?v=5';
+    import { createWolmyeongdongTerrainV2, TERRAIN_V2_TEXTURES } from './terrain_600m_v2.js?v=17';
+    import { createMasterScene, BASE_MAPS, LANDMARK_DEFS } from './main_scene.js?v=77';
+
+    const masterState = {
+      baseMapId: 'v2',
+      visibleLandmarks: new Set(['jesus', 'waterfall', 'gods_waterfall', 'hall316', 'pavilion', 'rockery', 'cheonggiwa', 'gods_temple', 'wonsan_pavilion', 'star_peak_pavilion', 'birth_memorial', 'prayer_mountain']),
+    };
+
+    // =========================================================
+    // 模型註冊表（未來新增島嶼／角色只要在此處加一筆即可）
+    // =========================================================
+    const MODELS = [
+      {
+        id: 'master_scene',
+        label: '🌏 主場景畫面',
+        create: () => createMasterScene({
+          baseMapId: masterState.baseMapId,
+          visibleLandmarks: Array.from(masterState.visibleLandmarks),
+        }),
+        isMaster: true,
+        supportsSnow: true,
+        supportsPick: true,
+        get textures() {
+          const bm = BASE_MAPS.find((b) => b.id === masterState.baseMapId);
+          return bm ? bm.textures : TERRAIN_V2_TEXTURES;
+        },
+        minDist: 1.0, maxDist: 105,
+        cams: [
+          { id: 'zelda_hill', label: '薩爾達山嵐視角', pos: [-18.2, 13.8, 3.2], target: [2.0, 8.3, 1.0] },
+          { id: 'overview', label: '全區鳥瞰', pos: [0, 42, 56], target: [0, 6.0, 0] },
+          { id: 'jesus_front', label: '✝️ 耶穌像正面', pos: [-5.4, 9.6, 0.7], target: [-9.38, 9.1, 1.71] },
+          { id: 'wf_front', label: '🌊 瀑布正面', pos: [-2.8, 9.6, 8.2], target: [-0.08, 8.8, 5.94] },
+          { id: 'h316_front', label: '🏛️ 316館正面', pos: [3.6, 9.4, 2.4], target: [6.13, 8.6, 5.99] },
+          { id: 'pav_front', label: '🏯 八角亭正面', pos: [1.6, 8.8, 1.9], target: [2.64, 8.1, 4.88] },
+        ],
+      },
+      {
+        id: 'terrain600m_v2',
+        label: '🗡️ 月明洞 2 版｜薩爾達 3D 世界',
+        create: () => createWolmyeongdongTerrainV2(),
+        supportsSnow: false,
+        supportsPick: true,
+        textures: TERRAIN_V2_TEXTURES,
+        minDist: 1.0, maxDist: 105,
+        cams: [
+          { id: 'zelda_hill', label: '薩爾達山嵐視角', pos: [-18.2, 13.8, 3.2], target: [2.0, 8.3, 1.0] },
+          { id: 'overview', label: '全區鳥瞰', pos: [0, 42, 56], target: [0, 6.0, 0] },
+          { id: 'lake', label: '月明湖畔', pos: [7.5, 11.2, 12.5], target: [2.36, 8.0, 5.02] },
+          { id: 'meadow', label: '林間草地', pos: [-10, 10.5, 6.5], target: [-3.5, 8.2, 0.5] },
+        ],
+      },
+      {
+        id: 'terrain600m',
+        label: '🗺️ 月明洞 1 版｜實景地形',
+        create: () => createWolmyeongdongTerrain600m(),
+        supportsSnow: false,
+        supportsPick: true,
+        textures: TERRAIN_TEXTURES,
+        minDist: 10, maxDist: 105,
+        cams: [
+          { id: 'overview', label: '全區鳥瞰', pos: [0, 38, 56], target: [0, 2.5, 0] },
+          { id: 'valley', label: '山谷低空', pos: [24, 16, 30], target: [0, 2.5, 0] },
+          { id: 'topdown', label: '正射俯視', pos: [0, 76, 0.1], target: [0, 2.0, 0] },
+          { id: 'ridge', label: '實體切面', pos: [-48, 12, -26], target: [0, 0.5, 0] },
+        ],
+      },
+      {
+        id: 'student_boy',
+        label: '👦 主角人物｜Q 版男學生',
+        create: () => createStudentAvatar('boy', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面書包', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      {
+        id: 'student_boy_cap',
+        label: '🧢 主角人物｜元氣棒球男孩',
+        create: () => createStudentAvatar('boy_cap', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面書包', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      {
+        id: 'student_boy_bear',
+        label: '🐻 主角人物｜熊耳軟萌男孩',
+        create: () => createStudentAvatar('boy_bear', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面小熊尾', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      {
+        id: 'student_girl',
+        label: '👧 主角人物｜Q 版女學生',
+        create: () => createStudentAvatar('girl', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面辮子與書包', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      {
+        id: 'student_girl_bunny',
+        label: '🐰 主角人物｜粉嫩兔耳女孩',
+        create: () => createStudentAvatar('girl_bunny', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面包頭與兔尾', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      {
+        id: 'student_girl_beret',
+        label: '🎨 主角人物｜貝雷帽文青女孩',
+        create: () => createStudentAvatar('girl_beret', { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面波浪長髮', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      },
+      ...['boy_dino', 'boy_sailor', 'boy_explorer', 'boy_prince', 'girl_cat', 'girl_strawberry', 'girl_angel', 'girl_star'].map((vid) => ({
+        id: `student_${vid}`,
+        label: `主角人物｜${STUDENT_VARIANTS[vid].label}`,
+        create: () => createStudentAvatar(vid, { withBase: true }),
+        supportsSnow: false,
+        minDist: 1.5, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面', pos: [0, 1.4, 3.6], target: [0, 1.0, 0] },
+          { id: 'back', label: '背面', pos: [0, 1.6, -3.4], target: [0, 1.0, 0] },
+          { id: 'side', label: '側面', pos: [3.2, 1.4, 1.4], target: [0, 1.0, 0] },
+        ],
+      })),
+      {
+        id: 'gentleman',
+        label: '👨‍🏫 老師',
+        create: () => createWhiteSuitGentleman({ withBase: true }),
+        supportsSnow: false,
+        minDist: 1.4, maxDist: 12,
+        cams: [
+          { id: 'front', label: '正面全身', pos: [0, 1.35, 3.4], target: [0, 0.95, 0] },
+          { id: 'face', label: '臉部與領帶特寫', pos: [0.0, 1.42, 1.75], target: [0, 1.22, 0.08] },
+          { id: 'side', label: '側面輪廓', pos: [3.2, 1.30, 0.3], target: [0, 0.95, 0] },
+          { id: 'back', label: '背面剪裁', pos: [0, 1.35, -3.4], target: [0, 0.95, 0] },
+        ],
+      },
+      {
+        id: 'cheonggiwa',
+        label: '🏠 青瓦屋',
+        create: () => createCheonggiwaHouse({ withBase: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 32,
+        cams: [
+          { id: 'overview', label: '正面全景', pos: [5.5, 4.8, 12.5], target: [0, 2.2, 0.5] },
+          { id: 'eaves', label: '青瓦飛簷特寫', pos: [6.8, 3.8, 6.2], target: [1.5, 3.1, 1.5] },
+          { id: 'holestone', label: '洞穴石與木窗', pos: [-5.2, 2.8, 8.8], target: [-2.2, 1.8, 2.5] },
+        ],
+      },
+      {
+        id: 'rockery',
+        label: '🪨 野心作石頭造景',
+        create: () => createAmbitionRockery({ withPlaza: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 36,
+        cams: [
+          { id: 'front', label: '正面全景', pos: [0, 5.2, 16.5], target: [0, 3.2, 0] },
+          { id: 'close', label: '「생명을 사랑하라」近看', pos: [0, 4.2, 8.5], target: [-0.25, 3.6, 0.5] },
+          { id: 'side', label: '側面立體層次', pos: [12, 5.5, 9.5], target: [0, 2.8, 0] },
+        ],
+      },
+      {
+        id: 'jesus',
+        label: '✝️ 自然聖殿耶穌像',
+        create: () => createJesusStatue({ withLawn: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 34,
+        cams: [
+          { id: 'overview', label: '全景視角', pos: [5.5, 5.2, 12.5], target: [-0.8, 2.8, -0.5] },
+          { id: 'front', label: '耶穌像正面', pos: [0, 4.2, 7.2], target: [0, 3.6, 0] },
+          { id: 'monument', label: '自然聖殿石碑', pos: [-6.5, 3.5, 4.5], target: [-3.2, 2.2, -2.0] },
+          { id: 'side', label: '側面微笑姿態', pos: [8.5, 4.0, 2.5], target: [0, 3.2, 0] },
+        ],
+      },
+      {
+        id: 'waterfall',
+        label: '🌊 聖靈瀑布',
+        create: () => createHolySpiritWaterfall({ withPlaza: true }),
+        supportsSnow: false,
+        minDist: 5, maxDist: 36,
+        cams: [
+          { id: 'overview', label: '全景視角', pos: [0, 7.5, 18], target: [0, 2.5, 0] },
+          { id: 'pool', label: '瀑布與綠光池', pos: [0, 3.2, 11.5], target: [0, 1.8, -0.8] },
+          { id: 'rocks', label: '三面石造景', pos: [-11.5, 6.5, 11.5], target: [0, 2.6, -1.2] },
+          { id: 'highpav', label: '高處涼亭', pos: [12, 10.5, 6], target: [4.0, 5.2, -4.0] },
+        ],
+      },
+      {
+        id: 'gods_waterfall',
+        label: '🌊 神的瀑布',
+        create: () => createGodsWaterfall({ withPlaza: true }),
+        supportsSnow: false,
+        minDist: 5, maxDist: 42,
+        cams: [
+          { id: 'overview', label: '全景視角', pos: [0, 8.2, 23.5], target: [0, 5.2, 0] },
+          { id: 'pool', label: '下層瀑布與熊貓石', pos: [0, 3.6, 12.0], target: [0, 2.2, 2.5] },
+          { id: 'rocks', label: '左右花崗岩與立石', pos: [-11.5, 7.2, 13.5], target: [0, 4.4, 0] },
+          { id: 'highpav', label: '山頂雙層涼亭', pos: [5.5, 12.2, 7.5], target: [0, 10.2, -1.65] },
+        ],
+      },
+      {
+        id: 'hall316',
+        label: '🏛️ 316 空提紀念館',
+        create: () => createHall316({ withLake: true }),
+        supportsSnow: true,
+        minDist: 6, maxDist: 42,
+        cams: [
+          { id: 'overview', label: '全景視角', pos: [16, 10, 21], target: [0, 4.2, -0.5] },
+          { id: 'pillars', label: '十根白柱', pos: [8.5, 4.2, 12.5], target: [-1.5, 4.0, 1.5] },
+          { id: 'pergola', label: '頂樓廊架', pos: [-11, 12.5, 11], target: [-1.0, 7.5, -1.8] },
+          { id: 'terrace', label: '湖岸露台', pos: [11, 4.5, 11.5], target: [2.0, 2.0, 2.5] },
+        ],
+      },
+      {
+        id: 'pavilion',
+        label: '🏯 月明湖八角亭',
+        create: () => createOctagonalPavilion({ withLake: true, withFountain: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 32,
+        cams: [
+          { id: 'overview', label: '全景視角', pos: [11, 7.5, 13], target: [0, 2.5, 0] },
+          { id: 'roof', label: '飛簷屋頂', pos: [5.5, 7.2, 5.5], target: [0, 5.4, 0] },
+          { id: 'arch', label: '石拱橋洞', pos: [0.5, 1.8, 7.8], target: [0, 1.2, 2.2] },
+          { id: 'bridge', label: '銀白鐵橋', pos: [8.5, 4.5, 8.5], target: [4.0, 2.2, -1.0] },
+        ],
+      },
+      {
+        id: 'gods_temple',
+        label: '🏯 神的殿',
+        create: () => createGodsTemple({ withBase: true }),
+        supportsSnow: false,
+        minDist: 6, maxDist: 38,
+        cams: [
+          { id: 'overview', label: '斜角全景', pos: [14, 9.5, 16], target: [0, 3.0, 0] },
+          { id: 'courtyard', label: 'U型中庭正面', pos: [0, 4.2, 16], target: [0, 2.8, 0] },
+          { id: 'roof', label: '青瓦屋頂', pos: [-12, 10.5, 11], target: [0, 4.8, -1.0] },
+        ],
+      },
+      {
+        id: 'wonsan_pavilion',
+        label: '⛩️ 圓山八角亭',
+        create: () => createWonsanPavilion({ withBase: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 28,
+        cams: [
+          { id: 'overview', label: '仰視全景', pos: [7.5, 3.2, 9.5], target: [0, 3.2, 0] },
+          { id: 'wood', label: '二樓木欄與椽木', pos: [4.2, 4.0, 5.2], target: [0, 3.6, 0] },
+        ],
+      },
+      {
+        id: 'star_peak_pavilion',
+        label: '⭐ 星峰亭',
+        create: () => createStarPeakPavilion({ withBase: true }),
+        supportsSnow: false,
+        minDist: 4, maxDist: 28,
+        cams: [
+          { id: 'overview', label: '石階正面全景', pos: [-5.5, 3.5, 9.8], target: [-0.4, 3.2, 0.5] },
+          { id: 'star', label: '亭內金星與半石半木柱', pos: [3.2, 3.6, 4.6], target: [0, 3.8, 0] },
+        ],
+      },
+      {
+        id: 'birth_memorial',
+        label: '🦅 誕生紀念館',
+        create: () => createBirthMemorial({ withBase: true }),
+        supportsSnow: false,
+        minDist: 5, maxDist: 34,
+        cams: [
+          { id: 'overview', label: '紀念館與雙柱全景', pos: [7.5, 4.2, 13.5], target: [1.0, 2.8, 0.6] },
+          { id: 'statues', label: '天使與老鷹石雕特寫', pos: [7.5, 4.8, 7.8], target: [4.5, 3.8, 2.0] },
+        ],
+      },
+      {
+        id: 'prayer_mountain',
+        label: '⛰️ 禱告山',
+        create: () => createPrayerMountain({ withBase: true }),
+        supportsSnow: false,
+        minDist: 6, maxDist: 38,
+        cams: [
+          { id: 'overview', label: '正面全景', pos: [0, 5.2, 17.5], target: [-0.5, 3.2, 0] },
+          { id: 'arch', label: '烏石與凱旋門三石', pos: [-7.5, 5.2, 9.5], target: [-4.5, 4.2, 0.5] },
+          { id: 'stairs', label: '純白階梯與立石', pos: [3.2, 4.2, 10.5], target: [1.0, 2.8, 0.6] },
+        ],
+      },
+    ];
+
+    const wrap = document.getElementById('canvas-wrap');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    wrap.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 200);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.screenSpacePanning = true;
+    controls.maxPolarAngle = Math.PI * 0.495;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.7;
+
+    const hemi = new THREE.HemisphereLight('#ffffff', '#6b8e78', 1.15);
+    scene.add(hemi);
+
+    const sun = new THREE.DirectionalLight('#fff2dc', 2.2);
+    sun.position.set(18, 28, 16);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.near = 2;
+    sun.shadow.camera.far = 70;
+    const d = 18;
+    sun.shadow.camera.left = -d;
+    sun.shadow.camera.right = d;
+    sun.shadow.camera.top = d;
+    sun.shadow.camera.bottom = -d;
+    scene.add(sun);
+
+    const PALETTES = {
+      day: { sky: '#cce6f4', fog: '#cce6f4', sunColor: '#fff2dc', sunI: 2.2, hemiI: 1.15, night: 0, snow: false },
+      dusk: { sky: '#f2b88d', fog: '#eab08a', sunColor: '#ff9659', sunI: 1.9, hemiI: 0.9, night: 0.4, snow: false },
+      night: { sky: '#0f172a', fog: '#111d36', sunColor: '#7a98d6', sunI: 0.65, hemiI: 0.45, night: 1.0, snow: false },
+      snow: { sky: '#dce7f0', fog: '#dce7f0', sunColor: '#ffffff', sunI: 2.0, hemiI: 1.3, night: 0, snow: true },
+    };
+
+    let activeModelObj = null;
+    let activeModelDef = null;
+    let currentTod = 'day';
+    let fogEnabled = true;
+    let currentTexId = null;
+    let pickMode = false;
+    let walkMode = false;
+    let lastPickText = '';
+
+    // 3D Pin + Forward Direction Arrow for terrain picking
+    const pickMarker = new THREE.Group();
+    const pinPole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.04, 1.8, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.7 })
+    );
+    pinPole.position.y = 0.9;
+    const pinHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28, 16, 12),
+      new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xf59e0b, emissiveIntensity: 0.9 })
+    );
+    pinHead.position.y = 1.9;
+    // Arrow pointing along +Z (facing camera when rotY = atan2(cam.x - hit.x, cam.z - hit.z))
+    const arrowShaft = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 1.2, 10),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.7 })
+    );
+    arrowShaft.rotation.x = Math.PI / 2;
+    arrowShaft.position.set(0, 0.25, 0.6);
+    const arrowTip = new THREE.Mesh(
+      new THREE.ConeGeometry(0.22, 0.55, 12),
+      new THREE.MeshStandardMaterial({ color: 0x7dd3fc, emissive: 0x0ea5e9, emissiveIntensity: 0.8 })
+    );
+    arrowTip.rotation.x = Math.PI / 2;
+    arrowTip.position.set(0, 0.25, 1.35);
+    pickMarker.add(pinPole, pinHead, arrowShaft, arrowTip);
+    pickMarker.visible = false;
+    scene.add(pickMarker);
+
+    const masterPanelEl = document.getElementById('master-panel');
+    const masterBodyEl = document.getElementById('master-panel-body');
+    const masterChevronEl = document.getElementById('master-chevron');
+    function syncWalkPadLayer() {
+      const pad = document.getElementById('walk-pad');
+      const act = document.getElementById('action-btn');
+      const masterOpen = masterPanelEl && masterPanelEl.style.display !== 'none' && !masterBodyEl.classList.contains('collapsed');
+      const moreOpen = document.getElementById('more-drawer')?.classList.contains('open');
+      const camEl = document.getElementById('cam-row');
+      const camOpen = camEl && camEl.style.display !== 'none';
+      const obscured = Boolean(masterOpen || moreOpen || camOpen);
+      if (pad) pad.classList.toggle('menu-obscured', obscured);
+      if (act) act.classList.toggle('menu-obscured', obscured);
+    }
+    document.getElementById('master-panel-toggle').onclick = () => {
+      const collapsed = masterBodyEl.classList.toggle('collapsed');
+      masterChevronEl.textContent = collapsed ? '▶' : '▼';
+      syncWalkPadLayer();
+    };
+
+    const pickBoxEl = document.getElementById('pick-box');
+    const pickCodeEl = document.getElementById('pick-code');
+    document.getElementById('copy-pick-btn').onclick = async () => {
+      if (!lastPickText) return;
+      try {
+        await navigator.clipboard.writeText(lastPickText);
+        document.getElementById('copy-pick-btn').textContent = '✅ 已複製';
+        setTimeout(() => { document.getElementById('copy-pick-btn').textContent = '📋 複製座標'; }, 1500);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = lastPickText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        document.getElementById('copy-pick-btn').textContent = '✅ 已複製';
+        setTimeout(() => { document.getElementById('copy-pick-btn').textContent = '📋 複製座標'; }, 1500);
+      }
+    };
+
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    let downX = 0, downY = 0;
+    let lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+
+    function createOrbitAnim({ startTarget, endTarget, endCamPos, startExYaw, endExYaw, dur, groundClamp = 0.18, onDone = null }) {
+      let exDyaw = endExYaw - startExYaw;
+      while (exDyaw > Math.PI) exDyaw -= Math.PI * 2;
+      while (exDyaw < -Math.PI) exDyaw += Math.PI * 2;
+
+      const sdx = camera.position.x - startTarget.x;
+      const sdy = camera.position.y - startTarget.y;
+      const sdz = camera.position.z - startTarget.z;
+      const startDist = Math.max(0.8, Math.hypot(sdx, sdy, sdz) || 2.2);
+      const startCamYaw = Math.atan2(sdx, sdz);
+      const startCamPitch = Math.atan2(sdy, Math.hypot(sdx, sdz) || 1e-4);
+
+      const edx = endCamPos.x - endTarget.x;
+      const edy = endCamPos.y - endTarget.y;
+      const edz = endCamPos.z - endTarget.z;
+      const endDist = Math.max(0.8, Math.hypot(edx, edy, edz) || 2.2);
+      const endCamYaw = Math.atan2(edx, edz);
+      const endCamPitch = Math.atan2(edy, Math.hypot(edx, edz) || 1e-4);
+
+      let camDyaw = endCamYaw - startCamYaw;
+      while (camDyaw > Math.PI) camDyaw -= Math.PI * 2;
+      while (camDyaw < -Math.PI) camDyaw += Math.PI * 2;
+
+      return {
+        t: 0,
+        dur,
+        startExYaw,
+        exDyaw,
+        startTarget: startTarget.clone(),
+        endTarget: endTarget.clone(),
+        startCamYaw,
+        camDyaw,
+        startCamPitch,
+        endCamPitch,
+        startDist,
+        endDist,
+        groundClamp,
+        onDone,
+      };
+    }
+
+    const _orbitTmpTarget = new THREE.Vector3();
+    function stepOrbitAnim(anim, dt) {
+      anim.t = Math.min(1, anim.t + dt / anim.dur);
+      const u = anim.t;
+      const ease = u * u * (3 - 2 * u);
+      explorerGroup.rotation.y = anim.startExYaw + anim.exDyaw * ease;
+      const curYaw = anim.startCamYaw + anim.camDyaw * ease;
+      const curPitch = anim.startCamPitch + (anim.endCamPitch - anim.startCamPitch) * ease;
+      const curDist = anim.startDist + (anim.endDist - anim.startDist) * ease;
+      _orbitTmpTarget.lerpVectors(anim.startTarget, anim.endTarget, ease);
+      const cosP = Math.cos(curPitch);
+      const cx = _orbitTmpTarget.x + Math.sin(curYaw) * cosP * curDist;
+      const cz = _orbitTmpTarget.z + Math.cos(curYaw) * cosP * curDist;
+      let cy = _orbitTmpTarget.y + Math.sin(curPitch) * curDist;
+      const camGroundY = sampleTerrainY(cx, cz, _orbitTmpTarget.y - 0.5);
+      if (cy < camGroundY + anim.groundClamp) cy = camGroundY + anim.groundClamp;
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(_orbitTmpTarget);
+      controls.target.copy(_orbitTmpTarget);
+      return anim.t >= 1;
+    }
+
+    function snapCameraBehindExplorerTo(tx, tz) {
+      const ex = explorerGroup.position.x;
+      const ey = explorerGroup.position.y;
+      const ez = explorerGroup.position.z;
+      const dx = tx - ex;
+      const dz = tz - ez;
+      const dlen = Math.hypot(dx, dz) || 1;
+      const dirX = dx / dlen;
+      const dirZ = dz / dlen;
+      const endYaw = Math.atan2(dirX, dirZ);
+      gameCam.panX = 0;
+      gameCam.panY = 0;
+      gameCam.panZ = 0;
+      // 行走前以球面最短角度快速環繞到主角身後視角，轉完後立刻快步邁進
+      preWalkAnim = createOrbitAnim({
+        startTarget: controls.target,
+        endTarget: new THREE.Vector3(ex, ey + 0.50, ez),
+        endCamPos: new THREE.Vector3(ex - dirX * 2.1, ey + 1.05, ez - dirZ * 2.1),
+        startExYaw: explorerGroup.rotation.y,
+        endExYaw: endYaw,
+        dur: 0.35,
+      });
+    }
+
+    function navigateExplorerToScreenPoint(clientX, clientY) {
+      if (!activeModelObj?.group || !activeModelDef?.supportsPick) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerNdc, camera);
+      const targets = [];
+      activeModelObj.group.traverse((obj) => {
+        if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.isTerrainSurface) targets.push(obj);
+      });
+      if (targets.length === 0) {
+        activeModelObj.group.traverse((obj) => {
+          if (obj.isMesh && !obj.userData.ignoreRaycast) targets.push(obj);
+        });
+      }
+      const hits = raycaster.intersectObjects(targets, false);
+      if (hits.length === 0) return;
+      const pt = hits[0].point;
+
+      if (!walkMode) {
+        setWalkMode(true, true);
+        const walkBtnEl = document.querySelector('[data-walk="1"]');
+        if (walkBtnEl) {
+          walkBtnEl.classList.add('walk-on');
+          walkBtnEl.textContent = '🚶 漫遊中';
+        }
+        controls.autoRotate = false;
+      }
+
+      walkFaceTarget = null;
+      camTurnAnim = null;
+      let tx = Math.max(-35, Math.min(35, pt.x));
+      let tz = Math.max(-35, Math.min(35, pt.z));
+      if (activeModelObj?.clampOutsideObstacles) {
+        const safe = activeModelObj.clampOutsideObstacles(tx, tz, 0.22);
+        tx = safe.x;
+        tz = safe.z;
+      }
+      const ty = sampleTerrainY(tx, tz, pt.y);
+      walkTarget = new THREE.Vector3(tx, ty, tz);
+      snapCameraBehindExplorerTo(walkTarget.x, walkTarget.z);
+      navRing.position.set(walkTarget.x, walkTarget.y + 0.08, walkTarget.z);
+      navRing.visible = true;
+    }
+
+    const LANDMARK_INTROS = {
+      jesus: { title: '✝️ 自然聖殿耶穌像', desc: '月明洞的信仰中心，主高舉雙手守望著自然聖殿，提醒我們時刻仰望主。' },
+      waterfall: { title: '🌊 聖靈瀑布', desc: '從高聳岩石奔流而下的壯闊瀑布，象徵聖靈潔淨與賜下生命的活水。' },
+      gods_waterfall: { title: '🌊 神的瀑布', desc: '層層黑石與白岩之間流淌的瀑布，展現神親自設計的自然之美。' },
+      hall316: { title: '🏛️ 316 空提紀念館', desc: '紀念神與歷史寶貴時刻的莊嚴建築，提醒我們珍惜時代的話語。' },
+      pavilion: { title: '🏯 月明湖八角亭', desc: '優雅的傳統八角涼亭與跨水小橋，是默想、休息與欣賞湖景的好地方。' },
+      rockery: { title: '🪨 野心作石頭造景', desc: '以數百顆巨石一顆顆堆疊而成的奇岩壯景，象徵反覆造就到底的信心！' },
+      cheonggiwa: { title: '🏠 青瓦屋', desc: '傳統韓式青瓦屋建築，見證早年禱告與同工們在月明洞生活奉獻的足跡。' },
+      gods_temple: { title: '🏯 神的殿', desc: '融合花崗岩與青瓦飛簷的雄偉聖殿，象徵神與聖靈同在居住的榮耀宮殿。' },
+      wonsan_pavilion: { title: '⛩️ 圓山八角亭', desc: '矗立於高處山頭的八角亭，爬得越高，就能看見越遼闊美麗的風景！' },
+      star_peak_pavilion: { title: '⭐ 星峰亭', desc: '登上純白階梯來到星峰亭，仰望亭內閃耀的金星，想起神對我們的珍貴應許。' },
+      birth_memorial: { title: '🦅 誕生紀念館', desc: '韓屋旁立著天使與老鷹石雕，紀念生命的誕生與如鷹展翅上騰的盼望。' },
+      prayer_mountain: { title: '⛰️ 禱告山', desc: '巨型烏石、凱旋門三石與純白階梯所在之處，是向神深切呼求、禱告並與神對話的聖山！' },
+    };
+
+    function showLandmarkSignboard(landmarkId) {
+      const info = LANDMARK_INTROS[landmarkId];
+      if (!info) return;
+      let board = document.getElementById('landmark-signboard');
+      if (!board) {
+        board = document.createElement('div');
+        board.id = 'landmark-signboard';
+        board.style.cssText = 'position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:2400;max-width:min(420px,90vw);padding:10px 34px 10px 16px;border-radius:14px;background:rgba(15,23,42,0.88);backdrop-filter:blur(8px);border:1.5px solid rgba(250,204,21,0.55);box-shadow:0 10px 28px rgba(0,0,0,0.45);color:#f8fafc;transition:opacity 0.25s,transform 0.25s;pointer-events:auto;';
+        board.innerHTML = '<div id="sb-title" style="font-size:14px;font-weight:800;color:#fde047;margin-bottom:3px;"></div><div id="sb-desc" style="font-size:12px;line-height:1.45;color:#e2e8f0;"></div><button id="sb-close" style="position:absolute;top:6px;right:8px;border:none;background:transparent;color:#94a3b8;font-size:14px;cursor:pointer;padding:2px 6px;">✕</button>';
+        document.body.appendChild(board);
+        board.querySelector('#sb-close').onclick = hideLandmarkSignboard;
+      }
+      board.querySelector('#sb-title').textContent = info.title;
+      board.querySelector('#sb-desc').textContent = info.desc;
+      board.style.opacity = '1';
+      board.style.pointerEvents = 'auto';
+      board.style.transform = 'translateX(-50%) translateY(0)';
+    }
+
+    function hideLandmarkSignboard() {
+      const board = document.getElementById('landmark-signboard');
+      if (!board) return;
+      board.style.opacity = '0';
+      board.style.pointerEvents = 'none';
+      board.style.transform = 'translateX(-50%) translateY(-6px)';
+    }
+
+    function navigateExplorerToLandmark(landmarkId) {
+      if (!activeModelObj?.getLandmarkPlacement) return false;
+      const cfg = activeModelObj.getLandmarkPlacement(landmarkId);
+      if (!cfg) return false;
+      const dist = cfg.frontDist || 2.1;
+      const fRot = cfg.frontRotY !== undefined ? cfg.frontRotY : cfg.rotY;
+      const fx = cfg.pos[0] + Math.sin(fRot) * dist;
+      const fz = cfg.pos[2] + Math.cos(fRot) * dist;
+      const fy = sampleTerrainY(fx, fz, cfg.pos[1]);
+
+      if (!walkMode) {
+        setWalkMode(true, true);
+        const walkBtnEl = document.querySelector('[data-walk="1"]');
+        if (walkBtnEl) {
+          walkBtnEl.classList.add('walk-on');
+          walkBtnEl.textContent = '🚶 漫遊中';
+        }
+        controls.autoRotate = false;
+      }
+
+      hideLandmarkSignboard();
+      walkTarget = new THREE.Vector3(fx, fy, fz);
+      walkFaceTarget = { x: cfg.pos[0], z: cfg.pos[2], landmarkId };
+      camTurnAnim = null;
+      // 行走前先立即切換到主角身後的第三人稱視角，走動全程以主角視角跟隨前進
+      snapCameraBehindExplorerTo(fx, fz);
+      navRing.position.set(fx, fy + 0.08, fz);
+      navRing.visible = true;
+      return true;
+    }
+
+    // Google 地圖 600m x 600m 對應 GLB 世界邊界 [-38, +38]（共 76 單位），故 1 世界單位 = 600 / 76 ≈ 7.895 公尺
+    const WORLD_TO_MAP_METERS = 600 / 76;
+    const TEACHER_PHOTO_MAX_DIST = 15 / WORLD_TO_MAP_METERS;
+    let photoToastTimer = null;
+    function showPhotoHint(msg) {
+      let el = document.getElementById('photo-hint-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'photo-hint-toast';
+        el.style.cssText = 'position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:2600;padding:8px 16px;border-radius:999px;background:rgba(15,23,42,0.88);color:#fef08a;font-size:13px;font-weight:700;border:1px solid rgba(250,204,21,0.45);box-shadow:0 6px 20px rgba(0,0,0,0.45);pointer-events:none;transition:opacity 0.25s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.opacity = '1';
+      if (photoToastTimer) clearTimeout(photoToastTimer);
+      photoToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2400);
+    }
+
+    function navigateExplorerToTeacher() {
+      if (!activeModelObj?.getTeacherPose || !activeModelObj?.pauseTeacherForPhoto) return false;
+      // 點擊老師準備拍照或顯示距離提示時，先關閉景點介紹牌子以免擋住拍照文字提示
+      hideLandmarkSignboard();
+      const tp = activeModelObj.getTeacherPose();
+      const distToTeacher = Math.hypot(tp.x - explorerGroup.position.x, tp.z - explorerGroup.position.z);
+      const distMeters = distToTeacher * WORLD_TO_MAP_METERS;
+      const maxMeters = TEACHER_PHOTO_MAX_DIST * WORLD_TO_MAP_METERS;
+      if (!walkMode) {
+        showPhotoHint(`🚶 請先開啟漫遊並走到老師身邊（約 ${maxMeters.toFixed(0)} 公尺內）再點擊合照！`);
+        return false;
+      }
+      if (distToTeacher > TEACHER_PHOTO_MAX_DIST) {
+        showPhotoHint(`📏 距離老師還有 ${distMeters.toFixed(1)} 公尺，請靠近到 ${maxMeters.toFixed(0)} 公尺內再點擊合照！`);
+        return false;
+      }
+
+      // 老師若正面向建物（站定看建物），轉 180 度背對建物面向鏡頭；主角配合老師轉向後的角度緊靠站在身旁
+      const photoYaw = tp.backToLandmarkYaw !== undefined ? tp.backToLandmarkYaw : (tp.rotY + Math.PI);
+      let sx = tp.x + Math.cos(photoYaw) * 0.24;
+      let sz = tp.z - Math.sin(photoYaw) * 0.24;
+      if (activeModelObj?.clampOutsideObstacles) {
+        const safe = activeModelObj.clampOutsideObstacles(sx, sz, 0.14);
+        sx = safe.x;
+        sz = safe.z;
+      }
+      const sy = sampleTerrainY(sx, sz, tp.y);
+      const midX = (tp.x + sx) * 0.5;
+      const midZ = (tp.z + sz) * 0.5;
+      // 鏡頭拉開並往下平移，微仰傾角讓人物從頭到腳全身入鏡並帶入後方景物
+      const camX = midX + Math.sin(photoYaw) * 1.95;
+      const camZ = midZ + Math.cos(photoYaw) * 1.95;
+      const camGroundY = sampleTerrainY(camX, camZ, sy);
+      const camY = Math.max(sy + 0.20, camGroundY + 0.16);
+
+      // 進入拍照流程時隱藏建物四周光圈與腳下導覽光圈
+      if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(false);
+      activeModelObj.pauseTeacherForPhoto(camX, camZ, 16);
+      walkTarget = new THREE.Vector3(sx, sy, sz);
+      walkFaceTarget = { x: camX, z: camZ, isPhoto: true, camX, camY, camZ, midX, midZ, snapX: sx, snapZ: sz };
+      camTurnAnim = null;
+      snapCameraBehindExplorerTo(sx, sz);
+      navRing.visible = false;
+      return true;
+    }
+
+    const photoBarEl = document.getElementById('photo-bar');
+    const photoModalEl = document.getElementById('photo-modal');
+    const photoImgEl = document.getElementById('photo-preview-img');
+    const downloadPhotoEl = document.getElementById('download-photo-btn');
+    const photoFlashEl = document.getElementById('photo-flash');
+    document.getElementById('close-photo-bar').onclick = () => {
+      photoBarEl.classList.remove('show');
+      if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(true);
+      if (activeModelObj?.triggerTeacherWave) activeModelObj.triggerTeacherWave(camera.position.x, camera.position.z, 2.0);
+    };
+    document.getElementById('close-photo-modal').onclick = () => {
+      photoModalEl.classList.remove('show');
+      if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(true);
+      if (activeModelObj?.triggerTeacherWave) activeModelObj.triggerTeacherWave(camera.position.x, camera.position.z, 2.0);
+    };
+    document.getElementById('snap-photo-btn').onclick = () => {
+      if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(false);
+      navRing.visible = false;
+      photoFlashEl.style.opacity = '0.92';
+      setTimeout(() => { photoFlashEl.style.opacity = '0'; }, 180);
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL('image/png');
+      photoImgEl.src = dataUrl;
+      downloadPhotoEl.href = dataUrl;
+      photoBarEl.classList.remove('show');
+      photoModalEl.classList.add('show');
+    };
+
+    // 滑鼠中鍵 (e.button === 1)：在 window capture 層級攔截，以 middleDownActive 追蹤放開狀態，確保 100% 穩定觸發
+    let middleDownActive = false;
+    window.addEventListener('mousedown', (e) => {
+      if (e.button === 1 && walkMode) e.preventDefault();
+    }, true);
+    window.addEventListener('auxclick', (e) => {
+      if (e.button === 1 && walkMode) e.preventDefault();
+    }, true);
+    window.addEventListener('pointerdown', (e) => {
+      if (e.button === 1 && walkMode) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        middleDownActive = true;
+        onActionDown(e);
+      }
+    }, true);
+    const finishMiddlePress = (e) => {
+      if (middleDownActive) {
+        middleDownActive = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onActionUp(e);
+      }
+    };
+    window.addEventListener('pointerup', finishMiddlePress, true);
+    window.addEventListener('mouseup', (e) => { if (e.button === 1) finishMiddlePress(e); }, true);
+    window.addEventListener('pointercancel', finishMiddlePress, true);
+
+    // 浮動搖桿熱區（僅限左邊 1/3 且下方 1/3 同時符合的區塊），且雙擊不可觸發搖桿
+    let pendingZoneTouch = null;
+    const isInJoystickZone = (x, y) => (x <= window.innerWidth / 3 && y >= window.innerHeight * (2 / 3));
+
+    function activateFloatingJoystick(pointerId, originX, originY, curX, curY) {
+      pendingZoneTouch = null;
+      const w = walkPadEl.offsetWidth || 96;
+      const h = walkPadEl.offsetHeight || 96;
+      const left = Math.max(6, Math.min(window.innerWidth - w - 6, originX - w * 0.5));
+      const top = Math.max(52, Math.min(window.innerHeight - h - 54, originY - h * 0.5));
+      walkPadEl.style.left = `${left.toFixed(0)}px`;
+      walkPadEl.style.top = `${top.toFixed(0)}px`;
+      walkPadEl.style.bottom = 'auto';
+      joyPointerId = pointerId;
+      joyVec.active = true;
+      // 不關閉 controls.enabled，僅攔截 joyPointerId，讓右手可以同時旋轉視角！
+      updateJoystickFromPointer(curX, curY);
+    }
+
+    // 漫遊模式獨立右手視角狀態機（支援左手推搖桿＋右手同步旋轉視角/仰望 63°/雙指縮放，以及電腦版滑鼠拖曳/右鍵平移/滾輪）
+    const rightPointers = new Map();
+    let prevPinchDist = null;
+    let mouseDragMode = null; // 'rotate' | 'pan'
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    renderer.domElement.addEventListener('contextmenu', (e) => {
+      if (walkMode) e.preventDefault();
+    });
+    renderer.domElement.addEventListener('wheel', (e) => {
+      if (!walkMode) return;
+      e.preventDefault();
+      gameCam.dist = Math.max(1.0, Math.min(8.5, gameCam.dist * (1 + Math.sign(e.deltaY) * 0.08)));
+    }, { passive: false });
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      if (e.button === 1 && walkMode) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onActionDown(e);
+        return;
+      }
+      if (walkMode && (e.button === 2 || (e.button === 0 && e.ctrlKey))) {
+        e.preventDefault();
+        mouseDragMode = 'pan';
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        return;
+      }
+      if (e.button !== 0) return;
+      downX = e.clientX;
+      downY = e.clientY;
+
+      // 左下 1/3 x 1/3 熱區：檢查是否為雙擊，若非雙擊則進入待定浮動搖桿判定（不送給右手視角）
+      if (walkMode && !pickMode && isInJoystickZone(e.clientX, e.clientY)) {
+        const now = performance.now();
+        const isDouble = now - lastTapTime < 350 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 36;
+        if (!isDouble && !joyVec.active) {
+          e.stopImmediatePropagation();
+          const pid = e.pointerId;
+          const sx = e.clientX;
+          const sy = e.clientY;
+          const timer = setTimeout(() => {
+            if (pendingZoneTouch && pendingZoneTouch.pointerId === pid) {
+              activateFloatingJoystick(pid, sx, sy, pendingZoneTouch.curX, pendingZoneTouch.curY);
+            }
+          }, 130);
+          pendingZoneTouch = { pointerId: pid, startX: sx, startY: sy, curX: sx, curY: sy, timer };
+          return;
+        }
+      }
+
+      if (walkMode) {
+        if (e.pointerType === 'touch') {
+          rightPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (rightPointers.size === 2) {
+            const pts = Array.from(rightPointers.values());
+            prevPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          }
+        } else {
+          mouseDragMode = 'rotate';
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+        }
+      }
+    }, true);
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (pendingZoneTouch && e.pointerId === pendingZoneTouch.pointerId) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pendingZoneTouch.curX = e.clientX;
+        pendingZoneTouch.curY = e.clientY;
+        if (Math.hypot(e.clientX - pendingZoneTouch.startX, e.clientY - pendingZoneTouch.startY) > 7) {
+          clearTimeout(pendingZoneTouch.timer);
+          activateFloatingJoystick(pendingZoneTouch.pointerId, pendingZoneTouch.startX, pendingZoneTouch.startY, e.clientX, e.clientY);
+        }
+        return;
+      }
+      if (joyVec.active && joyPointerId === e.pointerId) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        updateJoystickFromPointer(e.clientX, e.clientY);
+        return;
+      }
+
+      if (!walkMode) return;
+      if (e.pointerType === 'touch' && rightPointers.has(e.pointerId)) {
+        e.preventDefault();
+        const prev = rightPointers.get(e.pointerId);
+        const dx = e.clientX - prev.x;
+        const dy = e.clientY - prev.y;
+        rightPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (rightPointers.size === 1) {
+          // 手機高靈敏度視角旋轉（約滑 40% 螢幕轉 180°，往上滑＝往上看天空、往下滑＝往下看地面）
+          const sens = 0.0085;
+          gameCam.yaw -= dx * sens;
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch + dy * sens * 0.85));
+        } else if (rightPointers.size === 2) {
+          const pts = Array.from(rightPointers.values());
+          const curPinch = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (prevPinchDist && curPinch > 10) {
+            gameCam.dist = Math.max(1.0, Math.min(8.5, gameCam.dist * (prevPinchDist / curPinch)));
+          }
+          prevPinchDist = curPinch;
+        }
+      } else if (mouseDragMode) {
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (mouseDragMode === 'rotate') {
+          gameCam.yaw -= dx * 0.0055;
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch + dy * 0.0048));
+        } else if (mouseDragMode === 'pan') {
+          const rightX = Math.cos(gameCam.yaw);
+          const rightZ = -Math.sin(gameCam.yaw);
+          const panScale = gameCam.dist * 0.0022;
+          gameCam.panX -= rightX * dx * panScale;
+          gameCam.panZ -= rightZ * dx * panScale;
+          gameCam.panY += dy * panScale;
+        }
+      }
+    }, true);
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (e.button === 1) {
+        if (walkMode) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          onActionUp(e);
+        }
+        return;
+      }
+      if (rightPointers.has(e.pointerId)) {
+        rightPointers.delete(e.pointerId);
+        if (rightPointers.size < 2) prevPinchDist = null;
+      }
+      if (e.button === 2 || e.button === 0) mouseDragMode = null;
+      if (e.button !== 0) return;
+      if (pendingZoneTouch && e.pointerId === pendingZoneTouch.pointerId) {
+        clearTimeout(pendingZoneTouch.timer);
+        pendingZoneTouch = null;
+      }
+      if (joyVec.active && joyPointerId === e.pointerId) {
+        e.stopImmediatePropagation();
+        resetJoystick();
+        return;
+      }
+      const dx = e.clientX - downX;
+      const dy = e.clientY - downY;
+      if (Math.hypot(dx, dy) > 6) return; // 拖曳旋轉視角時不誤觸
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // 老師維持「單擊即可互動」（有隱形擴大感應區，且距離過遠僅提示不移動主角，不會造成視角誤觸）
+      if (!pickMode && activeModelObj?.group && activeModelDef?.isMaster) {
+        raycaster.setFromCamera(pointerNdc, camera);
+        const teacherMeshes = [];
+        activeModelObj.group.traverse((obj) => {
+          if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.isTeacher) {
+            teacherMeshes.push(obj);
+          }
+        });
+        if (teacherMeshes.length > 0 && raycaster.intersectObjects(teacherMeshes, false).length > 0) {
+          navigateExplorerToTeacher();
+          return;
+        }
+      }
+
+      // 雙擊／雙點 3D 建物模型或地圖任意處，才觸發自動導航（避免手機滑動轉視角時誤觸）
+      const now = performance.now();
+      const isDoubleTap = !pickMode && now - lastTapTime < 350 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 32;
+      if (isDoubleTap) {
+        lastTapTime = 0;
+        if (activeModelObj?.group && activeModelDef?.isMaster) {
+          raycaster.setFromCamera(pointerNdc, camera);
+          const interactMeshes = [];
+          activeModelObj.group.traverse((obj) => {
+            if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.landmarkId) {
+              interactMeshes.push(obj);
+            }
+          });
+          if (interactMeshes.length > 0) {
+            const hits = raycaster.intersectObjects(interactMeshes, false);
+            if (hits.length > 0) {
+              const hitObj = hits[0].object;
+              if (hitObj.userData.landmarkId) {
+                photoBarEl.classList.remove('show');
+                if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(true);
+                navigateExplorerToLandmark(hitObj.userData.landmarkId);
+                return;
+              }
+            }
+          }
+        }
+        navigateExplorerToScreenPoint(e.clientX, e.clientY);
+        return;
+      }
+      lastTapTime = now;
+      lastTapX = e.clientX;
+      lastTapY = e.clientY;
+
+      if (!pickMode || !activeModelObj?.group) return;
+
+      raycaster.setFromCamera(pointerNdc, camera);
+
+      const targets = [];
+      activeModelObj.group.traverse((obj) => {
+        if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.isTerrainSurface) {
+          targets.push(obj);
+        }
+      });
+      if (targets.length === 0) {
+        activeModelObj.group.traverse((obj) => {
+          if (obj.isMesh && !obj.userData.ignoreRaycast) targets.push(obj);
+        });
+      }
+
+      const hits = raycaster.intersectObjects(targets, false);
+      if (hits.length === 0) return;
+
+      const pt = hits[0].point;
+      const rotY = Math.atan2(camera.position.x - pt.x, camera.position.z - pt.z);
+      const deg = ((rotY * 180) / Math.PI).toFixed(1);
+
+      pickMarker.position.copy(pt);
+      pickMarker.rotation.y = rotY;
+      pickMarker.visible = true;
+
+      const baseInfo = activeModelDef?.isMaster ? `master(${masterState.baseMapId})` : activeModelDef?.id;
+      lastPickText = `pos: [${pt.x.toFixed(2)}, ${pt.y.toFixed(2)}, ${pt.z.toFixed(2)}], rotY: ${rotY.toFixed(3)} (${deg}°), 地圖: ${baseInfo}`;
+      pickCodeEl.textContent = lastPickText;
+      pickBoxEl.classList.add('show');
+    });
+
+    function renderMasterPanel() {
+      if (!activeModelDef?.isMaster) {
+        masterPanelEl.style.display = 'none';
+        return;
+      }
+      masterPanelEl.style.display = 'flex';
+
+      const baseList = document.getElementById('base-map-list');
+      baseList.innerHTML = '';
+      BASE_MAPS.forEach((bm) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'chk-item';
+        const rad = document.createElement('input');
+        rad.type = 'radio';
+        rad.name = 'master-base-map';
+        rad.checked = masterState.baseMapId === bm.id;
+        rad.onchange = () => {
+          if (!rad.checked) return;
+          masterState.baseMapId = bm.id;
+          currentTexId = null;
+          if (activeModelObj?.setBaseMap) activeModelObj.setBaseMap(bm.id);
+          renderHudForModel(activeModelDef);
+          applyTod(currentTod);
+        };
+        const span = document.createElement('span');
+        span.textContent = bm.label;
+        lbl.append(rad, span);
+        baseList.appendChild(lbl);
+      });
+
+      const lmList = document.getElementById('landmark-list');
+      lmList.innerHTML = '';
+      LANDMARK_DEFS.forEach((lm) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'chk-item';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = masterState.visibleLandmarks.has(lm.id);
+        chk.onchange = () => {
+          if (chk.checked) masterState.visibleLandmarks.add(lm.id);
+          else masterState.visibleLandmarks.delete(lm.id);
+          if (activeModelObj?.setLandmarkVisible) activeModelObj.setLandmarkVisible(lm.id, chk.checked);
+        };
+        const span = document.createElement('span');
+        span.textContent = lm.label;
+        lbl.append(chk, span);
+        lmList.appendChild(lbl);
+      });
+    }
+
+    function applyTod(tod) {
+      const p = PALETTES[tod] || PALETTES.day;
+      currentTod = PALETTES[tod] ? tod : 'day';
+      scene.background = new THREE.Color(p.sky);
+      if (fogEnabled) {
+        const near = activeModelDef?.fogNear ?? 28;
+        const far = activeModelDef?.fogFar ?? 70;
+        scene.fog = new THREE.Fog(p.fog, near, far);
+      } else {
+        scene.fog = null;
+      }
+      sun.color.set(p.sunColor);
+      sun.intensity = p.sunI;
+      hemi.intensity = p.hemiI;
+      if (activeModelObj?.setNightGlow) activeModelObj.setNightGlow(p.night);
+      if (activeModelObj?.setSnowMode) activeModelObj.setSnowMode(p.snow);
+    }
+
+    function renderHudForModel(def) {
+      const texRow = document.getElementById('tex-row');
+      texRow.innerHTML = '';
+      if (def.textures && def.textures.length > 0) {
+        texRow.style.display = 'flex';
+        if (!def.textures.some((t) => t.id === currentTexId)) {
+          currentTexId = def.textures[0].id;
+        }
+        def.textures.forEach((texDef) => {
+          const btn = document.createElement('button');
+          btn.className = `hud-btn ${currentTexId === texDef.id ? 'active' : ''}`;
+          btn.textContent = texDef.label;
+          btn.onclick = () => {
+            currentTexId = texDef.id;
+            texRow.querySelectorAll('.hud-btn').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (activeModelObj?.setTextureStyle) activeModelObj.setTextureStyle(texDef.id);
+          };
+          texRow.appendChild(btn);
+        });
+      } else {
+        texRow.style.display = 'none';
+      }
+
+      const todRow = document.getElementById('tod-row');
+      todRow.innerHTML = '';
+      const todItems = [
+        { id: 'day', label: '☀️ 白天' },
+        { id: 'dusk', label: '🌅 黃昏' },
+        { id: 'night', label: '🌙 夜晚' },
+      ];
+      if (def.supportsSnow) todItems.push({ id: 'snow', label: '❄️ 雪景' });
+
+      if (currentTod === 'snow' && !def.supportsSnow) currentTod = 'day';
+
+      todItems.forEach((t) => {
+        const btn = document.createElement('button');
+        btn.className = `hud-btn ${currentTod === t.id ? 'active' : ''}`;
+        btn.textContent = t.label;
+        btn.onclick = () => {
+          todRow.querySelectorAll('.hud-btn[data-tod]').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          applyTod(t.id);
+        };
+        btn.dataset.tod = t.id;
+        todRow.appendChild(btn);
+      });
+
+      const fogBtn = document.createElement('button');
+      fogBtn.className = `hud-btn ${fogEnabled ? 'active' : ''}`;
+      fogBtn.textContent = fogEnabled ? '🌫️ 雲霧：開' : '🌫️ 雲霧：關';
+      fogBtn.onclick = () => {
+        fogEnabled = !fogEnabled;
+        fogBtn.classList.toggle('active', fogEnabled);
+        fogBtn.textContent = fogEnabled ? '🌫️ 雲霧：開' : '🌫️ 雲霧：關';
+        applyTod(currentTod);
+      };
+      todRow.appendChild(fogBtn);
+
+      const spinBtn = document.createElement('button');
+      spinBtn.className = `hud-btn ${controls.autoRotate ? 'active' : ''}`;
+      spinBtn.textContent = '🔄 自動旋轉';
+      spinBtn.onclick = () => {
+        controls.autoRotate = !controls.autoRotate;
+        spinBtn.classList.toggle('active', controls.autoRotate);
+      };
+      todRow.appendChild(spinBtn);
+
+      const primaryBar = document.getElementById('primary-bar');
+      primaryBar.innerHTML = '';
+      const moreDrawer = document.getElementById('more-drawer');
+
+      if (def.supportsPick) {
+        const walkBtn = document.createElement('button');
+        walkBtn.dataset.walk = '1';
+        walkBtn.className = `hud-btn ${walkMode ? 'walk-on' : ''}`;
+        walkBtn.textContent = walkMode ? '🚶 漫遊中' : '🚶 漫遊';
+        walkBtn.onclick = () => {
+          setWalkMode(!walkMode);
+          walkBtn.classList.toggle('walk-on', walkMode);
+          walkBtn.textContent = walkMode ? '🚶 漫遊中' : '🚶 漫遊';
+          if (walkMode) {
+            controls.autoRotate = false;
+            spinBtn.classList.remove('active');
+          }
+        };
+        primaryBar.appendChild(walkBtn);
+
+        const genderLabel = (g) => (STUDENT_VARIANTS[g]?.label || (g === 'gentleman' ? '👨‍🏫 老師' : '👦 學院男孩'));
+        const genderBtn = document.createElement('button');
+        genderBtn.className = 'hud-btn';
+        genderBtn.textContent = genderLabel(explorerGender);
+        genderBtn.onclick = () => {
+          const order = [
+            'boy', 'boy_cap', 'boy_bear', 'boy_dino', 'boy_sailor', 'boy_explorer', 'boy_prince',
+            'girl', 'girl_bunny', 'girl_beret', 'girl_cat', 'girl_strawberry', 'girl_angel', 'girl_star',
+          ];
+          const next = order[(order.indexOf(explorerGender) + 1) % order.length];
+          setExplorerGender(next);
+          genderBtn.textContent = genderLabel(explorerGender);
+        };
+        primaryBar.appendChild(genderBtn);
+
+        const pickBtn = document.createElement('button');
+        pickBtn.className = `hud-btn ${pickMode ? 'pick-on' : ''}`;
+        pickBtn.textContent = pickMode ? '📍 擷取中' : '📍 擷取位置';
+        pickBtn.onclick = () => {
+          pickMode = !pickMode;
+          pickBtn.classList.toggle('pick-on', pickMode);
+          pickBtn.textContent = pickMode ? '📍 擷取中' : '📍 擷取位置';
+          if (pickMode) {
+            controls.autoRotate = false;
+            spinBtn.classList.remove('active');
+            pickBoxEl.classList.add('show');
+          } else {
+            pickMarker.visible = false;
+            pickBoxEl.classList.remove('show');
+          }
+        };
+        todRow.appendChild(pickBtn);
+      } else {
+        pickMode = false;
+        pickMarker.visible = false;
+        pickBoxEl.classList.remove('show');
+      }
+
+      const camRow = document.getElementById('cam-row');
+      camRow.innerHTML = '';
+      camRow.style.display = 'none';
+
+      const camToggleBtn = document.createElement('button');
+      camToggleBtn.className = 'hud-btn';
+      camToggleBtn.textContent = '🎥 視角 ▾';
+      camToggleBtn.onclick = () => {
+        const show = camRow.style.display === 'none';
+        camRow.style.display = show ? 'flex' : 'none';
+        camToggleBtn.classList.toggle('active', show);
+        if (show) {
+          moreDrawer.classList.remove('open');
+          moreBtn.classList.remove('active');
+        }
+        syncWalkPadLayer();
+      };
+
+      const moreBtn = document.createElement('button');
+      moreBtn.className = `hud-btn ${moreDrawer.classList.contains('open') ? 'active' : ''}`;
+      moreBtn.textContent = '🎛️ 更多設定';
+      moreBtn.onclick = () => {
+        const isOpen = moreDrawer.classList.toggle('open');
+        moreBtn.classList.toggle('active', isOpen);
+        if (isOpen) {
+          camRow.style.display = 'none';
+          camToggleBtn.classList.remove('active');
+        }
+        syncWalkPadLayer();
+      };
+      primaryBar.appendChild(camToggleBtn);
+      primaryBar.appendChild(moreBtn);
+
+      def.cams.forEach((c) => {
+        const btn = document.createElement('button');
+        btn.className = 'hud-btn';
+        btn.textContent = c.label;
+        btn.onclick = () => {
+          camera.position.set(...c.pos);
+          controls.target.set(...c.target);
+          controls.update();
+          camRow.style.display = 'none';
+          camToggleBtn.classList.remove('active');
+        };
+        camRow.appendChild(btn);
+      });
+    }
+
+    function loadModel(id) {
+      const def = MODELS.find((m) => m.id === id) || MODELS[0];
+      activeModelDef = def;
+
+      if (activeModelObj?.group) {
+        scene.remove(activeModelObj.group);
+      }
+      activeModelObj = def.create();
+      scene.add(activeModelObj.group);
+
+      controls.minDistance = def.minDist;
+      controls.maxDistance = def.maxDist;
+      const firstCam = def.cams[0];
+      camera.position.set(...firstCam.pos);
+      controls.target.set(...firstCam.target);
+      controls.update();
+
+      renderMasterPanel();
+      renderHudForModel(def);
+      applyTod(currentTod);
+
+      // 記住網址 hash 方便重整保持在同一模型
+      history.replaceState(null, '', `#${def.id}`);
+    }
+
+    // 填充下拉選單
+    const selectEl = document.getElementById('model-select');
+    MODELS.forEach((m) => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.label;
+      selectEl.appendChild(opt);
+    });
+
+    const explorerGroup = new THREE.Group();
+    let explorerGender = 'boy';
+    let explorerAvatar = null;
+    function setExplorerGender(g) {
+      explorerGender = g;
+      if (explorerAvatar?.group) explorerGroup.remove(explorerAvatar.group);
+      explorerAvatar = g === 'gentleman'
+        ? createWhiteSuitGentleman({ withBase: false })
+        : createStudentAvatar(g, { withBase: false });
+      explorerAvatar.group.scale.setScalar(g === 'gentleman' ? 0.42 : 0.14);
+      explorerAvatar.group.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.userData.ignoreRaycast = true; } });
+      explorerGroup.add(explorerAvatar.group);
+    }
+    setExplorerGender('boy');
+    explorerGroup.visible = false;
+    scene.add(explorerGroup);
+
+    const initialHash = location.hash.replace('#', '');
+    const initialId = MODELS.some((m) => m.id === initialHash) ? initialHash : MODELS[0].id;
+    selectEl.value = initialId;
+    loadModel(initialId);
+
+    selectEl.addEventListener('change', (e) => {
+      loadModel(e.target.value);
+    });
+
+    function syncGameCamFromCamera() {
+      const ex = explorerGroup.position.x + gameCam.panX;
+      const ey = explorerGroup.position.y + 0.52 + gameCam.panY;
+      const ez = explorerGroup.position.z + gameCam.panZ;
+      const dx = camera.position.x - ex;
+      const dy = camera.position.y - ey;
+      const dz = camera.position.z - ez;
+      const dist = Math.max(1.0, Math.min(8.5, Math.hypot(dx, dy, dz) || 2.35));
+      const horiz = Math.hypot(dx, dz) || 1e-4;
+      gameCam.yaw = gameCam.smoothYaw = Math.atan2(dx, dz);
+      gameCam.pitch = gameCam.smoothPitch = Math.max(-1.10, Math.min(1.15, Math.atan2(dy, horiz)));
+      gameCam.dist = gameCam.smoothDist = dist;
+    }
+
+    function updateCameraFov() {
+      const isPortraitWalk = walkMode && wrap.clientWidth < wrap.clientHeight;
+      const targetFov = isPortraitWalk ? 62 : 45;
+      if (camera.fov !== targetFov) {
+        camera.fov = targetFov;
+        camera.updateProjectionMatrix();
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = wrap.clientWidth / wrap.clientHeight;
+      updateCameraFov();
+      camera.updateProjectionMatrix();
+      renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    });
+
+    const walkInput = { fwd: false, back: false, left: false, right: false, fast: false };
+    const gameCam = {
+      yaw: 0, pitch: 0.28, dist: 2.35,
+      smoothYaw: 0, smoothPitch: 0.28, smoothDist: 2.35,
+      panX: 0, panY: 0, panZ: 0,
+    };
+    let walkTarget = null;
+    const explorerNavState = { preferSign: 0 };
+    let walkFaceTarget = null;
+    let preWalkAnim = null;
+    let camTurnAnim = null;
+    const navRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.24, 0.38, 24),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9, side: 2 })
+    );
+    navRing.rotation.x = -Math.PI / 2;
+    navRing.visible = false;
+    navRing.userData.ignoreRaycast = true;
+    scene.add(navRing);
+
+    const walkPadEl = document.getElementById('walk-pad');
+    const joyKnobEl = document.getElementById('joy-knob');
+    const actionBtnEl = document.getElementById('action-btn');
+    const skillShoutEl = document.getElementById('skill-shout');
+    const joyVec = { x: 0, y: 0, active: false };
+    let jumpOffsetY = 0;
+    let jumpVelY = 0;
+    let activeSkillMode = null; // null | 'saiyan' | 'heart'
+
+    // 建立超級賽亞人金黃色氣場光效 (掛在 explorerGroup)
+    const saiyanAuraGroup = new THREE.Group();
+    saiyanAuraGroup.visible = false;
+    const auraOuterMat = new THREE.MeshBasicMaterial({
+      color: 0xfacc15, transparent: true, opacity: 0.36,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: 2,
+    });
+    const auraInnerMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a, transparent: true, opacity: 0.48,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: 2,
+    });
+    const auraOuterCone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.35, 16, 1, true), auraOuterMat);
+    auraOuterCone.position.y = 0.65;
+    const auraInnerCone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.15, 14, 1, true), auraInnerMat);
+    auraInnerCone.position.y = 0.55;
+    const auraRingMat = new THREE.MeshBasicMaterial({
+      color: 0xfde047, transparent: true, opacity: 0.65,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: 2,
+    });
+    const auraGroundRing = new THREE.Mesh(new THREE.RingGeometry(0.24, 0.52, 24), auraRingMat);
+    auraGroundRing.rotation.x = -Math.PI / 2;
+    auraGroundRing.position.y = 0.04;
+    saiyanAuraGroup.add(auraOuterCone, auraInnerCone, auraGroundRing);
+
+    const auraFlames = [];
+    const flameGeo = new THREE.OctahedronGeometry(0.055, 0);
+    for (let i = 0; i < 14; i++) {
+      const fm = new THREE.Mesh(flameGeo, auraInnerMat);
+      fm.userData.phase = (i / 14) * Math.PI * 2;
+      fm.userData.speed = 1.6 + (i % 4) * 0.35;
+      fm.userData.rad = 0.18 + (i % 3) * 0.08;
+      auraFlames.push(fm);
+      saiyanAuraGroup.add(fm);
+    }
+    saiyanAuraGroup.traverse((o) => { if (o.isMesh) o.userData.ignoreRaycast = true; });
+    explorerGroup.add(saiyanAuraGroup);
+
+    // 建立 3D 立體愛心攻勢粒子池 (以雙球+倒錐組合，無需 ExtrudeGeometry)
+    const heartLobeGeo = new THREE.SphereGeometry(0.032, 10, 8);
+    const heartTipGeo = new THREE.ConeGeometry(0.044, 0.068, 10);
+    const heartColors = [0xf43f5e, 0xfb7185, 0xf472b6, 0xfda4af];
+    const heartParticles = [];
+    for (let i = 0; i < 14; i++) {
+      const hMat = new THREE.MeshBasicMaterial({
+        color: heartColors[i % heartColors.length],
+        transparent: true, opacity: 0.95,
+      });
+      const hg = new THREE.Group();
+      const l1 = new THREE.Mesh(heartLobeGeo, hMat);
+      l1.position.set(-0.022, 0.022, 0);
+      const l2 = new THREE.Mesh(heartLobeGeo, hMat);
+      l2.position.set(0.022, 0.022, 0);
+      const tip = new THREE.Mesh(heartTipGeo, hMat);
+      tip.rotation.x = Math.PI;
+      tip.position.set(0, -0.015, 0);
+      tip.scale.set(1.15, 1.0, 0.65);
+      hg.add(l1, l2, tip);
+      hg.visible = false;
+      hg.traverse((o) => { if (o.isMesh) o.userData.ignoreRaycast = true; });
+      scene.add(hg);
+      heartParticles.push({ mesh: hg, mat: hMat, t: (i / 14), active: false });
+    }
+
+    // 建立「跟老師打電話」通話電波 3D 環 (掛在 explorerGroup 頭頂)
+    const phoneWaveGroup = new THREE.Group();
+    phoneWaveGroup.visible = false;
+    const phoneWaveRings = [];
+    for (let i = 0; i < 3; i++) {
+      const rwMat = new THREE.MeshBasicMaterial({
+        color: i % 2 === 0 ? 0x38bdf8 : 0xfde047,
+        transparent: true, opacity: 0.85, side: 2,
+      });
+      const rw = new THREE.Mesh(new THREE.RingGeometry(0.10, 0.14, 24), rwMat);
+      rw.rotation.x = -Math.PI / 2;
+      rw.userData.phase = i / 3;
+      rw.userData.ignoreRaycast = true;
+      phoneWaveGroup.add(rw);
+      phoneWaveRings.push({ mesh: rw, mat: rwMat });
+    }
+    explorerGroup.add(phoneWaveGroup);
+
+    const PHONE_GREETINGS = [
+      '📞 老師您好！天氣變化要注意保暖、身體健康喔！',
+      '📞 老師！我會好好度過信仰生活，每天都充滿感謝！',
+      '📞 老師～我最近很認真禱告喔，每天都跟神對話、祈求！',
+      '📞 老師！我有帶同學一起來教會認識神耶！',
+      '📞 老師！月明洞世界我好喜歡、好好玩喔！',
+      '📞 老師您現在在哪裡？我現在就去找您合照！',
+      '📞 老師！聽了《命運》跟蝸牛的故事，我決定絕不放棄！',
+    ];
+    let selectedSkill = 'saiyan'; // 'saiyan' | 'phone' (快速連按兩次中鍵/跳躍鍵可切換)
+    const downRay = new THREE.Raycaster();
+    const downDir = new THREE.Vector3(0, -1, 0);
+    const walkFwdVec = new THREE.Vector3();
+    const walkRightVec = new THREE.Vector3();
+
+    function sampleTerrainY(x, z, fallbackY) {
+      if (!activeModelObj?.group) return fallbackY;
+      const targets = [];
+      activeModelObj.group.traverse((obj) => {
+        if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.isTerrainSurface) targets.push(obj);
+      });
+      if (targets.length === 0) return fallbackY;
+      downRay.set(new THREE.Vector3(x, 60, z), downDir);
+      const hits = downRay.intersectObjects(targets, false);
+      return hits.length > 0 ? hits[0].point.y : fallbackY;
+    }
+
+    function sampleBuildingSurfaceY(x, z) {
+      if (!activeModelObj?.group) return null;
+      const targets = [];
+      activeModelObj.group.traverse((obj) => {
+        if (obj.isMesh && !obj.userData.ignoreRaycast && obj.userData.isBuildingSurface) targets.push(obj);
+      });
+      if (targets.length === 0) return null;
+      downRay.set(new THREE.Vector3(x, 60, z), downDir);
+      const hits = downRay.intersectObjects(targets, false);
+      return hits.length > 0 ? hits[0].point.y : null;
+    }
+
+    // 3D 建物碰撞與台階/屋頂爬升：不可直接穿牆，但可走路或跳躍爬上模型（樹/石頭/動物可穿越）
+    function resolveStepWithBuildings(curX, curZ, curFootY, nextX, nextZ, fallbackY) {
+      const MAX_STEP_UP = 0.28;
+      const checkSpot = (tx, tz) => {
+        const terrY = sampleTerrainY(tx, tz, fallbackY);
+        const bldY = sampleBuildingSurfaceY(tx, tz);
+        if (bldY !== null && bldY > terrY) {
+          if (bldY <= curFootY + MAX_STEP_UP) {
+            return { ok: true, groundY: bldY };
+          }
+          return { ok: false, groundY: terrY };
+        }
+        return { ok: true, groundY: terrY };
+      };
+
+      const both = checkSpot(nextX, nextZ);
+      if (both.ok) return { x: nextX, z: nextZ, groundY: both.groundY };
+      const onlyX = checkSpot(nextX, curZ);
+      if (onlyX.ok) return { x: nextX, z: curZ, groundY: onlyX.groundY };
+      const onlyZ = checkSpot(curX, nextZ);
+      if (onlyZ.ok) return { x: curX, z: nextZ, groundY: onlyZ.groundY };
+      const stay = checkSpot(curX, curZ);
+      return { x: curX, z: curZ, groundY: stay.groundY };
+    }
+
+    function setWalkMode(on, skipCamSnap = false) {
+      walkMode = on;
+      controls.enabled = !on; // 漫遊模式改由 gameCam 獨立雙指狀態機接管，非漫遊模式使用 OrbitControls
+      updateCameraFov();
+      explorerGroup.visible = on;
+      walkPadEl.classList.toggle('show', on);
+      actionBtnEl.classList.toggle('show', on);
+      if (!on) {
+        walkTarget = null;
+        preWalkAnim = null;
+        camTurnAnim = null;
+        navRing.visible = false;
+        stopSkill();
+        smoothSpeed = 0;
+        jumpOffsetY = 0;
+        jumpVelY = 0;
+        gameCam.panX = gameCam.panY = gameCam.panZ = 0;
+        if (explorerAvatar?.group) explorerAvatar.group.position.y = 0;
+      } else {
+        const tx = Math.abs(controls.target.x) < 34 ? controls.target.x : 0.0;
+        const tz = Math.abs(controls.target.z) < 34 ? controls.target.z : 1.5;
+        const ty = sampleTerrainY(tx, tz, 8.2);
+        explorerGroup.position.set(tx, ty, tz);
+        gameCam.panX = gameCam.panY = gameCam.panZ = 0;
+        let dir = new THREE.Vector3().subVectors(controls.target, camera.position);
+        dir.y = 0;
+        if (dir.lengthSq() < 1e-4) dir.set(0, 0, -1);
+        dir.normalize();
+        // 點擊漫遊按鍵時，主角先轉向面對老師的方位，老師也先面對主角揮揮手後才繼續走動
+        if (!skipCamSnap && activeModelObj?.getTeacherPose) {
+          const tp = activeModelObj.getTeacherPose();
+          const tdx = tp.x - tx;
+          const tdz = tp.z - tz;
+          if (Math.hypot(tdx, tdz) > 0.1) {
+            dir.set(tdx, 0, tdz).normalize();
+          }
+          if (activeModelObj.triggerTeacherWave) {
+            activeModelObj.triggerTeacherWave(tx, tz, 2.2);
+          }
+        }
+        explorerGroup.rotation.y = Math.atan2(dir.x, dir.z);
+        if (!skipCamSnap) {
+          controls.target.set(tx, ty + 0.52, tz);
+          camera.position.set(tx - dir.x * 2.35, ty + 1.15, tz - dir.z * 2.35);
+          controls.update();
+        }
+        syncGameCamFromCamera();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!walkMode) return;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') walkInput.fwd = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') walkInput.back = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') walkInput.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') walkInput.right = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') walkInput.fast = true;
+      if (e.code === 'Space') { e.preventDefault(); triggerJump(); }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') walkInput.fwd = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') walkInput.back = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') walkInput.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') walkInput.right = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') walkInput.fast = false;
+    });
+    walkPadEl.addEventListener('contextmenu', (e) => e.preventDefault());
+    walkPadEl.addEventListener('selectstart', (e) => e.preventDefault());
+    let joyPointerId = null;
+    let smoothSpeed = 0;
+    const updateJoystickFromPointer = (clientX, clientY) => {
+      const rect = walkPadEl.getBoundingClientRect();
+      const cx = rect.left + rect.width * 0.5;
+      const cy = rect.top + rect.height * 0.5;
+      const maxR = rect.width * 0.44; // 加大至 ~42px 類比行程，微調站位更精準
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxR) {
+        dx = (dx / dist) * maxR;
+        dy = (dy / dist) * maxR;
+      }
+      joyKnobEl.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+      // 圓形死區 12%，消除十字軸黏滯感
+      const normMag = dist / maxR;
+      if (normMag <= 0.12 || dist < 1e-4) {
+        joyVec.x = 0;
+        joyVec.y = 0;
+      } else {
+        const scaled = (Math.min(1, normMag) - 0.12) / 0.88;
+        joyVec.x = (dx / dist) * scaled;
+        joyVec.y = (-dy / dist) * scaled;
+      }
+    };
+    const resetJoystick = () => {
+      joyPointerId = null;
+      joyVec.active = false;
+      joyVec.x = 0;
+      joyVec.y = 0;
+      joyKnobEl.style.transform = 'translate(0px, 0px)';
+      walkPadEl.style.left = '';
+      walkPadEl.style.top = '';
+      walkPadEl.style.bottom = '';
+    };
+    walkPadEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.getSelection?.()?.removeAllRanges?.();
+      const rect = walkPadEl.getBoundingClientRect();
+      const cx = rect.left + rect.width * 0.5;
+      const cy = rect.top + rect.height * 0.5;
+      // 若手指放下去不在圓心，立刻把搖桿中心移到手指位置（限熱區或就地調整）
+      if (Math.hypot(e.clientX - cx, e.clientY - cy) > 8) {
+        const w = rect.width || 96;
+        const h = rect.height || 96;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, e.clientX - w * 0.5));
+        const top = Math.max(52, Math.min(window.innerHeight - h - 54, e.clientY - h * 0.5));
+        walkPadEl.style.left = `${left.toFixed(0)}px`;
+        walkPadEl.style.top = `${top.toFixed(0)}px`;
+        walkPadEl.style.bottom = 'auto';
+      }
+      joyPointerId = e.pointerId;
+      joyVec.active = true;
+      try { walkPadEl.setPointerCapture?.(e.pointerId); } catch (_) {}
+      updateJoystickFromPointer(e.clientX, e.clientY);
+    });
+    walkPadEl.addEventListener('pointermove', (e) => {
+      if (!joyVec.active || (joyPointerId !== null && e.pointerId !== joyPointerId)) return;
+      e.preventDefault();
+      updateJoystickFromPointer(e.clientX, e.clientY);
+    });
+    walkPadEl.addEventListener('pointerup', (e) => {
+      if (joyPointerId === null || e.pointerId === joyPointerId) resetJoystick();
+    });
+    walkPadEl.addEventListener('pointercancel', resetJoystick);
+    walkPadEl.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      window.getSelection?.()?.removeAllRanges?.();
+    }, { passive: false });
+
+    // 右下角「跳躍 / 技能」按鈕（短按跳躍、長按不放發動超級賽亞人呼喊神或老師附近愛心攻勢）
+    let skillHoldTimer = null;
+    let isActionDown = false;
+    let lastActionTapTime = 0;
+    function toggleSelectedSkill() {
+      selectedSkill = selectedSkill === 'saiyan' ? 'phone' : 'saiyan';
+      const label = selectedSkill === 'saiyan' ? '✨ 目前技能：呼喊神（超級賽亞人）' : '📞 目前技能：跟老師打電話';
+      showPhotoHint(label);
+    }
+    function startSkill() {
+      if (!walkMode) return;
+      let nearTeacher = false;
+      if (activeModelObj?.getTeacherPose) {
+        const tp = activeModelObj.getTeacherPose();
+        const dist = Math.hypot(tp.x - explorerGroup.position.x, tp.z - explorerGroup.position.z);
+        if (dist <= TEACHER_PHOTO_MAX_DIST) nearTeacher = true;
+      }
+      // 在老師附近長按一律強制為「愛的攻勢」，否則依目前切換之技能發動
+      activeSkillMode = nearTeacher ? 'heart' : selectedSkill;
+      actionBtnEl.classList.add('holding');
+      actionBtnEl.classList.toggle('heart-mode', nearTeacher);
+      skillShoutEl.className = `skill-shout ${activeSkillMode}`;
+      if (activeSkillMode === 'heart') {
+        skillShoutEl.textContent = '💖 老師您辛苦了！愛您唷！ 💖';
+      } else if (activeSkillMode === 'phone') {
+        const line = PHONE_GREETINGS[Math.floor(Math.random() * PHONE_GREETINGS.length)];
+        skillShoutEl.textContent = line;
+      } else {
+        skillShoutEl.textContent = '✨ 神啊！求您與我同在，加添力量！ ✨';
+      }
+      if (nearTeacher && activeModelObj?.triggerTeacherWave) {
+        activeModelObj.triggerTeacherWave(explorerGroup.position.x, explorerGroup.position.z, 2.2);
+      }
+    }
+    function stopSkill() {
+      if (skillHoldTimer) { clearTimeout(skillHoldTimer); skillHoldTimer = null; }
+      isActionDown = false;
+      activeSkillMode = null;
+      actionBtnEl.classList.remove('holding', 'heart-mode');
+      skillShoutEl.className = 'skill-shout';
+      skillShoutEl.textContent = '';
+      saiyanAuraGroup.visible = false;
+      phoneWaveGroup.visible = false;
+      heartParticles.forEach((hp) => { hp.mesh.visible = false; });
+    }
+    function triggerJump() {
+      if (!walkMode) return;
+      if (jumpOffsetY <= 0.002) {
+        jumpVelY = 3.25;
+      }
+    }
+    const onActionDown = (e) => {
+      e.preventDefault();
+      window.getSelection?.()?.removeAllRanges?.();
+      if (isActionDown) return;
+      isActionDown = true;
+      skillHoldTimer = setTimeout(() => {
+        skillHoldTimer = null;
+        if (isActionDown) startSkill();
+      }, 300);
+    };
+    const onActionUp = (e) => {
+      if (e) e.preventDefault();
+      if (!isActionDown) return;
+      const wasSkill = Boolean(activeSkillMode);
+      stopSkill();
+      if (!wasSkill) {
+        const now = performance.now();
+        if (now - lastActionTapTime < 550) {
+          lastActionTapTime = 0;
+          toggleSelectedSkill();
+        } else {
+          lastActionTapTime = now;
+          triggerJump();
+        }
+      }
+    };
+    actionBtnEl.addEventListener('pointerdown', onActionDown);
+    actionBtnEl.addEventListener('pointerup', onActionUp);
+    actionBtnEl.addEventListener('pointercancel', onActionUp);
+    actionBtnEl.addEventListener('pointerleave', () => { if (isActionDown && !activeSkillMode) onActionUp(); });
+    actionBtnEl.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
+    actionBtnEl.addEventListener('contextmenu', (e) => e.preventDefault());
+    actionBtnEl.addEventListener('selectstart', (e) => e.preventDefault());
+
+    function updateJumpAndSkill(dt, elapsed) {
+      // 跳躍重力拋物線
+      if (jumpOffsetY > 0 || jumpVelY > 0) {
+        jumpOffsetY += jumpVelY * dt;
+        jumpVelY -= 10.5 * dt;
+        if (jumpOffsetY <= 0) {
+          jumpOffsetY = 0;
+          jumpVelY = 0;
+        }
+      }
+      if (explorerAvatar?.group) {
+        explorerAvatar.group.position.y = jumpOffsetY;
+      }
+
+      // 技能特效更新
+      if (activeSkillMode === 'saiyan' || activeSkillMode === 'phone') {
+        // 發揮技能前先轉到面對視角（攝影機）的方向，避免操作者只看到背面
+        const faceCamYaw = Math.atan2(camera.position.x - explorerGroup.position.x, camera.position.z - explorerGroup.position.z);
+        let camYawDiff = faceCamYaw - explorerGroup.rotation.y;
+        while (camYawDiff > Math.PI) camYawDiff -= Math.PI * 2;
+        while (camYawDiff < -Math.PI) camYawDiff += Math.PI * 2;
+        explorerGroup.rotation.y += camYawDiff * Math.min(1, dt * 14);
+      }
+      if (activeSkillMode === 'saiyan') {
+        phoneWaveGroup.visible = false;
+        saiyanAuraGroup.visible = true;
+        const pulse = 1.0 + Math.sin(elapsed * 22.0) * 0.14;
+        auraOuterCone.scale.set(pulse, 0.95 + Math.sin(elapsed * 18.0) * 0.18, pulse);
+        auraOuterCone.rotation.y = elapsed * 3.5;
+        auraInnerCone.scale.set(1.0 + Math.cos(elapsed * 26.0) * 0.15, 1.0 + Math.sin(elapsed * 21.0) * 0.16, 1.0);
+        auraInnerCone.rotation.y = -elapsed * 5.0;
+        auraGroundRing.scale.setScalar(1.0 + Math.sin(elapsed * 16.0) * 0.25);
+        auraFlames.forEach((fm) => {
+          const prog = (elapsed * fm.userData.speed + fm.userData.phase) % 1.0;
+          const ang = fm.userData.phase + elapsed * 4.5;
+          const r = fm.userData.rad * (1.0 - prog * 0.45);
+          fm.position.set(Math.cos(ang) * r, 0.08 + prog * 1.15, Math.sin(ang) * r);
+          const sc = (1.0 - prog) * 1.25;
+          fm.scale.setScalar(Math.max(0.05, sc));
+          fm.rotation.set(elapsed * 5, elapsed * 4, 0);
+        });
+        heartParticles.forEach((hp) => { hp.mesh.visible = false; });
+      } else if (activeSkillMode === 'phone') {
+        saiyanAuraGroup.visible = false;
+        heartParticles.forEach((hp) => { hp.mesh.visible = false; });
+        phoneWaveGroup.visible = true;
+        if (activeModelObj?.triggerTeacherPhone) {
+          activeModelObj.triggerTeacherPhone(explorerGroup.position.x, explorerGroup.position.z, 0.35);
+        }
+        phoneWaveRings.forEach((r) => {
+          const prog = (elapsed * 1.1 + r.mesh.userData.phase) % 1.0;
+          r.mesh.position.y = 0.55 + prog * 0.42;
+          r.mesh.scale.setScalar(0.6 + prog * 2.2);
+          r.mat.opacity = (1.0 - prog) * 0.85;
+        });
+      } else if (activeSkillMode === 'heart' && activeModelObj?.getTeacherPose) {
+        phoneWaveGroup.visible = false;
+        saiyanAuraGroup.visible = false;
+        const tp = activeModelObj.getTeacherPose();
+        // 主角轉向面對老師
+        const targetYaw = Math.atan2(tp.x - explorerGroup.position.x, tp.z - explorerGroup.position.z);
+        let diff = targetYaw - explorerGroup.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        explorerGroup.rotation.y += diff * Math.min(1, dt * 12);
+
+        heartParticles.forEach((hp, idx) => {
+          hp.mesh.visible = true;
+          const prog = (elapsed * 0.85 + idx / heartParticles.length) % 1.0;
+          const sx = explorerGroup.position.x;
+          const sy = explorerGroup.position.y + 0.36;
+          const sz = explorerGroup.position.z;
+          const tx = tp.x;
+          const ty = tp.y + 0.45;
+          const tz = tp.z;
+          const arcY = Math.sin(prog * Math.PI) * (0.45 + (idx % 3) * 0.14);
+          const sideOff = Math.sin(prog * Math.PI * 2 + idx) * 0.14;
+          hp.mesh.position.set(
+            sx + (tx - sx) * prog + sideOff,
+            sy + (ty - sy) * prog + arcY,
+            sz + (tz - sz) * prog
+          );
+          hp.mesh.rotation.y = elapsed * 3.0 + idx;
+          const s = (0.75 + Math.sin(prog * Math.PI) * 0.75) * 1.15;
+          hp.mesh.scale.setScalar(s);
+          hp.mat.opacity = prog < 0.85 ? 0.95 : (1.0 - prog) / 0.15;
+        });
+      } else {
+        saiyanAuraGroup.visible = false;
+        phoneWaveGroup.visible = false;
+        heartParticles.forEach((hp) => { hp.mesh.visible = false; });
+      }
+    }
+
+    function updateExplorer(dt, elapsed) {
+      if (!walkMode) return;
+      updateJumpAndSkill(dt, elapsed);
+      const skillPose = activeSkillMode || (jumpOffsetY > 0.03 ? 'jump' : null);
+      if (navRing.visible) {
+        const s = 0.85 + Math.sin(elapsed * 6.0) * 0.22;
+        navRing.scale.setScalar(s);
+      }
+
+      const kbZ = (walkInput.fwd ? 1 : 0) - (walkInput.back ? 1 : 0);
+      const kbX = (walkInput.right ? 1 : 0) - (walkInput.left ? 1 : 0);
+      const moveZ = Math.max(-1, Math.min(1, kbZ + joyVec.y));
+      const moveX = Math.max(-1, Math.min(1, kbX + joyVec.x));
+      const rawJoyMag = Math.min(1, Math.hypot(joyVec.x, joyVec.y));
+      // 指數響應曲線 m^1.65：微推精細走位、推滿順暢衝刺
+      const analogCurve = rawJoyMag > 0 ? Math.pow(rawJoyMag, 1.65) : 0;
+
+      let moveDir = null;
+      let targetSpeed = walkInput.fast
+        ? 7.5
+        : (analogCurve > 0 ? 1.2 + analogCurve * 6.3 : 4.2);
+
+      if (moveZ !== 0 || moveX !== 0) {
+        // 手動移動時將平移偏移量柔和回正至主角
+        gameCam.panX *= 0.85;
+        gameCam.panY *= 0.85;
+        gameCam.panZ *= 0.85;
+        // 手動操控優先，立即取消自動導航目標與轉向動畫
+        hideLandmarkSignboard();
+        walkTarget = null;
+        walkFaceTarget = null;
+        preWalkAnim = null;
+        camTurnAnim = null;
+        navRing.visible = false;
+        if (photoBarEl.classList.contains('show')) {
+          photoBarEl.classList.remove('show');
+          if (activeModelObj?.setRingsVisible) activeModelObj.setRingsVisible(true);
+        }
+
+        camera.getWorldDirection(walkFwdVec);
+        walkFwdVec.y = 0;
+        if (walkFwdVec.lengthSq() < 1e-6) walkFwdVec.set(0, 0, -1);
+        walkFwdVec.normalize();
+        walkRightVec.set(-walkFwdVec.z, 0, walkFwdVec.x);
+
+        moveDir = new THREE.Vector3()
+          .addScaledVector(walkFwdVec, moveZ)
+          .addScaledVector(walkRightVec, moveX)
+          .normalize();
+      } else if (preWalkAnim) {
+        if (stepOrbitAnim(preWalkAnim, dt)) {
+          preWalkAnim = null;
+          syncGameCamFromCamera();
+        }
+        if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false);
+        return;
+      } else if (walkTarget) {
+        const tx = walkTarget.x - explorerGroup.position.x;
+        const tz = walkTarget.z - explorerGroup.position.z;
+        const dist = Math.hypot(tx, tz);
+        const arriveThresh = walkFaceTarget?.isPhoto ? 0.08 : 0.22;
+        if (dist < arriveThresh) {
+          if (walkFaceTarget?.isPhoto && walkFaceTarget.snapX !== undefined) {
+            const snapY = sampleTerrainY(walkFaceTarget.snapX, walkFaceTarget.snapZ, explorerGroup.position.y);
+            explorerGroup.position.set(walkFaceTarget.snapX, snapY, walkFaceTarget.snapZ);
+          }
+          walkTarget = null;
+          navRing.visible = false;
+          if (walkFaceTarget) {
+            const ex = explorerGroup.position.x;
+            const ey = explorerGroup.position.y;
+            const ez = explorerGroup.position.z;
+            const fdx = walkFaceTarget.x - ex;
+            const fdz = walkFaceTarget.z - ez;
+            const flen = Math.hypot(fdx, fdz) || 1;
+            const fx = fdx / flen;
+            const fz = fdz / flen;
+            const endYaw = Math.atan2(fx, fz);
+            gameCam.panX = 0;
+            gameCam.panY = 0;
+            gameCam.panZ = 0;
+            if (walkFaceTarget.isPhoto) {
+              const targetCamY = walkFaceTarget.camY !== undefined ? walkFaceTarget.camY : ey + 0.36;
+              camTurnAnim = createOrbitAnim({
+                startTarget: controls.target,
+                endTarget: new THREE.Vector3(walkFaceTarget.midX, ey + 0.36, walkFaceTarget.midZ),
+                endCamPos: new THREE.Vector3(walkFaceTarget.camX, targetCamY, walkFaceTarget.camZ),
+                startExYaw: explorerGroup.rotation.y,
+                endExYaw: endYaw,
+                dur: 1.15,
+                groundClamp: 0.16,
+                onDone: () => {
+                  if (activeModelObj?.pauseTeacherForPhoto) {
+                    activeModelObj.pauseTeacherForPhoto(walkFaceTarget?.camX || camera.position.x, walkFaceTarget?.camZ || camera.position.z, 16);
+                  }
+                  // 站好後老師先親切摸摸主角的頭，再站好等待拍照
+                  if (activeModelObj?.triggerTeacherPat) {
+                    activeModelObj.triggerTeacherPat(1.5);
+                  }
+                  hideLandmarkSignboard();
+                  photoBarEl.classList.add('show');
+                },
+              });
+            } else {
+              const arrivedLandmarkId = walkFaceTarget.landmarkId;
+              camTurnAnim = createOrbitAnim({
+                startTarget: controls.target,
+                endTarget: new THREE.Vector3(ex, ey + 0.50, ez),
+                endCamPos: new THREE.Vector3(ex - fx * 2.2, ey + 1.15, ez - fz * 2.2),
+                startExYaw: explorerGroup.rotation.y,
+                endExYaw: endYaw,
+                dur: 1.15,
+                onDone: () => {
+                  if (arrivedLandmarkId) showLandmarkSignboard(arrivedLandmarkId);
+                },
+              });
+            }
+            walkFaceTarget = null;
+          }
+          if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false, skillPose);
+          return;
+        }
+        moveDir = new THREE.Vector3(tx / dist, 0, tz / dist);
+        targetSpeed = Math.min(6.4, Math.max(3.6, dist * 1.6));
+      } else if (camTurnAnim) {
+        smoothSpeed = 0;
+        if (stepOrbitAnim(camTurnAnim, dt)) {
+          const cb = camTurnAnim.onDone;
+          camTurnAnim = null;
+          syncGameCamFromCamera();
+          if (cb) cb();
+        }
+        if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false, skillPose);
+        return;
+      } else {
+        smoothSpeed = 0;
+        if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, false, skillPose);
+        return;
+      }
+
+      // 手遊級跟手反應速度（起步 15 / 轉向 12），消除滑冰延遲感
+      const accelRate = (!moveZ && !moveX && walkTarget) ? 16.0 : 15.0;
+      smoothSpeed += (targetSpeed - smoothSpeed) * Math.min(1, dt * accelRate);
+      const speed = smoothSpeed;
+
+      if (explorerAvatar?.update) explorerAvatar.update(dt, elapsed, true, skillPose);
+
+      let nx, nz, ny, faceDirX = moveDir.x, faceDirZ = moveDir.z;
+      const curFootY = explorerGroup.position.y + jumpOffsetY;
+      if (!moveZ && !moveX && walkTarget && activeModelObj?.stepAroundObstacles) {
+        const distLeft = Math.hypot(walkTarget.x - explorerGroup.position.x, walkTarget.z - explorerGroup.position.z);
+        const stepLen = Math.min(distLeft, speed * dt);
+        const steered = activeModelObj.stepAroundObstacles(
+          explorerGroup.position.x,
+          explorerGroup.position.z,
+          walkTarget.x,
+          walkTarget.z,
+          stepLen,
+          0.18,
+          explorerNavState
+        );
+        nx = Math.max(-35, Math.min(35, steered.x));
+        nz = Math.max(-35, Math.min(35, steered.z));
+        faceDirX = steered.dirX;
+        faceDirZ = steered.dirZ;
+        ny = sampleTerrainY(nx, nz, explorerGroup.position.y);
+      } else {
+        const rawX = Math.max(-35, Math.min(35, explorerGroup.position.x + moveDir.x * speed * dt));
+        const rawZ = Math.max(-35, Math.min(35, explorerGroup.position.z + moveDir.z * speed * dt));
+        const resolved = resolveStepWithBuildings(
+          explorerGroup.position.x,
+          explorerGroup.position.z,
+          curFootY,
+          rawX,
+          rawZ,
+          explorerGroup.position.y
+        );
+        nx = resolved.x;
+        nz = resolved.z;
+        ny = resolved.groundY;
+      }
+
+      // 若在空中跳躍落到較高的建物表面，自動把剩餘 jumpOffsetY 扣抵使落地平滑
+      const dy = ny - explorerGroup.position.y;
+      if (dy > 0 && jumpOffsetY > 0) {
+        jumpOffsetY = Math.max(0, jumpOffsetY - dy);
+      }
+      const dx = nx - explorerGroup.position.x;
+      const dz = nz - explorerGroup.position.z;
+
+      explorerGroup.position.set(nx, ny, nz);
+      const targetYaw = Math.atan2(faceDirX, faceDirZ);
+      let yawDiff = targetYaw - explorerGroup.rotation.y;
+      while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+      while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+      const yawRate = 12.0;
+      explorerGroup.rotation.y += yawDiff * Math.min(1, dt * yawRate);
+      controls.target.set(nx, ny + 0.52, nz);
+    }
+
+    function applyGameCamera(dt) {
+      if (!walkMode || preWalkAnim || camTurnAnim || photoBarEl.classList.contains('show')) return;
+      const damp = Math.min(1, dt * 18.0);
+      let yawDiff = gameCam.yaw - gameCam.smoothYaw;
+      while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+      while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+      gameCam.smoothYaw += yawDiff * damp;
+      gameCam.smoothPitch += (gameCam.pitch - gameCam.smoothPitch) * damp;
+      gameCam.smoothDist += (gameCam.dist - gameCam.smoothDist) * damp;
+
+      // 仰望天空時（smoothPitch < 0）自動拉近距離靠近主角再仰望，並微抬注視焦點
+      const upRatio = gameCam.smoothPitch < 0 ? Math.min(1, -gameCam.smoothPitch / 1.10) : 0;
+      const effDist = gameCam.smoothDist * (1.0 - upRatio * 0.62);
+
+      const tx = explorerGroup.position.x + gameCam.panX;
+      const ty = explorerGroup.position.y + 0.50 + upRatio * 0.28 + gameCam.panY;
+      const tz = explorerGroup.position.z + gameCam.panZ;
+
+      const cosP = Math.cos(gameCam.smoothPitch);
+      const cx = tx + Math.sin(gameCam.smoothYaw) * cosP * effDist;
+      const cz = tz + Math.cos(gameCam.smoothYaw) * cosP * effDist;
+      let cy = ty + Math.sin(gameCam.smoothPitch) * effDist;
+
+      // 攝影機地表防穿地保護：確保仰望 63° 時也不會插到地表下方
+      const camGroundY = sampleTerrainY(cx, cz, explorerGroup.position.y);
+      if (cy < camGroundY + 0.18) {
+        cy = camGroundY + 0.18;
+      }
+
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(tx, ty, tz);
+      controls.target.set(tx, ty, tz);
+    }
+
+    let last = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      updateExplorer(dt, now / 1000);
+      applyGameCamera(dt);
+      if (activeModelObj?.update) activeModelObj.update(dt, now / 1000);
+      if (!walkMode) controls.update();
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

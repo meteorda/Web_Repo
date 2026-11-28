@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>蝸牛與鸛鳥｜主日學水墨互動故事集</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: 'Noto Serif TC', 'Microsoft JhengHei', serif;
+      background: radial-gradient(circle at 20% 15%, #fefce8 0%, #f5f0e1 45%, #e7dcc8 100%);
+      color: #292524;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 28px 16px;
+    }
+    .container { max-width: 920px; width: 100%; }
+    header { text-align: center; margin-bottom: 28px; }
+    .badge {
+      display: inline-block; padding: 5px 14px; border-radius: 999px;
+      background: #fef3c7; border: 1px solid #d97706; color: #92400e;
+      font-size: 0.85rem; font-weight: 700; margin-bottom: 10px;
+    }
+    h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); color: #1c1917; margin-bottom: 8px; }
+    .sub { color: #57534e; font-size: 1rem; line-height: 1.6; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1.5px solid #d6c7ae; border-radius: 18px;
+      overflow: hidden; text-decoration: none; color: inherit;
+      box-shadow: 0 12px 30px rgba(41, 37, 36, 0.10);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      display: flex; flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 36px rgba(41, 37, 36, 0.18);
+      border-color: #b45309;
+    }
+    .thumb {
+      width: 100%; aspect-ratio: 16 / 10; object-fit: cover;
+      background: #e7e5e4; border-bottom: 1px solid #e7dcc8;
+    }
+    .card-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .ep { font-size: 0.82rem; font-weight: 800; color: #b45309; letter-spacing: 1px; margin-bottom: 4px; }
+    .card h2 { font-size: 1.32rem; margin-bottom: 8px; color: #1c1917; }
+    .card p { font-size: 0.94rem; line-height: 1.6; color: #44403c; margin-bottom: 16px; }
+    .cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 16px; border-radius: 10px;
+      background: #1c1917; color: #fef3c7; font-weight: 700; font-size: 0.95rem;
+    }
+    .card.ep2 .cta { background: #166534; color: #ecfdf5; }
+    footer {
+      margin-top: 28px; text-align: center; font-size: 0.88rem; color: #78716c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">2026.11.29 主日學互動繪畫故事</div>
+      <h1>🐌 蝸牛與鸛鳥｜靈性生命畫作動畫</h1>
+      <p class="sub">點擊下方任一篇章進入水墨有聲動畫，體會「堅持到底」與「倚靠神得勝」的話語故事</p>
+    </header>
+
+    <div class="grid">
+      <a class="card ep1" href="./destiny_animation.html">
+        <img class="thumb" src="./assets/destiny/bg_scroll.png" alt="前篇：命運">
+        <div class="card-body">
+          <div>
+            <div class="ep">EPISODE 01 · 前篇代表作</div>
+            <h2>🎨 《命運》— 阿根廷藝術展代表作</h2>
+            <p>「蝸牛即使面對強敵鸛鳥，仍堅持到底保住生命。」唯有在神的旨意中做到底，靈與肉才能真正存活！</p>
+          </div>
+          <div class="cta">▶ 觀看前篇《命運》</div>
+        </div>
+      </a>
+
+      <a class="card ep2" href="./battle_animation.html">
+        <img class="thumb" src="./assets/battle/original_painting.jpg" alt="續集：鸛鳥與蝸牛爭戰">
+        <div class="card-body">
+          <div>
+            <div class="ep">EPISODE 02 · 續集實戰篇</div>
+            <h2>⚔️ 《鸛鳥與蝸牛爭戰》</h2>
+            <p>微弱的蝸牛因總是與神同在生活，遇見惡人鸛鳥時內心呼喚神、勇敢斥退：「神啊！你與我同在，你這個惡人退去吧！」</p>
+          </div>
+          <div class="cta">▶ 觀看續集《鸛鳥與蝸牛爭戰》</div>
+        </div>
+      </a>
+    </div>
+
+    <footer>
+      🌟 核心經文：〈詩篇 119 篇 103 節〉你的言語在我上膛何等甘美，在我口中比蜜更甜！
+    </footer>
+  </div>
+</body>
+</html>
