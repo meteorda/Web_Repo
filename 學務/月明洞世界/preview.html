@@ -1146,10 +1146,10 @@
         const dy = e.clientY - prev.y;
         rightPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (rightPointers.size === 1) {
-          // 手機高靈敏度視角旋轉（約滑 40% 螢幕轉 180°，並支援仰望天空 63°）
+          // 手機高靈敏度視角旋轉（約滑 40% 螢幕轉 180°，往上滑＝往上看天空、往下滑＝往下看地面）
           const sens = 0.0085;
           gameCam.yaw -= dx * sens;
-          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch - dy * sens * 0.85));
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch + dy * sens * 0.85));
         } else if (rightPointers.size === 2) {
           const pts = Array.from(rightPointers.values());
           const curPinch = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
@@ -1165,7 +1165,7 @@
         lastMouseY = e.clientY;
         if (mouseDragMode === 'rotate') {
           gameCam.yaw -= dx * 0.0055;
-          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch - dy * 0.0048));
+          gameCam.pitch = Math.max(-1.10, Math.min(1.15, gameCam.pitch + dy * 0.0048));
         } else if (mouseDragMode === 'pan') {
           const rightX = Math.cos(gameCam.yaw);
           const rightZ = -Math.sin(gameCam.yaw);
