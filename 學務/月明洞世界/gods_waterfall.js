@@ -102,9 +102,6 @@ export function createGodsWaterfall(opts = {}) {
       .scale.set(1.35, 0.95, 0.42);
   }
 
-  // 池畔綠色人工草皮護岸（照片中沿池邊一圈翠綠邊緣）
-  const turfStrip = addMesh(root, new THREE.BoxGeometry(22.5, 0.22, 2.2), cTurf, 0, 0.04, 5.4);
-  turfStrip.rotation.y = 0.01;
   // 池水本體
   const pond = addMesh(root, new THREE.CylinderGeometry(11.5, 11.5, 0.14, 36, 1, false, -Math.PI * 0.48, Math.PI * 0.96), cPond, 0, -0.02, 5.2, 0, Math.PI, 0);
   pond.scale.set(1.05, 1, 0.62);
